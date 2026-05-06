@@ -24,7 +24,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch user profile from users table
+  // Fetch user profile from users table.
+  // Uses maybeSingle() so a missing row (rare race during invite acceptance)
+  // returns null rather than crashing the auth provider.
   const { data: userProfile } = useQuery({
     queryKey: ['userProfile', user?.id],
     queryFn: async () => {
@@ -33,11 +35,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .from('users')
         .select('*')
         .eq('id', user.id)
-        .single();
-      if (error) throw error;
-      return data as UserProfile;
+        .maybeSingle();
+      if (error) {
+        console.warn('userProfile fetch error:', error.message);
+        return null;
+      }
+      return data as UserProfile | null;
     },
     enabled: !!user?.id,
+    retry: 1,
   });
 
   // Initialize auth state
@@ -92,26 +98,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  /**
+   * Mobile signUp is intentionally minimal. Realtors should sign up via the
+   * web (where they pick a firm name and get billing/branding). Clients
+   * should arrive via an emailed invite, which creates their users row
+   * server-side. This function only creates the auth record — the public.users
+   * row is created either by the RPC (web realtor signup) or by the invite
+   * flow (admin/app/dashboard/clients/new/actions.ts).
+   *
+   * If a user gets here directly (no invite), they'll authenticate but won't
+   * have a users row and the app will gracefully prompt them to ask their
+   * realtor for an invite.
+   */
   const signUp = async (email: string, password: string, fullName: string) => {
     setIsLoading(true);
     setError(null);
     try {
-      const { error, data } = await supabase.auth.signUp({
+      const { error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: { full_name: fullName },
+        },
       });
       if (error) throw error;
-
-      // Create user profile
-      if (data.user?.id) {
-        const { error: profileError } = await supabase.from('users').insert({
-          id: data.user.id,
-          email,
-          full_name: fullName,
-          role: 'client',
-        });
-        if (profileError) throw profileError;
-      }
+      // Do NOT create a users row here — it would violate the
+      // users_firm_required_for_non_super_admin constraint. Users rows are
+      // created via:
+      //   - create_firm_and_admin RPC (web realtor signup)
+      //   - inviteClientAction (web realtor invites client)
     } catch (err: any) {
       setError(err.message);
       throw err;
