@@ -26,8 +26,10 @@ export async function inviteClientAction(fd: FormData) {
 
   const service = getSupabaseServiceRoleClient();
 
-  // 1) Send the invite
-  const redirectTo = `${process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'}/welcome`;
+  // 1) Send the invite. We pass firm_id in the redirectTo so the welcome page
+  //    can render the firm's branding even before the user is authenticated.
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
+  const redirectTo = `${baseUrl}/welcome?firm_id=${me!.firm_id}`;
   const { data, error } = await service.auth.admin.inviteUserByEmail(email, {
     data: {
       full_name: fullName,

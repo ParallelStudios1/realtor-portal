@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -9,7 +9,8 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
-import { useRouter, Link } from 'expo-router';
+import { useRouter, Link, useLocalSearchParams } from 'expo-router';
+import * as Linking from 'expo-linking';
 import { useAuth } from '@/lib/auth';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { useTheme } from '@/lib/theme';
@@ -18,8 +19,26 @@ export default function LoginScreen() {
   const router = useRouter();
   const { signIn, isLoading, error } = useAuth();
   const { colors } = useTheme();
-  const [email, setEmail] = useState('');
+  const params = useLocalSearchParams<{ email?: string }>();
+  const [email, setEmail] = useState((params.email as string) || '');
   const [password, setPassword] = useState('');
+
+  // If the app was opened via the realtorportal:// deep link with ?email=...,
+  // pre-fill the email field. (The web welcome page sends them here after they
+  // accept their invite and set a password.)
+  useEffect(() => {
+    if (params.email) {
+      setEmail(params.email as string);
+      return;
+    }
+    // Also handle cold start when params haven't propagated yet
+    Linking.getInitialURL().then((url) => {
+      if (!url) return;
+      const parsed = Linking.parse(url);
+      const e = parsed.queryParams?.email;
+      if (typeof e === 'string') setEmail(e);
+    });
+  }, [params.email]);
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
