@@ -28,7 +28,10 @@ export async function inviteClientAction(fd: FormData) {
 
   // 1) Send the invite. We pass firm_id in the redirectTo so the welcome page
   //    can render the firm's branding even before the user is authenticated.
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
+  // Production URL hardcoded as fallback so invites always land on the right
+  // page even if NEXT_PUBLIC_SITE_URL isn't set in Vercel env.
+  const baseUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ?? 'https://realtor-portal-ten.vercel.app';
   const redirectTo = `${baseUrl}/welcome?firm_id=${me!.firm_id}`;
   const { data, error } = await service.auth.admin.inviteUserByEmail(email, {
     data: {
