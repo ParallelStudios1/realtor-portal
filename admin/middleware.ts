@@ -18,9 +18,11 @@ export async function middleware(req: NextRequest) {
     path === '/' ||
     path.startsWith('/signup') ||
     path.startsWith('/login') ||
+    path.startsWith('/welcome') ||
     path.startsWith('/privacy') ||
     path.startsWith('/terms') ||
     path.startsWith('/api/auth') ||
+    path.startsWith('/api/billing/webhook') ||
     path.startsWith('/_next') ||
     path.startsWith('/favicon');
 
