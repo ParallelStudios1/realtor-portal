@@ -7,3 +7,8 @@ node_modules/
 .DS_Store
 .vercel
 next-env.d.ts
+
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/
