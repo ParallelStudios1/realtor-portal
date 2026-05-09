@@ -27,7 +27,7 @@ type Input = {
 
 async function resolveCaller(req: Request) {
   const me = await getMe();
-  if (me?.id) return { id: me.id, firm_id: me.firm_id };
+  if (me?.user_id) return { id: me.user_id, firm_id: me.firm_id };
   const auth = req.headers.get('authorization') || '';
   const m = auth.match(/^Bearer\s+(.+)$/i);
   if (!m) return null;

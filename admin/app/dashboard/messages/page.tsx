@@ -71,7 +71,7 @@ export default async function MessagesPage() {
       ) : (
         <MessagesClient
           firmId={me.firm_id!}
-          currentUserId={me.id}
+          currentUserId={me.user_id}
           threads={threads}
         />
       )}

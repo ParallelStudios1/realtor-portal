@@ -11,9 +11,9 @@ export const runtime = 'nodejs';
  * Returns null if neither yields a user.
  */
 async function resolveCaller(req: Request): Promise<{ id: string; firm_id: string | null } | null> {
-  // Try cookie session first
+  // Try cookie session first. getMe() returns { user_id, email, firm_id, … }
   const me = await getMe();
-  if (me?.id) return { id: me.id, firm_id: me.firm_id };
+  if (me?.user_id) return { id: me.user_id, firm_id: me.firm_id };
 
   const auth = req.headers.get('authorization') || '';
   const m = auth.match(/^Bearer\s+(.+)$/i);
