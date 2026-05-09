@@ -35,8 +35,37 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Logged in + visiting auth pages → bounce to dashboard
+  // For role-based routing we need the user row, not just auth. Pull it
+  // lazily — only when we're actually in protected territory and need to
+  // decide between /client and /dashboard.
+  let role: string | null = null;
+  if (user && (path === '/login' || path === '/signup' || path === '/dashboard' || path.startsWith('/dashboard/') || path === '/client' || path.startsWith('/client/'))) {
+    const { data: row } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle();
+    role = (row?.role as string) || null;
+  }
+
+  // Logged in + visiting auth pages → role-aware home
   if (user && (path === '/login' || path === '/signup')) {
+    const url = req.nextUrl.clone();
+    url.pathname = role === 'client' ? '/client' : '/dashboard';
+    url.search = '';
+    return NextResponse.redirect(url);
+  }
+
+  // Client visiting /dashboard → bounce to /client
+  if (role === 'client' && (path === '/dashboard' || path.startsWith('/dashboard/'))) {
+    const url = req.nextUrl.clone();
+    url.pathname = '/client';
+    url.search = '';
+    return NextResponse.redirect(url);
+  }
+
+  // Realtor / firm_admin visiting /client → bounce to /dashboard
+  if (role && role !== 'client' && (path === '/client' || path.startsWith('/client/'))) {
     const url = req.nextUrl.clone();
     url.pathname = '/dashboard';
     url.search = '';
