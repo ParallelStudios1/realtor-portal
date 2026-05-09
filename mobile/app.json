@@ -7,10 +7,16 @@
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.parallelstudios.realtorportal"
+      "bundleIdentifier": "com.parallelstudios.realtorportal",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
-      "package": "com.parallelstudios.realtorportal"
+      "package": "com.parallelstudios.realtorportal",
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "bundler": "metro"
@@ -21,6 +27,13 @@
       "expo-document-picker",
       "expo-image-picker"
     ],
-    "scheme": "realtorportal"
+    "scheme": "realtorportal",
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "2ec40b9d-760a-4b14-81eb-8de0f06e9fdb"
+      }
+    },
+    "owner": "parallelstudios"
   }
 }

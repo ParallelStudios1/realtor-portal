@@ -31,13 +31,26 @@ export function BillingClient({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ plan: planId }),
       });
-      const json = await res.json();
-      if (!res.ok || !json.url) {
-        throw new Error(json.error || 'Could not start checkout.');
+      // Read body as text first so we can show a useful message even if the
+      // server returned an empty body or HTML error page.
+      const raw = await res.text();
+      let json: any = null;
+      if (raw) {
+        try {
+          json = JSON.parse(raw);
+        } catch {
+          json = null;
+        }
+      }
+      if (!res.ok || !json?.url) {
+        const fallback = `Checkout failed (HTTP ${res.status}). ${
+          raw ? raw.slice(0, 200) : 'Empty response from server.'
+        }`;
+        throw new Error(json?.error || fallback);
       }
       window.location.href = json.url;
     } catch (err: any) {
-      setError(err.message);
+      setError(err?.message || 'Could not start checkout.');
       setPendingPlan(null);
     }
   }
