@@ -23,6 +23,7 @@ export async function middleware(req: NextRequest) {
     path.startsWith('/terms') ||
     path.startsWith('/api/auth') ||
     path.startsWith('/api/billing/webhook') ||
+    path.startsWith('/.well-known/') ||
     path.startsWith('/_next') ||
     path.startsWith('/favicon');
 
