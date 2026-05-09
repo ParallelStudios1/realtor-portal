@@ -40,6 +40,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           <nav className="flex items-center gap-1 text-sm">
             <Link href="/dashboard" className="rounded-md px-3 py-1.5 hover:bg-slate-100">Overview</Link>
             <Link href="/dashboard/clients" className="rounded-md px-3 py-1.5 hover:bg-slate-100">Clients</Link>
+            <Link href="/dashboard/messages" className="rounded-md px-3 py-1.5 hover:bg-slate-100">Messages</Link>
             <Link href="/dashboard/branding" className="rounded-md px-3 py-1.5 hover:bg-slate-100">Branding</Link>
             <Link href="/dashboard/billing" className="rounded-md px-3 py-1.5 hover:bg-slate-100">Billing</Link>
             <Link href="/dashboard/settings" className="rounded-md px-3 py-1.5 hover:bg-slate-100">Settings</Link>

@@ -1,4 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
+import { useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from './supabase';
 import {
   Firm,
@@ -178,7 +179,9 @@ export function useDocuments(searchId: string | null | undefined) {
 }
 
 export function useMessages(searchId: string | null | undefined) {
-  return useQuery({
+  const queryClient = useQueryClient();
+
+  const query = useQuery({
     queryKey: ['messages', searchId],
     queryFn: async () => {
       if (!searchId) return [];
@@ -192,6 +195,40 @@ export function useMessages(searchId: string | null | undefined) {
     },
     enabled: !!searchId,
   });
+
+  // Realtime subscription — push new messages into the cache the moment they
+  // hit Postgres, instead of waiting for the next manual refetch. The channel
+  // is keyed on searchId so swapping conversations cleanly tears down the old
+  // subscription.
+  useEffect(() => {
+    if (!searchId) return;
+    const channel = supabase
+      .channel(`messages:${searchId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `search_id=eq.${searchId}`,
+        },
+        (payload) => {
+          const msg = payload.new as Message;
+          queryClient.setQueryData<Message[]>(['messages', searchId], (prev) => {
+            if (!prev) return [msg];
+            // Avoid duplicate if optimistic update already inserted
+            if (prev.some((m) => m.id === msg.id)) return prev;
+            return [...prev, msg];
+          });
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [searchId, queryClient]);
+
+  return query;
 }
 
 /** Ratings for one specific house (1 row max — `unique(client_id, house_id)`). */

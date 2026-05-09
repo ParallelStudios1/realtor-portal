@@ -42,6 +42,54 @@ export default function AddHouseScreen() {
   const [squareFeet, setSquareFeet] = useState('');
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
+  const [generating, setGenerating] = useState(false);
+
+  const generateDescription = async () => {
+    if (!address.trim()) {
+      Alert.alert('Address first', 'Type at least the address before generating.');
+      return;
+    }
+    setGenerating(true);
+    try {
+      const { supabase } = await import('@/lib/supabase');
+      const { data: sess } = await supabase.auth.getSession();
+      const token = sess.session?.access_token;
+      const apiBase =
+        (process.env.EXPO_PUBLIC_API_URL as string | undefined) ||
+        'https://realtor-portal-ten.vercel.app';
+      const r = await fetch(`${apiBase}/api/ai/listing-description`, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          address: address.trim(),
+          price: price.trim(),
+          bedrooms: bedrooms.trim(),
+          bathrooms: bathrooms.trim(),
+          squareFeet: squareFeet.trim(),
+          notes: notes.trim(),
+        }),
+      });
+      const raw = await r.text();
+      let json: any = null;
+      try {
+        json = raw ? JSON.parse(raw) : null;
+      } catch {}
+      if (!r.ok || !json?.description) {
+        throw new Error(json?.error || `Generation failed (HTTP ${r.status}).`);
+      }
+      // Append (don't overwrite) so the agent's existing notes are preserved.
+      setNotes((prev) =>
+        prev.trim() ? `${prev.trim()}\n\n${json.description}` : json.description
+      );
+    } catch (e: any) {
+      Alert.alert('Could not generate', e?.message || String(e));
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   const save = async () => {
     if (!address.trim()) {
@@ -174,14 +222,53 @@ export default function AddHouseScreen() {
             </View>
           </View>
 
-          <Field
-            label="Notes"
-            value={notes}
-            onChangeText={setNotes}
-            placeholder="Anything to flag for the client"
-            multiline
-            colors={colors}
-          />
+          <View style={{ marginBottom: 12 }}>
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: 6,
+              }}
+            >
+              <Text style={[styles.label, { color: colors.text }]}>Notes</Text>
+              <Pressable
+                onPress={generateDescription}
+                disabled={generating || !address.trim()}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 6,
+                  paddingHorizontal: 10,
+                  paddingVertical: 6,
+                  borderRadius: 999,
+                  backgroundColor: colors.primary,
+                  opacity: generating || !address.trim() ? 0.5 : 1,
+                }}
+              >
+                {generating ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>
+                    ✨ Generate with AI
+                  </Text>
+                )}
+              </Pressable>
+            </View>
+            <TextInput
+              value={notes}
+              onChangeText={setNotes}
+              placeholder="Anything to flag for the client (or tap Generate to draft)"
+              placeholderTextColor={colors.textSecondary}
+              autoCapitalize="sentences"
+              multiline
+              style={[
+                styles.input,
+                { color: colors.text, borderColor: colors.border },
+                { minHeight: 110, textAlignVertical: 'top' as any },
+              ]}
+            />
+          </View>
 
           <Pressable
             onPress={save}
