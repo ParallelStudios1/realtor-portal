@@ -115,15 +115,30 @@ export function MessagesClient({
     setError(null);
     const body = draft.trim();
     setDraft('');
-    const { error: e } = await supabase.from('messages').insert({
-      firm_id: firmId,
-      search_id: activeId,
-      sender_id: currentUserId,
-      body,
-    });
+    const { data: inserted, error: e } = await supabase
+      .from('messages')
+      .insert({
+        firm_id: firmId,
+        search_id: activeId,
+        sender_id: currentUserId,
+        body,
+      })
+      .select('id')
+      .single();
     if (e) {
       setError(e.message);
       setDraft(body); // restore
+    } else {
+      // Fire-and-forget push to the client side
+      fetch('/api/notifications/send-push', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          searchId: activeId,
+          messageId: inserted?.id,
+          kind: 'message',
+        }),
+      }).catch(() => {});
     }
     setSending(false);
   }

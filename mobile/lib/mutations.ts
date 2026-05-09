@@ -150,13 +150,40 @@ export function useSendMessage() {
       body: string;
       senderId: string;
     }) => {
-      const { error } = await supabase.from('messages').insert({
-        search_id: searchId,
-        firm_id: firmId,
-        sender_id: senderId,
-        body,
-      });
+      const { data: inserted, error } = await supabase
+        .from('messages')
+        .insert({
+          search_id: searchId,
+          firm_id: firmId,
+          sender_id: senderId,
+          body,
+        })
+        .select('id')
+        .single();
       if (error) throw error;
+
+      // Fire-and-forget push notification to the other party. We don't await
+      // the result — message is already persisted, push is a side-effect that
+      // shouldn't block the optimistic UI.
+      try {
+        const { data: sess } = await supabase.auth.getSession();
+        const token = sess.session?.access_token;
+        const apiBase =
+          (process.env.EXPO_PUBLIC_API_URL as string | undefined) ||
+          'https://realtor-portal-ten.vercel.app';
+        fetch(`${apiBase}/api/notifications/send-push`, {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({
+            searchId,
+            messageId: inserted?.id,
+            kind: 'message',
+          }),
+        }).catch(() => {});
+      } catch {}
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({

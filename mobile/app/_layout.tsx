@@ -4,7 +4,10 @@ import { AuthProvider, useAuth } from '@/lib/auth';
 import { ThemeProvider } from '@/lib/theme';
 import { Stack } from 'expo-router';
 import { setupNotificationHandlers, registerPushToken } from '@/lib/notifications';
+import { initSentry, setUser as setSentryUser, clearUser as clearSentryUser } from '@/lib/sentry';
 import * as SplashScreen from 'expo-splash-screen';
+
+initSentry();
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -30,8 +33,11 @@ function RootNavigator() {
     if (user?.id) {
       registerPushToken(user.id);
       setupNotificationHandlers();
+      setSentryUser({ id: user.id, email: user.email });
+    } else {
+      clearSentryUser();
     }
-  }, [user?.id]);
+  }, [user?.id, user?.email]);
 
   if (isLoading) {
     return null;

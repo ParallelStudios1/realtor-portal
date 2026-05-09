@@ -8,21 +8,21 @@ export const dynamic = 'force-static';
 export default function HomePage() {
   return (
     <main className="min-h-screen bg-white text-slate-900">
-      {/* Nav */}
-      <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
+      {/* Nav — collapses to logo + CTA on mobile */}
+      <nav className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6 sm:py-5">
         <Link href="/" className="flex items-center gap-2 font-bold tracking-tight">
           <span className="inline-block h-7 w-7 rounded-md bg-slate-900" />
-          Realtor Portal
+          <span>Realtor Portal</span>
         </Link>
-        <div className="flex items-center gap-6 text-sm">
-          <a href="#features" className="text-slate-600 hover:text-slate-900">Features</a>
-          <a href="#pricing" className="text-slate-600 hover:text-slate-900">Pricing</a>
+        <div className="flex items-center gap-3 text-sm sm:gap-6">
+          <a href="#features" className="hidden text-slate-600 hover:text-slate-900 sm:inline">Features</a>
+          <a href="#pricing" className="hidden text-slate-600 hover:text-slate-900 sm:inline">Pricing</a>
           <Link href="/login" className="text-slate-600 hover:text-slate-900">Sign in</Link>
           <Link
             href="/signup"
-            className="rounded-md bg-slate-900 px-4 py-2 font-semibold text-white hover:bg-slate-700"
+            className="rounded-md bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-700 sm:px-4 sm:py-2 sm:text-sm"
           >
-            Start free trial
+            Start free
           </Link>
         </div>
       </nav>
@@ -34,7 +34,7 @@ export default function HomePage() {
             <span className="inline-block rounded-full border border-slate-200 px-3 py-1 text-xs font-medium uppercase tracking-wide text-slate-600">
               Built for modern brokerages
             </span>
-            <h1 className="mt-5 text-5xl font-bold leading-tight tracking-tight md:text-6xl">
+            <h1 className="mt-5 text-4xl font-bold leading-tight tracking-tight sm:text-5xl md:text-6xl">
               Your firm's<br />
               <span className="text-blue-600">client portal</span>,<br />
               ready in 10 minutes.
