@@ -66,41 +66,46 @@ export default function SignupScreen() {
     }
     setSubmitting(true);
     try {
-      // Step 1 — create the auth user
-      await signUp(email.trim(), password, fullName.trim());
+      const apiBase =
+        (process.env.EXPO_PUBLIC_API_URL as string | undefined) ||
+        'https://realtor-portal-ten.vercel.app';
 
-      // Step 2 — sign in (signUp doesn't always auto-sign-in if email
-      // confirmation is required; we try to grab a session either way).
-      await supabase.auth.signInWithPassword({
+      // Step 1 — server admin-creates the auth user (email pre-confirmed),
+      // creates firm OR attaches to realtor's firm, creates starter search.
+      // This bypasses Supabase's "Confirm email" requirement which otherwise
+      // blocks signInWithPassword and the create_firm_and_admin RPC.
+      const r = await fetch(`${apiBase}/api/auth/signup`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          role,
+          full_name: fullName.trim(),
+          email: email.trim(),
+          password,
+          firm_name: role === 'realtor' ? firmName.trim() : undefined,
+          realtor_email:
+            role === 'buyer' || role === 'seller'
+              ? realtorEmail.trim()
+              : undefined,
+        }),
+      });
+      const raw = await r.text();
+      let json: any = null;
+      try {
+        json = raw ? JSON.parse(raw) : null;
+      } catch {}
+      if (!r.ok || !json?.ok) {
+        throw new Error(json?.error || `Signup failed (HTTP ${r.status}).`);
+      }
+
+      // Step 2 — sign in. Email is pre-confirmed so this works on first try.
+      const { error: signInError } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
       });
+      if (signInError) throw signInError;
 
-      // Step 3 — call the right RPC for this role
-      if (role === 'realtor') {
-        const { error } = await supabase.rpc('create_firm_and_admin', {
-          p_firm_name: firmName.trim(),
-          p_full_name: fullName.trim(),
-        });
-        if (error) throw error;
-      } else if (role === 'buyer' || role === 'seller') {
-        const { error } = await supabase.rpc('create_client_user', {
-          p_realtor_email: realtorEmail.trim(),
-          p_full_name: fullName.trim(),
-          p_kind: role,
-        });
-        if (error) {
-          if (error.message?.includes('realtor_not_found')) {
-            throw new Error(
-              "We couldn't find a realtor with that email. Double-check it, or ask them to send you an invite."
-            );
-          }
-          throw error;
-        }
-      }
-
-      // Step 4 — done. The auth listener picks up the session and
-      // _layout.tsx routes to the right tab group based on role.
+      // Step 3 — done. Auth listener routes by role automatically.
       router.replace('/');
     } catch (err: any) {
       Alert.alert('Could not create account', err?.message || String(err));

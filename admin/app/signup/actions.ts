@@ -4,17 +4,10 @@ import { redirect } from 'next/navigation';
 import { getSupabaseServerClient } from '@/lib/supabaseSsr';
 
 /**
- * Role-aware self-serve signup.
- *
- * 1. Creates a Supabase auth user
- * 2. Signs them in (cookies)
- * 3. Calls the right RPC for their role:
- *    - realtor → create_firm_and_admin (creates firm + firm_admin user row)
- *    - buyer/seller → create_client_user (looks up realtor's firm, creates
- *      client user row + starter search)
- * 4. Redirects to /onboarding (realtor) or /client (buyer/seller)
- *
- * If anything fails, redirects back to /signup with a readable error.
+ * Role-aware signup that goes through /api/auth/signup so email-confirmation
+ * never blocks the flow. The API admin-creates the user with email_confirm=true
+ * and runs the firm/client setup server-side. Then we sign the user in here
+ * to set the cookies, and redirect to the right home.
  */
 export async function signupAction(formData: FormData) {
   const role = (formData.get('role') as string | null)?.trim();
@@ -36,7 +29,7 @@ export async function signupAction(formData: FormData) {
     );
 
   if (!role || !['realtor', 'buyer', 'seller'].includes(role)) {
-    back('Please pick whether you\'re a Realtor, Buyer, or Seller.');
+    back("Please pick whether you're a Realtor, Buyer, or Seller.");
     return;
   }
   if (!fullName || !email || !password) back('Fill in every field.');
@@ -45,46 +38,36 @@ export async function signupAction(formData: FormData) {
   if ((role === 'buyer' || role === 'seller') && !realtorEmail)
     back("Your realtor's email is required.");
 
-  const supabase = getSupabaseServerClient();
+  // Talk to our own API. We can't relative-fetch in a server action without
+  // a base URL, so use the env-configured site URL.
+  const baseUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ?? 'https://realtor-portal-ten.vercel.app';
+  const r = await fetch(`${baseUrl}/api/auth/signup`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      role,
+      full_name: fullName,
+      email,
+      password,
+      firm_name: role === 'realtor' ? firmName : undefined,
+      realtor_email:
+        role === 'buyer' || role === 'seller' ? realtorEmail : undefined,
+    }),
+    cache: 'no-store',
+  });
+  const json = await r.json().catch(() => ({}));
+  if (!r.ok || !json?.ok) {
+    back(json?.error || `Signup failed (HTTP ${r.status}).`);
+  }
 
-  const { data: authData, error: authError } = await supabase.auth.signUp({
+  // Sign in here so the response carries the auth cookies for the redirect.
+  const supabase = getSupabaseServerClient();
+  const { error: signInError } = await supabase.auth.signInWithPassword({
     email: email!,
     password: password!,
-    options: { data: { full_name: fullName } },
   });
-  if (authError) back(authError.message);
+  if (signInError) back('Account created but sign-in failed: ' + signInError.message);
 
-  if (!authData?.session) {
-    redirect(
-      '/login?notice=' +
-        encodeURIComponent(
-          'Check your email to confirm your account, then sign in.'
-        )
-    );
-  }
-
-  if (role === 'realtor') {
-    const { error: rpcError } = await supabase.rpc('create_firm_and_admin', {
-      p_firm_name: firmName!,
-      p_full_name: fullName!,
-    });
-    if (rpcError) back('Account created but firm setup failed: ' + rpcError.message);
-    redirect('/onboarding');
-  }
-
-  // Buyer or Seller path
-  const { error: rpcError } = await supabase.rpc('create_client_user', {
-    p_realtor_email: realtorEmail!,
-    p_full_name: fullName!,
-    p_kind: role,
-  });
-  if (rpcError) {
-    if (rpcError.message?.includes('realtor_not_found')) {
-      back(
-        "We couldn't find a realtor with that email. Double-check it, or ask them to send you an invite."
-      );
-    }
-    back(rpcError.message);
-  }
-  redirect('/client');
+  redirect(role === 'realtor' ? '/onboarding' : '/client');
 }
