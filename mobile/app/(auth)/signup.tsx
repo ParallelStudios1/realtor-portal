@@ -105,8 +105,12 @@ export default function SignupScreen() {
       });
       if (signInError) throw signInError;
 
-      // Step 3 — done. Auth listener routes by role automatically.
-      router.replace('/');
+      // Step 3 — done. The auth listener inside AuthProvider sees the
+      // SIGNED_IN event, swaps the root navigator to (realtor) or (client),
+      // and that re-render is the navigation. We don't need router.replace
+      // here — calling replace('/') against the (auth) Stack throws
+      // "no route named 'index'" because the route group changes underneath
+      // us. Just let the listener handle it.
     } catch (err: any) {
       Alert.alert('Could not create account', err?.message || String(err));
     } finally {

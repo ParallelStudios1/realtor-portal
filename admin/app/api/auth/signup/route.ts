@@ -237,7 +237,7 @@ export async function POST(req: Request) {
           realtor_id: realtor.id,
           name:
             fullName + (role === 'seller' ? "'s Listing" : "'s Search"),
-          phase: 'browsing',
+          phase: 'searching',
           kind: role,
         });
       }

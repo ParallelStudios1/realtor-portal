@@ -107,7 +107,7 @@ begin
       v_realtor_id,
       coalesce(trim(p_full_name), 'Search') || ' ' ||
         case when p_kind = 'seller' then 'Listing' else 'Search' end,
-      'browsing',
+      'searching',
       p_kind,
       now()
     )

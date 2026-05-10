@@ -145,7 +145,7 @@ export async function POST(req: Request) {
           realtor_id: me.id,
           name:
             fullName + (roleInDeal === 'seller' ? "'s Listing" : "'s Search"),
-          phase: 'browsing',
+          phase: 'searching',
           kind: roleInDeal,
         })
         .select('id')

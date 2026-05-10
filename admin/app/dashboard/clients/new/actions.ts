@@ -95,7 +95,7 @@ export async function inviteClientAction(fd: FormData) {
       realtor_id: me!.user_id,
       name:
         fullName + (roleInDeal === 'seller' ? "'s Listing" : "'s Search"),
-      phase: 'browsing',
+      phase: 'searching',
       kind: roleInDeal,
     });
     if (searchErr) {

@@ -4,10 +4,11 @@ import { getMe, getSupabaseServerClient } from '@/lib/supabaseSsr';
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Home' };
 
+// Must match the public.deal_phase enum in Postgres exactly.
+// User-facing labels can be friendlier than the enum values.
 const PHASES = [
-  { id: 'browsing', label: 'Browsing' },
-  { id: 'shortlisted', label: 'Shortlisted' },
-  { id: 'offer', label: 'Offer' },
+  { id: 'searching', label: 'Searching' },
+  { id: 'offer_made', label: 'Offer made' },
   { id: 'under_contract', label: 'Under contract' },
   { id: 'closing', label: 'Closing' },
   { id: 'closed', label: 'Closed' },
