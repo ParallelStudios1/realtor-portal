@@ -21,8 +21,10 @@ export async function middleware(req: NextRequest) {
     path.startsWith('/welcome') ||
     path.startsWith('/privacy') ||
     path.startsWith('/terms') ||
-    path.startsWith('/api/auth') ||
-    path.startsWith('/api/billing/webhook') ||
+    // All /api routes do their own auth (cookie session OR Bearer token).
+    // Letting middleware redirect them to /login was breaking every mobile
+    // call: fetch followed the 307 → got /login HTML at 200 → "Failed HTTP 200".
+    path.startsWith('/api/') ||
     path.startsWith('/.well-known/') ||
     path.startsWith('/_next') ||
     path.startsWith('/favicon');
