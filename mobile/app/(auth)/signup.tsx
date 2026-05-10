@@ -7,213 +7,370 @@ import {
   SafeAreaView,
   Alert,
   TouchableOpacity,
+  Pressable,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
-import { useRouter, Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/lib/auth';
+import { supabase } from '@/lib/supabase';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { useTheme } from '@/lib/theme';
 
+type Role = 'realtor' | 'buyer' | 'seller' | null;
+
+/**
+ * Role-aware signup. The user picks WHO THEY ARE first; the form below adapts.
+ *
+ *  Realtor → ask firm name → call create_firm_and_admin RPC.
+ *  Buyer / Seller → ask realtor's email → call create_client_user RPC.
+ *
+ * In both cases we create the public.users row immediately, so the user is
+ * never stuck on the OrphanAccountScreen.
+ */
 export default function SignupScreen() {
   const router = useRouter();
-  const { signUp, isLoading, error } = useAuth();
+  const { signUp, isLoading } = useAuth();
   const { colors } = useTheme();
+
+  const [role, setRole] = useState<Role>(null);
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [firmName, setFirmName] = useState('');
+  const [realtorEmail, setRealtorEmail] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSignup = async () => {
-    if (!fullName.trim() || !email.trim() || !password.trim()) {
-      Alert.alert('Error', 'Please fill in all fields');
+  const accent = colors.primary;
+
+  const validate = () => {
+    if (!fullName.trim()) return 'Full name is required.';
+    if (!email.trim()) return 'Email is required.';
+    if (password.length < 8) return 'Password must be at least 8 characters.';
+    if (password !== confirm) return 'Passwords do not match.';
+    if (role === 'realtor' && !firmName.trim())
+      return 'Firm or brokerage name is required.';
+    if ((role === 'buyer' || role === 'seller') && !realtorEmail.trim())
+      return "Your realtor's email is required.";
+    return null;
+  };
+
+  const handleSubmit = async () => {
+    const v = validate();
+    if (v) {
+      Alert.alert('Hold on', v);
       return;
     }
-
-    if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
-      return;
-    }
-
-    if (password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters');
-      return;
-    }
-
+    setSubmitting(true);
     try {
-      await signUp(email, password, fullName);
-      Alert.alert(
-        'Success',
-        'Account created! Please wait for your realtor to associate you with a firm.'
-      );
+      // Step 1 — create the auth user
+      await signUp(email.trim(), password, fullName.trim());
+
+      // Step 2 — sign in (signUp doesn't always auto-sign-in if email
+      // confirmation is required; we try to grab a session either way).
+      await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+
+      // Step 3 — call the right RPC for this role
+      if (role === 'realtor') {
+        const { error } = await supabase.rpc('create_firm_and_admin', {
+          p_firm_name: firmName.trim(),
+          p_full_name: fullName.trim(),
+        });
+        if (error) throw error;
+      } else if (role === 'buyer' || role === 'seller') {
+        const { error } = await supabase.rpc('create_client_user', {
+          p_realtor_email: realtorEmail.trim(),
+          p_full_name: fullName.trim(),
+          p_kind: role,
+        });
+        if (error) {
+          if (error.message?.includes('realtor_not_found')) {
+            throw new Error(
+              "We couldn't find a realtor with that email. Double-check it, or ask them to send you an invite."
+            );
+          }
+          throw error;
+        }
+      }
+
+      // Step 4 — done. The auth listener picks up the session and
+      // _layout.tsx routes to the right tab group based on role.
       router.replace('/');
     } catch (err: any) {
-      Alert.alert('Signup failed', err.message);
+      Alert.alert('Could not create account', err?.message || String(err));
+    } finally {
+      setSubmitting(false);
     }
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={styles.content}>
-        <Text style={[styles.title, { color: colors.text }]}>
-          Create Account
-        </Text>
-        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-          Join Realtor Portal
-        </Text>
-
-        {error && (
-          <View style={[styles.errorBox, { backgroundColor: colors.error + '20' }]}>
-            <Text style={[styles.errorText, { color: colors.error }]}>
-              {error}
-            </Text>
-          </View>
-        )}
-
-        <TextInput
-          style={[
-            styles.input,
-            {
-              color: colors.text,
-              borderColor: colors.border,
-              backgroundColor: colors.surface,
-            },
-          ]}
-          placeholder="Full name"
-          placeholderTextColor={colors.textSecondary}
-          value={fullName}
-          onChangeText={setFullName}
-          editable={!isLoading}
-        />
-
-        <TextInput
-          style={[
-            styles.input,
-            {
-              color: colors.text,
-              borderColor: colors.border,
-              backgroundColor: colors.surface,
-            },
-          ]}
-          placeholder="Email"
-          placeholderTextColor={colors.textSecondary}
-          value={email}
-          onChangeText={setEmail}
-          editable={!isLoading}
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
-
-        <TextInput
-          style={[
-            styles.input,
-            {
-              color: colors.text,
-              borderColor: colors.border,
-              backgroundColor: colors.surface,
-            },
-          ]}
-          placeholder="Password"
-          placeholderTextColor={colors.textSecondary}
-          value={password}
-          onChangeText={setPassword}
-          editable={!isLoading}
-          secureTextEntry
-        />
-
-        <TextInput
-          style={[
-            styles.input,
-            {
-              color: colors.text,
-              borderColor: colors.border,
-              backgroundColor: colors.surface,
-            },
-          ]}
-          placeholder="Confirm password"
-          placeholderTextColor={colors.textSecondary}
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-          editable={!isLoading}
-          secureTextEntry
-        />
-
-        <PrimaryButton
-          label={isLoading ? 'Creating account...' : 'Sign up'}
-          onPress={handleSignup}
-          loading={isLoading}
-          disabled={isLoading}
-          style={styles.button}
-        />
-
-        <View style={styles.login}>
-          <Text style={[styles.loginText, { color: colors.textSecondary }]}>
-            Already have an account?{' '}
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.background }]}
+    >
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={{ flex: 1 }}
+      >
+        <ScrollView
+          contentContainerStyle={styles.body}
+          keyboardShouldPersistTaps="handled"
+        >
+          <Text style={[styles.title, { color: colors.text }]}>
+            Welcome to Realtor Portal
           </Text>
-          <Link href="/(auth)/login" asChild>
-            <TouchableOpacity disabled={isLoading}>
-              <Text
-                style={[
-                  styles.loginLink,
-                  { color: colors.primary, opacity: isLoading ? 0.5 : 1 },
-                ]}
-              >
-                Sign in
-              </Text>
-            </TouchableOpacity>
-          </Link>
-        </View>
-      </View>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+            First, who are you?
+          </Text>
+
+          {/* Role picker */}
+          <View style={styles.roleRow}>
+            <RoleCard
+              icon="briefcase-outline"
+              label="Realtor"
+              hint="I help others buy or sell"
+              active={role === 'realtor'}
+              accent={accent}
+              colors={colors}
+              onPress={() => setRole('realtor')}
+            />
+            <RoleCard
+              icon="home-outline"
+              label="Buyer"
+              hint="I'm looking for a home"
+              active={role === 'buyer'}
+              accent={accent}
+              colors={colors}
+              onPress={() => setRole('buyer')}
+            />
+            <RoleCard
+              icon="cash-outline"
+              label="Seller"
+              hint="I'm selling a home"
+              active={role === 'seller'}
+              accent={accent}
+              colors={colors}
+              onPress={() => setRole('seller')}
+            />
+          </View>
+
+          {role && (
+            <>
+              <Field
+                label="Full name"
+                value={fullName}
+                onChangeText={setFullName}
+                placeholder="Turner Logan"
+                colors={colors}
+              />
+              <Field
+                label="Email"
+                value={email}
+                onChangeText={setEmail}
+                placeholder="you@example.com"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                colors={colors}
+              />
+              <Field
+                label="Password"
+                value={password}
+                onChangeText={setPassword}
+                placeholder="At least 8 characters"
+                secureTextEntry
+                colors={colors}
+              />
+              <Field
+                label="Confirm password"
+                value={confirm}
+                onChangeText={setConfirm}
+                placeholder="Type it again"
+                secureTextEntry
+                colors={colors}
+              />
+
+              {role === 'realtor' && (
+                <Field
+                  label="Firm or brokerage name"
+                  value={firmName}
+                  onChangeText={setFirmName}
+                  placeholder="Logan Realty Group"
+                  colors={colors}
+                />
+              )}
+
+              {(role === 'buyer' || role === 'seller') && (
+                <Field
+                  label="Your realtor's email"
+                  value={realtorEmail}
+                  onChangeText={setRealtorEmail}
+                  placeholder="agent@brokerage.com"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  colors={colors}
+                  hint="We'll connect you to their portal automatically."
+                />
+              )}
+
+              <PrimaryButton
+                label={submitting || isLoading ? 'Creating…' : 'Create account'}
+                onPress={handleSubmit}
+                loading={submitting || isLoading}
+                disabled={submitting || isLoading}
+                style={{ marginTop: 12 }}
+              />
+            </>
+          )}
+
+          <View style={styles.signin}>
+            <Text style={{ color: colors.textSecondary, fontSize: 14 }}>
+              Already have an account?{' '}
+            </Text>
+            <Link href="/(auth)/login" asChild>
+              <TouchableOpacity>
+                <Text
+                  style={{ color: accent, fontWeight: '600', fontSize: 14 }}
+                >
+                  Sign in
+                </Text>
+              </TouchableOpacity>
+            </Link>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
+function RoleCard({
+  icon,
+  label,
+  hint,
+  active,
+  accent,
+  colors,
+  onPress,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  hint: string;
+  active: boolean;
+  accent: string;
+  colors: any;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={[
+        styles.roleCard,
+        {
+          borderColor: active ? accent : colors.border,
+          backgroundColor: active ? accent + '12' : colors.surface,
+        },
+      ]}
+    >
+      <Ionicons name={icon} size={24} color={active ? accent : colors.text} />
+      <Text
+        style={[
+          styles.roleLabel,
+          { color: active ? accent : colors.text, fontWeight: '700' },
+        ]}
+      >
+        {label}
+      </Text>
+      <Text style={[styles.roleHint, { color: colors.textSecondary }]}>
+        {hint}
+      </Text>
+    </Pressable>
+  );
+}
+
+function Field({
+  label,
+  value,
+  onChangeText,
+  placeholder,
+  keyboardType,
+  secureTextEntry,
+  autoCapitalize,
+  colors,
+  hint,
+}: {
+  label: string;
+  value: string;
+  onChangeText: (s: string) => void;
+  placeholder?: string;
+  keyboardType?: 'default' | 'email-address';
+  secureTextEntry?: boolean;
+  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
+  colors: any;
+  hint?: string;
+}) {
+  return (
+    <View style={{ marginTop: 14 }}>
+      <Text style={[styles.fieldLabel, { color: colors.text }]}>{label}</Text>
+      <TextInput
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor={colors.textSecondary}
+        keyboardType={keyboardType ?? 'default'}
+        secureTextEntry={secureTextEntry}
+        autoCapitalize={autoCapitalize ?? 'sentences'}
+        style={[
+          styles.input,
+          {
+            color: colors.text,
+            borderColor: colors.border,
+            backgroundColor: colors.surface,
+          },
+        ]}
+      />
+      {hint && (
+        <Text style={[styles.hint, { color: colors.textSecondary }]}>
+          {hint}
+        </Text>
+      )}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  container: {
+  container: { flex: 1 },
+  body: { padding: 24, paddingBottom: 60 },
+  title: { fontSize: 26, fontWeight: '800', marginTop: 8 },
+  subtitle: { fontSize: 15, marginTop: 4, marginBottom: 18 },
+  roleRow: { flexDirection: 'row', gap: 8 },
+  roleCard: {
     flex: 1,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    paddingVertical: 14,
+    paddingHorizontal: 8,
+    alignItems: 'center',
     justifyContent: 'center',
+    gap: 6,
   },
-  content: {
-    paddingHorizontal: 24,
-    paddingVertical: 40,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: '700',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    marginBottom: 32,
-  },
-  errorBox: {
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
-  },
-  errorText: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
+  roleLabel: { fontSize: 14, marginTop: 4 },
+  roleHint: { fontSize: 11, textAlign: 'center' },
+  fieldLabel: { fontSize: 13, fontWeight: '600', marginBottom: 6 },
   input: {
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 12,
-    marginBottom: 16,
-    fontSize: 16,
+    fontSize: 15,
   },
-  button: {
-    marginTop: 8,
-    marginBottom: 24,
-  },
-  login: {
+  hint: { fontSize: 11, marginTop: 4 },
+  signin: {
     flexDirection: 'row',
     justifyContent: 'center',
-  },
-  loginText: {
-    fontSize: 14,
-  },
-  loginLink: {
-    fontSize: 14,
-    fontWeight: '600',
+    marginTop: 28,
   },
 });

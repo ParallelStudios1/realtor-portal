@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from './supabase';
 import { User, UserRole } from './database.types';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 export type UserProfile = User & { role: UserRole; firm_id: string | null };
 
@@ -19,6 +19,7 @@ type AuthContextType = {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const queryClient = useQueryClient();
   const [session, setSession] = useState<any | null>(null);
   const [user, setUser] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -66,11 +67,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     getSession();
 
     const { data: listener } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        if (mounted) {
-          setSession(session);
-          setUser(session?.user ?? null);
-          setError(null);
+      (event, session) => {
+        if (!mounted) return;
+        setSession(session);
+        setUser(session?.user ?? null);
+        setError(null);
+        // Whenever we change identity (sign in, sign out, token refresh
+        // for a different user), wipe React Query cache so the previous
+        // user's profile / messages / clients don't bleed through.
+        if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'USER_UPDATED') {
+          queryClient.clear();
         }
       }
     );
@@ -141,6 +147,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
+      // Belt-and-suspenders cache clear in addition to the auth listener.
+      queryClient.clear();
     } catch (err: any) {
       setError(err.message);
       throw err;
