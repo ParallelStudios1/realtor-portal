@@ -28,8 +28,11 @@
     "production": {
       "ios": {
         "appleId": "turnerlogan@parallelstudios.co",
-        "ascAppId": "REPLACE_WITH_APP_STORE_CONNECT_APP_ID",
-        "appleTeamId": "REPLACE_WITH_APPLE_TEAM_ID"
+        "ascAppId": "6768115138",
+        "appleTeamId": "W4K7G5YF5D",
+        "ascApiKeyPath": "/Users/turnerlogan/Downloads/AuthKey_3ST6Z8D74J.p8",
+        "ascApiKeyId": "3ST6Z8D74J",
+        "ascApiKeyIssuerId": "907a18b2-6f6a-40ee-9e58-7ad1fbb63f6a"
       }
     }
   }
