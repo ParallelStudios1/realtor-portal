@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { ThemeProvider } from '@/lib/theme';
+import { ToastProvider } from '@/components/Toast';
 import { Stack } from 'expo-router';
 import { setupNotificationHandlers, registerPushToken } from '@/lib/notifications';
 import { initSentry, setUser as setSentryUser, clearUser as clearSentryUser } from '@/lib/sentry';
@@ -144,9 +145,11 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <ThemeProvider>
-          <RootNavigator />
-        </ThemeProvider>
+        <ToastProvider>
+          <ThemeProvider>
+            <RootNavigator />
+          </ThemeProvider>
+        </ToastProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

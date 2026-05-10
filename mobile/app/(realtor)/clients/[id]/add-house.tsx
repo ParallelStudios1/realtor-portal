@@ -20,6 +20,8 @@ import { useAuth } from '@/lib/auth';
 import { useTheme } from '@/lib/theme';
 import { useLogActivity } from '@/lib/mutations';
 import { supabase } from '@/lib/supabase';
+import { useToast } from '@/components/Toast';
+import { humanError } from '@/lib/humanError';
 
 /**
  * Realtor adds a house to a client's search.
@@ -39,6 +41,7 @@ export default function AddHouseScreen() {
   const { user, userProfile } = useAuth();
   const { colors } = useTheme();
   const logActivity = useLogActivity();
+  const toast = useToast();
 
   const [address, setAddress] = useState('');
   const [listingUrl, setListingUrl] = useState('');
@@ -106,7 +109,7 @@ export default function AddHouseScreen() {
 
       setPhotoUrl(pub.publicUrl);
     } catch (e: any) {
-      Alert.alert('Photo upload failed', e?.message || String(e));
+      toast.show(humanError(e), { variant: 'error' });
     } finally {
       setPickingPhoto(false);
     }
@@ -115,9 +118,9 @@ export default function AddHouseScreen() {
   const pickFromLibrary = async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) {
-      Alert.alert(
-        'Photo library access needed',
-        'Allow access in Settings to attach a listing photo from your library.'
+      toast.show(
+        'Allow photo library access in Settings to attach a photo.',
+        { variant: 'error' }
       );
       return;
     }
@@ -135,10 +138,9 @@ export default function AddHouseScreen() {
   const takePhoto = async () => {
     const perm = await ImagePicker.requestCameraPermissionsAsync();
     if (!perm.granted) {
-      Alert.alert(
-        'Camera access needed',
-        'Allow camera access in Settings to take a listing photo.'
-      );
+      toast.show('Allow camera access in Settings to take a photo.', {
+        variant: 'error',
+      });
       return;
     }
     const res = await ImagePicker.launchCameraAsync({
@@ -228,7 +230,9 @@ export default function AddHouseScreen() {
 
   const generateDescription = async () => {
     if (!address.trim()) {
-      Alert.alert('Address first', 'Type at least the address before generating.');
+      toast.show('Type at least the address before generating.', {
+        variant: 'error',
+      });
       return;
     }
     setGenerating(true);
@@ -263,7 +267,7 @@ export default function AddHouseScreen() {
         prev.trim() ? `${prev.trim()}\n\n${json.description}` : json.description
       );
     } catch (e: any) {
-      Alert.alert('Could not generate', e?.message || String(e));
+      toast.show(humanError(e), { variant: 'error' });
     } finally {
       setGenerating(false);
     }
@@ -275,7 +279,7 @@ export default function AddHouseScreen() {
 
   const save = async () => {
     if (!address.trim()) {
-      Alert.alert('Address required', 'Type at least the street address.');
+      toast.show('Type at least the street address.', { variant: 'error' });
       return;
     }
     if (!searchId || !userProfile?.firm_id || !user?.id) return;
@@ -313,9 +317,10 @@ export default function AddHouseScreen() {
         action: 'added',
         target: address.trim(),
       });
+      toast.show('House added.', { variant: 'success' });
       router.back();
     } catch (e: any) {
-      Alert.alert('Could not add house', e.message ?? String(e));
+      toast.show(humanError(e), { variant: 'error' });
     } finally {
       setSaving(false);
     }

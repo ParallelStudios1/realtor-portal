@@ -5,7 +5,6 @@ import {
   TextInput,
   StyleSheet,
   SafeAreaView,
-  Alert,
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
@@ -14,11 +13,14 @@ import * as Linking from 'expo-linking';
 import { useAuth } from '@/lib/auth';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { useTheme } from '@/lib/theme';
+import { useToast } from '@/components/Toast';
+import { humanError } from '@/lib/humanError';
 
 export default function LoginScreen() {
   const router = useRouter();
   const { signIn, isLoading, error } = useAuth();
   const { colors } = useTheme();
+  const toast = useToast();
   const params = useLocalSearchParams<{ email?: string }>();
   const [email, setEmail] = useState((params.email as string) || '');
   const [password, setPassword] = useState('');
@@ -42,7 +44,7 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
-      Alert.alert('Error', 'Please fill in all fields');
+      toast.show('Please fill in all fields', { variant: 'error' });
       return;
     }
 
@@ -50,7 +52,7 @@ export default function LoginScreen() {
       await signIn(email, password);
       router.replace('/');
     } catch (err: any) {
-      Alert.alert('Login failed', err.message);
+      toast.show(humanError(err), { variant: 'error' });
     }
   };
 

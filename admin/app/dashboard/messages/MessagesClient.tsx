@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { getSupabaseBrowserClient } from '@/lib/supabaseBrowser';
+import { useToast } from '@/components/Toast';
+import { humanError } from '@/lib/humanError';
 
 type Thread = {
   searchId: string;
@@ -44,6 +46,7 @@ export function MessagesClient({
   const [error, setError] = useState<string | null>(null);
   const supabase = getSupabaseBrowserClient();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const toast = useToast();
 
   // Load messages when active thread changes
   useEffect(() => {
@@ -126,7 +129,9 @@ export function MessagesClient({
       .select('id')
       .single();
     if (e) {
-      setError(e.message);
+      const msg = humanError(e);
+      setError(msg);
+      toast.show(msg, { variant: 'error' });
       setDraft(body); // restore
     } else {
       // Fire-and-forget push to the client side

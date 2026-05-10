@@ -5,7 +5,6 @@ import {
   StyleSheet,
   Pressable,
   ActivityIndicator,
-  Alert,
   SafeAreaView,
 } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
@@ -15,6 +14,8 @@ import { useAuth } from '@/lib/auth';
 import { useTheme } from '@/lib/theme';
 import { supabase } from '@/lib/supabase';
 import { useLogActivity } from '@/lib/mutations';
+import { useToast } from '@/components/Toast';
+import { humanError } from '@/lib/humanError';
 
 /**
  * Realtor → Client document upload.
@@ -35,6 +36,7 @@ export default function UploadDocumentScreen() {
   const { user, userProfile } = useAuth();
   const { colors } = useTheme();
   const logActivity = useLogActivity();
+  const toast = useToast();
 
   const [picked, setPicked] = useState<DocumentPicker.DocumentPickerAsset | null>(
     null
@@ -110,7 +112,7 @@ export default function UploadDocumentScreen() {
       // Brief pause so the user sees the success state, then go back.
       setTimeout(() => router.back(), 600);
     } catch (e: any) {
-      Alert.alert('Upload failed', e?.message ?? String(e));
+      toast.show(humanError(e), { variant: 'error' });
       setProgressLabel('');
     } finally {
       setUploading(false);

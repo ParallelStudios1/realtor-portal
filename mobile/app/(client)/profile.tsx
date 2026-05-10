@@ -18,6 +18,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/auth';
 import { useTheme } from '@/lib/theme';
 import { supabase } from '@/lib/supabase';
+import { useToast } from '@/components/Toast';
+import { humanError } from '@/lib/humanError';
 
 /**
  * Client profile screen — same scope as realtor settings minus the firm
@@ -28,6 +30,7 @@ export default function ClientProfileScreen() {
   const { user, userProfile, signOut } = useAuth();
   const { colors } = useTheme();
   const queryClient = useQueryClient();
+  const toast = useToast();
 
   const [fullName, setFullName] = useState(userProfile?.full_name ?? '');
   const [savingProfile, setSavingProfile] = useState(false);
@@ -52,7 +55,9 @@ export default function ClientProfileScreen() {
     if (!user?.id) return;
     const trimmed = fullName.trim();
     if (!trimmed) {
-      Alert.alert('Name required', 'Your realtor needs a name to call you.');
+      toast.show('Your realtor needs a name to call you.', {
+        variant: 'error',
+      });
       return;
     }
     setSavingProfile(true);
@@ -63,8 +68,9 @@ export default function ClientProfileScreen() {
         .eq('id', user.id);
       if (error) throw error;
       await queryClient.invalidateQueries({ queryKey: ['userProfile', user.id] });
+      toast.show('Profile saved.', { variant: 'success' });
     } catch (e: any) {
-      Alert.alert('Could not save', e?.message ?? String(e));
+      toast.show(humanError(e), { variant: 'error' });
     } finally {
       setSavingProfile(false);
     }
@@ -80,11 +86,15 @@ export default function ClientProfileScreen() {
   const submitPasswordChange = async () => {
     if (!user?.email) return;
     if (newPw.length < 8) {
-      Alert.alert('Password too short', 'Use at least 8 characters.');
+      toast.show('Password must be at least 8 characters.', {
+        variant: 'error',
+      });
       return;
     }
     if (newPw !== confirmPw) {
-      Alert.alert('Passwords don’t match', 'Re-enter the new password.');
+      toast.show('Passwords don’t match. Re-enter the new password.', {
+        variant: 'error',
+      });
       return;
     }
     setPwSaving(true);
@@ -100,10 +110,10 @@ export default function ClientProfileScreen() {
       const { error } = await supabase.auth.updateUser({ password: newPw });
       if (error) throw error;
 
-      Alert.alert('Password updated', 'Use your new password next time you sign in.');
+      toast.show('Password updated.', { variant: 'success' });
       closePwModal();
     } catch (e: any) {
-      Alert.alert('Could not change password', e?.message ?? String(e));
+      toast.show(humanError(e), { variant: 'error' });
     } finally {
       setPwSaving(false);
     }

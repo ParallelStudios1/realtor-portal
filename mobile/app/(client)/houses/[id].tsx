@@ -7,7 +7,6 @@ import {
   SafeAreaView,
   Pressable,
   ActivityIndicator,
-  Alert,
   Linking,
   TextInput,
 } from 'react-native';
@@ -24,6 +23,8 @@ import {
 import { formatHouseStatus } from '@/lib/houseStatus';
 import { Stars } from '@/components/Stars';
 import type { HouseStatus } from '@/lib/database.types';
+import { useToast } from '@/components/Toast';
+import { humanError } from '@/lib/humanError';
 
 /**
  * House detail (client side).
@@ -41,6 +42,7 @@ export default function ClientHouseDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user, userProfile } = useAuth();
   const { colors } = useTheme();
+  const toast = useToast();
 
   const { data: house, isLoading, refetch } = useHouse(id);
   const { data: rating } = useHouseRating(id, user?.id);
@@ -84,11 +86,13 @@ export default function ClientHouseDetailScreen() {
         target: `Tour of ${house.address}`,
       });
       await refetch();
-      Alert.alert('Tour requested', 'Your realtor will reach out to confirm timing.');
+      toast.show('Tour requested — your realtor will confirm timing.', {
+        variant: 'success',
+      });
       setTourNotes('');
       setTourWhen('');
     } catch (e: any) {
-      Alert.alert('Could not request tour', e.message ?? String(e));
+      toast.show(humanError(e), { variant: 'error' });
     } finally {
       setRequesting(false);
     }
@@ -96,7 +100,7 @@ export default function ClientHouseDetailScreen() {
 
   const handleSubmitRating = async () => {
     if (stars < 1) {
-      Alert.alert('Pick at least 1 star');
+      toast.show('Pick at least 1 star.', { variant: 'error' });
       return;
     }
     if (!user?.id || !userProfile?.firm_id) return;
@@ -119,9 +123,11 @@ export default function ClientHouseDetailScreen() {
         metadata: { stars },
       });
       await refetch();
-      Alert.alert('Thanks!', 'Your realtor will see your feedback.');
+      toast.show('Thanks — your realtor will see your feedback.', {
+        variant: 'success',
+      });
     } catch (e: any) {
-      Alert.alert('Could not save rating', e.message ?? String(e));
+      toast.show(humanError(e), { variant: 'error' });
     } finally {
       setSubmitting(false);
     }

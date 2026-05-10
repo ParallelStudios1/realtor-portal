@@ -7,7 +7,6 @@ import {
   Pressable,
   ActivityIndicator,
   SafeAreaView,
-  Alert,
 } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import { useAuth } from '@/lib/auth';
@@ -15,6 +14,10 @@ import { useTheme } from '@/lib/theme';
 import { useClientSearches, useDocuments } from '@/lib/queries';
 import { supabase } from '@/lib/supabase';
 import type { Document } from '@/lib/database.types';
+import { useToast } from '@/components/Toast';
+import { humanError } from '@/lib/humanError';
+import { SkeletonRow } from '@/components/Skeleton';
+import { EmptyState } from '@/components/EmptyState';
 
 /**
  * Client-facing list of documents shared by the realtor.
@@ -28,6 +31,7 @@ import type { Document } from '@/lib/database.types';
 export default function ClientDocumentsScreen() {
   const { user, userProfile } = useAuth();
   const { colors } = useTheme();
+  const toast = useToast();
   const { data: searches } = useClientSearches(
     userProfile?.firm_id,
     false,
@@ -66,7 +70,7 @@ export default function ClientDocumentsScreen() {
 
       await WebBrowser.openBrowserAsync(json.url as string);
     } catch (e: any) {
-      Alert.alert('Could not open document', e?.message ?? String(e));
+      toast.show(humanError(e), { variant: 'error' });
     } finally {
       setOpeningId(null);
     }
@@ -89,13 +93,18 @@ export default function ClientDocumentsScreen() {
         refreshing={isRefetching}
         onRefresh={refetch}
         ListEmptyComponent={
-          isLoading ? (
-            <ActivityIndicator color={colors.primary} style={{ marginTop: 40 }} />
+          documents === undefined ? (
+            <View>
+              <SkeletonRow />
+              <SkeletonRow />
+              <SkeletonRow />
+            </View>
           ) : (
-            <Text style={[styles.empty, { color: colors.textSecondary }]}>
-              No documents yet. When your realtor uploads contracts or
-              disclosures, they'll show up here.
-            </Text>
+            <EmptyState
+              icon="document-text-outline"
+              title="No documents yet"
+              body="When your realtor uploads contracts or disclosures, they'll show up here."
+            />
           )
         }
         renderItem={({ item }) => {

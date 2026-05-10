@@ -16,6 +16,8 @@ import { useAuth } from '@/lib/auth';
 import { useTheme } from '@/lib/theme';
 import { supabase } from '@/lib/supabase';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { SkeletonRow, Skeleton } from '@/components/Skeleton';
+import { EmptyState } from '@/components/EmptyState';
 
 /**
  * Realtor messaging hub — list of every active client thread on the left
@@ -135,22 +137,19 @@ export default function RealtorMessagesScreen() {
   if (!activeId) {
     return (
       <SafeAreaView style={[s.container, { backgroundColor: colors.background }]}>
-        {threadsLoading ? (
-          <ActivityIndicator
-            color={colors.primary}
-            style={{ marginTop: 40 }}
-          />
-        ) : !threads || threads.length === 0 ? (
-          <View style={s.empty}>
-            <Ionicons
-              name="chatbubble-ellipses-outline"
-              size={36}
-              color={colors.textSecondary}
-            />
-            <Text style={[s.emptyText, { color: colors.textSecondary }]}>
-              No client threads yet. Invite your first client to start chatting.
-            </Text>
+        {threads === undefined ? (
+          <View>
+            <SkeletonRow />
+            <SkeletonRow />
+            <SkeletonRow />
+            <SkeletonRow />
           </View>
+        ) : !threads || threads.length === 0 ? (
+          <EmptyState
+            icon="chatbubble-ellipses-outline"
+            title="No conversations yet"
+            body="Invite your first client to start chatting. Messages will show up here."
+          />
         ) : (
           <FlatList
             data={threads}
@@ -231,6 +230,18 @@ export default function RealtorMessagesScreen() {
         style={{ flex: 1 }}
         keyboardVerticalOffset={80}
       >
+        {messages === undefined ? (
+          <View style={{ padding: 12, gap: 8, flex: 1 }}>
+            <Skeleton width="60%" height={32} borderRadius={16} />
+            <Skeleton
+              width="50%"
+              height={32}
+              borderRadius={16}
+              style={{ alignSelf: 'flex-end' as any }}
+            />
+            <Skeleton width="70%" height={32} borderRadius={16} />
+          </View>
+        ) : (
         <FlatList
           ref={scrollRef}
           data={messages || []}
@@ -266,6 +277,7 @@ export default function RealtorMessagesScreen() {
             scrollRef.current?.scrollToEnd({ animated: true })
           }
         />
+        )}
 
         <View
           style={[

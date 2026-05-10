@@ -3,6 +3,8 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSupabaseBrowserClient } from '@/lib/supabaseBrowser';
+import { useToast } from '@/components/Toast';
+import { humanError } from '@/lib/humanError';
 
 export type Tour = {
   id: string;
@@ -36,6 +38,7 @@ export function ToursClient({
   const [, startTransition] = useTransition();
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const toast = useToast();
 
   async function act(tour: Tour, status: 'confirmed' | 'declined') {
     if (busy) return;
@@ -53,7 +56,9 @@ export function ToursClient({
       .eq('id', tour.id);
 
     if (updErr) {
-      setError(updErr.message);
+      const msg = humanError(updErr);
+      setError(msg);
+      toast.show(msg, { variant: 'error' });
       setBusy(null);
       return;
     }
@@ -96,9 +101,37 @@ export function ToursClient({
             : 'Your realtor confirmed your tour.',
         }),
       }).catch(() => {});
+
+      // Fire-and-forget email with .ics attachment.
+      fetch('/api/notifications/send-email', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          kind: 'tour_confirmed',
+          searchId: tour.search_id,
+          tourRequestId: tour.id,
+        }),
+      }).catch(() => {});
+    }
+
+    if (status === 'declined' && tour.search_id) {
+      // Fire-and-forget polite-decline email to the client.
+      fetch('/api/notifications/send-email', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          kind: 'tour_declined',
+          searchId: tour.search_id,
+          tourRequestId: tour.id,
+        }),
+      }).catch(() => {});
     }
 
     setBusy(null);
+    toast.show(
+      status === 'confirmed' ? 'Tour confirmed.' : 'Tour declined.',
+      { variant: 'success' }
+    );
     startTransition(() => router.refresh());
   }
 
@@ -216,8 +249,6 @@ export function ToursClient({
         </section>
       )}
 
-      {/* TODO(v1.1): Email + ICS attachment for confirmed tours via Resend.
-          Push + in-app `important_dates` row covers v1. */}
     </div>
   );
 }

@@ -7,7 +7,6 @@ import {
   FlatList,
   TextInput,
   TouchableOpacity,
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
@@ -16,6 +15,8 @@ import { useTheme } from '@/lib/theme';
 import { useClientSearches, useMessages } from '@/lib/queries';
 import { useSendMessage } from '@/lib/mutations';
 import { MessageBubble } from '@/components/MessageBubble';
+import { Skeleton } from '@/components/Skeleton';
+import { EmptyState } from '@/components/EmptyState';
 
 export default function MessagesScreen() {
   const { user, userProfile } = useAuth();
@@ -48,14 +49,31 @@ export default function MessagesScreen() {
     setMessageText('');
   };
 
+  if (searches === undefined) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={{ padding: 12, gap: 8, flex: 1 }}>
+          <Skeleton width="60%" height={32} borderRadius={16} />
+          <Skeleton
+            width="50%"
+            height={32}
+            borderRadius={16}
+            style={{ alignSelf: 'flex-end' as any }}
+          />
+          <Skeleton width="70%" height={32} borderRadius={16} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   if (!activeSearch) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-        <View style={styles.emptyState}>
-          <Text style={[styles.emptyStateText, { color: colors.textSecondary }]}>
-            No active search yet
-          </Text>
-        </View>
+        <EmptyState
+          icon="chatbubble-ellipses-outline"
+          title="No active search yet"
+          body="Once your realtor sets you up, you'll be able to chat here."
+        />
       </SafeAreaView>
     );
   }
@@ -67,12 +85,17 @@ export default function MessagesScreen() {
         style={{ flex: 1 }}
         keyboardVerticalOffset={90}
       >
-        {messagesLoading ? (
-          <ActivityIndicator
-            size="large"
-            color={colors.primary}
-            style={styles.loader}
-          />
+        {messages === undefined ? (
+          <View style={{ padding: 12, gap: 8, flex: 1 }}>
+            <Skeleton width="60%" height={32} borderRadius={16} />
+            <Skeleton
+              width="50%"
+              height={32}
+              borderRadius={16}
+              style={{ alignSelf: 'flex-end' as any }}
+            />
+            <Skeleton width="70%" height={32} borderRadius={16} />
+          </View>
         ) : messages && messages.length > 0 ? (
           <FlatList
             data={messages}
@@ -83,11 +106,11 @@ export default function MessagesScreen() {
             inverted
           />
         ) : (
-          <View style={styles.emptyState}>
-            <Text style={[styles.emptyStateText, { color: colors.textSecondary }]}>
-              No messages yet. Start a conversation!
-            </Text>
-          </View>
+          <EmptyState
+            icon="chatbubble-ellipses-outline"
+            title="No messages yet"
+            body="Say hi to your realtor! They'll get notified right away."
+          />
         )}
 
         {/* Message input */}

@@ -773,6 +773,31 @@ export function useUpdateTourRequest() {
         .eq('id', tourRequestId);
       if (updErr) throw updErr;
 
+      // Fire-and-forget transactional email (.ics on confirm, polite note on
+      // decline). Mirrors the web ToursClient behavior — mobile only triggers
+      // via the web API, which holds the Resend key.
+      if (status === 'confirmed' || status === 'declined') {
+        try {
+          const { data: sess } = await supabase.auth.getSession();
+          const token = sess.session?.access_token;
+          const apiBase =
+            (process.env.EXPO_PUBLIC_API_URL as string | undefined) ||
+            'https://realtor-portal-ten.vercel.app';
+          fetch(`${apiBase}/api/notifications/send-email`, {
+            method: 'POST',
+            headers: {
+              'content-type': 'application/json',
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            body: JSON.stringify({
+              kind: status === 'confirmed' ? 'tour_confirmed' : 'tour_declined',
+              searchId: req.search_id,
+              tourRequestId: req.id,
+            }),
+          }).catch(() => {});
+        } catch {}
+      }
+
       if (status === 'confirmed') {
         // Best-effort: try to look up the house address for a nicer label.
         const { data: house } = await supabase

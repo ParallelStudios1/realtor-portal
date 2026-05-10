@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { getSupabaseBrowserClient } from '@/lib/supabaseBrowser';
+import { useToast } from '@/components/Toast';
+import { humanError } from '@/lib/humanError';
 
 type Existing = { id: string; stars: number; notes: string | null } | null;
 
@@ -34,6 +36,7 @@ export function HouseRatingClient({
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const supabase = getSupabaseBrowserClient();
+  const toast = useToast();
 
   async function save(nextStars: number | null = stars, nextNotes = notes) {
     if (nextStars == null) return;
@@ -51,8 +54,14 @@ export function HouseRatingClient({
       { onConflict: 'client_id,house_id' }
     );
     setSaving(false);
-    if (e) setError(e.message);
-    else setSavedAt(Date.now());
+    if (e) {
+      const msg = humanError(e);
+      setError(msg);
+      toast.show(msg, { variant: 'error' });
+    } else {
+      setSavedAt(Date.now());
+      toast.show('Saved.', { variant: 'success' });
+    }
   }
 
   return (

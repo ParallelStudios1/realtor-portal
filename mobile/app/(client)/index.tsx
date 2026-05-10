@@ -17,6 +17,8 @@ import { useClientSearches, useImportantDates } from '@/lib/queries';
 import { PhaseStepper } from '@/components/PhaseStepper';
 import { ImportantDateRow } from '@/components/ImportantDateRow';
 import { useQueryClient } from '@tanstack/react-query';
+import { Skeleton, SkeletonRow } from '@/components/Skeleton';
+import { EmptyState } from '@/components/EmptyState';
 
 export default function ClientHomeScreen() {
   const { user, userProfile } = useAuth();
@@ -80,12 +82,22 @@ export default function ClientHomeScreen() {
           </View>
         </View>
 
-        {searchesLoading && !activeSearch ? (
-          <ActivityIndicator
-            size="large"
-            color={colors.primary}
-            style={styles.loader}
-          />
+        {searches === undefined ? (
+          <>
+            <View style={styles.section}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                Deal Progress
+              </Text>
+              <Skeleton width="100%" height={48} borderRadius={8} />
+            </View>
+            <View style={styles.section}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                Important Dates
+              </Text>
+              <SkeletonRow />
+              <SkeletonRow />
+            </View>
+          </>
         ) : activeSearch ? (
           <>
             {/* Phase Stepper */}
@@ -97,25 +109,34 @@ export default function ClientHomeScreen() {
             </View>
 
             {/* Upcoming Dates */}
-            {upcomingDates.length > 0 && (
-              <View style={styles.section}>
-                <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                  Important Dates
-                </Text>
-                {upcomingDates.map((date) => (
+            <View style={styles.section}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                Important Dates
+              </Text>
+              {importantDates === undefined ? (
+                <>
+                  <SkeletonRow />
+                  <SkeletonRow />
+                </>
+              ) : upcomingDates.length > 0 ? (
+                upcomingDates.map((date) => (
                   <ImportantDateRow key={date.id} date={date} />
-                ))}
-              </View>
-            )}
-
-            {/* No active search placeholder */}
+                ))
+              ) : (
+                <EmptyState
+                  icon="calendar-outline"
+                  title="No important dates yet"
+                  body="Closing day, inspection deadlines, and other key dates will appear here."
+                />
+              )}
+            </View>
           </>
         ) : (
-          <View style={styles.emptyState}>
-            <Text style={[styles.emptyStateText, { color: colors.textSecondary }]}>
-              No active searches yet. Your realtor will get you set up soon!
-            </Text>
-          </View>
+          <EmptyState
+            icon="home-outline"
+            title="No active search yet"
+            body="Your realtor will get you set up soon. Once they do, you'll see your deal progress here."
+          />
         )}
       </ScrollView>
     </SafeAreaView>

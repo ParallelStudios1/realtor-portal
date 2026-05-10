@@ -5,7 +5,6 @@ import {
   TextInput,
   StyleSheet,
   SafeAreaView,
-  Alert,
   TouchableOpacity,
   Pressable,
   ScrollView,
@@ -18,6 +17,8 @@ import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { useTheme } from '@/lib/theme';
+import { useToast } from '@/components/Toast';
+import { humanError } from '@/lib/humanError';
 
 type Role = 'realtor' | 'buyer' | 'seller' | null;
 
@@ -34,6 +35,7 @@ export default function SignupScreen() {
   const router = useRouter();
   const { signUp, isLoading } = useAuth();
   const { colors } = useTheme();
+  const toast = useToast();
 
   const [role, setRole] = useState<Role>(null);
   const [fullName, setFullName] = useState('');
@@ -61,7 +63,7 @@ export default function SignupScreen() {
   const handleSubmit = async () => {
     const v = validate();
     if (v) {
-      Alert.alert('Hold on', v);
+      toast.show(v, { variant: 'error' });
       return;
     }
     setSubmitting(true);
@@ -112,7 +114,7 @@ export default function SignupScreen() {
       // "no route named 'index'" because the route group changes underneath
       // us. Just let the listener handle it.
     } catch (err: any) {
-      Alert.alert('Could not create account', err?.message || String(err));
+      toast.show(humanError(err), { variant: 'error' });
     } finally {
       setSubmitting(false);
     }

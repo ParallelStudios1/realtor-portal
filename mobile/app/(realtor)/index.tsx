@@ -7,7 +7,6 @@ import {
   ScrollView,
   Pressable,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -16,6 +15,9 @@ import { useTheme } from '@/lib/theme';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useUpdateTourRequest } from '@/lib/mutations';
+import { useToast } from '@/components/Toast';
+import { humanError } from '@/lib/humanError';
+import { SkeletonRow, Skeleton } from '@/components/Skeleton';
 
 /**
  * Realtor home — first screen after sign-in. Shows a snapshot of the day:
@@ -26,6 +28,7 @@ export default function RealtorHome() {
   const { userProfile } = useAuth();
   const { colors } = useTheme();
   const updateTour = useUpdateTourRequest();
+  const toast = useToast();
   const [expandedTour, setExpandedTour] = useState<string | null>(null);
   const [actingOn, setActingOn] = useState<string | null>(null);
 
@@ -89,14 +92,14 @@ export default function RealtorHome() {
     try {
       await updateTour.mutateAsync({ tourRequestId, status });
       await refetchTours();
-      Alert.alert(
-        status === 'confirmed' ? 'Tour confirmed' : 'Tour declined',
+      toast.show(
         status === 'confirmed'
-          ? 'The client was notified and the tour is on their calendar.'
-          : 'The client was marked as declined.'
+          ? 'Tour confirmed — the client was notified.'
+          : 'Tour declined.',
+        { variant: 'success' }
       );
     } catch (e: any) {
-      Alert.alert('Could not update', e?.message ?? String(e));
+      toast.show(humanError(e), { variant: 'error' });
     } finally {
       setActingOn(null);
       setExpandedTour(null);
@@ -114,18 +117,45 @@ export default function RealtorHome() {
         </Text>
 
         <View style={s.statRow}>
-          <StatCard
-            icon="people-outline"
-            label="Clients"
-            value={String(stats?.clientCount ?? '—')}
-            colors={colors}
-          />
-          <StatCard
-            icon="search-outline"
-            label="Active searches"
-            value={String(stats?.activeSearches ?? '—')}
-            colors={colors}
-          />
+          {stats === undefined ? (
+            <>
+              <View
+                style={[
+                  s.stat,
+                  { backgroundColor: colors.surface, borderColor: colors.border },
+                ]}
+              >
+                <Skeleton width={20} height={20} borderRadius={10} />
+                <Skeleton width="60%" height={22} style={{ marginTop: 6 }} />
+                <Skeleton width="40%" height={11} style={{ marginTop: 4 }} />
+              </View>
+              <View
+                style={[
+                  s.stat,
+                  { backgroundColor: colors.surface, borderColor: colors.border },
+                ]}
+              >
+                <Skeleton width={20} height={20} borderRadius={10} />
+                <Skeleton width="60%" height={22} style={{ marginTop: 6 }} />
+                <Skeleton width="50%" height={11} style={{ marginTop: 4 }} />
+              </View>
+            </>
+          ) : (
+            <>
+              <StatCard
+                icon="people-outline"
+                label="Clients"
+                value={String(stats?.clientCount ?? '—')}
+                colors={colors}
+              />
+              <StatCard
+                icon="search-outline"
+                label="Active searches"
+                value={String(stats?.activeSearches ?? '—')}
+                colors={colors}
+              />
+            </>
+          )}
         </View>
 
         <Text style={[s.sectionTitle, { color: colors.text }]}>
@@ -244,7 +274,16 @@ export default function RealtorHome() {
           </>
         )}
 
-        {stats?.recentMessages && stats.recentMessages.length > 0 && (
+        {stats === undefined ? (
+          <>
+            <Text style={[s.sectionTitle, { color: colors.text }]}>
+              Recent messages
+            </Text>
+            <SkeletonRow />
+            <SkeletonRow />
+            <SkeletonRow />
+          </>
+        ) : stats?.recentMessages && stats.recentMessages.length > 0 ? (
           <>
             <Text style={[s.sectionTitle, { color: colors.text }]}>
               Recent messages
@@ -269,7 +308,7 @@ export default function RealtorHome() {
               </View>
             ))}
           </>
-        )}
+        ) : null}
       </ScrollView>
     </SafeAreaView>
   );

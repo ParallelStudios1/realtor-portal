@@ -5,7 +5,6 @@ import {
   TextInput,
   StyleSheet,
   SafeAreaView,
-  Alert,
   Pressable,
   ScrollView,
   KeyboardAvoidingView,
@@ -18,6 +17,8 @@ import { useAuth } from '@/lib/auth';
 import { useTheme } from '@/lib/theme';
 import { supabase } from '@/lib/supabase';
 import { useQueryClient } from '@tanstack/react-query';
+import { useToast } from '@/components/Toast';
+import { humanError } from '@/lib/humanError';
 
 /**
  * Realtor → invite a buyer or seller. Hits /api/clients/invite which
@@ -28,6 +29,7 @@ export default function InviteClientScreen() {
   const { user, userProfile } = useAuth();
   const { colors } = useTheme();
   const queryClient = useQueryClient();
+  const toast = useToast();
 
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -36,7 +38,7 @@ export default function InviteClientScreen() {
 
   const submit = async () => {
     if (!fullName.trim() || !email.trim()) {
-      Alert.alert('Hold on', 'Name and email are required.');
+      toast.show('Name and email are required.', { variant: 'error' });
       return;
     }
     setSubmitting(true);
@@ -70,13 +72,10 @@ export default function InviteClientScreen() {
       queryClient.invalidateQueries({ queryKey: ['clientSearches'] });
       queryClient.invalidateQueries({ queryKey: ['realtor-threads'] });
       queryClient.invalidateQueries({ queryKey: ['realtor-home-stats'] });
-      Alert.alert(
-        'Invite sent',
-        `${fullName} will get an email. They'll show up in your client list right away.`,
-        [{ text: 'OK', onPress: () => router.back() }]
-      );
+      toast.show(`Invite sent to ${fullName}.`, { variant: 'success' });
+      router.back();
     } catch (e: any) {
-      Alert.alert('Could not invite', e?.message || String(e));
+      toast.show(humanError(e), { variant: 'error' });
     } finally {
       setSubmitting(false);
     }

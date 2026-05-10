@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { getSupabaseBrowserClient } from '@/lib/supabaseBrowser';
+import { useToast } from '@/components/Toast';
+import { humanError } from '@/lib/humanError';
 
 type Message = {
   id: string;
@@ -30,6 +32,7 @@ export function ClientMessagesClient({
   const [error, setError] = useState<string | null>(null);
   const supabase = getSupabaseBrowserClient();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const toast = useToast();
 
   // Realtime: any new INSERT for this search → append
   useEffect(() => {
@@ -79,7 +82,9 @@ export function ClientMessagesClient({
       .select('id')
       .single();
     if (e) {
-      setError(e.message);
+      const msg = humanError(e);
+      setError(msg);
+      toast.show(msg, { variant: 'error' });
       setDraft(body);
     } else {
       // Notify the realtor side via push

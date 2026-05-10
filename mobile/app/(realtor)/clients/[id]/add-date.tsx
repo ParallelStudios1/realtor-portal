@@ -5,7 +5,6 @@ import {
   TextInput,
   StyleSheet,
   Pressable,
-  Alert,
   SafeAreaView,
   ActivityIndicator,
 } from 'react-native';
@@ -13,6 +12,8 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { useAuth } from '@/lib/auth';
 import { useTheme } from '@/lib/theme';
 import { useAddImportantDate, useLogActivity } from '@/lib/mutations';
+import { useToast } from '@/components/Toast';
+import { humanError } from '@/lib/humanError';
 
 const PRESETS = ['Closing Day', 'Appraisal Due', 'Inspection Deadline', 'Offer Expires', 'Earnest Money Due'];
 
@@ -29,6 +30,7 @@ export default function AddImportantDateScreen() {
   const { colors } = useTheme();
   const addDate = useAddImportantDate();
   const logActivity = useLogActivity();
+  const toast = useToast();
 
   const [label, setLabel] = useState('');
   const [dateStr, setDateStr] = useState('');
@@ -37,11 +39,15 @@ export default function AddImportantDateScreen() {
 
   const save = async () => {
     if (!label.trim()) {
-      Alert.alert('Missing label', 'Give the date a name like "Closing Day".');
+      toast.show('Give the date a name like "Closing Day".', {
+        variant: 'error',
+      });
       return;
     }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
-      Alert.alert('Invalid date', 'Use the format YYYY-MM-DD (e.g. 2026-06-15).');
+      toast.show('Use the format YYYY-MM-DD (e.g. 2026-06-15).', {
+        variant: 'error',
+      });
       return;
     }
     if (!searchId || !userProfile?.firm_id || !user?.id) return;
@@ -62,9 +68,10 @@ export default function AddImportantDateScreen() {
         action: 'added',
         target: label.trim(),
       });
+      toast.show('Date saved.', { variant: 'success' });
       router.back();
     } catch (e: any) {
-      Alert.alert('Could not save', e.message ?? String(e));
+      toast.show(humanError(e), { variant: 'error' });
     } finally {
       setSaving(false);
     }

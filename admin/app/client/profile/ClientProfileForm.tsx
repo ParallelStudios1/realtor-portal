@@ -6,6 +6,8 @@ import {
   changeClientPasswordAction,
   saveClientProfileAction,
 } from './actions';
+import { useToast } from '@/components/Toast';
+import { humanError } from '@/lib/humanError';
 
 type Props = {
   fullName: string;
@@ -14,6 +16,7 @@ type Props = {
 
 export function ClientProfileForm({ fullName, email }: Props) {
   const router = useRouter();
+  const toast = useToast();
 
   // Profile state
   const [name, setName] = useState(fullName);
@@ -33,13 +36,22 @@ export function ClientProfileForm({ fullName, email }: Props) {
     const fd = new FormData();
     fd.append('full_name', name);
     startProfile(async () => {
-      const r = await saveClientProfileAction(fd);
-      if (r?.error) {
-        setProfileMsg({ kind: 'error', text: r.error });
-        return;
+      try {
+        const r = await saveClientProfileAction(fd);
+        if (r?.error) {
+          const msg = humanError(r.error);
+          setProfileMsg({ kind: 'error', text: msg });
+          toast.show(msg, { variant: 'error' });
+          return;
+        }
+        setProfileMsg({ kind: 'ok', text: 'Saved.' });
+        toast.show('Profile saved.', { variant: 'success' });
+        router.refresh();
+      } catch (err) {
+        const msg = humanError(err);
+        setProfileMsg({ kind: 'error', text: msg });
+        toast.show(msg, { variant: 'error' });
       }
-      setProfileMsg({ kind: 'ok', text: 'Saved.' });
-      router.refresh();
     });
   }
 
@@ -51,15 +63,24 @@ export function ClientProfileForm({ fullName, email }: Props) {
     fd.append('new_password', newPw);
     fd.append('confirm_password', confirmPw);
     startPw(async () => {
-      const r = await changeClientPasswordAction(fd);
-      if (r?.error) {
-        setPwMsg({ kind: 'error', text: r.error });
-        return;
+      try {
+        const r = await changeClientPasswordAction(fd);
+        if (r?.error) {
+          const msg = humanError(r.error);
+          setPwMsg({ kind: 'error', text: msg });
+          toast.show(msg, { variant: 'error' });
+          return;
+        }
+        setPwMsg({ kind: 'ok', text: 'Password updated.' });
+        toast.show('Password updated.', { variant: 'success' });
+        setCurrentPw('');
+        setNewPw('');
+        setConfirmPw('');
+      } catch (err) {
+        const msg = humanError(err);
+        setPwMsg({ kind: 'error', text: msg });
+        toast.show(msg, { variant: 'error' });
       }
-      setPwMsg({ kind: 'ok', text: 'Password updated.' });
-      setCurrentPw('');
-      setNewPw('');
-      setConfirmPw('');
     });
   }
 

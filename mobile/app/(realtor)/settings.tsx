@@ -18,6 +18,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/auth';
 import { useTheme } from '@/lib/theme';
 import { supabase } from '@/lib/supabase';
+import { useToast } from '@/components/Toast';
+import { humanError } from '@/lib/humanError';
 
 const HEX_RE = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
 
@@ -32,6 +34,7 @@ export default function RealtorSettingsScreen() {
   const { user, userProfile, signOut } = useAuth();
   const { firm, colors } = useTheme();
   const queryClient = useQueryClient();
+  const toast = useToast();
 
   const isFirmAdmin = userProfile?.role === 'firm_admin' || userProfile?.role === 'super_admin';
 
@@ -88,7 +91,9 @@ export default function RealtorSettingsScreen() {
     if (!user?.id) return;
     const trimmed = fullName.trim();
     if (!trimmed) {
-      Alert.alert('Name required', 'Give yourself a name your clients will see.');
+      toast.show('Give yourself a name your clients will see.', {
+        variant: 'error',
+      });
       return;
     }
     setSavingProfile(true);
@@ -99,8 +104,9 @@ export default function RealtorSettingsScreen() {
         .eq('id', user.id);
       if (error) throw error;
       await queryClient.invalidateQueries({ queryKey: ['userProfile', user.id] });
+      toast.show('Profile saved.', { variant: 'success' });
     } catch (e: any) {
-      Alert.alert('Could not save', e?.message ?? String(e));
+      toast.show(humanError(e), { variant: 'error' });
     } finally {
       setSavingProfile(false);
     }
@@ -109,15 +115,21 @@ export default function RealtorSettingsScreen() {
   const saveFirm = async () => {
     if (!firm?.id) return;
     if (!firmName.trim()) {
-      Alert.alert('Firm name required', 'Your clients see this name in the app.');
+      toast.show('Your clients see this firm name in the app.', {
+        variant: 'error',
+      });
       return;
     }
     if (brandColor && !HEX_RE.test(brandColor.trim())) {
-      Alert.alert('Brand color', 'Use a hex value like #1F6FEB.');
+      toast.show('Brand color must be a hex value like #1F6FEB.', {
+        variant: 'error',
+      });
       return;
     }
     if (accentColor && !HEX_RE.test(accentColor.trim())) {
-      Alert.alert('Accent color', 'Use a hex value like #1F6FEB.');
+      toast.show('Accent color must be a hex value like #1F6FEB.', {
+        variant: 'error',
+      });
       return;
     }
     setSavingFirm(true);
@@ -135,8 +147,9 @@ export default function RealtorSettingsScreen() {
         .eq('id', firm.id);
       if (error) throw error;
       await queryClient.invalidateQueries({ queryKey: ['firm', firm.id] });
+      toast.show('Firm settings saved.', { variant: 'success' });
     } catch (e: any) {
-      Alert.alert('Could not save', e?.message ?? String(e));
+      toast.show(humanError(e), { variant: 'error' });
     } finally {
       setSavingFirm(false);
     }
@@ -152,11 +165,15 @@ export default function RealtorSettingsScreen() {
   const submitPasswordChange = async () => {
     if (!user?.email) return;
     if (newPw.length < 8) {
-      Alert.alert('Password too short', 'Use at least 8 characters.');
+      toast.show('Password must be at least 8 characters.', {
+        variant: 'error',
+      });
       return;
     }
     if (newPw !== confirmPw) {
-      Alert.alert('Passwords don’t match', 'Re-enter the new password.');
+      toast.show('Passwords don’t match. Re-enter the new password.', {
+        variant: 'error',
+      });
       return;
     }
     setPwSaving(true);
@@ -176,10 +193,10 @@ export default function RealtorSettingsScreen() {
       const { error } = await supabase.auth.updateUser({ password: newPw });
       if (error) throw error;
 
-      Alert.alert('Password updated', 'Use your new password next time you sign in.');
+      toast.show('Password updated.', { variant: 'success' });
       closePwModal();
     } catch (e: any) {
-      Alert.alert('Could not change password', e?.message ?? String(e));
+      toast.show(humanError(e), { variant: 'error' });
     } finally {
       setPwSaving(false);
     }

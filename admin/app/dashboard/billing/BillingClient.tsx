@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { useToast } from '@/components/Toast';
+import { humanError, humanErrorFromResponse } from '@/lib/humanError';
 
 type Plan = {
   id: string;
@@ -21,6 +23,7 @@ export function BillingClient({
 }) {
   const [pendingPlan, setPendingPlan] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const toast = useToast();
 
   async function startCheckout(planId: string) {
     setPendingPlan(planId);
@@ -43,14 +46,13 @@ export function BillingClient({
         }
       }
       if (!res.ok || !json?.url) {
-        const fallback = `Checkout failed (HTTP ${res.status}). ${
-          raw ? raw.slice(0, 200) : 'Empty response from server.'
-        }`;
-        throw new Error(json?.error || fallback);
+        throw new Error(humanErrorFromResponse(res, raw));
       }
       window.location.href = json.url;
     } catch (err: any) {
-      setError(err?.message || 'Could not start checkout.');
+      const msg = humanError(err);
+      setError(msg);
+      toast.show(msg, { variant: 'error' });
       setPendingPlan(null);
     }
   }

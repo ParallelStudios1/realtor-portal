@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   FlatList,
-  ActivityIndicator,
   RefreshControl,
   Pressable,
   SafeAreaView,
@@ -16,6 +15,8 @@ import { useTheme } from '@/lib/theme';
 import { useClientSearches } from '@/lib/queries';
 import { formatPhase } from '@/lib/format';
 import type { ClientSearch } from '@/lib/database.types';
+import { SkeletonRow } from '@/components/Skeleton';
+import { EmptyState } from '@/components/EmptyState';
 
 /**
  * Realtor's home screen — every active client/deal in the firm.
@@ -29,10 +30,16 @@ export default function RealtorClientsScreen() {
     true, // isRealtor — fetch all firm searches, not just current user's
   );
 
-  if (isLoading && !searches) {
+  // First-load: render layout-stable skeleton rows.
+  if (searches === undefined) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 60 }} />
+        <View>
+          <SkeletonRow withChip />
+          <SkeletonRow withChip />
+          <SkeletonRow withChip />
+          <SkeletonRow withChip />
+        </View>
       </SafeAreaView>
     );
   }
@@ -58,22 +65,14 @@ export default function RealtorClientsScreen() {
           ) : null
         }
         ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <Text style={[styles.emptyTitle, { color: colors.text }]}>
-              No clients yet
-            </Text>
-            <Text style={[styles.emptyBody, { color: colors.textSecondary }]}>
-              Invite your first buyer or seller — they'll get an email and
-              show up here right away.
-            </Text>
-            <Pressable
-              onPress={() => router.push('/(realtor)/invite' as any)}
-              style={[styles.inviteBigCta, { backgroundColor: colors.primary }]}
-            >
-              <Ionicons name="person-add" size={18} color="#fff" />
-              <Text style={styles.inviteBigCtaText}>Invite a client</Text>
-            </Pressable>
-          </View>
+          <EmptyState
+            icon="people-outline"
+            title="No clients yet"
+            body="Invite your first buyer or seller — they'll get an email and show up here right away."
+            ctaLabel="Invite a client"
+            ctaIcon="person-add"
+            onCtaPress={() => router.push('/(realtor)/invite' as any)}
+          />
         }
         renderItem={({ item }) => (
           <ClientRow

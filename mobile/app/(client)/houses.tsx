@@ -5,9 +5,7 @@ import {
   StyleSheet,
   SafeAreaView,
   ScrollView,
-  ActivityIndicator,
   TouchableOpacity,
-  Alert,
   RefreshControl,
 } from 'react-native';
 import { router } from 'expo-router';
@@ -17,6 +15,8 @@ import { useClientSearches, useHouses } from '@/lib/queries';
 import { useUpdateFavoriteHouse } from '@/lib/mutations';
 import { formatPrice } from '@/lib/format';
 import { formatHouseStatus } from '@/lib/houseStatus';
+import { SkeletonRow } from '@/components/Skeleton';
+import { EmptyState } from '@/components/EmptyState';
 
 export default function HousesScreen() {
   const { user, userProfile } = useAuth();
@@ -55,18 +55,19 @@ export default function HousesScreen() {
           />
         }
       >
-        {(searchesLoading || housesLoading) && !houses ? (
-          <ActivityIndicator
-            size="large"
-            color={colors.primary}
-            style={styles.loader}
-          />
-        ) : !activeSearch ? (
-          <View style={styles.emptyState}>
-            <Text style={[styles.emptyStateText, { color: colors.textSecondary }]}>
-              No active search yet
-            </Text>
+        {searches === undefined || (activeSearch && houses === undefined) ? (
+          <View>
+            <SkeletonRow withChip />
+            <SkeletonRow withChip />
+            <SkeletonRow withChip />
+            <SkeletonRow withChip />
           </View>
+        ) : !activeSearch ? (
+          <EmptyState
+            icon="home-outline"
+            title="No active search yet"
+            body="Once your realtor sets up your search, properties will appear here."
+          />
         ) : houses && houses.length > 0 ? (
           <View>
             {houses.map((house) => (
@@ -122,11 +123,11 @@ export default function HousesScreen() {
             ))}
           </View>
         ) : (
-          <View style={styles.emptyState}>
-            <Text style={[styles.emptyStateText, { color: colors.textSecondary }]}>
-              No houses added yet. Your realtor will add properties soon.
-            </Text>
-          </View>
+          <EmptyState
+            icon="home-outline"
+            title="No houses yet"
+            body="Your realtor will add properties to your search soon. They'll show up here."
+          />
         )}
       </ScrollView>
     </SafeAreaView>
