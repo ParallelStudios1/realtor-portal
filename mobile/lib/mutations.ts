@@ -1,6 +1,32 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from './supabase';
-import { DealPhase, HouseStatus, TourRequestStatus } from './database.types';
+import {
+  DealPhase,
+  HouseStatus,
+  TourRequestStatus,
+  Message,
+  House,
+  ImportantDate,
+  Document,
+  Activity,
+  TourRequest,
+  ClientSearch,
+} from './database.types';
+
+/**
+ * Optimistic-update helpers across this file follow the same shape:
+ *   1. onMutate: cancel in-flight queries, snapshot the cache, write a
+ *      provisional row with a `temp-…` id and `_pending` flag where useful.
+ *   2. onError: roll back to the snapshot.
+ *   3. onSettled: invalidate so the server-of-truth eventually wins.
+ *
+ * Realtime subscriptions (queries.ts) handle reconciling pending → real rows
+ * for messages by id-deduping against the optimistic placeholder.
+ */
+
+function tempId(prefix: string) {
+  return `${prefix}-${Math.random().toString(36).slice(2, 10)}-${Date.now()}`;
+}
 
 export function useUpdatePhase() {
   const queryClient = useQueryClient();
@@ -20,7 +46,43 @@ export function useUpdatePhase() {
       if (error) throw error;
       return { searchId, newPhase };
     },
-    onSuccess: (_, variables) => {
+    onMutate: async ({ searchId, newPhase }) => {
+      await queryClient.cancelQueries({ queryKey: ['search', searchId] });
+      await queryClient.cancelQueries({ queryKey: ['clientSearches'] });
+
+      const prevSearch = queryClient.getQueryData<ClientSearch>([
+        'search',
+        searchId,
+      ]);
+      const prevLists = queryClient.getQueriesData<ClientSearch[]>({
+        queryKey: ['clientSearches'],
+      });
+
+      if (prevSearch) {
+        queryClient.setQueryData<ClientSearch>(
+          ['search', searchId],
+          { ...prevSearch, phase: newPhase }
+        );
+      }
+      for (const [key, list] of prevLists) {
+        if (!list) continue;
+        queryClient.setQueryData<ClientSearch[]>(
+          key,
+          list.map((s) => (s.id === searchId ? { ...s, phase: newPhase } : s))
+        );
+      }
+      return { prevSearch, prevLists };
+    },
+    onError: (_err, { searchId }, ctx) => {
+      if (!ctx) return;
+      if (ctx.prevSearch) {
+        queryClient.setQueryData(['search', searchId], ctx.prevSearch);
+      }
+      for (const [key, list] of ctx.prevLists) {
+        queryClient.setQueryData(key, list);
+      }
+    },
+    onSettled: (_data, _err, variables) => {
       queryClient.invalidateQueries({ queryKey: ['search', variables.searchId] });
       queryClient.invalidateQueries({ queryKey: ['clientSearches'] });
     },
@@ -62,7 +124,38 @@ export function useAddHouse() {
       });
       if (error) throw error;
     },
-    onSuccess: (_, variables) => {
+    onMutate: async (vars) => {
+      await queryClient.cancelQueries({ queryKey: ['houses', vars.searchId] });
+      const prev = queryClient.getQueryData<House[]>(['houses', vars.searchId]);
+      const optimistic: House = {
+        id: tempId('house'),
+        firm_id: vars.firmId,
+        search_id: vars.searchId,
+        address: vars.address,
+        list_price: vars.listPrice ?? null,
+        bedrooms: vars.bedrooms ?? null,
+        bathrooms: vars.bathrooms ?? null,
+        square_feet: vars.squareFeet ?? null,
+        listing_url: null,
+        photo_url: null,
+        notes: vars.notes ?? null,
+        is_favorite: false,
+        toured_at: null,
+        status: 'interested',
+        created_at: new Date().toISOString(),
+      };
+      queryClient.setQueryData<House[]>(
+        ['houses', vars.searchId],
+        [optimistic, ...(prev ?? [])]
+      );
+      return { prev };
+    },
+    onError: (_err, vars, ctx) => {
+      if (ctx?.prev !== undefined) {
+        queryClient.setQueryData(['houses', vars.searchId], ctx.prev);
+      }
+    },
+    onSettled: (_data, _err, variables) => {
       queryClient.invalidateQueries({ queryKey: ['houses', variables.searchId] });
     },
   });
@@ -94,7 +187,41 @@ export function useAddImportantDate() {
       });
       if (error) throw error;
     },
-    onSuccess: (_, variables) => {
+    onMutate: async (vars) => {
+      await queryClient.cancelQueries({
+        queryKey: ['importantDates', vars.searchId],
+      });
+      const prev = queryClient.getQueryData<ImportantDate[]>([
+        'importantDates',
+        vars.searchId,
+      ]);
+      const optimistic: ImportantDate = {
+        id: tempId('date'),
+        firm_id: vars.firmId,
+        search_id: vars.searchId,
+        label: vars.label,
+        date: vars.date,
+        notes: vars.notes ?? null,
+        created_by: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      // Keep dates ordered ascending — same as the query.
+      const next = [...(prev ?? []), optimistic].sort((a, b) =>
+        a.date < b.date ? -1 : a.date > b.date ? 1 : 0
+      );
+      queryClient.setQueryData<ImportantDate[]>(
+        ['importantDates', vars.searchId],
+        next
+      );
+      return { prev };
+    },
+    onError: (_err, vars, ctx) => {
+      if (ctx?.prev !== undefined) {
+        queryClient.setQueryData(['importantDates', vars.searchId], ctx.prev);
+      }
+    },
+    onSettled: (_data, _err, variables) => {
       queryClient.invalidateQueries({
         queryKey: ['importantDates', variables.searchId],
       });
@@ -127,7 +254,37 @@ export function useUploadDocument() {
       });
       if (error) throw error;
     },
-    onSuccess: (_, variables) => {
+    onMutate: async (vars) => {
+      await queryClient.cancelQueries({
+        queryKey: ['documents', vars.searchId],
+      });
+      const prev = queryClient.getQueryData<Document[]>([
+        'documents',
+        vars.searchId,
+      ]);
+      const optimistic: Document = {
+        id: tempId('doc'),
+        firm_id: vars.firmId,
+        search_id: vars.searchId,
+        name: vars.fileName,
+        storage_path: `documents/${vars.firmId}/${vars.searchId}/${vars.fileName}`,
+        file_size: null,
+        mime_type: null,
+        uploaded_by: null,
+        created_at: new Date().toISOString(),
+      };
+      queryClient.setQueryData<Document[]>(
+        ['documents', vars.searchId],
+        [optimistic, ...(prev ?? [])]
+      );
+      return { prev };
+    },
+    onError: (_err, vars, ctx) => {
+      if (ctx?.prev !== undefined) {
+        queryClient.setQueryData(['documents', vars.searchId], ctx.prev);
+      }
+    },
+    onSettled: (_data, _err, variables) => {
       queryClient.invalidateQueries({
         queryKey: ['documents', variables.searchId],
       });
@@ -184,8 +341,49 @@ export function useSendMessage() {
           }),
         }).catch(() => {});
       } catch {}
+
+      return { tempId: undefined as string | undefined, realId: inserted?.id };
     },
-    onSuccess: (_, variables) => {
+    onMutate: async (vars) => {
+      await queryClient.cancelQueries({ queryKey: ['messages', vars.searchId] });
+      const prev = queryClient.getQueryData<Message[]>([
+        'messages',
+        vars.searchId,
+      ]);
+      const tid = tempId('msg');
+      const optimistic: Message & { _pending?: boolean } = {
+        id: tid,
+        firm_id: vars.firmId,
+        search_id: vars.searchId,
+        sender_id: vars.senderId,
+        body: vars.body,
+        read_at: null,
+        created_at: new Date().toISOString(),
+        _pending: true,
+      };
+      queryClient.setQueryData<Message[]>(
+        ['messages', vars.searchId],
+        [...(prev ?? []), optimistic]
+      );
+      return { prev, tempId: tid };
+    },
+    onError: (_err, vars, ctx) => {
+      if (ctx?.prev !== undefined) {
+        queryClient.setQueryData(['messages', vars.searchId], ctx.prev);
+      }
+    },
+    onSuccess: (data, vars, ctx) => {
+      // Replace the optimistic row's id with the real one so the realtime
+      // INSERT doesn't slip past our dedupe (which is keyed on id).
+      if (!data?.realId || !ctx?.tempId) return;
+      queryClient.setQueryData<Message[]>(['messages', vars.searchId], (cur) => {
+        if (!cur) return cur;
+        return cur.map((m) =>
+          m.id === ctx.tempId ? { ...m, id: data.realId!, _pending: false } : m
+        );
+      });
+    },
+    onSettled: (_data, _err, variables) => {
       queryClient.invalidateQueries({
         queryKey: ['messages', variables.searchId],
       });
@@ -247,8 +445,45 @@ export function useUpdateFavoriteHouse() {
         .eq('id', houseId);
       if (error) throw error;
     },
-    onSuccess: () => {
+    onMutate: async (vars) => {
+      // We don't know the searchId here, so optimistically patch every cached
+      // houses list. Cheap because we only mutate the one matching house.
+      await queryClient.cancelQueries({ queryKey: ['houses'] });
+      await queryClient.cancelQueries({ queryKey: ['house', vars.houseId] });
+      const prevLists = queryClient.getQueriesData<House[]>({
+        queryKey: ['houses'],
+      });
+      const prevHouse = queryClient.getQueryData<House>(['house', vars.houseId]);
+
+      for (const [key, list] of prevLists) {
+        if (!list) continue;
+        queryClient.setQueryData<House[]>(
+          key,
+          list.map((h) =>
+            h.id === vars.houseId ? { ...h, is_favorite: vars.isFavorite } : h
+          )
+        );
+      }
+      if (prevHouse) {
+        queryClient.setQueryData<House>(['house', vars.houseId], {
+          ...prevHouse,
+          is_favorite: vars.isFavorite,
+        });
+      }
+      return { prevLists, prevHouse };
+    },
+    onError: (_err, vars, ctx) => {
+      if (!ctx) return;
+      for (const [key, list] of ctx.prevLists) {
+        queryClient.setQueryData(key, list);
+      }
+      if (ctx.prevHouse) {
+        queryClient.setQueryData(['house', vars.houseId], ctx.prevHouse);
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['houses'] });
+      queryClient.invalidateQueries({ queryKey: ['house'] });
     },
   });
 }
@@ -270,7 +505,50 @@ export function useUpdateHouseStatus() {
       const { error } = await supabase.from('houses').update(update).eq('id', houseId);
       if (error) throw error;
     },
-    onSuccess: () => {
+    onMutate: async (vars) => {
+      await queryClient.cancelQueries({ queryKey: ['houses'] });
+      await queryClient.cancelQueries({ queryKey: ['house', vars.houseId] });
+      const prevLists = queryClient.getQueriesData<House[]>({
+        queryKey: ['houses'],
+      });
+      const prevHouse = queryClient.getQueryData<House>(['house', vars.houseId]);
+      const touredAt =
+        vars.status === 'toured' ? new Date().toISOString() : undefined;
+
+      for (const [key, list] of prevLists) {
+        if (!list) continue;
+        queryClient.setQueryData<House[]>(
+          key,
+          list.map((h) =>
+            h.id === vars.houseId
+              ? {
+                  ...h,
+                  status: vars.status,
+                  toured_at: touredAt ?? h.toured_at,
+                }
+              : h
+          )
+        );
+      }
+      if (prevHouse) {
+        queryClient.setQueryData<House>(['house', vars.houseId], {
+          ...prevHouse,
+          status: vars.status,
+          toured_at: touredAt ?? prevHouse.toured_at,
+        });
+      }
+      return { prevLists, prevHouse };
+    },
+    onError: (_err, vars, ctx) => {
+      if (!ctx) return;
+      for (const [key, list] of ctx.prevLists) {
+        queryClient.setQueryData(key, list);
+      }
+      if (ctx.prevHouse) {
+        queryClient.setQueryData(['house', vars.houseId], ctx.prevHouse);
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['houses'] });
       queryClient.invalidateQueries({ queryKey: ['house'] });
     },
@@ -346,9 +624,111 @@ export function useRequestTour() {
 
       return { tourRequestId: inserted?.id };
     },
-    onSuccess: (_, variables) => {
+    onMutate: async (vars) => {
+      await queryClient.cancelQueries({ queryKey: ['houses'] });
+      await queryClient.cancelQueries({ queryKey: ['house', vars.houseId] });
+      await queryClient.cancelQueries({
+        queryKey: ['tourRequests', vars.searchId],
+      });
+      await queryClient.cancelQueries({ queryKey: ['pendingTours'] });
+
+      const prevLists = queryClient.getQueriesData<House[]>({
+        queryKey: ['houses'],
+      });
+      const prevHouse = queryClient.getQueryData<House>(['house', vars.houseId]);
+      const prevTourRequests = queryClient.getQueryData<TourRequest[]>([
+        'tourRequests',
+        vars.searchId,
+      ]);
+      const prevPending = queryClient.getQueriesData<any[]>({
+        queryKey: ['pendingTours'],
+      });
+
+      // Flip house.status everywhere so the button immediately reads
+      // "Tour Requested ✓".
+      for (const [key, list] of prevLists) {
+        if (!list) continue;
+        queryClient.setQueryData<House[]>(
+          key,
+          list.map((h) =>
+            h.id === vars.houseId ? { ...h, status: 'tour_requested' } : h
+          )
+        );
+      }
+      if (prevHouse) {
+        queryClient.setQueryData<House>(['house', vars.houseId], {
+          ...prevHouse,
+          status: 'tour_requested',
+        });
+      }
+
+      const optimisticTour: TourRequest = {
+        id: tempId('tour'),
+        firm_id: vars.firmId,
+        house_id: vars.houseId,
+        search_id: vars.searchId,
+        client_id: vars.clientId,
+        preferred_when: vars.preferredWhen ?? null,
+        notes: vars.notes ?? null,
+        status: 'pending',
+        handled_at: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      queryClient.setQueryData<TourRequest[]>(
+        ['tourRequests', vars.searchId],
+        [optimisticTour, ...(prevTourRequests ?? [])]
+      );
+
+      // Realtor's pending tour feed: shape is whatever the realtor home query
+      // builds. Insert a minimal row that matches the keys the UI reads.
+      for (const [key, list] of prevPending) {
+        if (!list) continue;
+        queryClient.setQueryData<any[]>(
+          key,
+          [
+            {
+              id: optimisticTour.id,
+              preferred_when: optimisticTour.preferred_when,
+              notes: optimisticTour.notes,
+              created_at: optimisticTour.created_at,
+              search_id: optimisticTour.search_id,
+              house_id: optimisticTour.house_id,
+              client_id: optimisticTour.client_id,
+              house: { id: vars.houseId, address: prevHouse?.address ?? '' },
+              client: null,
+            },
+            ...list,
+          ]
+        );
+      }
+
+      return { prevLists, prevHouse, prevTourRequests, prevPending };
+    },
+    onError: (_err, vars, ctx) => {
+      if (!ctx) return;
+      for (const [key, list] of ctx.prevLists) {
+        queryClient.setQueryData(key, list);
+      }
+      if (ctx.prevHouse) {
+        queryClient.setQueryData(['house', vars.houseId], ctx.prevHouse);
+      }
+      if (ctx.prevTourRequests !== undefined) {
+        queryClient.setQueryData(
+          ['tourRequests', vars.searchId],
+          ctx.prevTourRequests
+        );
+      }
+      for (const [key, list] of ctx.prevPending) {
+        queryClient.setQueryData(key, list);
+      }
+    },
+    onSettled: (_data, _err, variables) => {
       queryClient.invalidateQueries({ queryKey: ['houses'] });
-      queryClient.invalidateQueries({ queryKey: ['tourRequests', variables.searchId] });
+      queryClient.invalidateQueries({ queryKey: ['house', variables.houseId] });
+      queryClient.invalidateQueries({
+        queryKey: ['tourRequests', variables.searchId],
+      });
       queryClient.invalidateQueries({ queryKey: ['pendingTours'] });
     },
   });
@@ -445,11 +825,80 @@ export function useUpdateTourRequest() {
             }),
           }).catch(() => {});
         } catch {}
+
+        // Optimistically add the important_dates row we just inserted.
+        const optimisticDate: ImportantDate = {
+          id: tempId('date'),
+          firm_id: req.firm_id,
+          search_id: req.search_id,
+          label,
+          date: dateStr,
+          notes: req.preferred_when || req.notes || null,
+          created_by: null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        queryClient.setQueryData<ImportantDate[]>(
+          ['importantDates', req.search_id],
+          (prev) => {
+            const list = [...(prev ?? []), optimisticDate];
+            list.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+            return list;
+          }
+        );
       }
 
       return { tourRequestId, searchId: req.search_id };
     },
-    onSuccess: (data) => {
+    onMutate: async (vars) => {
+      await queryClient.cancelQueries({ queryKey: ['tourRequests'] });
+      await queryClient.cancelQueries({ queryKey: ['pendingTours'] });
+      const prevTours = queryClient.getQueriesData<TourRequest[]>({
+        queryKey: ['tourRequests'],
+      });
+      const prevPending = queryClient.getQueriesData<any[]>({
+        queryKey: ['pendingTours'],
+      });
+
+      // Flip status everywhere this tour appears.
+      for (const [key, list] of prevTours) {
+        if (!list) continue;
+        queryClient.setQueryData<TourRequest[]>(
+          key,
+          list.map((t) =>
+            t.id === vars.tourRequestId
+              ? {
+                  ...t,
+                  status: vars.status,
+                  handled_at:
+                    vars.status === 'confirmed' || vars.status === 'declined'
+                      ? new Date().toISOString()
+                      : t.handled_at,
+                }
+              : t
+          )
+        );
+      }
+      // Pending feed: anything that's no longer pending should drop out.
+      for (const [key, list] of prevPending) {
+        if (!list) continue;
+        queryClient.setQueryData<any[]>(
+          key,
+          list.filter((t) => t.id !== vars.tourRequestId)
+        );
+      }
+      return { prevTours, prevPending };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (!ctx) return;
+      for (const [key, list] of ctx.prevTours) {
+        queryClient.setQueryData(key, list);
+      }
+      for (const [key, list] of ctx.prevPending) {
+        queryClient.setQueryData(key, list);
+      }
+    },
+    onSettled: (data) => {
       queryClient.invalidateQueries({ queryKey: ['tourRequests', data?.searchId] });
       queryClient.invalidateQueries({ queryKey: ['importantDates', data?.searchId] });
       queryClient.invalidateQueries({ queryKey: ['pendingTours'] });

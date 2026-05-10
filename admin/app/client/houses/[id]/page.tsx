@@ -1,9 +1,52 @@
 import Link from 'next/link';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getMe, getSupabaseServerClient } from '@/lib/supabaseSsr';
 import { HouseRatingClient } from './HouseRatingClient';
 
 export const dynamic = 'force-dynamic';
+
+/**
+ * Generate the social-share metadata for this listing. The OG image is
+ * rendered on demand by /api/og/house/[id] (24h cache).
+ *
+ * We deliberately keep this lightweight and don't hit the DB — the OG route
+ * does that work, and that result is already cached. Title/description here
+ * stay generic so we don't leak listing details to unauthenticated metadata
+ * scrapers beyond what's already in the OG image they fetch anyway.
+ */
+export async function generateMetadata({
+  params,
+}: {
+  params: { id: string };
+}): Promise<Metadata> {
+  const ogUrl = `/api/og/house/${params.id}`;
+  const title = 'Listing';
+  const description = 'A house your agent picked out for you.';
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: 'website',
+      images: [
+        {
+          url: ogUrl,
+          width: 1200,
+          height: 630,
+          alt: title,
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [ogUrl],
+    },
+  };
+}
 
 export default async function HouseDetailPage({
   params,
