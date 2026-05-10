@@ -9,6 +9,7 @@ import {
   Pressable,
   SafeAreaView,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useAuth } from '@/lib/auth';
 import { useTheme } from '@/lib/theme';
@@ -45,18 +46,42 @@ export default function RealtorClientsScreen() {
         refreshControl={
           <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.primary} />
         }
+        ListHeaderComponent={
+          searches && searches.length > 0 ? (
+            <Pressable
+              onPress={() => router.push('/(realtor)/invite' as any)}
+              style={[styles.inviteCta, { backgroundColor: colors.primary }]}
+            >
+              <Ionicons name="person-add" size={16} color="#fff" />
+              <Text style={styles.inviteCtaText}>Invite a client</Text>
+            </Pressable>
+          ) : null
+        }
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <Text style={[styles.emptyTitle, { color: colors.text }]}>No clients yet</Text>
-            <Text style={[styles.emptyBody, { color: colors.textSecondary }]}>
-              When you create a search for a client, it'll show up here.
-              {'\n\n'}For v1, you create searches via the Supabase dashboard
-              or admin panel. In v1.1 we'll add a "New Client" button here.
+            <Text style={[styles.emptyTitle, { color: colors.text }]}>
+              No clients yet
             </Text>
+            <Text style={[styles.emptyBody, { color: colors.textSecondary }]}>
+              Invite your first buyer or seller — they'll get an email and
+              show up here right away.
+            </Text>
+            <Pressable
+              onPress={() => router.push('/(realtor)/invite' as any)}
+              style={[styles.inviteBigCta, { backgroundColor: colors.primary }]}
+            >
+              <Ionicons name="person-add" size={18} color="#fff" />
+              <Text style={styles.inviteBigCtaText}>Invite a client</Text>
+            </Pressable>
           </View>
         }
         renderItem={({ item }) => (
-          <ClientRow search={item} onPress={() => router.push(`/(realtor)/clients/${item.id}` as any)} />
+          <ClientRow
+            search={item}
+            onPress={() =>
+              router.push(`/(realtor)/clients/${item.id}` as any)
+            }
+          />
         )}
       />
     </SafeAreaView>
@@ -111,4 +136,24 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   phaseChipText: { fontSize: 12, fontWeight: '600' },
+  inviteCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    margin: 12,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  inviteCtaText: { color: '#fff', fontSize: 14, fontWeight: '700' },
+  inviteBigCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 24,
+    paddingVertical: 12,
+    paddingHorizontal: 18,
+    borderRadius: 12,
+  },
+  inviteBigCtaText: { color: '#fff', fontWeight: '700', fontSize: 15 },
 });

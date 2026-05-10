@@ -4,20 +4,19 @@ export const runtime = 'edge';
 export const dynamic = 'force-static';
 
 /**
- * Apple App Site Association (AASA) — required for Universal Links so that
- * https://realtor-portal-ten.vercel.app/welcome and /invite open the iOS app
- * directly when installed (instead of bouncing through Safari).
+ * Apple App Site Association (AASA) for Universal Links.
  *
- * The appID is "<APPLE_TEAM_ID>.<BUNDLE_IDENTIFIER>". The Apple Team ID is
- * available at https://developer.apple.com/account → Membership.
+ * IMPORTANT: We do NOT capture /welcome here. The Supabase invite email lands
+ * on /welcome with a URL fragment containing the access_token (e.g.
+ * #access_token=...). iOS strips fragments before delivering Universal Link
+ * URLs to the app, so capturing /welcome would break the password-set flow
+ * (the app would open with no session → "no account").
  *
- * Set APPLE_TEAM_ID in Vercel env vars. We default to a placeholder that
- * still lets the file resolve (Apple will silently ignore until you set the
- * real value), so deploys never break.
+ * Instead, /welcome stays in Safari, the user sets their password, and the
+ * welcome page deep-links into the app via the realtorportal:// custom scheme.
  *
- * Apple requires this file to be served at:
- *   https://<your-domain>/.well-known/apple-app-site-association
- * with Content-Type application/json (no .json extension).
+ * /invite/* IS captured because that flow uses query params (not fragments)
+ * and is safe to hand off to the app.
  */
 export async function GET() {
   const teamId = process.env.APPLE_TEAM_ID || 'TEAMIDXXXX';
@@ -30,13 +29,10 @@ export async function GET() {
       details: [
         {
           appID,
-          // Routes that should open the app when tapped from a link in
-          // Mail / Messages / Safari. Anything else stays on the web.
-          paths: ['/welcome', '/welcome/*', '/invite', '/invite/*'],
+          paths: ['/invite', '/invite/*'],
         },
       ],
     },
-    // (Optional) webcredentials enables iCloud Keychain shared logins
     webcredentials: {
       apps: [appID],
     },

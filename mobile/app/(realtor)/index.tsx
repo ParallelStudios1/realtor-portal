@@ -86,7 +86,7 @@ export default function RealtorHome() {
           <Action
             icon="person-add-outline"
             label="Invite a client"
-            onPress={() => router.push('/(realtor)/clients')}
+            onPress={() => router.push('/(realtor)/invite' as any)}
             colors={colors}
           />
           <Action
