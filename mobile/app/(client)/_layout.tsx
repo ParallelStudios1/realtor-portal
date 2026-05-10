@@ -58,10 +58,12 @@ export default function ClientLayout() {
           ),
         }}
       />
-      {/* Activity & Documents are still routable but no longer in the tab bar */}
+      {/* Activity, Documents & Profile are still routable but not in the tab bar.
+          Profile is reachable via the home screen's header button. */}
       <Tabs.Screen name="activity" options={{ href: null }} />
       <Tabs.Screen name="documents" options={{ href: null }} />
       <Tabs.Screen name="houses/[id]" options={{ href: null }} />
+      <Tabs.Screen name="profile" options={{ href: null, title: 'Profile' }} />
     </Tabs>
   );
 }

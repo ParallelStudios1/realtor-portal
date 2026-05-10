@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from './supabase';
-import { DealPhase, HouseStatus } from './database.types';
+import { DealPhase, HouseStatus, TourRequestStatus } from './database.types';
 
 export function useUpdatePhase() {
   const queryClient = useQueryClient();
@@ -297,14 +297,19 @@ export function useRequestTour() {
       preferredWhen?: string;
       notes?: string;
     }) => {
-      const { error: insertError } = await supabase.from('tour_requests').insert({
-        house_id: houseId,
-        search_id: searchId,
-        firm_id: firmId,
-        client_id: clientId,
-        preferred_when: preferredWhen ?? null,
-        notes: notes ?? null,
-      });
+      const { data: inserted, error: insertError } = await supabase
+        .from('tour_requests')
+        .insert({
+          house_id: houseId,
+          search_id: searchId,
+          firm_id: firmId,
+          client_id: clientId,
+          preferred_when: preferredWhen ?? null,
+          notes: notes ?? null,
+          status: 'pending',
+        })
+        .select('id')
+        .single();
       if (insertError) throw insertError;
 
       // Also flip the house status so it shows up correctly on both sides.
@@ -313,10 +318,141 @@ export function useRequestTour() {
         .update({ status: 'tour_requested' })
         .eq('id', houseId);
       if (statusError) throw statusError;
+
+      // Fire-and-forget push to the realtor side. The row is already persisted
+      // — we don't want a flaky network to block the client's optimistic UI.
+      try {
+        const { data: sess } = await supabase.auth.getSession();
+        const token = sess.session?.access_token;
+        const apiBase =
+          (process.env.EXPO_PUBLIC_API_URL as string | undefined) ||
+          'https://realtor-portal-ten.vercel.app';
+        fetch(`${apiBase}/api/notifications/send-push`, {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({
+            searchId,
+            kind: 'tour',
+            title: 'New tour request',
+            body: preferredWhen
+              ? `Client wants a tour: ${preferredWhen}`
+              : 'A client requested a tour.',
+          }),
+        }).catch(() => {});
+      } catch {}
+
+      return { tourRequestId: inserted?.id };
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['houses'] });
       queryClient.invalidateQueries({ queryKey: ['tourRequests', variables.searchId] });
+      queryClient.invalidateQueries({ queryKey: ['pendingTours'] });
+    },
+  });
+}
+
+/**
+ * Realtor confirms / declines / cancels a tour request.
+ * On 'confirmed': also write an `important_dates` row tied to the search so
+ * the tour shows up on both home screens (the date itself is a best-guess
+ * parse of preferred_when — falls back to today if we can't parse it).
+ */
+export function useUpdateTourRequest() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      tourRequestId,
+      status,
+    }: {
+      tourRequestId: string;
+      status: TourRequestStatus;
+    }) => {
+      // Pull the row first so we can build the important_dates row off it.
+      const { data: req, error: fetchErr } = await supabase
+        .from('tour_requests')
+        .select('id, firm_id, search_id, client_id, house_id, preferred_when, notes')
+        .eq('id', tourRequestId)
+        .single();
+      if (fetchErr || !req) throw fetchErr ?? new Error('Tour request not found');
+
+      const update: {
+        status: TourRequestStatus;
+        handled_at?: string;
+      } = { status };
+      if (status === 'confirmed' || status === 'declined') {
+        update.handled_at = new Date().toISOString();
+      }
+
+      const { error: updErr } = await supabase
+        .from('tour_requests')
+        .update(update)
+        .eq('id', tourRequestId);
+      if (updErr) throw updErr;
+
+      if (status === 'confirmed') {
+        // Best-effort: try to look up the house address for a nicer label.
+        const { data: house } = await supabase
+          .from('houses')
+          .select('address')
+          .eq('id', req.house_id)
+          .single();
+
+        // Try to parse preferred_when as a date; fall back to today.
+        const tryDate = req.preferred_when
+          ? new Date(req.preferred_when)
+          : new Date();
+        const dateStr = isNaN(tryDate.getTime())
+          ? new Date().toISOString().slice(0, 10)
+          : tryDate.toISOString().slice(0, 10);
+
+        const label = house?.address
+          ? `Tour: ${house.address}`
+          : 'Tour confirmed';
+
+        const { error: dateErr } = await supabase.from('important_dates').insert({
+          firm_id: req.firm_id,
+          search_id: req.search_id,
+          label,
+          date: dateStr,
+          notes: req.preferred_when || req.notes || null,
+        });
+        if (dateErr) throw dateErr;
+
+        // Fire-and-forget push to the client.
+        try {
+          const { data: sess } = await supabase.auth.getSession();
+          const token = sess.session?.access_token;
+          const apiBase =
+            (process.env.EXPO_PUBLIC_API_URL as string | undefined) ||
+            'https://realtor-portal-ten.vercel.app';
+          fetch(`${apiBase}/api/notifications/send-push`, {
+            method: 'POST',
+            headers: {
+              'content-type': 'application/json',
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            body: JSON.stringify({
+              searchId: req.search_id,
+              kind: 'tour',
+              title: 'Tour confirmed',
+              body: house?.address
+                ? `Your tour of ${house.address} is on the calendar.`
+                : 'Your realtor confirmed your tour.',
+            }),
+          }).catch(() => {});
+        } catch {}
+      }
+
+      return { tourRequestId, searchId: req.search_id };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['tourRequests', data?.searchId] });
+      queryClient.invalidateQueries({ queryKey: ['importantDates', data?.searchId] });
+      queryClient.invalidateQueries({ queryKey: ['pendingTours'] });
     },
   });
 }

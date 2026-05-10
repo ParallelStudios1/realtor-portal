@@ -1,4 +1,5 @@
 import { getMe, getSupabaseServerClient } from '@/lib/supabaseSsr';
+import { ClientDocumentsList } from './ClientDocumentsList';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Documents' };
@@ -37,22 +38,7 @@ export default async function ClientDocumentsPage() {
           </p>
         </div>
       ) : (
-        <ul className="mt-6 divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white">
-          {documents.map((d: any) => (
-            <li key={d.id} className="flex items-center justify-between px-4 py-3">
-              <div>
-                <div className="text-sm font-semibold">{d.name}</div>
-                <div className="text-xs text-slate-500">
-                  {new Date(d.created_at).toLocaleDateString()}
-                </div>
-              </div>
-              <span className="text-xs text-slate-400">
-                {/* TODO(v1.1): generate signed Storage URL on demand */}
-                File
-              </span>
-            </li>
-          ))}
-        </ul>
+        <ClientDocumentsList documents={documents as any[]} />
       )}
     </main>
   );

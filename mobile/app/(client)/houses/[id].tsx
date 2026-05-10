@@ -50,6 +50,7 @@ export default function ClientHouseDetailScreen() {
   const logActivity = useLogActivity();
 
   const [tourNotes, setTourNotes] = useState('');
+  const [tourWhen, setTourWhen] = useState('');
   const [requesting, setRequesting] = useState(false);
   const [stars, setStars] = useState(rating?.stars ?? 0);
   const [ratingNotes, setRatingNotes] = useState(rating?.notes ?? '');
@@ -72,6 +73,7 @@ export default function ClientHouseDetailScreen() {
         searchId: house.search_id,
         firmId: userProfile.firm_id,
         clientId: user.id,
+        preferredWhen: tourWhen.trim() || undefined,
         notes: tourNotes.trim() || undefined,
       });
       await logActivity.mutateAsync({
@@ -84,6 +86,7 @@ export default function ClientHouseDetailScreen() {
       await refetch();
       Alert.alert('Tour requested', 'Your realtor will reach out to confirm timing.');
       setTourNotes('');
+      setTourWhen('');
     } catch (e: any) {
       Alert.alert('Could not request tour', e.message ?? String(e));
     } finally {
@@ -186,11 +189,22 @@ export default function ClientHouseDetailScreen() {
             <View style={[styles.actionBlock, { borderColor: colors.border }]}>
               <Text style={[styles.actionTitle, { color: colors.text }]}>Want to see this house?</Text>
               <TextInput
-                value={tourNotes}
-                onChangeText={setTourNotes}
-                placeholder="When works for you? (optional)"
+                value={tourWhen}
+                onChangeText={setTourWhen}
+                placeholder="Preferred when (e.g. Saturday afternoon)"
                 placeholderTextColor={colors.textSecondary}
                 style={[styles.input, { color: colors.text, borderColor: colors.border }]}
+              />
+              <TextInput
+                value={tourNotes}
+                onChangeText={setTourNotes}
+                placeholder="Anything else your realtor should know? (optional)"
+                placeholderTextColor={colors.textSecondary}
+                multiline
+                style={[
+                  styles.input,
+                  { color: colors.text, borderColor: colors.border, minHeight: 70 },
+                ]}
               />
               <Pressable
                 onPress={handleRequestTour}

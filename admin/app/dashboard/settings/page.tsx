@@ -1,40 +1,61 @@
-import { getMe } from '@/lib/supabaseSsr';
+import { getMe, getSupabaseServerClient } from '@/lib/supabaseSsr';
+import { SettingsForm } from './SettingsForm';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Settings · Realtor Portal' };
 
 export default async function SettingsPage() {
   const me = (await getMe())!;
+  const supabase = getSupabaseServerClient();
+
+  const isFirmAdmin = me.role === 'firm_admin' || me.role === 'super_admin';
+
+  let firmRow: {
+    id: string;
+    name: string;
+    tagline: string | null;
+    brand_color: string | null;
+    accent_color: string | null;
+    contact_email: string | null;
+    contact_phone: string | null;
+  } | null = null;
+
+  if (me.firm_id) {
+    const { data } = await supabase
+      .from('firms')
+      .select('id, name, tagline, brand_color, accent_color, contact_email, contact_phone')
+      .eq('id', me.firm_id)
+      .maybeSingle();
+    if (data) firmRow = data;
+  }
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-8">
       <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
+      <p className="mt-1 text-sm text-slate-600">
+        Manage your profile, account security, and firm details.
+      </p>
 
-      <section className="mt-8 rounded-xl border border-slate-200 bg-white p-6">
-        <h2 className="text-lg font-semibold">Account</h2>
-        <dl className="mt-4 space-y-3 text-sm">
-          <div className="flex justify-between border-b border-slate-100 pb-2">
-            <dt className="text-slate-500">Name</dt>
-            <dd className="font-medium">{me.full_name}</dd>
-          </div>
-          <div className="flex justify-between border-b border-slate-100 pb-2">
-            <dt className="text-slate-500">Email</dt>
-            <dd className="font-medium">{me.email}</dd>
-          </div>
-          <div className="flex justify-between border-b border-slate-100 pb-2">
-            <dt className="text-slate-500">Firm</dt>
-            <dd className="font-medium">{me.firm_name}</dd>
-          </div>
-          <div className="flex justify-between border-b border-slate-100 pb-2">
-            <dt className="text-slate-500">Subdomain</dt>
-            <dd className="font-mono text-xs">{me.firm_subdomain}.realtorportal.app</dd>
-          </div>
-          <div className="flex justify-between">
-            <dt className="text-slate-500">Status</dt>
-            <dd className="font-medium capitalize">{me.firm_status}</dd>
-          </div>
-        </dl>
-      </section>
+      <div className="mt-8">
+        <SettingsForm
+          fullName={me.full_name ?? ''}
+          email={me.email ?? ''}
+          isFirmAdmin={isFirmAdmin}
+          firm={
+            firmRow
+              ? {
+                  id: firmRow.id,
+                  name: firmRow.name ?? '',
+                  tagline: firmRow.tagline ?? '',
+                  brand_color: firmRow.brand_color ?? '#0F172A',
+                  accent_color: firmRow.accent_color ?? '#2563EB',
+                  contact_email: firmRow.contact_email ?? '',
+                  contact_phone: firmRow.contact_phone ?? '',
+                }
+              : null
+          }
+        />
+      </div>
 
       <section id="mobile" className="mt-8 rounded-xl border border-slate-200 bg-white p-6">
         <h2 className="text-lg font-semibold">Mobile app</h2>

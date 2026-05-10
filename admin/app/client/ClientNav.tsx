@@ -19,6 +19,7 @@ const ITEMS = [
   { href: '/client/houses', label: 'Houses' },
   { href: '/client/messages', label: 'Messages' },
   { href: '/client/documents', label: 'Documents' },
+  { href: '/client/profile', label: 'Profile' },
 ];
 
 export function ClientNav({

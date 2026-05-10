@@ -19,23 +19,16 @@ import { useAuth } from '@/lib/auth';
 import { useTheme } from '@/lib/theme';
 import { supabase } from '@/lib/supabase';
 
-const HEX_RE = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
-
 /**
- * Realtor settings — profile (full_name), account (email read-only + change
- * password modal), firm branding (firm_admin only), and sign out.
- *
- * Saves go straight to Supabase from the device since RLS on `users` and
- * `firms` already restricts writes to the right rows.
+ * Client profile screen — same scope as realtor settings minus the firm
+ * branding (clients don't own a firm). Editable name, read-only email,
+ * change-password modal, sign out.
  */
-export default function RealtorSettingsScreen() {
+export default function ClientProfileScreen() {
   const { user, userProfile, signOut } = useAuth();
-  const { firm, colors } = useTheme();
+  const { colors } = useTheme();
   const queryClient = useQueryClient();
 
-  const isFirmAdmin = userProfile?.role === 'firm_admin' || userProfile?.role === 'super_admin';
-
-  // Profile state
   const [fullName, setFullName] = useState(userProfile?.full_name ?? '');
   const [savingProfile, setSavingProfile] = useState(false);
 
@@ -43,25 +36,7 @@ export default function RealtorSettingsScreen() {
     setFullName(userProfile?.full_name ?? '');
   }, [userProfile?.full_name]);
 
-  // Firm state
-  const [firmName, setFirmName] = useState(firm?.name ?? '');
-  const [brandColor, setBrandColor] = useState(firm?.brand_color ?? firm?.primary_color ?? '#0F172A');
-  const [accentColor, setAccentColor] = useState(firm?.accent_color ?? firm?.secondary_color ?? '#2563EB');
-  const [tagline, setTagline] = useState(firm?.tagline ?? '');
-  const [contactPhone, setContactPhone] = useState(firm?.contact_phone ?? '');
-  const [contactEmail, setContactEmail] = useState(firm?.contact_email ?? '');
-  const [savingFirm, setSavingFirm] = useState(false);
-
-  useEffect(() => {
-    setFirmName(firm?.name ?? '');
-    setBrandColor(firm?.brand_color ?? firm?.primary_color ?? '#0F172A');
-    setAccentColor(firm?.accent_color ?? firm?.secondary_color ?? '#2563EB');
-    setTagline(firm?.tagline ?? '');
-    setContactPhone(firm?.contact_phone ?? '');
-    setContactEmail(firm?.contact_email ?? '');
-  }, [firm?.id]);
-
-  // Password modal state
+  // Password modal
   const [pwOpen, setPwOpen] = useState(false);
   const [currentPw, setCurrentPw] = useState('');
   const [newPw, setNewPw] = useState('');
@@ -73,22 +48,11 @@ export default function RealtorSettingsScreen() {
     [fullName, userProfile?.full_name]
   );
 
-  const firmDirty = useMemo(
-    () =>
-      (firmName ?? '').trim() !== (firm?.name ?? '').trim() ||
-      (brandColor ?? '') !== (firm?.brand_color ?? firm?.primary_color ?? '#0F172A') ||
-      (accentColor ?? '') !== (firm?.accent_color ?? firm?.secondary_color ?? '#2563EB') ||
-      (tagline ?? '') !== (firm?.tagline ?? '') ||
-      (contactPhone ?? '') !== (firm?.contact_phone ?? '') ||
-      (contactEmail ?? '') !== (firm?.contact_email ?? ''),
-    [firmName, brandColor, accentColor, tagline, contactPhone, contactEmail, firm]
-  );
-
   const saveProfile = async () => {
     if (!user?.id) return;
     const trimmed = fullName.trim();
     if (!trimmed) {
-      Alert.alert('Name required', 'Give yourself a name your clients will see.');
+      Alert.alert('Name required', 'Your realtor needs a name to call you.');
       return;
     }
     setSavingProfile(true);
@@ -103,42 +67,6 @@ export default function RealtorSettingsScreen() {
       Alert.alert('Could not save', e?.message ?? String(e));
     } finally {
       setSavingProfile(false);
-    }
-  };
-
-  const saveFirm = async () => {
-    if (!firm?.id) return;
-    if (!firmName.trim()) {
-      Alert.alert('Firm name required', 'Your clients see this name in the app.');
-      return;
-    }
-    if (brandColor && !HEX_RE.test(brandColor.trim())) {
-      Alert.alert('Brand color', 'Use a hex value like #1F6FEB.');
-      return;
-    }
-    if (accentColor && !HEX_RE.test(accentColor.trim())) {
-      Alert.alert('Accent color', 'Use a hex value like #1F6FEB.');
-      return;
-    }
-    setSavingFirm(true);
-    try {
-      const { error } = await supabase
-        .from('firms')
-        .update({
-          name: firmName.trim(),
-          brand_color: brandColor.trim(),
-          accent_color: accentColor.trim(),
-          tagline: tagline.trim() || null,
-          contact_phone: contactPhone.trim() || null,
-          contact_email: contactEmail.trim() || null,
-        })
-        .eq('id', firm.id);
-      if (error) throw error;
-      await queryClient.invalidateQueries({ queryKey: ['firm', firm.id] });
-    } catch (e: any) {
-      Alert.alert('Could not save', e?.message ?? String(e));
-    } finally {
-      setSavingFirm(false);
     }
   };
 
@@ -161,10 +89,6 @@ export default function RealtorSettingsScreen() {
     }
     setPwSaving(true);
     try {
-      // Re-verify current password before rotating. Supabase JS doesn't expose
-      // a "verify current password" call, so we sign in again with the user's
-      // email + current password — if it succeeds the session refreshes, then
-      // we update.
       const { error: reauthError } = await supabase.auth.signInWithPassword({
         email: user.email,
         password: currentPw,
@@ -195,7 +119,6 @@ export default function RealtorSettingsScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
-        {/* Profile section */}
         <SectionHeader icon="person-circle-outline" label="Profile" colors={colors} />
         <View style={[styles.card, { borderColor: colors.border, backgroundColor: colors.surface }]}>
           <FieldLabel colors={colors}>Full name</FieldLabel>
@@ -225,7 +148,6 @@ export default function RealtorSettingsScreen() {
           </Pressable>
         </View>
 
-        {/* Account section */}
         <SectionHeader icon="lock-closed-outline" label="Account" colors={colors} />
         <View style={[styles.card, { borderColor: colors.border, backgroundColor: colors.surface }]}>
           <FieldLabel colors={colors}>Email</FieldLabel>
@@ -233,7 +155,7 @@ export default function RealtorSettingsScreen() {
             <Text style={[styles.readonlyText, { color: colors.text }]}>{user?.email ?? '—'}</Text>
           </View>
           <Text style={[styles.helper, { color: colors.textSecondary }]}>
-            To change your email, contact support.
+            To change your email, contact your realtor.
           </Text>
 
           <Pressable
@@ -245,106 +167,6 @@ export default function RealtorSettingsScreen() {
           </Pressable>
         </View>
 
-        {/* Firm section — only firm admins can edit */}
-        {isFirmAdmin && firm && (
-          <>
-            <SectionHeader icon="business-outline" label="Firm" colors={colors} />
-            <View style={[styles.card, { borderColor: colors.border, backgroundColor: colors.surface }]}>
-              <FieldLabel colors={colors}>Firm name</FieldLabel>
-              <TextInput
-                value={firmName}
-                onChangeText={setFirmName}
-                placeholder="Your firm"
-                placeholderTextColor={colors.textSecondary}
-                style={[styles.input, { color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]}
-              />
-
-              <FieldLabel colors={colors}>Tagline (optional)</FieldLabel>
-              <TextInput
-                value={tagline}
-                onChangeText={setTagline}
-                placeholder="e.g. Boston's premier waterfront brokerage"
-                placeholderTextColor={colors.textSecondary}
-                style={[styles.input, { color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]}
-              />
-
-              <View style={styles.row}>
-                <View style={{ flex: 1 }}>
-                  <FieldLabel colors={colors}>Brand color</FieldLabel>
-                  <View style={styles.colorRow}>
-                    <View style={[styles.swatch, { backgroundColor: HEX_RE.test(brandColor) ? brandColor : colors.border, borderColor: colors.border }]} />
-                    <TextInput
-                      value={brandColor}
-                      onChangeText={setBrandColor}
-                      autoCapitalize="none"
-                      autoCorrect={false}
-                      placeholder="#0F172A"
-                      placeholderTextColor={colors.textSecondary}
-                      style={[styles.input, { flex: 1, color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]}
-                    />
-                  </View>
-                </View>
-                <View style={{ width: 12 }} />
-                <View style={{ flex: 1 }}>
-                  <FieldLabel colors={colors}>Accent color</FieldLabel>
-                  <View style={styles.colorRow}>
-                    <View style={[styles.swatch, { backgroundColor: HEX_RE.test(accentColor) ? accentColor : colors.border, borderColor: colors.border }]} />
-                    <TextInput
-                      value={accentColor}
-                      onChangeText={setAccentColor}
-                      autoCapitalize="none"
-                      autoCorrect={false}
-                      placeholder="#2563EB"
-                      placeholderTextColor={colors.textSecondary}
-                      style={[styles.input, { flex: 1, color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]}
-                    />
-                  </View>
-                </View>
-              </View>
-
-              <FieldLabel colors={colors}>Contact phone</FieldLabel>
-              <TextInput
-                value={contactPhone}
-                onChangeText={setContactPhone}
-                placeholder="(555) 123-4567"
-                placeholderTextColor={colors.textSecondary}
-                keyboardType="phone-pad"
-                style={[styles.input, { color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]}
-              />
-
-              <FieldLabel colors={colors}>Contact email</FieldLabel>
-              <TextInput
-                value={contactEmail}
-                onChangeText={setContactEmail}
-                placeholder="hello@yourfirm.com"
-                placeholderTextColor={colors.textSecondary}
-                autoCapitalize="none"
-                keyboardType="email-address"
-                style={[styles.input, { color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]}
-              />
-
-              <Pressable
-                onPress={saveFirm}
-                disabled={!firmDirty || savingFirm}
-                style={[
-                  styles.primaryBtn,
-                  {
-                    backgroundColor: !firmDirty ? colors.border : colors.primary,
-                    opacity: savingFirm ? 0.7 : 1,
-                  },
-                ]}
-              >
-                {savingFirm ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <Text style={styles.primaryBtnText}>Save firm</Text>
-                )}
-              </Pressable>
-            </View>
-          </>
-        )}
-
-        {/* Sign out */}
         <Pressable
           onPress={handleSignOut}
           style={[styles.signOutBtn, { borderColor: colors.error }]}
@@ -352,11 +174,8 @@ export default function RealtorSettingsScreen() {
           <Ionicons name="log-out-outline" size={16} color={colors.error} />
           <Text style={[styles.signOutText, { color: colors.error }]}>Sign Out</Text>
         </Pressable>
-
-        <Text style={[styles.version, { color: colors.textSecondary }]}>Realtor Portal v0.1</Text>
       </ScrollView>
 
-      {/* Change password modal */}
       <Modal visible={pwOpen} animationType="slide" transparent onRequestClose={closePwModal}>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -478,9 +297,6 @@ const styles = StyleSheet.create({
   },
   readonlyText: { fontSize: 15 },
   helper: { fontSize: 11, marginTop: 6 },
-  row: { flexDirection: 'row' },
-  colorRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  swatch: { width: 28, height: 28, borderRadius: 6, borderWidth: 1 },
   primaryBtn: {
     paddingVertical: 12,
     borderRadius: 8,
@@ -510,7 +326,6 @@ const styles = StyleSheet.create({
     marginTop: 28,
   },
   signOutText: { fontSize: 14, fontWeight: '600' },
-  version: { fontSize: 11, marginTop: 24, textAlign: 'center' },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',

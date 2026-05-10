@@ -7,7 +7,10 @@ import {
   ScrollView,
   ActivityIndicator,
   RefreshControl,
+  Pressable,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { useAuth } from '@/lib/auth';
 import { useTheme } from '@/lib/theme';
 import { useClientSearches, useImportantDates } from '@/lib/queries';
@@ -52,14 +55,29 @@ export default function ClientHomeScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          {logoUrl && (
-            <Text style={[styles.firmName, { color: colors.text }]}>
-              {firm?.name}
-            </Text>
-          )}
-          <Text style={[styles.greeting, { color: colors.text }]}>
-            Welcome, {userProfile?.full_name?.split(' ')[0]}
-          </Text>
+          <View style={styles.headerRow}>
+            <View style={{ flex: 1 }}>
+              {logoUrl && (
+                <Text style={[styles.firmName, { color: colors.text }]}>
+                  {firm?.name}
+                </Text>
+              )}
+              <Text style={[styles.greeting, { color: colors.text }]}>
+                Welcome, {userProfile?.full_name?.split(' ')[0]}
+              </Text>
+            </View>
+            <Pressable
+              onPress={() => router.push('/(client)/profile' as any)}
+              hitSlop={10}
+              accessibilityLabel="Open profile"
+              style={({ pressed }) => [
+                styles.profileBtn,
+                { borderColor: colors.border, opacity: pressed ? 0.6 : 1 },
+              ]}
+            >
+              <Ionicons name="person-circle-outline" size={26} color={colors.text} />
+            </Pressable>
+          </View>
         </View>
 
         {searchesLoading && !activeSearch ? (
@@ -113,6 +131,20 @@ const styles = StyleSheet.create({
     paddingVertical: 24,
     borderBottomWidth: 1,
     borderBottomColor: '#F0F0F0',
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  profileBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   firmName: {
     fontSize: 14,

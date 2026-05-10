@@ -1,6 +1,7 @@
 export type UserRole = 'super_admin' | 'realtor' | 'client';
 export type DealPhase = 'searching' | 'offer_made' | 'under_contract' | 'closing' | 'closed';
 export type HouseStatus = 'interested' | 'tour_requested' | 'toured' | 'offered' | 'passed';
+export type TourRequestStatus = 'pending' | 'confirmed' | 'declined' | 'cancelled';
 
 export type Firm = {
   id: string;
@@ -95,8 +96,10 @@ export type TourRequest = {
   client_id: string;
   preferred_when: string | null;
   notes: string | null;
+  status: TourRequestStatus;
   handled_at: string | null;
   created_at: string;
+  updated_at: string;
 };
 
 export type Activity = {

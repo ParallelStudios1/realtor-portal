@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,8 @@ import {
   SafeAreaView,
   ScrollView,
   Pressable,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -13,6 +15,7 @@ import { useAuth } from '@/lib/auth';
 import { useTheme } from '@/lib/theme';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import { useUpdateTourRequest } from '@/lib/mutations';
 
 /**
  * Realtor home — first screen after sign-in. Shows a snapshot of the day:
@@ -22,6 +25,9 @@ import { supabase } from '@/lib/supabase';
 export default function RealtorHome() {
   const { userProfile } = useAuth();
   const { colors } = useTheme();
+  const updateTour = useUpdateTourRequest();
+  const [expandedTour, setExpandedTour] = useState<string | null>(null);
+  const [actingOn, setActingOn] = useState<string | null>(null);
 
   const { data: stats } = useQuery({
     queryKey: ['realtor-home-stats', userProfile?.firm_id],
@@ -53,6 +59,49 @@ export default function RealtorHome() {
     },
     enabled: !!userProfile?.firm_id,
   });
+
+  const { data: pendingTours, refetch: refetchTours } = useQuery({
+    queryKey: ['pendingTours', userProfile?.firm_id],
+    queryFn: async () => {
+      if (!userProfile?.firm_id) return [];
+      const { data, error } = await supabase
+        .from('tour_requests')
+        .select(
+          `id, preferred_when, notes, created_at, search_id, house_id, client_id,
+           house:houses ( id, address ),
+           client:users!tour_requests_client_id_fkey ( id, full_name, email )`
+        )
+        .eq('firm_id', userProfile.firm_id)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false })
+        .limit(10);
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    enabled: !!userProfile?.firm_id,
+  });
+
+  const handleAct = async (
+    tourRequestId: string,
+    status: 'confirmed' | 'declined'
+  ) => {
+    setActingOn(tourRequestId);
+    try {
+      await updateTour.mutateAsync({ tourRequestId, status });
+      await refetchTours();
+      Alert.alert(
+        status === 'confirmed' ? 'Tour confirmed' : 'Tour declined',
+        status === 'confirmed'
+          ? 'The client was notified and the tour is on their calendar.'
+          : 'The client was marked as declined.'
+      );
+    } catch (e: any) {
+      Alert.alert('Could not update', e?.message ?? String(e));
+    } finally {
+      setActingOn(null);
+      setExpandedTour(null);
+    }
+  };
 
   return (
     <SafeAreaView style={[s.container, { backgroundColor: colors.background }]}>
@@ -96,6 +145,104 @@ export default function RealtorHome() {
             colors={colors}
           />
         </View>
+
+        {pendingTours && pendingTours.length > 0 && (
+          <>
+            <Text style={[s.sectionTitle, { color: colors.text }]}>
+              Pending tour requests
+            </Text>
+            {pendingTours.map((t) => {
+              const expanded = expandedTour === t.id;
+              const acting = actingOn === t.id;
+              return (
+                <Pressable
+                  key={t.id}
+                  onPress={() => setExpandedTour(expanded ? null : t.id)}
+                  style={[
+                    s.tourCard,
+                    {
+                      backgroundColor: colors.surface,
+                      borderColor: colors.border,
+                    },
+                  ]}
+                >
+                  <View style={s.tourHeader}>
+                    <Ionicons
+                      name="home-outline"
+                      size={18}
+                      color={colors.primary}
+                    />
+                    <Text
+                      style={[s.tourAddress, { color: colors.text }]}
+                      numberOfLines={1}
+                    >
+                      {t.house?.address || 'House'}
+                    </Text>
+                  </View>
+                  <Text
+                    style={[s.tourMeta, { color: colors.textSecondary }]}
+                    numberOfLines={1}
+                  >
+                    {(t.client?.full_name || t.client?.email || 'Client') +
+                      (t.preferred_when ? ` · ${t.preferred_when}` : '')}
+                  </Text>
+                  {t.notes ? (
+                    <Text
+                      style={[s.tourNotes, { color: colors.textSecondary }]}
+                      numberOfLines={expanded ? undefined : 1}
+                    >
+                      {t.notes}
+                    </Text>
+                  ) : null}
+
+                  {expanded && (
+                    <View style={s.tourActions}>
+                      <Pressable
+                        disabled={acting}
+                        onPress={(e) => {
+                          e.stopPropagation?.();
+                          handleAct(t.id, 'declined');
+                        }}
+                        style={[
+                          s.tourBtn,
+                          {
+                            borderColor: colors.border,
+                            backgroundColor: colors.background,
+                          },
+                        ]}
+                      >
+                        <Text
+                          style={[s.tourBtnText, { color: colors.text }]}
+                        >
+                          Decline
+                        </Text>
+                      </Pressable>
+                      <Pressable
+                        disabled={acting}
+                        onPress={(e) => {
+                          e.stopPropagation?.();
+                          handleAct(t.id, 'confirmed');
+                        }}
+                        style={[
+                          s.tourBtn,
+                          { backgroundColor: colors.primary, borderColor: colors.primary },
+                        ]}
+                      >
+                        {acting ? (
+                          <ActivityIndicator color="#fff" />
+                        ) : (
+                          <Text style={[s.tourBtnText, { color: '#fff' }]}>
+                            Confirm
+                          </Text>
+                        )}
+                      </Pressable>
+                    </View>
+                  )}
+                </Pressable>
+              );
+            })}
+          </>
+        )}
 
         {stats?.recentMessages && stats.recentMessages.length > 0 && (
           <>
@@ -205,4 +352,31 @@ const s = StyleSheet.create({
   },
   recentBody: { fontSize: 14 },
   recentTime: { fontSize: 11, marginTop: 4 },
+  tourCard: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 10,
+  },
+  tourHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  tourAddress: { fontSize: 14, fontWeight: '700', flex: 1 },
+  tourMeta: { fontSize: 12, marginTop: 4 },
+  tourNotes: { fontSize: 12, marginTop: 6, fontStyle: 'italic' },
+  tourActions: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 12,
+  },
+  tourBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+  },
+  tourBtnText: { fontSize: 13, fontWeight: '700' },
 });
