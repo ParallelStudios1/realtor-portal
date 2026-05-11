@@ -58,24 +58,31 @@ export async function registerPushToken(userId: string) {
 }
 
 export function setupNotificationHandlers() {
-  // Handle notifications when app is in foreground
-  Notifications.setNotificationHandler({
-    handleNotification: async (notification) => {
-      return {
-        shouldShowAlert: true,
-        shouldPlaySound: true,
-        shouldSetBadge: true,
-      };
-    },
-  });
+  try {
+    // Handle notifications when app is in foreground
+    Notifications.setNotificationHandler({
+      handleNotification: async (notification) => {
+        return {
+          shouldShowAlert: true,
+          shouldPlaySound: true,
+          shouldSetBadge: true,
+        };
+      },
+    });
 
-  // Handle notification when app is opened from notification
-  const subscription = Notifications.addNotificationResponseReceivedListener(
-    (response) => {
-      // TODO(v1.1): Handle notification tap — navigate to relevant screen
-      console.log('Notification response:', response);
-    }
-  );
+    // Handle notification when app is opened from notification
+    const subscription = Notifications.addNotificationResponseReceivedListener(
+      (response) => {
+        // TODO(v1.1): Handle notification tap — navigate to relevant screen
+        console.log('Notification response:', response);
+      }
+    );
 
-  return () => subscription.remove();
+    return () => subscription.remove();
+  } catch (err) {
+    // Native module not available (Expo Go, web, misconfigured build) —
+    // don't crash the whole app over notifications.
+    console.warn('Notification handler setup failed:', err);
+    return () => {};
+  }
 }

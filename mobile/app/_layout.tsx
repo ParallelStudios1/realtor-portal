@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { View, Text, ScrollView } from 'react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { ThemeProvider } from '@/lib/theme';
@@ -6,6 +7,7 @@ import { ToastProvider } from '@/components/Toast';
 import { Stack } from 'expo-router';
 import { setupNotificationHandlers, registerPushToken } from '@/lib/notifications';
 import { initSentry, setUser as setSentryUser, clearUser as clearSentryUser } from '@/lib/sentry';
+import { configError } from '@/lib/supabase';
 import * as SplashScreen from 'expo-splash-screen';
 
 initSentry();
@@ -141,7 +143,54 @@ function OrphanAccountScreen({
   );
 }
 
+function ConfigErrorScreen({ error }: { error: string }) {
+  useEffect(() => {
+    SplashScreen.hideAsync().catch(() => {});
+  }, []);
+  return (
+    <ScrollView
+      contentContainerStyle={{
+        flexGrow: 1,
+        backgroundColor: '#0F172A',
+        padding: 24,
+        justifyContent: 'center',
+      }}
+    >
+      <Text style={{ color: '#FCA5A5', fontSize: 14, fontWeight: '700', letterSpacing: 1 }}>
+        BUILD CONFIGURATION ERROR
+      </Text>
+      <Text style={{ color: 'white', fontSize: 24, fontWeight: '700', marginTop: 8 }}>
+        The app can't talk to its backend.
+      </Text>
+      <Text
+        style={{
+          color: 'rgba(255,255,255,0.8)',
+          fontSize: 15,
+          marginTop: 16,
+          lineHeight: 22,
+        }}
+      >
+        {error}
+      </Text>
+      <Text
+        style={{
+          color: 'rgba(255,255,255,0.6)',
+          fontSize: 13,
+          marginTop: 24,
+          lineHeight: 20,
+        }}
+      >
+        Take a screenshot of this screen and send it to the dev team. The next
+        build will fix this.
+      </Text>
+    </ScrollView>
+  );
+}
+
 export default function RootLayout() {
+  if (configError) {
+    return <ConfigErrorScreen error={configError} />;
+  }
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
