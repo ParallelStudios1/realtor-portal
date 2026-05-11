@@ -3,8 +3,6 @@ import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
 import { buildCalendarFeed, type IcsEvent } from '@/lib/ics';
 
 export const dynamic = 'force-dynamic';
-// 30 second edge cache — clients refresh every ~10 min anyway.
-export const revalidate = 30;
 
 /**
  * Public read-only calendar feed for a single client_searches deal.
