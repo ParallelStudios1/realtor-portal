@@ -50,7 +50,10 @@ export default function LoginScreen() {
 
     try {
       await signIn(email, password);
-      router.replace('/');
+      // No explicit navigation — the AuthProvider's SIGNED_IN listener
+      // updates state, then the root layout swaps the screen group from
+      // (auth) to (realtor) or (client) automatically. Pushing '/' here
+      // was racing the layout switch and bouncing back to login.
     } catch (err: any) {
       toast.show(humanError(err), { variant: 'error' });
     }
