@@ -72,6 +72,29 @@ export default async function HouseDetailPage({
     .eq('client_id', me.user_id)
     .maybeSingle();
 
+  // Look for a recently-confirmed tour on this house so we can show the
+  // "How was the tour?" banner — fires once the tour's preferred_when is
+  // in the past and the client hasn't rated yet.
+  const { data: recentTour } = await supabase
+    .from('tour_requests')
+    .select('id, status, preferred_when, handled_at')
+    .eq('house_id', params.id)
+    .eq('client_id', me.user_id)
+    .eq('status', 'confirmed')
+    .order('handled_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const showPostTourPrompt = (() => {
+    if (!recentTour) return false;
+    if (rating) return false; // already rated
+    const when = recentTour.preferred_when
+      ? new Date(recentTour.preferred_when)
+      : null;
+    if (!when) return true; // confirmed but no datetime — prompt anyway
+    return when.getTime() < Date.now();
+  })();
+
   return (
     <main className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-8">
       <Link
@@ -132,12 +155,23 @@ export default async function HouseDetailPage({
       </div>
 
       {/* Rating */}
-      <section className="mt-6 rounded-xl border border-slate-200 bg-white p-5">
+      <section
+        className={
+          'mt-6 rounded-xl border bg-white p-5 ' +
+          (showPostTourPrompt
+            ? 'border-amber-300 ring-2 ring-amber-100'
+            : 'border-slate-200')
+        }
+      >
         <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-          What do you think?
+          {showPostTourPrompt
+            ? 'How was the tour?'
+            : 'What do you think?'}
         </div>
         <p className="mt-1 text-sm text-slate-600">
-          Your agent uses your feedback to filter what they show you next.
+          {showPostTourPrompt
+            ? 'You just toured this place. Rate it 1–5 and add a note — your agent reads this to find better matches.'
+            : 'Your agent uses your feedback to filter what they show you next.'}
         </p>
         <HouseRatingClient
           houseId={house.id}

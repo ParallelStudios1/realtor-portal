@@ -16,7 +16,7 @@ type Thread = {
     sender_id: string;
     created_at: string;
   } | null;
-  status: string;
+  phase: string;
 };
 
 type Message = {

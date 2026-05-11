@@ -210,14 +210,26 @@ export function WelcomeClient({ firm, hasSession, email, fullName }: Props) {
                   Open the app →
                 </a>
                 <a
-                  href="https://apps.apple.com/"
-                  className="block rounded-md border border-slate-300 bg-white px-6 py-3 text-center text-sm font-semibold text-slate-700 hover:border-slate-400"
+                  href="/client"
+                  className="block rounded-md border-2 px-6 py-3 text-center text-base font-semibold hover:opacity-90"
+                  style={{ borderColor: accentColor, color: accentColor }}
                 >
-                  Don't have it? Get on the App Store
+                  Or continue in your browser →
+                </a>
+                <div className="my-2 flex items-center gap-3 text-xs text-slate-400">
+                  <div className="h-px flex-1 bg-slate-200" />
+                  <span>Don't have the app yet?</span>
+                  <div className="h-px flex-1 bg-slate-200" />
+                </div>
+                <a
+                  href="https://apps.apple.com/"
+                  className="block rounded-md border border-slate-300 bg-white px-6 py-2.5 text-center text-sm font-semibold text-slate-700 hover:border-slate-400"
+                >
+                  Get on the App Store
                 </a>
                 <a
                   href="https://play.google.com/"
-                  className="block rounded-md border border-slate-300 bg-white px-6 py-3 text-center text-sm font-semibold text-slate-700 hover:border-slate-400"
+                  className="block rounded-md border border-slate-300 bg-white px-6 py-2.5 text-center text-sm font-semibold text-slate-700 hover:border-slate-400"
                 >
                   Get on Google Play
                 </a>
@@ -225,7 +237,7 @@ export function WelcomeClient({ firm, hasSession, email, fullName }: Props) {
 
               <p className="mt-6 text-center text-xs text-slate-500">
                 Already have the app? It should open automatically when you tap
-                the button above.
+                "Open the app".
               </p>
             </>
           )}

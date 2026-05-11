@@ -21,7 +21,7 @@ export default async function ClientHomePage() {
   // Most recent search for this client
   const { data: searches } = await supabase
     .from('client_searches')
-    .select('id, status, phase, created_at, realtor_id')
+    .select('id, phase, created_at, realtor_id')
     .eq('client_id', me.user_id)
     .order('created_at', { ascending: false })
     .limit(5);

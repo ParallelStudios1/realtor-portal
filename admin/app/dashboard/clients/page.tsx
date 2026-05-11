@@ -54,11 +54,24 @@ export default async function ClientsListPage() {
             </thead>
             <tbody>
               {clients.map((c) => (
-                <tr key={c.id} className="border-b border-slate-100 last:border-0">
-                  <td className="px-4 py-3 font-medium">{c.full_name || '—'}</td>
-                  <td className="px-4 py-3 text-slate-600">{c.email}</td>
+                <tr
+                  key={c.id}
+                  className="cursor-pointer border-b border-slate-100 transition hover:bg-slate-50 last:border-0"
+                >
+                  <td className="px-4 py-3 font-medium">
+                    <Link href={`/dashboard/clients/${c.id}`} className="block">
+                      {c.full_name || '—'}
+                    </Link>
+                  </td>
+                  <td className="px-4 py-3 text-slate-600">
+                    <Link href={`/dashboard/clients/${c.id}`} className="block">
+                      {c.email}
+                    </Link>
+                  </td>
                   <td className="px-4 py-3 text-xs text-slate-500">
-                    {new Date(c.created_at).toLocaleDateString()}
+                    <Link href={`/dashboard/clients/${c.id}`} className="block">
+                      {new Date(c.created_at).toLocaleDateString()}
+                    </Link>
                   </td>
                 </tr>
               ))}

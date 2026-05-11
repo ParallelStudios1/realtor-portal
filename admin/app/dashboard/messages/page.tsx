@@ -19,7 +19,7 @@ export default async function MessagesPage() {
   const { data: searches } = await supabase
     .from('client_searches')
     .select(
-      `id, status, created_at,
+      `id, phase, created_at,
        client:users!client_searches_client_id_fkey ( id, full_name, email )`
     )
     .eq('firm_id', me.firm_id!)
@@ -48,7 +48,7 @@ export default async function MessagesPage() {
     clientName: s.client?.full_name || s.client?.email || 'Unknown client',
     clientEmail: s.client?.email || null,
     latest: latestBySearch.get(s.id) || null,
-    status: s.status,
+    phase: s.phase,
   }));
 
   return (
