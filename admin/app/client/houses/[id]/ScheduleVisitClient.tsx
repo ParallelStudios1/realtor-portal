@@ -78,7 +78,7 @@ export function ScheduleVisitClient({
                 notes: notes.trim() || undefined,
               });
               if (!r.ok)
-                return toast.show(r.error, { variant: 'error' });
+                return toast.show(r.error || 'Failed', { variant: 'error' });
               toast.show('Tour requested — your agent will confirm.', {
                 variant: 'success',
               });

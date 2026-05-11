@@ -90,7 +90,7 @@ export function ClientDetailActions({
           onClose={close}
           onSubmit={async (phase) => {
             const r = await updatePhaseAction(clientId, phase as any);
-            if (!r.ok) return toast.show(r.error, { variant: 'error' });
+            if (!r.ok) return toast.show(r.error || 'Failed', { variant: 'error' });
             toast.show('Phase updated.', { variant: 'success' });
             close();
           }}
@@ -102,7 +102,7 @@ export function ClientDetailActions({
           onClose={close}
           onSubmit={async (payload) => {
             const r = await addHouseAction(clientId, payload);
-            if (!r.ok) return toast.show(r.error, { variant: 'error' });
+            if (!r.ok) return toast.show(r.error || 'Failed', { variant: 'error' });
             toast.show('House added.', { variant: 'success' });
             close();
           }}
@@ -114,7 +114,7 @@ export function ClientDetailActions({
           onClose={close}
           onSubmit={async (payload) => {
             const r = await addImportantDateAction(clientId, payload);
-            if (!r.ok) return toast.show(r.error, { variant: 'error' });
+            if (!r.ok) return toast.show(r.error || 'Failed', { variant: 'error' });
             toast.show('Date saved.', { variant: 'success' });
             close();
           }}
@@ -126,7 +126,7 @@ export function ClientDetailActions({
           onClose={close}
           onSubmit={async (url) => {
             const r = await linkDocusignAction(clientId, url);
-            if (!r.ok) return toast.show(r.error, { variant: 'error' });
+            if (!r.ok) return toast.show(r.error || 'Failed', { variant: 'error' });
             toast.show('DocuSign link saved.', { variant: 'success' });
             close();
           }}
@@ -138,7 +138,7 @@ export function ClientDetailActions({
           onClose={close}
           onSubmit={async (payload) => {
             const r = await setAttorneyAction(clientId, payload);
-            if (!r.ok) return toast.show(r.error, { variant: 'error' });
+            if (!r.ok) return toast.show(r.error || 'Failed', { variant: 'error' });
             toast.show('Attorney saved.', { variant: 'success' });
             close();
           }}
@@ -153,7 +153,7 @@ export function ClientDetailActions({
           onClose={close}
           onSubmit={async (body) => {
             const r = await quickMessageAction(clientId, body);
-            if (!r.ok) return toast.show(r.error, { variant: 'error' });
+            if (!r.ok) return toast.show(r.error || 'Failed', { variant: 'error' });
             toast.show('Message sent.', { variant: 'success' });
             close();
           }}
@@ -169,7 +169,7 @@ export function ClientDetailActions({
           onClose={close}
           onSubmit={async (body) => {
             const r = await sendAlertAction(clientId, body);
-            if (!r.ok) return toast.show(r.error, { variant: 'error' });
+            if (!r.ok) return toast.show(r.error || 'Failed', { variant: 'error' });
             toast.show('Alert delivered.', { variant: 'success' });
             close();
           }}
