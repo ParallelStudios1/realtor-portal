@@ -147,3 +147,48 @@ export function buildTourIcsAttachment(event: IcsEvent): {
     contentType: 'application/octet-stream',
   };
 }
+
+/**
+ * Build a multi-event VCALENDAR feed (suitable for webcal:// subscription).
+ *
+ * Used for the per-deal calendar feed served at /api/calendar/[searchId].ics
+ * — it contains every important_date and confirmed tour for the deal so the
+ * client can subscribe in Apple Calendar / Google Calendar and have a live
+ * read-only view of every milestone.
+ */
+export function buildCalendarFeed(
+  calendarName: string,
+  events: IcsEvent[]
+): string {
+  const lines: string[] = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Realtor Portal//Deal feed//EN',
+    'CALSCALE:GREGORIAN',
+    `X-WR-CALNAME:${escapeText(calendarName)}`,
+    'METHOD:PUBLISH',
+  ];
+
+  for (const ev of events) {
+    const start = resolveTourStart(ev.start);
+    const durationMin = Math.max(1, ev.durationMinutes ?? 60);
+    const end = new Date(start.getTime() + durationMin * 60_000);
+
+    lines.push('BEGIN:VEVENT');
+    lines.push(`UID:${ev.uid}`);
+    lines.push(`DTSTAMP:${toIcsUtc(new Date())}`);
+    lines.push(`DTSTART:${toIcsUtc(start)}`);
+    lines.push(`DTEND:${toIcsUtc(end)}`);
+    lines.push(`SUMMARY:${escapeText(ev.summary)}`);
+    if (ev.description) {
+      lines.push(`DESCRIPTION:${escapeText(ev.description)}`);
+    }
+    if (ev.location) {
+      lines.push(`LOCATION:${escapeText(ev.location)}`);
+    }
+    lines.push('END:VEVENT');
+  }
+
+  lines.push('END:VCALENDAR');
+  return lines.map(foldLine).join('\r\n');
+}

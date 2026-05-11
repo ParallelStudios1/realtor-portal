@@ -53,6 +53,17 @@ async function activity(
   });
 }
 
+const PHASE_CELEBRATIONS: Record<string, string> = {
+  offer_made:
+    '🎯 Offer is in! Your agent has submitted your offer. Fingers crossed.',
+  under_contract:
+    '🎉 Congrats — you are UNDER CONTRACT! Big step. Your agent will line up inspection and appraisal next.',
+  closing:
+    '🏁 You are in the closing phase. Wire instructions and final paperwork are coming.',
+  closed:
+    '🏡 CONGRATS! The house is officially yours. Welcome home.',
+};
+
 export async function updatePhaseAction(
   clientId: string,
   phase: 'searching' | 'offer_made' | 'under_contract' | 'closing' | 'closed'
@@ -60,12 +71,36 @@ export async function updatePhaseAction(
   const a = await authorize(clientId);
   if ('error' in a) return { ok: false as const, error: a.error };
   const service = getSupabaseServiceRoleClient();
+  const previousPhase = a.search.phase;
   const { error } = await service
     .from('client_searches')
     .update({ phase })
     .eq('id', a.search.id);
   if (error) return { ok: false as const, error: error.message };
   await activity(a.search.id, a.search.firm_id, a.me.user_id, 'phase_change', phase);
+
+  // Auto-celebrate transitions to milestone phases.
+  if (phase !== previousPhase && PHASE_CELEBRATIONS[phase]) {
+    await service.from('messages').insert({
+      firm_id: a.search.firm_id,
+      search_id: a.search.id,
+      sender_id: a.me.user_id,
+      body: PHASE_CELEBRATIONS[phase],
+    });
+    // Push to the client side (best effort).
+    try {
+      const base = process.env.SITE_URL || 'https://realtor-portal-ten.vercel.app';
+      await fetch(base + '/api/notifications/send-push', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          searchId: a.search.id,
+          kind: 'phase_change',
+        }),
+      });
+    } catch {}
+  }
+
   revalidatePath(`/dashboard/clients/${clientId}`);
   return { ok: true as const };
 }

@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getMe, getSupabaseServerClient } from '@/lib/supabaseSsr';
 import { HouseRatingClient } from './HouseRatingClient';
+import { ScheduleVisitClient } from './ScheduleVisitClient';
 
 export const dynamic = 'force-dynamic';
 
@@ -95,6 +96,16 @@ export default async function HouseDetailPage({
     return when.getTime() < Date.now();
   })();
 
+  // Any tour the client has open for this house — used to swap the button
+  // for a "pending" badge instead of letting them double-request.
+  const { data: pendingTour } = await supabase
+    .from('tour_requests')
+    .select('id, preferred_when')
+    .eq('house_id', params.id)
+    .eq('client_id', me.user_id)
+    .eq('status', 'pending')
+    .maybeSingle();
+
   return (
     <main className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-8">
       <Link
@@ -151,6 +162,11 @@ export default async function HouseDetailPage({
               View original listing →
             </a>
           )}
+
+          <ScheduleVisitClient
+            houseId={house.id}
+            pendingTour={pendingTour || null}
+          />
         </div>
       </div>
 

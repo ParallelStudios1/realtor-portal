@@ -38,6 +38,19 @@ export default async function ClientHomePage() {
         .limit(5)
     : { data: [] as any[] };
 
+  // Recent activity feed — "Maria updated phase to under contract", etc.
+  const { data: feed } = active
+    ? await supabase
+        .from('activities')
+        .select(
+          `id, action, target, created_at,
+           actor:users!activities_actor_id_fkey ( full_name )`
+        )
+        .eq('search_id', active.id)
+        .order('created_at', { ascending: false })
+        .limit(8)
+    : { data: [] as any[] };
+
   // Realtor info
   const { data: realtor } = active?.realtor_id
     ? await supabase
@@ -128,8 +141,16 @@ export default async function ClientHomePage() {
           {/* Important dates */}
           {dates && dates.length > 0 && (
             <section className="mt-4 rounded-xl border border-slate-200 bg-white p-5">
-              <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Important dates
+              <div className="flex items-baseline justify-between">
+                <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Important dates
+                </div>
+                <a
+                  href={`webcal://realtor-portal-ten.vercel.app/api/calendar/${active.id}.ics`}
+                  className="text-xs font-semibold text-blue-600 hover:underline"
+                >
+                  Subscribe in Calendar ↗
+                </a>
               </div>
               <ul className="mt-3 divide-y divide-slate-100">
                 {dates.map((d: any) => (
@@ -147,7 +168,38 @@ export default async function ClientHomePage() {
             </section>
           )}
 
-          <div className="mt-6 grid gap-3 sm:grid-cols-3">
+          {/* Activity feed — what's been happening */}
+          {feed && feed.length > 0 && (
+            <section className="mt-4 rounded-xl border border-slate-200 bg-white p-5">
+              <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Recent updates
+              </div>
+              <ol className="mt-3 space-y-2.5">
+                {feed.map((f: any) => {
+                  const actor =
+                    f.actor?.full_name || 'Your agent';
+                  const verb = humanizeAction(f.action);
+                  return (
+                    <li
+                      key={f.id}
+                      className="flex items-baseline gap-2 text-sm"
+                    >
+                      <span className="font-semibold">{actor}</span>
+                      <span className="text-slate-600">{verb}</span>
+                      {f.target && (
+                        <span className="font-medium">{prettyTarget(f.action, f.target)}</span>
+                      )}
+                      <span className="ml-auto shrink-0 text-xs text-slate-400">
+                        {timeAgo(f.created_at)}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ol>
+            </section>
+          )}
+
+          <div className="mt-6 grid gap-3 sm:grid-cols-3" id="quicklinks">
             <Link
               href="/client/houses"
               className="rounded-xl border border-slate-200 bg-white p-4 text-sm hover:border-slate-300"
@@ -174,4 +226,60 @@ export default async function ClientHomePage() {
       )}
     </main>
   );
+}
+
+function humanizeAction(action: string): string {
+  switch (action) {
+    case 'phase_change':
+      return 'moved your deal to';
+    case 'house_added':
+      return 'added a house —';
+    case 'tour_confirmed':
+      return 'confirmed a tour for';
+    case 'tour_declined':
+      return 'declined a tour for';
+    case 'tour_requested':
+      return 'requested a tour for';
+    case 'document_uploaded':
+      return 'uploaded a document —';
+    case 'important_date_added':
+      return 'added an important date —';
+    case 'alert':
+      return 'sent an alert —';
+    case 'attorney_added':
+      return 'added an attorney —';
+    case 'co_realtor_added':
+      return 'added a co-realtor —';
+    case 'docusign_linked':
+      return 'linked a DocuSign envelope';
+    case 'message':
+      return 'sent a message';
+    default:
+      return action.replace(/_/g, ' ');
+  }
+}
+
+function prettyTarget(action: string, target: string) {
+  if (action === 'phase_change') {
+    const map: Record<string, string> = {
+      searching: 'Searching',
+      offer_made: 'Offer Made',
+      under_contract: 'Under Contract',
+      closing: 'Closing',
+      closed: 'Closed',
+    };
+    return map[target] || target;
+  }
+  return target;
+}
+
+function timeAgo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(diff / 60_000);
+  if (m < 1) return 'now';
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  return `${d}d ago`;
 }
