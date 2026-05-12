@@ -52,7 +52,7 @@ Under `scripts/`:
 - `asc-add-whatsnew.py` — attach "What to Test" notes to a build (run per build)
 - `asc-poll.sh` — generic background poller for processing state
 
-All scripts use the .p8 API key at `/Users/turnerlogan/Downloads/AuthKey_3ST6Z8D74J.p8`.
+All scripts use the .p8 API key at `/Users/turnerlogan/Downloads/AuthKey_544WW2NRWY.p8`.
 
 ## Pending Vercel env vars (Turner action)
 

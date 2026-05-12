@@ -3,9 +3,9 @@
 test info is set, and verify it is available for testing."""
 import jwt, time, json, urllib.request
 
-KEY_ID = '3ST6Z8D74J'
+KEY_ID = '544WW2NRWY'
 ISSUER_ID = '907a18b2-6f6a-40ee-9e58-7ad1fbb63f6a'
-P8 = '/Users/turnerlogan/Downloads/AuthKey_3ST6Z8D74J.p8'
+P8 = '/Users/turnerlogan/Downloads/AuthKey_544WW2NRWY.p8'
 APP_ID = '6768115138'
 GROUP_ID = '786a0ae8-9a09-48b9-be63-cb0665d1e0b9'
 BUILD_ID = '21205547-afdc-4168-a32f-6f76c4f472c5'

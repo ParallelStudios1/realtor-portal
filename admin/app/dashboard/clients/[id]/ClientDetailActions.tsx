@@ -48,7 +48,6 @@ const DATE_PRESETS = [
 export function ClientDetailActions({
   clientId,
   firmId,
-  searchId,
   currentPhase,
   financials,
   teammates,
@@ -76,32 +75,96 @@ export function ClientDetailActions({
 
   return (
     <>
-      <div className="flex flex-wrap gap-2">
-        <ActionButton label="+ Add house" onClick={() => setOpen('house')} />
-        <ActionButton label="Update phase" onClick={() => setOpen('phase')} />
-        <ActionButton label="+ Important date" onClick={() => setOpen('date')} />
-        <ActionButton
-          label="$ Financials / Contract"
-          onClick={() => setOpen('financials')}
-        />
-        <ActionButton
-          label="+ Document"
-          href={`/dashboard/clients/${clientId}/upload`}
-        />
-        <ActionButton
-          label="+ DocuSign envelope"
-          onClick={() => setOpen('docusign')}
-        />
-        <ActionButton label="+ Attorney" onClick={() => setOpen('attorney')} />
-        <ActionButton label="Quick message" onClick={() => setOpen('message')} />
-        <ActionButton
-          label="Send alert"
-          onClick={() => setOpen('alert')}
-          variant="danger"
-        />
-        <ActionButton label="Open messages" href="/dashboard/messages" />
-        <ActionButton label="View tours" href="/dashboard/tours" />
-      </div>
+      <section className="rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50/50 p-5 shadow-sm">
+        <div className="mb-4 flex items-baseline justify-between">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500">
+            Quick actions
+          </h2>
+          <span className="text-xs text-slate-400">
+            Everything you can do for this deal
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
+          <ActionCard
+            tone="blue"
+            icon={<IconHouse />}
+            title="Add house"
+            subtitle="With photo or Zillow link"
+            onClick={() => setOpen('house')}
+          />
+          <ActionCard
+            tone="indigo"
+            icon={<IconFlag />}
+            title="Update phase"
+            subtitle={phaseLabel(currentPhase)}
+            onClick={() => setOpen('phase')}
+          />
+          <ActionCard
+            tone="emerald"
+            icon={<IconCalendar />}
+            title="Important date"
+            subtitle="Closing, appraisal, etc."
+            onClick={() => setOpen('date')}
+          />
+          <ActionCard
+            tone="amber"
+            icon={<IconDollar />}
+            title="Financials"
+            subtitle="Price, earnest, commission"
+            onClick={() => setOpen('financials')}
+          />
+          <ActionCard
+            tone="violet"
+            icon={<IconDocument />}
+            title="Upload document"
+            subtitle="PDFs, disclosures"
+            href={`/dashboard/clients/${clientId}/upload`}
+          />
+          <ActionCard
+            tone="orange"
+            icon={<IconSignature />}
+            title="DocuSign envelope"
+            subtitle="Paste signing link"
+            onClick={() => setOpen('docusign')}
+          />
+          <ActionCard
+            tone="slate"
+            icon={<IconBriefcase />}
+            title="Attorney"
+            subtitle="Add to this deal"
+            onClick={() => setOpen('attorney')}
+          />
+          <ActionCard
+            tone="sky"
+            icon={<IconMessage />}
+            title="Quick message"
+            subtitle="Send to your client"
+            onClick={() => setOpen('message')}
+          />
+          <ActionCard
+            tone="rose"
+            icon={<IconAlert />}
+            title="Send alert"
+            subtitle="Urgent — pushes notification"
+            onClick={() => setOpen('alert')}
+          />
+          <ActionCard
+            tone="slate"
+            icon={<IconInbox />}
+            title="All messages"
+            subtitle="Open thread list"
+            href="/dashboard/messages"
+          />
+          <ActionCard
+            tone="slate"
+            icon={<IconRoute />}
+            title="Tour requests"
+            subtitle="Pending tours"
+            href="/dashboard/tours"
+          />
+        </div>
+      </section>
 
       {open === 'phase' && (
         <PhaseModal
@@ -129,6 +192,18 @@ export function ClientDetailActions({
         />
       )}
 
+      {open === 'date' && (
+        <DateModal
+          onClose={close}
+          onSubmit={async (payload) => {
+            const r = await addImportantDateAction(clientId, payload);
+            if (!r.ok) return toast.show(r.error || 'Failed', { variant: 'error' });
+            toast.show('Date saved.', { variant: 'success' });
+            close();
+          }}
+        />
+      )}
+
       {open === 'financials' && (
         <FinancialsModal
           initial={financials}
@@ -137,18 +212,6 @@ export function ClientDetailActions({
             const r = await updateDealFinancialsAction(clientId, payload);
             if (!r.ok) return toast.show(r.error || 'Failed', { variant: 'error' });
             toast.show('Deal updated.', { variant: 'success' });
-            close();
-          }}
-        />
-      )}
-
-      {open === 'date' && (
-        <DateModal
-          onClose={close}
-          onSubmit={async (payload) => {
-            const r = await addImportantDateAction(clientId, payload);
-            if (!r.ok) return toast.show(r.error || 'Failed', { variant: 'error' });
-            toast.show('Date saved.', { variant: 'success' });
             close();
           }}
         />
@@ -180,8 +243,8 @@ export function ClientDetailActions({
 
       {open === 'message' && (
         <MessageModal
-          title="Quick message"
-          submitLabel="Send message"
+          title="Send a message"
+          submitLabel="Send"
           placeholder="Type a message…"
           onClose={close}
           onSubmit={async (body) => {
@@ -195,7 +258,7 @@ export function ClientDetailActions({
 
       {open === 'alert' && (
         <MessageModal
-          title="Send alert"
+          title="Send an alert"
           submitLabel="Send alert"
           placeholder="Urgent update for the client…"
           danger
@@ -212,36 +275,238 @@ export function ClientDetailActions({
   );
 }
 
-// -- helpers --------------------------------------------------------------
+// -- Action card -----------------------------------------------------------
 
-function ActionButton({
-  label,
+type Tone =
+  | 'blue'
+  | 'indigo'
+  | 'emerald'
+  | 'amber'
+  | 'violet'
+  | 'orange'
+  | 'slate'
+  | 'sky'
+  | 'rose';
+
+const TONE_STYLES: Record<
+  Tone,
+  { bg: string; ring: string; icon: string; iconBg: string }
+> = {
+  blue: {
+    bg: 'hover:bg-blue-50',
+    ring: 'hover:ring-blue-200',
+    icon: 'text-blue-600',
+    iconBg: 'bg-blue-100',
+  },
+  indigo: {
+    bg: 'hover:bg-indigo-50',
+    ring: 'hover:ring-indigo-200',
+    icon: 'text-indigo-600',
+    iconBg: 'bg-indigo-100',
+  },
+  emerald: {
+    bg: 'hover:bg-emerald-50',
+    ring: 'hover:ring-emerald-200',
+    icon: 'text-emerald-600',
+    iconBg: 'bg-emerald-100',
+  },
+  amber: {
+    bg: 'hover:bg-amber-50',
+    ring: 'hover:ring-amber-200',
+    icon: 'text-amber-700',
+    iconBg: 'bg-amber-100',
+  },
+  violet: {
+    bg: 'hover:bg-violet-50',
+    ring: 'hover:ring-violet-200',
+    icon: 'text-violet-600',
+    iconBg: 'bg-violet-100',
+  },
+  orange: {
+    bg: 'hover:bg-orange-50',
+    ring: 'hover:ring-orange-200',
+    icon: 'text-orange-600',
+    iconBg: 'bg-orange-100',
+  },
+  slate: {
+    bg: 'hover:bg-slate-100',
+    ring: 'hover:ring-slate-300',
+    icon: 'text-slate-700',
+    iconBg: 'bg-slate-200',
+  },
+  sky: {
+    bg: 'hover:bg-sky-50',
+    ring: 'hover:ring-sky-200',
+    icon: 'text-sky-600',
+    iconBg: 'bg-sky-100',
+  },
+  rose: {
+    bg: 'hover:bg-rose-50',
+    ring: 'hover:ring-rose-300',
+    icon: 'text-rose-600',
+    iconBg: 'bg-rose-100',
+  },
+};
+
+function ActionCard({
+  tone,
+  icon,
+  title,
+  subtitle,
   onClick,
   href,
-  variant,
 }: {
-  label: string;
+  tone: Tone;
+  icon: React.ReactNode;
+  title: string;
+  subtitle: string;
   onClick?: () => void;
   href?: string;
-  variant?: 'danger';
 }) {
+  const t = TONE_STYLES[tone];
   const cls =
-    'rounded-md border px-3 py-1.5 text-xs font-semibold transition ' +
-    (variant === 'danger'
-      ? 'border-rose-300 bg-rose-50 text-rose-800 hover:bg-rose-100'
-      : 'border-slate-300 bg-white text-slate-800 hover:border-slate-400 hover:bg-slate-50');
+    'group flex flex-col items-start gap-2 rounded-xl border border-slate-200 bg-white p-3 text-left shadow-sm ring-1 ring-transparent transition ' +
+    t.bg +
+    ' ' +
+    t.ring;
+  const inner = (
+    <>
+      <span
+        className={
+          'flex h-9 w-9 items-center justify-center rounded-lg ' +
+          t.iconBg +
+          ' ' +
+          t.icon
+        }
+      >
+        {icon}
+      </span>
+      <div className="min-w-0">
+        <div className="truncate text-sm font-semibold text-slate-900">
+          {title}
+        </div>
+        <div className="line-clamp-1 text-xs text-slate-500">{subtitle}</div>
+      </div>
+    </>
+  );
   if (href)
     return (
       <a href={href} className={cls}>
-        {label}
+        {inner}
       </a>
     );
   return (
     <button type="button" onClick={onClick} className={cls}>
-      {label}
+      {inner}
     </button>
   );
 }
+
+function phaseLabel(p: string) {
+  const map: Record<string, string> = {
+    searching: 'Searching',
+    offer_made: 'Offer made',
+    under_contract: 'Under contract',
+    closing: 'Closing',
+    closed: 'Closed',
+  };
+  return 'Currently: ' + (map[p] || p);
+}
+
+// -- icons (inline svg, no extra dependency) -------------------------------
+
+function IconHouse() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 11l9-8 9 8" />
+      <path d="M5 10v10h14V10" />
+      <path d="M9 21v-6h6v6" />
+    </svg>
+  );
+}
+function IconFlag() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 22V4h13l-2 4 2 4H4" />
+    </svg>
+  );
+}
+function IconCalendar() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="5" width="18" height="16" rx="2" />
+      <path d="M16 3v4M8 3v4M3 10h18" />
+    </svg>
+  );
+}
+function IconDollar() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2v20" />
+      <path d="M17 6.5C17 4.6 14.8 3 12 3S7 4.6 7 6.5 9.2 10 12 10s5 1.6 5 3.5S14.8 17 12 17s-5-1.6-5-3.5" />
+    </svg>
+  );
+}
+function IconDocument() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <polyline points="14 2 14 8 20 8" />
+    </svg>
+  );
+}
+function IconSignature() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 17c4 1 9-5 13-1 2 2 5 0 5 0" />
+      <path d="M3 21h18" />
+    </svg>
+  );
+}
+function IconBriefcase() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="7" width="18" height="13" rx="2" />
+      <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+    </svg>
+  );
+}
+function IconMessage() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 11a9 9 0 1 1-3.5-7L21 3v8z" />
+      <path d="M8 11h.01M12 11h.01M16 11h.01" />
+    </svg>
+  );
+}
+function IconAlert() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M10.3 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+      <path d="M12 9v4" />
+      <path d="M12 17h.01" />
+    </svg>
+  );
+}
+function IconInbox() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="22 12 16 12 14 15 10 15 8 12 2 12" />
+      <path d="M5.5 5h13L22 12v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6z" />
+    </svg>
+  );
+}
+function IconRoute() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="6" cy="19" r="3" />
+      <path d="M9 19h8.5a3.5 3.5 0 0 0 0-7H6.5a3.5 3.5 0 0 1 0-7H15" />
+      <circle cx="18" cy="5" r="3" />
+    </svg>
+  );
+}
+
+// -- Modal shell ----------------------------------------------------------
 
 function Modal({
   title,
@@ -253,16 +518,22 @@ function Modal({
   children: React.ReactNode;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-md rounded-xl bg-white shadow-xl">
-        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-3">
-          <h3 className="font-semibold">{title}</h3>
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-md rounded-t-2xl bg-white shadow-2xl sm:rounded-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-3.5">
+          <h3 className="text-base font-semibold text-slate-900">{title}</h3>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600"
+            className="-mr-1.5 rounded-md p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
             aria-label="Close"
           >
-            ✕
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
           </button>
         </div>
         <div className="p-5">{children}</div>
@@ -270,6 +541,51 @@ function Modal({
     </div>
   );
 }
+
+function PrimaryButton({
+  pending,
+  disabled,
+  onClick,
+  children,
+  variant,
+}: {
+  pending: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+  variant?: 'danger';
+}) {
+  return (
+    <button
+      type="button"
+      disabled={pending || disabled}
+      onClick={onClick}
+      className={
+        'mt-5 inline-flex w-full items-center justify-center rounded-lg px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition disabled:cursor-not-allowed disabled:opacity-50 ' +
+        (variant === 'danger'
+          ? 'bg-rose-600 hover:bg-rose-700'
+          : 'bg-slate-900 hover:bg-slate-700')
+      }
+    >
+      {pending ? 'Saving…' : children}
+    </button>
+  );
+}
+
+function Field({ label, children, hint }: { label: string; children: React.ReactNode; hint?: string }) {
+  return (
+    <label className="block text-sm">
+      <span className="block text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</span>
+      <div className="mt-1.5">{children}</div>
+      {hint && <p className="mt-1 text-[11px] text-slate-400">{hint}</p>}
+    </label>
+  );
+}
+
+const inputCls =
+  'w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm transition focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10';
+
+// -- Specific modals ------------------------------------------------------
 
 function PhaseModal({
   currentPhase,
@@ -285,35 +601,37 @@ function PhaseModal({
   return (
     <Modal title="Update deal phase" onClose={onClose}>
       <div className="space-y-2">
-        {PHASES.map((p) => (
-          <label
-            key={p.id}
-            className={
-              'flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm ' +
-              (phase === p.id
-                ? 'border-blue-600 bg-blue-50'
-                : 'border-slate-200 hover:bg-slate-50')
-            }
-          >
-            <input
-              type="radio"
-              name="phase"
-              value={p.id}
-              checked={phase === p.id}
-              onChange={() => setPhase(p.id)}
-            />
-            <span>{p.label}</span>
-          </label>
-        ))}
+        {PHASES.map((p) => {
+          const selected = phase === p.id;
+          return (
+            <label
+              key={p.id}
+              className={
+                'flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 text-sm transition ' +
+                (selected
+                  ? 'border-slate-900 bg-slate-50 ring-1 ring-slate-900'
+                  : 'border-slate-200 hover:bg-slate-50')
+              }
+            >
+              <input
+                type="radio"
+                name="phase"
+                className="accent-slate-900"
+                value={p.id}
+                checked={selected}
+                onChange={() => setPhase(p.id)}
+              />
+              <span className="font-medium text-slate-800">{p.label}</span>
+              {p.id === currentPhase && (
+                <span className="ml-auto text-[10px] font-bold uppercase tracking-wide text-slate-400">Current</span>
+              )}
+            </label>
+          );
+        })}
       </div>
-      <button
-        type="button"
-        disabled={pending}
-        onClick={() => start(() => onSubmit(phase))}
-        className="mt-4 w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
-      >
-        {pending ? 'Saving…' : 'Save phase'}
-      </button>
+      <PrimaryButton pending={pending} onClick={() => start(() => onSubmit(phase))}>
+        Save phase
+      </PrimaryButton>
     </Modal>
   );
 }
@@ -340,23 +658,31 @@ function HouseModal({
   const [notes, setNotes] = useState('');
   const [pending, start] = useTransition();
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [importing, setImporting] = useState(false);
   const toast = useToast();
   const supabase = getSupabaseBrowserClient();
 
   async function importFromUrl() {
     if (!listingUrl) return;
+    setImporting(true);
     try {
       const r = await fetch('/api/url/preview', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ url: listingUrl }),
       });
-      if (!r.ok) return;
+      if (!r.ok) {
+        toast.show('Could not read that listing.', { variant: 'error' });
+        return;
+      }
       const j = await r.json();
       if (j.image && !photoUrl) setPhotoUrl(j.image);
       if (j.title && !address) setAddress(j.title);
       if (j.description && !notes) setNotes(j.description);
-    } catch {}
+      toast.show('Imported.', { variant: 'success' });
+    } finally {
+      setImporting(false);
+    }
   }
 
   async function uploadPhotoFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -381,39 +707,32 @@ function HouseModal({
 
   return (
     <Modal title="Add a house" onClose={onClose}>
-      <div className="space-y-3">
+      <div className="space-y-4">
         <Field label="Address">
           <input
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            className={inputCls}
             value={address}
             onChange={(e) => setAddress(e.target.value)}
             placeholder="123 Main St, Atlanta GA"
           />
         </Field>
-        <Field label="Listing URL (Zillow, Redfin, etc.)">
+        <Field label="Listing URL" hint="Zillow, Redfin, Realtor.com — we'll auto-pull title, photo, and description">
           <div className="flex gap-2">
             <input
-              className="flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm"
+              className={inputCls + ' flex-1'}
               value={listingUrl}
               onChange={(e) => setListingUrl(e.target.value)}
-              placeholder="https://www.zillow.com/homedetails/..."
+              placeholder="https://www.zillow.com/homedetails/…"
             />
             <button
               type="button"
               onClick={importFromUrl}
-              className="rounded-md border border-slate-300 px-3 py-2 text-xs font-semibold hover:bg-slate-50"
+              disabled={importing || !listingUrl}
+              className="rounded-lg bg-slate-900 px-3 text-xs font-semibold text-white shadow-sm disabled:opacity-50"
             >
-              Import
+              {importing ? '…' : 'Import'}
             </button>
           </div>
-        </Field>
-        <Field label="List price (USD)">
-          <input
-            type="number"
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-            value={listPrice}
-            onChange={(e) => setListPrice(e.target.value)}
-          />
         </Field>
         <Field label="Photo">
           <div className="flex items-center gap-3">
@@ -422,15 +741,15 @@ function HouseModal({
               <img
                 src={photoUrl}
                 alt="house"
-                className="h-16 w-20 rounded-md object-cover"
+                className="h-16 w-20 rounded-lg object-cover ring-1 ring-slate-200"
               />
             ) : (
-              <div className="flex h-16 w-20 items-center justify-center rounded-md border border-dashed border-slate-300 bg-slate-50 text-[10px] text-slate-400">
+              <div className="flex h-16 w-20 items-center justify-center rounded-lg border border-dashed border-slate-300 bg-slate-50 text-[10px] text-slate-400">
                 No photo
               </div>
             )}
-            <label className="cursor-pointer rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold hover:bg-slate-50">
-              {uploadingPhoto ? 'Uploading…' : photoUrl ? 'Replace' : 'Upload'}
+            <label className="cursor-pointer rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold shadow-sm transition hover:bg-slate-50">
+              {uploadingPhoto ? 'Uploading…' : photoUrl ? 'Replace photo' : 'Upload photo'}
               <input
                 type="file"
                 accept="image/*"
@@ -442,24 +761,33 @@ function HouseModal({
           </div>
           <input
             type="url"
-            className="mt-2 w-full rounded-md border border-slate-300 px-3 py-1.5 text-xs"
+            className={inputCls + ' mt-2 text-xs'}
             value={photoUrl}
             onChange={(e) => setPhotoUrl(e.target.value)}
             placeholder="…or paste a photo URL"
           />
         </Field>
+        <Field label="List price (USD)">
+          <input
+            type="number"
+            className={inputCls}
+            value={listPrice}
+            onChange={(e) => setListPrice(e.target.value)}
+          />
+        </Field>
         <Field label="Notes">
           <textarea
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            className={inputCls}
             rows={3}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
+            placeholder="Why is this a fit, what to flag, etc."
           />
         </Field>
       </div>
-      <button
-        type="button"
-        disabled={pending || !address}
+      <PrimaryButton
+        pending={pending}
+        disabled={!address}
         onClick={() =>
           start(() =>
             onSubmit({
@@ -471,10 +799,9 @@ function HouseModal({
             })
           )
         }
-        className="mt-4 w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
       >
-        {pending ? 'Adding…' : 'Add house'}
-      </button>
+        Add house
+      </PrimaryButton>
     </Modal>
   );
 }
@@ -496,37 +823,40 @@ function DateModal({
   const [pending, start] = useTransition();
   return (
     <Modal title="Add an important date" onClose={onClose}>
-      <Field label="Type">
-        <select
-          className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-          value={preset}
-          onChange={(e) => setPreset(e.target.value)}
-        >
-          {DATE_PRESETS.map((p) => (
-            <option key={p}>{p}</option>
-          ))}
-        </select>
-      </Field>
-      {preset === 'Custom' && (
-        <Field label="Label">
+      <div className="space-y-3">
+        <Field label="Type">
+          <select
+            className={inputCls}
+            value={preset}
+            onChange={(e) => setPreset(e.target.value)}
+          >
+            {DATE_PRESETS.map((p) => (
+              <option key={p}>{p}</option>
+            ))}
+          </select>
+        </Field>
+        {preset === 'Custom' && (
+          <Field label="Custom label">
+            <input
+              className={inputCls}
+              value={customLabel}
+              onChange={(e) => setCustomLabel(e.target.value)}
+              placeholder="e.g. HOA approval deadline"
+            />
+          </Field>
+        )}
+        <Field label="Date">
           <input
-            className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-            value={customLabel}
-            onChange={(e) => setCustomLabel(e.target.value)}
+            type="date"
+            className={inputCls}
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
           />
         </Field>
-      )}
-      <Field label="Date">
-        <input
-          type="date"
-          className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-        />
-      </Field>
-      <button
-        type="button"
-        disabled={pending || !date || (preset === 'Custom' && !customLabel)}
+      </div>
+      <PrimaryButton
+        pending={pending}
+        disabled={!date || (preset === 'Custom' && !customLabel)}
         onClick={() =>
           start(() =>
             onSubmit({
@@ -543,10 +873,9 @@ function DateModal({
             })
           )
         }
-        className="mt-4 w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
       >
-        {pending ? 'Saving…' : 'Save date'}
-      </button>
+        Save date
+      </PrimaryButton>
     </Modal>
   );
 }
@@ -562,24 +891,21 @@ function DocusignModal({
   const [pending, start] = useTransition();
   return (
     <Modal title="Link a DocuSign envelope" onClose={onClose}>
-      <p className="text-xs text-slate-500">
-        Paste the DocuSign envelope URL you sent the client. The button will
-        appear at the top of this client's deal so you can jump to it.
-      </p>
-      <input
-        className="mt-3 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-        value={url}
-        onChange={(e) => setUrl(e.target.value)}
-        placeholder="https://app.docusign.com/documents/..."
-      />
-      <button
-        type="button"
-        disabled={pending || !url}
+      <Field label="Envelope URL" hint="Paste from DocuSign — the link will appear at the top of this client's deal">
+        <input
+          className={inputCls}
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          placeholder="https://app.docusign.com/documents/…"
+        />
+      </Field>
+      <PrimaryButton
+        pending={pending}
+        disabled={!url}
         onClick={() => start(() => onSubmit(url.trim()))}
-        className="mt-4 w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
       >
-        {pending ? 'Saving…' : 'Save envelope'}
-      </button>
+        Save envelope
+      </PrimaryButton>
     </Modal>
   );
 }
@@ -600,34 +926,26 @@ function AttorneyModal({
   const [phone, setPhone] = useState('');
   const [pending, start] = useTransition();
   return (
-    <Modal title="Add an attorney to this deal" onClose={onClose}>
+    <Modal title="Add attorney" onClose={onClose}>
       <div className="space-y-3">
         <Field label="Name">
-          <input
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
+          <input className={inputCls} value={name} onChange={(e) => setName(e.target.value)} />
         </Field>
         <Field label="Email">
           <input
             type="email"
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            className={inputCls}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
         </Field>
         <Field label="Phone">
-          <input
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-          />
+          <input className={inputCls} value={phone} onChange={(e) => setPhone(e.target.value)} />
         </Field>
       </div>
-      <button
-        type="button"
-        disabled={pending || !name}
+      <PrimaryButton
+        pending={pending}
+        disabled={!name}
         onClick={() =>
           start(() =>
             onSubmit({
@@ -637,10 +955,9 @@ function AttorneyModal({
             })
           )
         }
-        className="mt-4 w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
       >
-        {pending ? 'Saving…' : 'Save attorney'}
-      </button>
+        Save attorney
+      </PrimaryButton>
     </Modal>
   );
 }
@@ -664,42 +981,24 @@ function MessageModal({
   const [pending, start] = useTransition();
   return (
     <Modal title={title} onClose={onClose}>
-      <textarea
-        rows={5}
-        className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-        value={body}
-        onChange={(e) => setBody(e.target.value)}
-        placeholder={placeholder}
-      />
-      <button
-        type="button"
-        disabled={pending || !body.trim()}
+      <Field label={danger ? 'Alert message' : 'Message'}>
+        <textarea
+          rows={5}
+          className={inputCls}
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+          placeholder={placeholder}
+        />
+      </Field>
+      <PrimaryButton
+        pending={pending}
+        disabled={!body.trim()}
+        variant={danger ? 'danger' : undefined}
         onClick={() => start(() => onSubmit(body))}
-        className={
-          'mt-4 w-full rounded-md px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 ' +
-          (danger
-            ? 'bg-rose-600 hover:bg-rose-700'
-            : 'bg-blue-600 hover:bg-blue-700')
-        }
       >
-        {pending ? 'Sending…' : submitLabel}
-      </button>
+        {submitLabel}
+      </PrimaryButton>
     </Modal>
-  );
-}
-
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <label className="block text-sm">
-      <span className="block text-xs font-medium text-slate-600">{label}</span>
-      {children}
-    </label>
   );
 }
 
@@ -726,84 +1025,41 @@ function FinancialsModal({
     notes?: string | null;
   }) => Promise<void>;
 }) {
-  const [agreed, setAgreed] = useState(
-    initial.agreed_price != null ? String(initial.agreed_price) : ''
-  );
-  const [closing, setClosing] = useState(
-    initial.closing_amount != null ? String(initial.closing_amount) : ''
-  );
-  const [earnest, setEarnest] = useState(
-    initial.earnest_money != null ? String(initial.earnest_money) : ''
-  );
-  const [commission, setCommission] = useState(
-    initial.commission_pct != null ? String(initial.commission_pct) : ''
-  );
+  const [agreed, setAgreed] = useState(initial.agreed_price != null ? String(initial.agreed_price) : '');
+  const [closing, setClosing] = useState(initial.closing_amount != null ? String(initial.closing_amount) : '');
+  const [earnest, setEarnest] = useState(initial.earnest_money != null ? String(initial.earnest_money) : '');
+  const [commission, setCommission] = useState(initial.commission_pct != null ? String(initial.commission_pct) : '');
   const [contractUrl, setContractUrl] = useState(initial.contract_url || '');
   const [notes, setNotes] = useState(initial.notes || '');
   const [pending, start] = useTransition();
-
   const num = (s: string) => (s.trim() === '' ? null : Number(s));
 
   return (
     <Modal title="Financials & contract" onClose={onClose}>
       <div className="space-y-3">
-        <Field label="Agreed price (USD)">
-          <input
-            type="number"
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-            value={agreed}
-            onChange={(e) => setAgreed(e.target.value)}
-            placeholder="e.g. 485000"
-          />
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Agreed price">
+            <input type="number" className={inputCls} value={agreed} onChange={(e) => setAgreed(e.target.value)} placeholder="485000" />
+          </Field>
+          <Field label="Closing">
+            <input type="number" className={inputCls} value={closing} onChange={(e) => setClosing(e.target.value)} />
+          </Field>
+          <Field label="Earnest money">
+            <input type="number" className={inputCls} value={earnest} onChange={(e) => setEarnest(e.target.value)} />
+          </Field>
+          <Field label="Commission %">
+            <input type="number" step="0.01" className={inputCls} value={commission} onChange={(e) => setCommission(e.target.value)} placeholder="2.5" />
+          </Field>
+        </div>
+        <Field label="Contract URL" hint="Link to signed PDF or DocuSign envelope">
+          <input type="url" className={inputCls} value={contractUrl} onChange={(e) => setContractUrl(e.target.value)} />
         </Field>
-        <Field label="Closing amount (USD)">
-          <input
-            type="number"
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-            value={closing}
-            onChange={(e) => setClosing(e.target.value)}
-          />
-        </Field>
-        <Field label="Earnest money (USD)">
-          <input
-            type="number"
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-            value={earnest}
-            onChange={(e) => setEarnest(e.target.value)}
-          />
-        </Field>
-        <Field label="Commission (%)">
-          <input
-            type="number"
-            step="0.01"
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-            value={commission}
-            onChange={(e) => setCommission(e.target.value)}
-            placeholder="e.g. 2.5"
-          />
-        </Field>
-        <Field label="Contract URL (optional)">
-          <input
-            type="url"
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-            value={contractUrl}
-            onChange={(e) => setContractUrl(e.target.value)}
-            placeholder="Link to signed PDF or DocuSign envelope"
-          />
-        </Field>
-        <Field label="Internal notes">
-          <textarea
-            rows={3}
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Anything the client shouldn't see — visible only to your firm"
-          />
+        <Field label="Internal notes" hint="Visible only to your firm — clients can't see this">
+          <textarea rows={3} className={inputCls} value={notes} onChange={(e) => setNotes(e.target.value)} />
         </Field>
       </div>
-      <button
-        type="button"
-        disabled={pending}
+      <PrimaryButton
+        pending={pending}
         onClick={() =>
           start(() =>
             onSubmit({
@@ -816,10 +1072,9 @@ function FinancialsModal({
             })
           )
         }
-        className="mt-4 w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
       >
-        {pending ? 'Saving…' : 'Save deal details'}
-      </button>
+        Save deal details
+      </PrimaryButton>
     </Modal>
   );
 }

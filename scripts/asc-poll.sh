@@ -4,9 +4,9 @@
 set -u
 export PATH=/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin
 
-KEY_ID='3ST6Z8D74J'
+KEY_ID='544WW2NRWY'
 ISSUER_ID='907a18b2-6f6a-40ee-9e58-7ad1fbb63f6a'
-P8=/Users/turnerlogan/Downloads/AuthKey_3ST6Z8D74J.p8
+P8=/Users/turnerlogan/Downloads/AuthKey_544WW2NRWY.p8
 APP_ID='6768115138'
 LOG=/tmp/asc-poll.log
 LAST_STATE_FILE=/tmp/asc-poll-last-state.txt

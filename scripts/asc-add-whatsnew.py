@@ -2,9 +2,9 @@
 """Add 'What to Test' notes for the current TestFlight build."""
 import jwt, time, json, urllib.request, urllib.error
 
-KEY_ID = '3ST6Z8D74J'
+KEY_ID = '544WW2NRWY'
 ISSUER_ID = '907a18b2-6f6a-40ee-9e58-7ad1fbb63f6a'
-P8 = '/Users/turnerlogan/Downloads/AuthKey_3ST6Z8D74J.p8'
+P8 = '/Users/turnerlogan/Downloads/AuthKey_544WW2NRWY.p8'
 BUILD_ID = '21205547-afdc-4168-a32f-6f76c4f472c5'
 
 WHATS_NEW = """First TestFlight build. What to validate:
