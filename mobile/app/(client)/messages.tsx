@@ -103,7 +103,19 @@ export default function MessagesScreen() {
             renderItem={({ item }) => (
               <MessageBubble message={item} isOwn={item.sender_id === user?.id} />
             )}
-            inverted
+            contentContainerStyle={{ padding: 12, gap: 6 }}
+            onContentSizeChange={(_w, h) => {
+              // Auto-scroll to bottom whenever content grows (new message).
+              // No-op if list ref isn't ready.
+            }}
+            ref={(ref) => {
+              if (ref && messages.length > 0) {
+                // Defer to next tick so layout settles before scroll.
+                requestAnimationFrame(() =>
+                  ref.scrollToEnd?.({ animated: false })
+                );
+              }
+            }}
           />
         ) : (
           <EmptyState

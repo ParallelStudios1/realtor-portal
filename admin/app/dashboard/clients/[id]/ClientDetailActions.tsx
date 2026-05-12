@@ -8,9 +8,11 @@ import {
   quickMessageAction,
   sendAlertAction,
   setAttorneyAction,
+  updateDealFinancialsAction,
   updatePhaseAction,
 } from './actions';
 import { useToast } from '@/components/Toast';
+import { getSupabaseBrowserClient } from '@/lib/supabaseBrowser';
 
 type Teammate = { id: string; full_name: string | null; email: string | null };
 
@@ -21,7 +23,8 @@ type Action =
   | 'docusign'
   | 'attorney'
   | 'message'
-  | 'alert';
+  | 'alert'
+  | 'financials';
 
 const PHASES = [
   { id: 'searching', label: 'Searching' },
@@ -44,12 +47,24 @@ const DATE_PRESETS = [
 
 export function ClientDetailActions({
   clientId,
+  firmId,
+  searchId,
   currentPhase,
+  financials,
   teammates,
 }: {
   clientId: string;
+  firmId: string;
   searchId: string;
   currentPhase: string;
+  financials: {
+    agreed_price: number | null;
+    closing_amount: number | null;
+    earnest_money: number | null;
+    commission_pct: number | null;
+    contract_url: string | null;
+    notes: string | null;
+  };
   teammates: Teammate[];
 }) {
   const [open, setOpen] = useState<Action | null>(null);
@@ -65,6 +80,10 @@ export function ClientDetailActions({
         <ActionButton label="+ Add house" onClick={() => setOpen('house')} />
         <ActionButton label="Update phase" onClick={() => setOpen('phase')} />
         <ActionButton label="+ Important date" onClick={() => setOpen('date')} />
+        <ActionButton
+          label="$ Financials / Contract"
+          onClick={() => setOpen('financials')}
+        />
         <ActionButton
           label="+ Document"
           href={`/dashboard/clients/${clientId}/upload`}
@@ -99,11 +118,25 @@ export function ClientDetailActions({
 
       {open === 'house' && (
         <HouseModal
+          firmId={firmId}
           onClose={close}
           onSubmit={async (payload) => {
             const r = await addHouseAction(clientId, payload);
             if (!r.ok) return toast.show(r.error || 'Failed', { variant: 'error' });
             toast.show('House added.', { variant: 'success' });
+            close();
+          }}
+        />
+      )}
+
+      {open === 'financials' && (
+        <FinancialsModal
+          initial={financials}
+          onClose={close}
+          onSubmit={async (payload) => {
+            const r = await updateDealFinancialsAction(clientId, payload);
+            if (!r.ok) return toast.show(r.error || 'Failed', { variant: 'error' });
+            toast.show('Deal updated.', { variant: 'success' });
             close();
           }}
         />
@@ -286,9 +319,11 @@ function PhaseModal({
 }
 
 function HouseModal({
+  firmId,
   onClose,
   onSubmit,
 }: {
+  firmId: string;
   onClose: () => void;
   onSubmit: (payload: {
     address: string;
@@ -304,6 +339,9 @@ function HouseModal({
   const [photoUrl, setPhotoUrl] = useState('');
   const [notes, setNotes] = useState('');
   const [pending, start] = useTransition();
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const toast = useToast();
+  const supabase = getSupabaseBrowserClient();
 
   async function importFromUrl() {
     if (!listingUrl) return;
@@ -319,6 +357,26 @@ function HouseModal({
       if (j.title && !address) setAddress(j.title);
       if (j.description && !notes) setNotes(j.description);
     } catch {}
+  }
+
+  async function uploadPhotoFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingPhoto(true);
+    try {
+      const path = `${firmId}/houses/${Date.now()}-${file.name}`;
+      const { error: upErr } = await supabase.storage
+        .from('house-photos')
+        .upload(path, file, { upsert: false });
+      if (upErr) {
+        toast.show('Photo upload failed: ' + upErr.message, { variant: 'error' });
+        return;
+      }
+      const { data: pub } = supabase.storage.from('house-photos').getPublicUrl(path);
+      if (pub?.publicUrl) setPhotoUrl(pub.publicUrl);
+    } finally {
+      setUploadingPhoto(false);
+    }
   }
 
   return (
@@ -357,11 +415,37 @@ function HouseModal({
             onChange={(e) => setListPrice(e.target.value)}
           />
         </Field>
-        <Field label="Photo URL">
+        <Field label="Photo">
+          <div className="flex items-center gap-3">
+            {photoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={photoUrl}
+                alt="house"
+                className="h-16 w-20 rounded-md object-cover"
+              />
+            ) : (
+              <div className="flex h-16 w-20 items-center justify-center rounded-md border border-dashed border-slate-300 bg-slate-50 text-[10px] text-slate-400">
+                No photo
+              </div>
+            )}
+            <label className="cursor-pointer rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold hover:bg-slate-50">
+              {uploadingPhoto ? 'Uploading…' : photoUrl ? 'Replace' : 'Upload'}
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={uploadPhotoFile}
+                disabled={uploadingPhoto}
+              />
+            </label>
+          </div>
           <input
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            type="url"
+            className="mt-2 w-full rounded-md border border-slate-300 px-3 py-1.5 text-xs"
             value={photoUrl}
             onChange={(e) => setPhotoUrl(e.target.value)}
+            placeholder="…or paste a photo URL"
           />
         </Field>
         <Field label="Notes">
@@ -616,5 +700,126 @@ function Field({
       <span className="block text-xs font-medium text-slate-600">{label}</span>
       {children}
     </label>
+  );
+}
+
+function FinancialsModal({
+  initial,
+  onClose,
+  onSubmit,
+}: {
+  initial: {
+    agreed_price: number | null;
+    closing_amount: number | null;
+    earnest_money: number | null;
+    commission_pct: number | null;
+    contract_url: string | null;
+    notes: string | null;
+  };
+  onClose: () => void;
+  onSubmit: (payload: {
+    agreed_price?: number | null;
+    closing_amount?: number | null;
+    earnest_money?: number | null;
+    commission_pct?: number | null;
+    contract_url?: string | null;
+    notes?: string | null;
+  }) => Promise<void>;
+}) {
+  const [agreed, setAgreed] = useState(
+    initial.agreed_price != null ? String(initial.agreed_price) : ''
+  );
+  const [closing, setClosing] = useState(
+    initial.closing_amount != null ? String(initial.closing_amount) : ''
+  );
+  const [earnest, setEarnest] = useState(
+    initial.earnest_money != null ? String(initial.earnest_money) : ''
+  );
+  const [commission, setCommission] = useState(
+    initial.commission_pct != null ? String(initial.commission_pct) : ''
+  );
+  const [contractUrl, setContractUrl] = useState(initial.contract_url || '');
+  const [notes, setNotes] = useState(initial.notes || '');
+  const [pending, start] = useTransition();
+
+  const num = (s: string) => (s.trim() === '' ? null : Number(s));
+
+  return (
+    <Modal title="Financials & contract" onClose={onClose}>
+      <div className="space-y-3">
+        <Field label="Agreed price (USD)">
+          <input
+            type="number"
+            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            value={agreed}
+            onChange={(e) => setAgreed(e.target.value)}
+            placeholder="e.g. 485000"
+          />
+        </Field>
+        <Field label="Closing amount (USD)">
+          <input
+            type="number"
+            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            value={closing}
+            onChange={(e) => setClosing(e.target.value)}
+          />
+        </Field>
+        <Field label="Earnest money (USD)">
+          <input
+            type="number"
+            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            value={earnest}
+            onChange={(e) => setEarnest(e.target.value)}
+          />
+        </Field>
+        <Field label="Commission (%)">
+          <input
+            type="number"
+            step="0.01"
+            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            value={commission}
+            onChange={(e) => setCommission(e.target.value)}
+            placeholder="e.g. 2.5"
+          />
+        </Field>
+        <Field label="Contract URL (optional)">
+          <input
+            type="url"
+            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            value={contractUrl}
+            onChange={(e) => setContractUrl(e.target.value)}
+            placeholder="Link to signed PDF or DocuSign envelope"
+          />
+        </Field>
+        <Field label="Internal notes">
+          <textarea
+            rows={3}
+            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Anything the client shouldn't see — visible only to your firm"
+          />
+        </Field>
+      </div>
+      <button
+        type="button"
+        disabled={pending}
+        onClick={() =>
+          start(() =>
+            onSubmit({
+              agreed_price: num(agreed),
+              closing_amount: num(closing),
+              earnest_money: num(earnest),
+              commission_pct: num(commission),
+              contract_url: contractUrl.trim() || null,
+              notes: notes.trim() || null,
+            })
+          )
+        }
+        className="mt-4 w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+      >
+        {pending ? 'Saving…' : 'Save deal details'}
+      </button>
+    </Modal>
   );
 }

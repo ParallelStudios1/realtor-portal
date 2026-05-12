@@ -273,6 +273,98 @@ export async function sendAlertAction(clientId: string, message: string) {
   return { ok: true as const };
 }
 
+export async function updateDealFinancialsAction(
+  clientId: string,
+  payload: {
+    agreed_price?: number | null;
+    closing_amount?: number | null;
+    earnest_money?: number | null;
+    commission_pct?: number | null;
+    contract_url?: string | null;
+    notes?: string | null;
+  }
+) {
+  const a = await authorize(clientId);
+  if ('error' in a) return { ok: false as const, error: a.error };
+  const service = getSupabaseServiceRoleClient();
+  const update: Record<string, any> = {};
+  if (payload.agreed_price !== undefined) update.agreed_price = payload.agreed_price;
+  if (payload.closing_amount !== undefined) update.closing_amount = payload.closing_amount;
+  if (payload.earnest_money !== undefined) update.earnest_money = payload.earnest_money;
+  if (payload.commission_pct !== undefined) update.commission_pct = payload.commission_pct;
+  if (payload.contract_url !== undefined) update.contract_url = payload.contract_url;
+  if (payload.notes !== undefined) update.notes = payload.notes;
+  const { error } = await service
+    .from('client_searches')
+    .update(update)
+    .eq('id', a.search.id);
+  if (error) return { ok: false as const, error: error.message };
+  await activity(
+    a.search.id,
+    a.search.firm_id,
+    a.me.user_id,
+    'deal_updated',
+    Object.keys(update).join(', '),
+    update
+  );
+  revalidatePath(`/dashboard/clients/${clientId}`);
+  return { ok: true as const };
+}
+
+export async function editHouseAction(
+  clientId: string,
+  houseId: string,
+  payload: {
+    address?: string;
+    list_price?: number | null;
+    listing_url?: string | null;
+    photo_url?: string | null;
+    notes?: string | null;
+    bedrooms?: number | null;
+    bathrooms?: number | null;
+    square_feet?: number | null;
+  }
+) {
+  const a = await authorize(clientId);
+  if ('error' in a) return { ok: false as const, error: a.error };
+  const service = getSupabaseServiceRoleClient();
+  const update: Record<string, any> = {};
+  for (const k of [
+    'address',
+    'list_price',
+    'listing_url',
+    'photo_url',
+    'notes',
+    'bedrooms',
+    'bathrooms',
+    'square_feet',
+  ] as const) {
+    if (payload[k] !== undefined) update[k] = payload[k];
+  }
+  const { error } = await service
+    .from('houses')
+    .update(update)
+    .eq('id', houseId)
+    .eq('firm_id', a.search.firm_id);
+  if (error) return { ok: false as const, error: error.message };
+  revalidatePath(`/dashboard/clients/${clientId}`);
+  return { ok: true as const };
+}
+
+export async function deleteHouseAction(clientId: string, houseId: string) {
+  const a = await authorize(clientId);
+  if ('error' in a) return { ok: false as const, error: a.error };
+  const service = getSupabaseServiceRoleClient();
+  const { error } = await service
+    .from('houses')
+    .delete()
+    .eq('id', houseId)
+    .eq('firm_id', a.search.firm_id);
+  if (error) return { ok: false as const, error: error.message };
+  revalidatePath(`/dashboard/clients/${clientId}`);
+  return { ok: true as const };
+}
+
 export async function quickMessageAction(clientId: string, body: string) {
   const a = await authorize(clientId);
   if ('error' in a) return { ok: false as const, error: a.error };

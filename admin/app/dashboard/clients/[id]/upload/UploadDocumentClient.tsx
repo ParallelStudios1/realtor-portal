@@ -40,9 +40,10 @@ export function UploadDocumentClient({
       const { error: insertErr } = await supabase.from('documents').insert({
         firm_id: firmId,
         search_id: searchId,
-        title: title.trim(),
+        name: title.trim(),
         storage_path: path,
         mime_type: file.type || null,
+        file_size: file.size || null,
       });
       if (insertErr) {
         toast.show('Saved file but DB row failed: ' + insertErr.message, {

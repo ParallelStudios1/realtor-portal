@@ -35,7 +35,7 @@ export default async function ClientDetailPage({
   const { data: search } = await supabase
     .from('client_searches')
     .select(
-      'id, kind, phase, name, description, attorney_name, attorney_email, attorney_phone, docusign_envelope_url, co_realtor_id, started_at, created_at'
+      'id, kind, phase, name, description, attorney_name, attorney_email, attorney_phone, docusign_envelope_url, co_realtor_id, started_at, created_at, agreed_price, closing_amount, earnest_money, commission_pct, contract_url, notes'
     )
     .eq('client_id', params.id)
     .eq('firm_id', me.firm_id!)
@@ -88,7 +88,7 @@ export default async function ClientDetailPage({
   const { data: documents } = searchId
     ? await supabase
         .from('documents')
-        .select('id, title, storage_path, mime_type, created_at')
+        .select('id, name, storage_path, mime_type, created_at')
         .eq('search_id', searchId)
         .order('created_at', { ascending: false })
         .limit(10)
@@ -199,8 +199,17 @@ export default async function ClientDetailPage({
       {search && (
         <ClientDetailActions
           clientId={params.id}
+          firmId={me.firm_id!}
           searchId={search.id}
           currentPhase={search.phase}
+          financials={{
+            agreed_price: (search as any).agreed_price ?? null,
+            closing_amount: (search as any).closing_amount ?? null,
+            earnest_money: (search as any).earnest_money ?? null,
+            commission_pct: (search as any).commission_pct ?? null,
+            contract_url: (search as any).contract_url ?? null,
+            notes: (search as any).notes ?? null,
+          }}
           teammates={(teammates || []) as any}
         />
       )}
@@ -396,6 +405,59 @@ export default async function ClientDetailPage({
             </ul>
           </section>
 
+          {/* Financials */}
+          {search && ((search as any).agreed_price || (search as any).closing_amount || (search as any).earnest_money || (search as any).commission_pct || (search as any).contract_url) && (
+            <section className="rounded-xl border border-slate-200 bg-white p-5">
+              <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Financials
+              </h2>
+              <dl className="mt-3 grid grid-cols-2 gap-y-2 text-sm">
+                {(search as any).agreed_price != null && (
+                  <>
+                    <dt className="text-slate-500">Agreed</dt>
+                    <dd className="text-right font-semibold">
+                      ${Number((search as any).agreed_price).toLocaleString()}
+                    </dd>
+                  </>
+                )}
+                {(search as any).closing_amount != null && (
+                  <>
+                    <dt className="text-slate-500">Closing</dt>
+                    <dd className="text-right font-semibold">
+                      ${Number((search as any).closing_amount).toLocaleString()}
+                    </dd>
+                  </>
+                )}
+                {(search as any).earnest_money != null && (
+                  <>
+                    <dt className="text-slate-500">Earnest</dt>
+                    <dd className="text-right font-semibold">
+                      ${Number((search as any).earnest_money).toLocaleString()}
+                    </dd>
+                  </>
+                )}
+                {(search as any).commission_pct != null && (
+                  <>
+                    <dt className="text-slate-500">Commission</dt>
+                    <dd className="text-right font-semibold">
+                      {Number((search as any).commission_pct)}%
+                    </dd>
+                  </>
+                )}
+              </dl>
+              {(search as any).contract_url && (
+                <a
+                  href={(search as any).contract_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-3 inline-block text-xs font-semibold text-blue-600 hover:underline"
+                >
+                  View contract ↗
+                </a>
+              )}
+            </section>
+          )}
+
           {/* Documents */}
           <section className="rounded-xl border border-slate-200 bg-white p-5">
             <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
@@ -407,7 +469,7 @@ export default async function ClientDetailPage({
               <ul className="mt-3 divide-y divide-slate-100">
                 {documents.map((d: any) => (
                   <li key={d.id} className="py-2 text-sm">
-                    <div className="font-medium">{d.title}</div>
+                    <div className="font-medium">{d.name}</div>
                     <div className="text-xs text-slate-500">
                       {new Date(d.created_at).toLocaleDateString()}
                     </div>
