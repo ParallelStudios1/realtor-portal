@@ -28,6 +28,105 @@ function tempId(prefix: string) {
   return `${prefix}-${Math.random().toString(36).slice(2, 10)}-${Date.now()}`;
 }
 
+/**
+ * Update the financials/contract fields on a client_searches row.
+ * Realtor-only. Pass null for any field to clear it; undefined to leave it.
+ */
+export function useUpdateDealFinancials() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      searchId,
+      ...patch
+    }: {
+      searchId: string;
+      agreed_price?: number | null;
+      closing_amount?: number | null;
+      earnest_money?: number | null;
+      commission_pct?: number | null;
+      contract_url?: string | null;
+      notes?: string | null;
+    }) => {
+      const update: Record<string, any> = {};
+      for (const k of [
+        'agreed_price',
+        'closing_amount',
+        'earnest_money',
+        'commission_pct',
+        'contract_url',
+        'notes',
+      ] as const) {
+        if ((patch as any)[k] !== undefined) update[k] = (patch as any)[k];
+      }
+      const { error } = await supabase
+        .from('client_searches')
+        .update(update)
+        .eq('id', searchId);
+      if (error) throw error;
+      return searchId;
+    },
+    onSettled: (_d, _e, vars) => {
+      queryClient.invalidateQueries({ queryKey: ['search', vars.searchId] });
+    },
+  });
+}
+
+/**
+ * Send a high-priority "ALERT:" message in the deal thread + push.
+ */
+export function useSendAlert() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      searchId,
+      firmId,
+      senderId,
+      message,
+    }: {
+      searchId: string;
+      firmId: string;
+      senderId: string;
+      message: string;
+    }) => {
+      const { data: inserted, error } = await supabase
+        .from('messages')
+        .insert({
+          firm_id: firmId,
+          search_id: searchId,
+          sender_id: senderId,
+          body: 'ALERT: ' + message.trim(),
+        })
+        .select('id')
+        .single();
+      if (error) throw error;
+      // Best-effort push.
+      try {
+        const apiBase =
+          (process.env.EXPO_PUBLIC_API_URL as string | undefined) ||
+          'https://realtor-portal-ten.vercel.app';
+        const { data: sess } = await supabase.auth.getSession();
+        const token = sess.session?.access_token;
+        await fetch(apiBase + '/api/notifications/send-push', {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            ...(token ? { Authorization: 'Bearer ' + token } : {}),
+          },
+          body: JSON.stringify({
+            searchId,
+            messageId: inserted?.id,
+            kind: 'alert',
+          }),
+        });
+      } catch {}
+      return inserted?.id;
+    },
+    onSettled: (_d, _e, vars) => {
+      queryClient.invalidateQueries({ queryKey: ['messages', vars.searchId] });
+    },
+  });
+}
+
 export function useUpdatePhase() {
   const queryClient = useQueryClient();
 

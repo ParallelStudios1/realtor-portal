@@ -249,10 +249,7 @@ export default function RealtorClientDetailScreen() {
               icon="cash"
               label="Financials"
               onPress={() =>
-                Alert.alert(
-                  'Coming to mobile soon',
-                  'Set financials in the web dashboard for now: realtor-portal-ten.vercel.app',
-                )
+                router.push(`/(realtor)/clients/${id}/financials` as any)
               }
             />
             <ActionTile
@@ -285,10 +282,7 @@ export default function RealtorClientDetailScreen() {
               icon="alert-circle"
               label="Send alert"
               onPress={() =>
-                Alert.alert(
-                  'Send alert',
-                  'Alerts come to mobile in the next update. Use the web dashboard now.',
-                )
+                router.push(`/(realtor)/clients/${id}/alert` as any)
               }
             />
           </View>
