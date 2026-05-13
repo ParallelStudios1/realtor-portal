@@ -9,10 +9,13 @@ export default async function DashboardOverviewPage() {
 
   const [{ count: clientCount }, { count: dealCount }, { data: recentDeals }] = await Promise.all([
     supabase.from('users').select('id', { count: 'exact', head: true }).eq('role', 'client').eq('firm_id', me.firm_id!),
-    supabase.from('deals').select('id', { count: 'exact', head: true }).eq('firm_id', me.firm_id!),
+    supabase.from('client_searches').select('id', { count: 'exact', head: true }).eq('firm_id', me.firm_id!).neq('phase', 'closed'),
     supabase
-      .from('deals')
-      .select('id, address, current_phase, updated_at, client:users!deals_client_id_fkey(full_name)')
+      .from('client_searches')
+      .select(
+        `id, name, phase, updated_at,
+         client:users!client_searches_client_id_fkey ( id, full_name, email )`
+      )
       .eq('firm_id', me.firm_id!)
       .order('updated_at', { ascending: false })
       .limit(5),
@@ -69,12 +72,24 @@ export default async function DashboardOverviewPage() {
               </thead>
               <tbody>
                 {recentDeals.map((d: any) => (
-                  <tr key={d.id} className="border-b border-slate-100 last:border-0">
-                    <td className="px-4 py-3 font-medium">{d.client?.full_name || '—'}</td>
-                    <td className="px-4 py-3 text-slate-600">{d.address || '—'}</td>
+                  <tr
+                    key={d.id}
+                    className="cursor-pointer border-b border-slate-100 transition hover:bg-slate-50 last:border-0"
+                  >
+                    <td className="px-4 py-3 font-medium">
+                      <Link
+                        href={`/dashboard/clients/${d.client?.id}`}
+                        className="block"
+                      >
+                        {d.client?.full_name || d.client?.email || '—'}
+                      </Link>
+                    </td>
+                    <td className="px-4 py-3 text-slate-600">
+                      {d.name || 'Deal'}
+                    </td>
                     <td className="px-4 py-3">
-                      <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs text-blue-700">
-                        {d.current_phase || 'Pending'}
+                      <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
+                        {String(d.phase || 'pending').replace(/_/g, ' ')}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-xs text-slate-500">

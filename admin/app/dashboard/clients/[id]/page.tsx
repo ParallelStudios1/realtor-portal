@@ -79,7 +79,7 @@ export default async function ClientDetailPage({
   const { data: dates } = searchId
     ? await supabase
         .from('important_dates')
-        .select('id, label, date, kind')
+        .select('id, label, date, notes')
         .eq('search_id', searchId)
         .order('date', { ascending: true })
     : { data: [] as any[] };

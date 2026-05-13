@@ -119,7 +119,7 @@ export async function addImportantDateAction(
     search_id: a.search.id,
     label: payload.label,
     date: payload.date,
-    kind: payload.kind ?? 'custom',
+    notes: payload.kind && payload.kind !== 'custom' ? payload.kind : null,
     created_by: a.me.user_id,
   });
   if (error) return { ok: false as const, error: error.message };

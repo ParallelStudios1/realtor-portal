@@ -538,10 +538,12 @@ export function useUpdateFavoriteHouse() {
       houseId: string;
       isFavorite: boolean;
     }) => {
-      const { error } = await supabase
-        .from('houses')
-        .update({ is_favorite: isFavorite })
-        .eq('id', houseId);
+      // Clients can't write to houses directly (RLS staff-only). Use the
+      // SECURITY DEFINER RPC which verifies caller owns the search.
+      const { error } = await supabase.rpc('set_house_favorite', {
+        p_house_id: houseId,
+        p_favorite: isFavorite,
+      });
       if (error) throw error;
     },
     onMutate: async (vars) => {
@@ -689,12 +691,9 @@ export function useRequestTour() {
         .single();
       if (insertError) throw insertError;
 
-      // Also flip the house status so it shows up correctly on both sides.
-      const { error: statusError } = await supabase
-        .from('houses')
-        .update({ status: 'tour_requested' })
-        .eq('id', houseId);
-      if (statusError) throw statusError;
+      // NOTE: we used to flip houses.status to 'tour_requested' here, but
+      // clients don't have write access to houses (RLS staff-only). The
+      // realtor's confirm flow updates the house status when they accept.
 
       // Fire-and-forget push to the realtor side. The row is already persisted
       // — we don't want a flaky network to block the client's optimistic UI.

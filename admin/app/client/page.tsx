@@ -32,7 +32,7 @@ export default async function ClientHomePage() {
   const { data: dates } = active
     ? await supabase
         .from('important_dates')
-        .select('id, label, date, kind')
+        .select('id, label, date, notes')
         .eq('search_id', active.id)
         .order('date', { ascending: true })
         .limit(5)

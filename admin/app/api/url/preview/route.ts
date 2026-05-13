@@ -81,10 +81,19 @@ export async function POST(req: Request) {
         redirect: 'follow',
         signal: ac.signal,
         headers: {
+          // Zillow and Redfin block the obvious "bot" UA. Use a real
+          // browser UA — they still serve their listing page when one
+          // hits without cookies.
           'user-agent':
-            'Mozilla/5.0 (compatible; RealtorPortalBot/1.0; +https://realtor-portal-ten.vercel.app)',
-          accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_4) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15',
+          accept:
+            'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
           'accept-language': 'en-US,en;q=0.9',
+          'sec-fetch-dest': 'document',
+          'sec-fetch-mode': 'navigate',
+          'sec-fetch-site': 'none',
+          'sec-fetch-user': '?1',
+          'upgrade-insecure-requests': '1',
         },
       });
     } catch (err: any) {

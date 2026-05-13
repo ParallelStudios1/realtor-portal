@@ -52,7 +52,7 @@ export async function GET(
   // 1. Important dates (closing, appraisal, inspection, custom).
   const { data: dates } = await service
     .from('important_dates')
-    .select('id, label, date, kind')
+    .select('id, label, date, notes')
     .eq('search_id', rawId)
     .order('date', { ascending: true });
 
@@ -66,7 +66,7 @@ export async function GET(
     events.push({
       uid: 'date-' + d.id + '@realtor-portal',
       summary: d.label || 'Important date',
-      description: 'Type: ' + (d.kind || 'custom'),
+      description: d.notes || 'Important date',
       start,
       durationMinutes: 60,
     });

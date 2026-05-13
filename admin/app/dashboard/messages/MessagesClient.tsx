@@ -126,21 +126,45 @@ export function MessagesClient({
         sender_id: currentUserId,
         body,
       })
-      .select('id')
+      .select('*')
       .single();
     if (e) {
       const msg = humanError(e);
       setError(msg);
       toast.show(msg, { variant: 'error' });
       setDraft(body); // restore
-    } else {
+    } else if (inserted) {
+      // Optimistically inject the message so the sender sees it immediately
+      // without relying on the realtime channel. The realtime listener
+      // dedupes by id when the broadcast arrives.
+      const full = inserted as unknown as Message;
+      setMessages((prev) => {
+        const list = prev[activeId] || [];
+        if (list.some((m) => m.id === full.id)) return prev;
+        return { ...prev, [activeId]: [...list, full] };
+      });
+      setThreads((prev) => {
+        const idx = prev.findIndex((t) => t.searchId === activeId);
+        if (idx === -1) return prev;
+        const updated = {
+          ...prev[idx],
+          latest: {
+            id: full.id,
+            body: full.body,
+            sender_id: full.sender_id,
+            created_at: full.created_at,
+          },
+        };
+        const rest = prev.filter((_, i) => i !== idx);
+        return [updated, ...rest];
+      });
       // Fire-and-forget push to the client side
       fetch('/api/notifications/send-push', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           searchId: activeId,
-          messageId: inserted?.id,
+          messageId: full.id,
           kind: 'message',
         }),
       }).catch(() => {});

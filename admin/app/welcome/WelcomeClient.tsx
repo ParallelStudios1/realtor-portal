@@ -29,15 +29,26 @@ export function WelcomeClient({ firm, hasSession, email, fullName }: Props) {
   const supabase = getSupabaseBrowserClient();
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [step, setStep] = useState<'setPassword' | 'openApp'>(
-    hasSession ? 'setPassword' : 'openApp'
-  );
+
+  // Detect a magic-link hash on the very first render so we don't flash the
+  // "Open in app / browser" buttons before the session is set.
+  const hashHasToken =
+    typeof window !== 'undefined' &&
+    window.location.hash.includes('access_token');
+
+  const [step, setStep] = useState<'redeeming' | 'setPassword' | 'openApp'>(() => {
+    if (hashHasToken) return 'redeeming';
+    return hasSession ? 'setPassword' : 'openApp';
+  });
+  // Client-side mirror of hasSession — the server prop is captured at render
+  // time and won't update after setSession runs in the browser.
+  const [sessionReady, setSessionReady] = useState(hasSession);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
-  // Supabase verify endpoint sends users back here with #access_token=... in the
-  // URL fragment. Pick those up and set the session client-side. (Server-side
-  // can't read URL fragments — they never reach the server.)
+  // Magic-link hash handling. The token only exists in `window.location.hash`
+  // (server can't see it). We exchange it for a session, then HARD redirect
+  // to the destination so the cookie is fresh and there's no flicker.
   useEffect(() => {
     const hash = typeof window !== 'undefined' ? window.location.hash : '';
     if (!hash.includes('access_token')) return;
@@ -45,21 +56,25 @@ export function WelcomeClient({ firm, hasSession, email, fullName }: Props) {
     const params = new URLSearchParams(hash.slice(1));
     const access_token = params.get('access_token');
     const refresh_token = params.get('refresh_token');
-    if (access_token && refresh_token) {
-      supabase.auth
-        .setSession({ access_token, refresh_token })
-        .then(({ error: e }) => {
-          if (e) {
-            setError(e.message);
-            return;
-          }
-          // Clear the hash, then refresh server props so firm/user load
-          window.history.replaceState(null, '', window.location.pathname);
-          setStep('setPassword');
-          router.refresh();
-        });
+    if (!access_token || !refresh_token) {
+      setError('Invite link is missing a token. Ask your realtor to resend.');
+      setStep('openApp');
+      return;
     }
-  }, [supabase, router]);
+    supabase.auth
+      .setSession({ access_token, refresh_token })
+      .then(async ({ error: e }) => {
+        if (e) {
+          setError(e.message);
+          setStep('openApp');
+          return;
+        }
+        // Clean the URL.
+        window.history.replaceState(null, '', window.location.pathname);
+        setSessionReady(true);
+        setStep('setPassword');
+      });
+  }, [supabase]);
 
   const brandColor = firm?.brand_color || '#0F172A';
   const accentColor = firm?.accent_color || '#2563EB';
@@ -118,7 +133,14 @@ export function WelcomeClient({ firm, hasSession, email, fullName }: Props) {
 
         {/* Card */}
         <div className="rounded-2xl bg-white p-7 shadow-2xl">
-          {step === 'setPassword' && hasSession && (
+          {step === 'redeeming' && (
+            <div className="flex flex-col items-center py-10">
+              <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-slate-900" />
+              <p className="mt-4 text-sm text-slate-600">Signing you in…</p>
+            </div>
+          )}
+
+          {step === 'setPassword' && sessionReady && (
             <>
               <h1 className="text-2xl font-bold tracking-tight">
                 Welcome{fullName ? `, ${fullName.split(' ')[0]}` : ''}.
@@ -194,7 +216,7 @@ export function WelcomeClient({ firm, hasSession, email, fullName }: Props) {
           {step === 'openApp' && (
             <>
               <h1 className="text-2xl font-bold tracking-tight">
-                {hasSession ? "You're all set." : "You're invited."}
+                {sessionReady ? "You're all set." : "You're invited."}
               </h1>
               <p className="mt-1 text-sm text-slate-600">
                 Open {firm?.name || 'the portal'} in the app to track your deal,
@@ -242,7 +264,7 @@ export function WelcomeClient({ firm, hasSession, email, fullName }: Props) {
             </>
           )}
 
-          {step === 'openApp' && !hasSession && (
+          {step === 'openApp' && !sessionReady && (
             <p className="mt-4 text-center text-xs text-slate-500">
               Need help signing in? Email your realtor at{' '}
               {firm?.name || 'the firm'}.
