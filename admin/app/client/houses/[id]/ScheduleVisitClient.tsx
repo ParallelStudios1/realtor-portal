@@ -47,13 +47,14 @@ export function ScheduleVisitClient({
       <div className="text-sm font-semibold">Schedule a visit</div>
       <label className="mt-3 block text-sm">
         <span className="block text-xs font-medium text-slate-600">
-          When would you like to go? (any free text)
+          When would you like to go?
         </span>
         <input
-          className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+          type="datetime-local"
+          className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
           value={when}
           onChange={(e) => setWhen(e.target.value)}
-          placeholder="e.g. Sat afternoon, or Tue evening after 6pm"
+          min={new Date().toISOString().slice(0, 16)}
         />
       </label>
       <label className="mt-3 block text-sm">

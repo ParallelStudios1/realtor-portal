@@ -41,7 +41,17 @@ export async function middleware(req: NextRequest) {
   // lazily — only when we're actually in protected territory and need to
   // decide between /client and /dashboard.
   let role: string | null = null;
-  if (user && (path === '/login' || path === '/signup' || path === '/dashboard' || path.startsWith('/dashboard/') || path === '/client' || path.startsWith('/client/'))) {
+  if (
+    user &&
+    (path === '/login' ||
+      path === '/signup' ||
+      path === '/dashboard' ||
+      path.startsWith('/dashboard/') ||
+      path === '/client' ||
+      path.startsWith('/client/') ||
+      path === '/attorney' ||
+      path.startsWith('/attorney/'))
+  ) {
     const { data: row } = await supabase
       .from('users')
       .select('role')
@@ -50,24 +60,40 @@ export async function middleware(req: NextRequest) {
     role = (row?.role as string) || null;
   }
 
+  const homeForRole = (r: string | null) =>
+    r === 'attorney' ? '/attorney' : r === 'client' ? '/client' : '/dashboard';
+
   // Logged in + visiting auth pages → role-aware home
   if (user && (path === '/login' || path === '/signup')) {
     const url = req.nextUrl.clone();
-    url.pathname = role === 'client' ? '/client' : '/dashboard';
+    url.pathname = homeForRole(role);
     url.search = '';
     return NextResponse.redirect(url);
   }
 
-  // Client visiting /dashboard → bounce to /client
-  if (role === 'client' && (path === '/dashboard' || path.startsWith('/dashboard/'))) {
+  // Cross-role visits → redirect to correct home.
+  const inDashboard = path === '/dashboard' || path.startsWith('/dashboard/');
+  const inClient = path === '/client' || path.startsWith('/client/');
+  const inAttorney = path === '/attorney' || path.startsWith('/attorney/');
+
+  if (role === 'client' && (inDashboard || inAttorney)) {
     const url = req.nextUrl.clone();
     url.pathname = '/client';
     url.search = '';
     return NextResponse.redirect(url);
   }
-
-  // Realtor / firm_admin visiting /client → bounce to /dashboard
-  if (role && role !== 'client' && (path === '/client' || path.startsWith('/client/'))) {
+  if (role === 'attorney' && (inDashboard || inClient)) {
+    const url = req.nextUrl.clone();
+    url.pathname = '/attorney';
+    url.search = '';
+    return NextResponse.redirect(url);
+  }
+  if (
+    role &&
+    role !== 'client' &&
+    role !== 'attorney' &&
+    (inClient || inAttorney)
+  ) {
     const url = req.nextUrl.clone();
     url.pathname = '/dashboard';
     url.search = '';
