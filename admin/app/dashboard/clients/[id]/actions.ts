@@ -365,6 +365,93 @@ export async function deleteHouseAction(clientId: string, houseId: string) {
   return { ok: true as const };
 }
 
+export type PartyRole =
+  | 'realtor'
+  | 'co_realtor'
+  | 'buyer'
+  | 'seller'
+  | 'attorney'
+  | 'inspector'
+  | 'lender'
+  | 'appraiser'
+  | 'title_agent'
+  | 'mortgage_broker'
+  | 'other';
+
+export async function addParticipantAction(
+  clientId: string,
+  payload: {
+    role: PartyRole;
+    name?: string;
+    email?: string;
+    phone?: string;
+    can_view_documents?: boolean;
+    can_view_financials?: boolean;
+    can_view_messages?: boolean;
+    can_view_dates?: boolean;
+  }
+) {
+  const a = await authorize(clientId);
+  if ('error' in a) return { ok: false as const, error: a.error };
+  if (!payload.name && !payload.email)
+    return {
+      ok: false as const,
+      error: 'Add a name or email so this party can be identified.',
+    };
+  const service = getSupabaseServiceRoleClient();
+  // Match an existing user by email so logging in works automatically.
+  let userId: string | null = null;
+  if (payload.email) {
+    const { data: u } = await service
+      .from('users')
+      .select('id')
+      .ilike('email', payload.email)
+      .maybeSingle();
+    userId = u?.id ?? null;
+  }
+  const { error } = await service.from('deal_participants').insert({
+    search_id: a.search.id,
+    firm_id: a.search.firm_id,
+    user_id: userId,
+    external_email: payload.email || null,
+    external_name: payload.name || null,
+    external_phone: payload.phone || null,
+    role: payload.role,
+    can_view_documents: payload.can_view_documents ?? true,
+    can_view_financials: payload.can_view_financials ?? false,
+    can_view_messages: payload.can_view_messages ?? false,
+    can_view_dates: payload.can_view_dates ?? true,
+    created_by: a.me.user_id,
+  });
+  if (error) return { ok: false as const, error: error.message };
+  await activity(
+    a.search.id,
+    a.search.firm_id,
+    a.me.user_id,
+    payload.role + '_added',
+    payload.name || payload.email || ''
+  );
+  revalidatePath(`/dashboard/clients/${clientId}`);
+  return { ok: true as const };
+}
+
+export async function removeParticipantAction(
+  clientId: string,
+  participantId: string
+) {
+  const a = await authorize(clientId);
+  if ('error' in a) return { ok: false as const, error: a.error };
+  const service = getSupabaseServiceRoleClient();
+  const { error } = await service
+    .from('deal_participants')
+    .delete()
+    .eq('id', participantId)
+    .eq('search_id', a.search.id);
+  if (error) return { ok: false as const, error: error.message };
+  revalidatePath(`/dashboard/clients/${clientId}`);
+  return { ok: true as const };
+}
+
 export async function quickMessageAction(clientId: string, body: string) {
   const a = await authorize(clientId);
   if ('error' in a) return { ok: false as const, error: a.error };

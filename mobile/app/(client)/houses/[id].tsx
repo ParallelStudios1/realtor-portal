@@ -9,7 +9,11 @@ import {
   ActivityIndicator,
   Linking,
   TextInput,
+  Platform,
 } from 'react-native';
+import DateTimePicker, {
+  type DateTimePickerEvent,
+} from '@react-native-community/datetimepicker';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useAuth } from '@/lib/auth';
@@ -52,7 +56,8 @@ export default function ClientHouseDetailScreen() {
   const logActivity = useLogActivity();
 
   const [tourNotes, setTourNotes] = useState('');
-  const [tourWhen, setTourWhen] = useState('');
+  const [tourWhenDate, setTourWhenDate] = useState<Date | null>(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [requesting, setRequesting] = useState(false);
   const [stars, setStars] = useState(rating?.stars ?? 0);
   const [ratingNotes, setRatingNotes] = useState(rating?.notes ?? '');
@@ -75,7 +80,7 @@ export default function ClientHouseDetailScreen() {
         searchId: house.search_id,
         firmId: userProfile.firm_id,
         clientId: user.id,
-        preferredWhen: tourWhen.trim() || undefined,
+        preferredWhen: tourWhenDate ? tourWhenDate.toISOString() : undefined,
         notes: tourNotes.trim() || undefined,
       });
       await logActivity.mutateAsync({
@@ -194,13 +199,46 @@ export default function ClientHouseDetailScreen() {
           {house.status === 'interested' && (
             <View style={[styles.actionBlock, { borderColor: colors.border }]}>
               <Text style={[styles.actionTitle, { color: colors.text }]}>Want to see this house?</Text>
-              <TextInput
-                value={tourWhen}
-                onChangeText={setTourWhen}
-                placeholder="Preferred when (e.g. Saturday afternoon)"
-                placeholderTextColor={colors.textSecondary}
-                style={[styles.input, { color: colors.text, borderColor: colors.border }]}
-              />
+              <Pressable
+                onPress={() => setShowDatePicker(true)}
+                style={[
+                  styles.input,
+                  {
+                    borderColor: colors.border,
+                    backgroundColor: colors.surface,
+                    paddingVertical: 14,
+                  },
+                ]}
+              >
+                <Text
+                  style={{
+                    color: tourWhenDate ? colors.text : colors.textSecondary,
+                    fontSize: 14,
+                  }}
+                >
+                  {tourWhenDate
+                    ? tourWhenDate.toLocaleString([], {
+                        weekday: 'short',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit',
+                      })
+                    : 'Pick a date & time'}
+                </Text>
+              </Pressable>
+              {showDatePicker && (
+                <DateTimePicker
+                  value={tourWhenDate || new Date()}
+                  mode="datetime"
+                  display={Platform.OS === 'ios' ? 'inline' : 'default'}
+                  onChange={(e: DateTimePickerEvent, d?: Date) => {
+                    if (Platform.OS !== 'ios') setShowDatePicker(false);
+                    if (e.type === 'set' && d) setTourWhenDate(d);
+                  }}
+                  minimumDate={new Date()}
+                />
+              )}
               <TextInput
                 value={tourNotes}
                 onChangeText={setTourNotes}

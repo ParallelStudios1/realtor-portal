@@ -19,6 +19,7 @@ export async function middleware(req: NextRequest) {
     path.startsWith('/signup') ||
     path.startsWith('/login') ||
     path.startsWith('/welcome') ||
+    path.startsWith('/deal/') ||
     path.startsWith('/privacy') ||
     path.startsWith('/terms') ||
     // All /api routes do their own auth (cookie session OR Bearer token).
