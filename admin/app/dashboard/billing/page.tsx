@@ -38,14 +38,21 @@ export default async function BillingPage({
   searchParams: { success?: string; canceled?: string };
 }) {
   const me = (await getMe())!;
-  const trialDays = me.trial_ends_at
-    ? Math.max(
-        0,
-        Math.ceil(
-          (new Date(me.trial_ends_at).getTime() - Date.now()) / 86400000
-        )
-      )
+  // Compose a live-feeling countdown: "X days, Y hours" so it visibly ticks
+  // throughout the day instead of sitting on a whole-day integer.
+  const trialMsLeft = me.trial_ends_at
+    ? Math.max(0, new Date(me.trial_ends_at).getTime() - Date.now())
     : 0;
+  const trialTotalHours = Math.floor(trialMsLeft / 3600000);
+  const trialDaysFull = Math.floor(trialTotalHours / 24);
+  const trialHoursPart = trialTotalHours - trialDaysFull * 24;
+  const trialDays = trialDaysFull;
+  const trialDisplay =
+    trialMsLeft <= 0
+      ? 'Trial ended'
+      : trialDaysFull > 0
+      ? `${trialDaysFull} day${trialDaysFull === 1 ? '' : 's'}, ${trialHoursPart} hour${trialHoursPart === 1 ? '' : 's'} left`
+      : `${trialTotalHours} hour${trialTotalHours === 1 ? '' : 's'} left`;
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-8">
@@ -53,7 +60,7 @@ export default async function BillingPage({
       <p className="mt-1 text-sm text-slate-600">
         {me.firm_status === 'trial' ? (
           <>
-            You're on a free trial — <strong>{trialDays} days left</strong>.
+            You're on a free trial — <strong>{trialDisplay}</strong>.
             Pick a plan to keep your portal running after that.
           </>
         ) : me.firm_status === 'active' ? (

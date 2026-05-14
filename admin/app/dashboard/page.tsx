@@ -43,8 +43,8 @@ export default async function DashboardOverviewPage() {
         <Card label="Clients" value={clientCount ?? 0} href="/dashboard/clients" />
         <Card label="Active deals" value={dealCount ?? 0} href="/dashboard/clients" />
         <Card
-          label="Trial status"
-          value={me.firm_status === 'trial' ? 'Free trial' : 'Active'}
+          label={me.firm_status === 'trial' ? 'Trial' : 'Plan'}
+          value={trialStatusLabel(me)}
           href="/dashboard/billing"
         />
       </div>
@@ -120,6 +120,17 @@ export default async function DashboardOverviewPage() {
       </section>
     </main>
   );
+}
+
+function trialStatusLabel(me: any): string {
+  if (me.firm_status !== 'trial') return 'Active';
+  if (!me.trial_ends_at) return 'Free trial';
+  const msLeft = new Date(me.trial_ends_at).getTime() - Date.now();
+  if (msLeft <= 0) return 'Trial ended';
+  const hours = Math.floor(msLeft / 3600000);
+  const days = Math.floor(hours / 24);
+  if (days >= 1) return days + 'd left';
+  return hours + 'h left';
 }
 
 function Card({ label, value, href }: { label: string; value: string | number; href: string }) {
