@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getMe, getSupabaseServerClient } from '@/lib/supabaseSsr';
 import { ClientDetailActions, ParticipantList } from './ClientDetailActions';
+import { DocumentRow } from './DocumentRow';
 
 export const dynamic = 'force-dynamic';
 
@@ -555,17 +556,16 @@ export default async function ClientDetailPage({
                   }
                   return Array.from(grouped.entries()).map(([folder, items]) => (
                     <li key={folder} className="py-2">
-                      <div className="text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                      <div className="mb-1.5 text-[10px] font-bold uppercase tracking-wide text-slate-400">
                         {folder}
                       </div>
-                      <ul className="mt-1 space-y-1">
+                      <ul className="space-y-1.5">
                         {items.map((d: any) => (
-                          <li key={d.id} className="text-sm">
-                            <div className="font-medium">{d.name}</div>
-                            <div className="text-xs text-slate-500">
-                              {new Date(d.created_at).toLocaleDateString()}
-                            </div>
-                          </li>
+                          <DocumentRow
+                            key={d.id}
+                            clientId={params.id}
+                            doc={d}
+                          />
                         ))}
                       </ul>
                     </li>

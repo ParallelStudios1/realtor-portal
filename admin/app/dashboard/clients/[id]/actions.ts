@@ -696,6 +696,50 @@ export async function createNewDealAction(
   return { ok: true as const, dealId: created?.id };
 }
 
+export async function moveDocumentFolderAction(
+  clientId: string,
+  payload: { documentId: string; folder: string }
+) {
+  const a = await authorize(clientId);
+  if ('error' in a) return { ok: false as const, error: a.error };
+  const service = getSupabaseServiceRoleClient();
+  const { error } = await service
+    .from('documents')
+    .update({ folder: payload.folder })
+    .eq('id', payload.documentId)
+    .eq('firm_id', a.search.firm_id);
+  if (error) return { ok: false as const, error: error.message };
+  revalidatePath(`/dashboard/clients/${clientId}`);
+  return { ok: true as const };
+}
+
+export async function deleteDocumentAction(
+  clientId: string,
+  documentId: string
+) {
+  const a = await authorize(clientId);
+  if ('error' in a) return { ok: false as const, error: a.error };
+  const service = getSupabaseServiceRoleClient();
+  // Fetch the storage path so we can delete the object too.
+  const { data: doc } = await service
+    .from('documents')
+    .select('storage_path, firm_id')
+    .eq('id', documentId)
+    .maybeSingle();
+  if (!doc || doc.firm_id !== a.search.firm_id)
+    return { ok: false as const, error: 'Document not found.' };
+  const { error: rmErr } = await service.storage
+    .from('client-docs')
+    .remove([doc.storage_path]);
+  if (rmErr) {
+    // Soft-continue — DB delete is still useful.
+  }
+  const { error } = await service.from('documents').delete().eq('id', documentId);
+  if (error) return { ok: false as const, error: error.message };
+  revalidatePath(`/dashboard/clients/${clientId}`);
+  return { ok: true as const };
+}
+
 export async function quickMessageAction(clientId: string, body: string) {
   const a = await authorize(clientId);
   if ('error' in a) return { ok: false as const, error: a.error };
