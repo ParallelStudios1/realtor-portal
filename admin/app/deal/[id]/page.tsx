@@ -84,6 +84,17 @@ export default async function DealPage({
   const hasAccess = isStaffSameFirm || isPrincipalClient || !!myParticipantRow;
   if (!hasAccess) notFound();
 
+  // Pretty-print my role for the header banner.
+  const myRoleLabel = isStaffSameFirm
+    ? 'Realtor'
+    : isPrincipalClient
+    ? d.kind === 'seller'
+      ? 'Seller'
+      : 'Buyer'
+    : myParticipantRow
+    ? (myParticipantRow.role as string).replace(/_/g, ' ')
+    : '';
+
   // Visibility flags. Staff and the principal client see everything; other
   // parties see only what was granted.
   const canSeeFinancials =
@@ -198,6 +209,33 @@ export default async function DealPage({
             </div>
           </div>
         </header>
+
+        {/* Your-role banner */}
+        {myRoleLabel && (
+          <div
+            className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm shadow-sm"
+            style={{ borderColor: brand + '33' }}
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                Your role
+              </span>
+              <span
+                className="rounded-full px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide capitalize"
+                style={{ backgroundColor: brand + '15', color: brand }}
+              >
+                {myRoleLabel}
+              </span>
+            </div>
+            <span className="text-xs text-slate-500">
+              {isStaffSameFirm
+                ? "You can edit everything."
+                : isPrincipalClient
+                ? "You're the principal on this deal."
+                : 'Read-only view scoped to what your realtor shared.'}
+            </span>
+          </div>
+        )}
 
         {/* Body grid */}
         <div className="mt-6 grid gap-6 md:grid-cols-3">

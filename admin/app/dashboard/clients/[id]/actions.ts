@@ -5,6 +5,7 @@ import { getMe, getSupabaseServerClient } from '@/lib/supabaseSsr';
 import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
 import { sendEmail, escapeHtml } from '@/lib/email';
 import { emailEveryoneOnPhaseChange } from '@/lib/dealEmail';
+import { isFirmPlanActive } from '@/lib/planGate';
 
 /**
  * Server actions called from the rich realtor client-detail page. Each one
@@ -22,6 +23,13 @@ async function authorize(clientId: string) {
   if (!me?.firm_id) return { error: 'Not authenticated.' as const };
   if (me.role !== 'realtor' && me.role !== 'firm_admin' && me.role !== 'super_admin')
     return { error: 'Forbidden.' as const };
+  // Block write actions when the firm's trial has lapsed.
+  const planOk = await isFirmPlanActive(me.firm_id);
+  if (!planOk)
+    return {
+      error:
+        'Your free trial has ended. Pick a plan in Settings → Billing to continue.' as const,
+    };
   const supabase = getSupabaseServerClient();
   // Find the active search for (firm, client). All actions are scoped to it.
   const { data: search } = await supabase
