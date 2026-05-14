@@ -5,7 +5,9 @@ import {
   addHouseAction,
   addImportantDateAction,
   addParticipantAction,
+  goUnderContractAction,
   linkDocusignAction,
+  massInviteAction,
   quickMessageAction,
   removeParticipantAction,
   sendAlertAction,
@@ -28,7 +30,9 @@ type Action =
   | 'message'
   | 'alert'
   | 'financials'
-  | 'participant';
+  | 'participant'
+  | 'mass_invite'
+  | 'under_contract';
 
 const PHASES = [
   { id: 'searching', label: 'Searching' },
@@ -145,6 +149,20 @@ export function ClientDetailActions({
             title="+ Party"
             subtitle="Buyer / seller / co-realtor / etc."
             onClick={() => setOpen('participant')}
+          />
+          <ActionCard
+            tone="sky"
+            icon={<IconMail />}
+            title="Mass invite"
+            subtitle="Paste many emails at once"
+            onClick={() => setOpen('mass_invite')}
+          />
+          <ActionCard
+            tone="rose"
+            icon={<IconSparkle />}
+            title="Go under contract"
+            subtitle="Dates + contract + email all"
+            onClick={() => setOpen('under_contract')}
           />
           <ActionCard
             tone="sky"
@@ -290,6 +308,35 @@ export function ClientDetailActions({
             const r = await addParticipantAction(clientId, payload);
             if (!r.ok) return toast.show(r.error || 'Failed', { variant: 'error' });
             toast.show('Party added to deal.', { variant: 'success' });
+            close();
+          }}
+        />
+      )}
+
+      {open === 'mass_invite' && (
+        <MassInviteModal
+          onClose={close}
+          onSubmit={async (payload) => {
+            const r = await massInviteAction(clientId, payload);
+            if (!r.ok) return toast.show(r.error || 'Failed', { variant: 'error' });
+            toast.show(
+              'Invited ' + (r as any).added + ' people.',
+              { variant: 'success' }
+            );
+            close();
+          }}
+        />
+      )}
+
+      {open === 'under_contract' && (
+        <UnderContractModal
+          onClose={close}
+          onSubmit={async (payload) => {
+            const r = await goUnderContractAction(clientId, payload);
+            if (!r.ok) return toast.show(r.error || 'Failed', { variant: 'error' });
+            toast.show('Under contract — every party was notified.', {
+              variant: 'success',
+            });
             close();
           }}
         />
@@ -516,6 +563,21 @@ function IconInbox() {
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
       <polyline points="22 12 16 12 14 15 10 15 8 12 2 12" />
       <path d="M5.5 5h13L22 12v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6z" />
+    </svg>
+  );
+}
+function IconMail() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="m3 7 9 6 9-6" />
+    </svg>
+  );
+}
+function IconSparkle() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M5.6 18.4l2.8-2.8M15.6 8.4l2.8-2.8" />
     </svg>
   );
 }
@@ -1272,6 +1334,121 @@ function Chip({ children }: { children: React.ReactNode }) {
     <span className="rounded bg-slate-100 px-1.5 py-0.5 font-semibold uppercase tracking-wide">
       {children}
     </span>
+  );
+}
+
+function UnderContractModal({
+  onClose,
+  onSubmit,
+}: {
+  onClose: () => void;
+  onSubmit: (p: {
+    binding_date?: string | null;
+    earnest_money_due?: string | null;
+    earnest_money_amount?: number | null;
+    due_diligence_end?: string | null;
+    closing_date?: string | null;
+    contract_url?: string | null;
+    message?: string;
+  }) => Promise<void>;
+}) {
+  const [binding, setBinding] = useState('');
+  const [earnest, setEarnest] = useState('');
+  const [earnestAmt, setEarnestAmt] = useState('');
+  const [diligence, setDiligence] = useState('');
+  const [closing, setClosing] = useState('');
+  const [contract, setContract] = useState('');
+  const [msg, setMsg] = useState('');
+  const [pending, start] = useTransition();
+  return (
+    <Modal title="Going under contract" onClose={onClose}>
+      <p className="mb-3 text-xs text-slate-500">
+        We'll save these dates, store the contract, move the phase, and email
+        every party on the deal automatically.
+      </p>
+      <div className="space-y-3">
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Binding agreement">
+            <input type="date" className={inputCls} value={binding} onChange={(e) => setBinding(e.target.value)} />
+          </Field>
+          <Field label="Earnest money due">
+            <input type="date" className={inputCls} value={earnest} onChange={(e) => setEarnest(e.target.value)} />
+          </Field>
+          <Field label="Earnest amount (USD)">
+            <input type="number" className={inputCls} value={earnestAmt} onChange={(e) => setEarnestAmt(e.target.value)} placeholder="5000" />
+          </Field>
+          <Field label="Due diligence ends">
+            <input type="date" className={inputCls} value={diligence} onChange={(e) => setDiligence(e.target.value)} />
+          </Field>
+          <Field label="Closing day">
+            <input type="date" className={inputCls} value={closing} onChange={(e) => setClosing(e.target.value)} />
+          </Field>
+        </div>
+        <Field label="Contract URL (PDF link or DocuSign)" hint="Anyone on the deal can click through to it from their email.">
+          <input type="url" className={inputCls} value={contract} onChange={(e) => setContract(e.target.value)} />
+        </Field>
+        <Field label="Note to everyone (optional)">
+          <textarea rows={3} className={inputCls} value={msg} onChange={(e) => setMsg(e.target.value)} placeholder="A line that appears in the email to all parties." />
+        </Field>
+      </div>
+      <PrimaryButton
+        pending={pending}
+        onClick={() =>
+          start(() =>
+            onSubmit({
+              binding_date: binding || null,
+              earnest_money_due: earnest || null,
+              earnest_money_amount: earnestAmt ? Number(earnestAmt) : null,
+              due_diligence_end: diligence || null,
+              closing_date: closing || null,
+              contract_url: contract.trim() || null,
+              message: msg.trim() || undefined,
+            })
+          )
+        }
+      >
+        Move to Under Contract & notify everyone
+      </PrimaryButton>
+    </Modal>
+  );
+}
+
+function MassInviteModal({
+  onClose,
+  onSubmit,
+}: {
+  onClose: () => void;
+  onSubmit: (p: { emails: string; role: PartyRole }) => Promise<void>;
+}) {
+  const [emails, setEmails] = useState('');
+  const [role, setRole] = useState<PartyRole>('buyer');
+  const [pending, start] = useTransition();
+  return (
+    <Modal title="Mass invite to this deal" onClose={onClose}>
+      <Field label="Role for everyone">
+        <select className={inputCls} value={role} onChange={(e) => setRole(e.target.value as PartyRole)}>
+          {PARTY_ROLES.map((r) => (
+            <option key={r.id} value={r.id}>{r.label}</option>
+          ))}
+        </select>
+      </Field>
+      <Field label="Emails" hint="One per line — or paste comma/space-separated. We dedupe + validate.">
+        <textarea
+          rows={6}
+          className={inputCls}
+          value={emails}
+          onChange={(e) => setEmails(e.target.value)}
+          placeholder={'alice@example.com\nbob@example.com\ncharlie@example.com'}
+        />
+      </Field>
+      <PrimaryButton
+        pending={pending}
+        disabled={!emails.trim()}
+        onClick={() => start(() => onSubmit({ emails, role }))}
+      >
+        Invite everyone
+      </PrimaryButton>
+    </Modal>
   );
 }
 

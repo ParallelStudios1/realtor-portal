@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { getMe, getSupabaseServerClient } from '@/lib/supabaseSsr';
 import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
 import { sendEmail, escapeHtml } from '@/lib/email';
+import { emailEveryoneOnPhaseChange } from '@/lib/dealEmail';
 
 /**
  * Server actions called from the rich realtor client-detail page. Each one
@@ -98,6 +99,13 @@ export async function updatePhaseAction(
           searchId: a.search.id,
           kind: 'phase_change',
         }),
+      });
+    } catch {}
+    // Email every party on the deal (client, realtor, attorney, all participants).
+    try {
+      await emailEveryoneOnPhaseChange({
+        searchId: a.search.id,
+        newPhase: phase,
       });
     } catch {}
   }
@@ -270,6 +278,97 @@ export async function sendAlertAction(clientId: string, message: string) {
       }),
     });
   } catch {}
+  revalidatePath(`/dashboard/clients/${clientId}`);
+  return { ok: true as const };
+}
+
+/**
+ * "Going under contract" workflow. One submit that:
+ *  - Flips deal phase → under_contract
+ *  - Saves binding date, earnest due, due-diligence end, closing day as
+ *    important_dates rows
+ *  - Stores contract URL on the search
+ *  - Emails ALL parties with the snapshot
+ *
+ * Saves the realtor from doing this manually for every deal.
+ */
+export async function goUnderContractAction(
+  clientId: string,
+  payload: {
+    binding_date?: string | null;
+    earnest_money_due?: string | null;
+    earnest_money_amount?: number | null;
+    due_diligence_end?: string | null;
+    closing_date?: string | null;
+    contract_url?: string | null;
+    message?: string;
+  }
+) {
+  const a = await authorize(clientId);
+  if ('error' in a) return { ok: false as const, error: a.error };
+  const service = getSupabaseServiceRoleClient();
+
+  await service
+    .from('client_searches')
+    .update({
+      phase: 'under_contract',
+      contract_url: payload.contract_url || null,
+      earnest_money: payload.earnest_money_amount ?? null,
+    })
+    .eq('id', a.search.id);
+
+  // Insert important dates (replace any existing rows with same label).
+  const dates: Array<{ label: string; date: string }> = [];
+  if (payload.binding_date)
+    dates.push({ label: 'Binding agreement', date: payload.binding_date });
+  if (payload.earnest_money_due)
+    dates.push({ label: 'Earnest money due', date: payload.earnest_money_due });
+  if (payload.due_diligence_end)
+    dates.push({ label: 'Due diligence ends', date: payload.due_diligence_end });
+  if (payload.closing_date)
+    dates.push({ label: 'Closing day', date: payload.closing_date });
+  for (const d of dates) {
+    await service.from('important_dates').upsert(
+      {
+        firm_id: a.search.firm_id,
+        search_id: a.search.id,
+        label: d.label,
+        date: d.date,
+        created_by: a.me.user_id,
+      },
+      { onConflict: 'search_id,label' as any, ignoreDuplicates: false }
+    );
+  }
+
+  await activity(
+    a.search.id,
+    a.search.firm_id,
+    a.me.user_id,
+    'phase_change',
+    'under_contract',
+    { dates }
+  );
+
+  // Celebration message in-thread.
+  await service.from('messages').insert({
+    firm_id: a.search.firm_id,
+    search_id: a.search.id,
+    sender_id: a.me.user_id,
+    body:
+      '🎉 Congrats — we are UNDER CONTRACT! Key dates and contract are in the deal view.',
+  });
+
+  // Email everyone the whole snapshot.
+  try {
+    await emailEveryoneOnPhaseChange({
+      searchId: a.search.id,
+      newPhase: 'under_contract',
+      message: payload.message,
+      contractUrl: payload.contract_url || null,
+      importantDates: dates,
+    });
+  } catch {}
+
   revalidatePath(`/dashboard/clients/${clientId}`);
   return { ok: true as const };
 }
@@ -501,6 +600,46 @@ export async function removeParticipantAction(
   if (error) return { ok: false as const, error: error.message };
   revalidatePath(`/dashboard/clients/${clientId}`);
   return { ok: true as const };
+}
+
+/**
+ * Mass-invite many emails to a single deal as buyer / seller / attorney /
+ * etc. Splits the input on comma, semicolon, newline, or whitespace. Adds
+ * each as a deal_participants row with default visibility and fires off
+ * invite emails.
+ */
+export async function massInviteAction(
+  clientId: string,
+  payload: {
+    emails: string; // raw textarea content
+    role: PartyRole;
+  }
+) {
+  const a = await authorize(clientId);
+  if ('error' in a) return { ok: false as const, error: a.error };
+  const list = payload.emails
+    .split(/[\s,;]+/)
+    .map((e) => e.trim())
+    .filter((e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e));
+  if (list.length === 0)
+    return { ok: false as const, error: 'No valid emails found.' };
+
+  let added = 0;
+  for (const email of list) {
+    const r = await addParticipantAction(clientId, {
+      role: payload.role,
+      email,
+      // sensible default visibility: client-equivalent.
+      can_view_documents: true,
+      can_view_financials: false,
+      can_view_messages: false,
+      can_view_dates: true,
+    });
+    if (r.ok) added++;
+  }
+
+  revalidatePath(`/dashboard/clients/${clientId}`);
+  return { ok: true as const, added };
 }
 
 export async function quickMessageAction(clientId: string, body: string) {

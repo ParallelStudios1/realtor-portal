@@ -62,12 +62,16 @@ export default function RealtorTabsLayout() {
         }}
       />
       {/* Stacked routes — keep them out of the tab bar */}
-      <Tabs.Screen name="invite" options={{ href: null }} />
-      <Tabs.Screen name="clients/[id]" options={{ href: null }} />
-      <Tabs.Screen name="clients/[id]/upload" options={{ href: null }} />
-      <Tabs.Screen name="clients/[id]/add-date" options={{ href: null }} />
-      <Tabs.Screen name="clients/[id]/add-house" options={{ href: null }} />
-      <Tabs.Screen name="clients/[id]/houses/[houseId]" options={{ href: null }} />
+      <Tabs.Screen name="invite" options={{ href: null, title: 'Invite client' }} />
+      <Tabs.Screen name="clients/[id]" options={{ href: null, title: 'Deal' }} />
+      <Tabs.Screen name="clients/[id]/upload" options={{ href: null, title: 'Upload document' }} />
+      <Tabs.Screen name="clients/[id]/add-date" options={{ href: null, title: 'Add date' }} />
+      <Tabs.Screen name="clients/[id]/add-house" options={{ href: null, title: 'Add house' }} />
+      <Tabs.Screen name="clients/[id]/houses/[houseId]" options={{ href: null, title: 'House' }} />
+      <Tabs.Screen name="clients/[id]/financials" options={{ href: null, title: 'Financials' }} />
+      <Tabs.Screen name="clients/[id]/alert" options={{ href: null, title: 'Send alert' }} />
+      <Tabs.Screen name="clients/[id]/attorney" options={{ href: null, title: 'Attorney' }} />
+      <Tabs.Screen name="clients/[id]/docusign" options={{ href: null, title: 'DocuSign' }} />
     </Tabs>
   );
 }
