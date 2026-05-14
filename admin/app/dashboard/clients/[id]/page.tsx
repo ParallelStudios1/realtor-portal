@@ -31,6 +31,14 @@ export default async function ClientDetailPage({
 
   if (!client) notFound();
 
+  // All deals for this client (we used to load just the most recent).
+  const { data: allDeals } = await supabase
+    .from('client_searches')
+    .select('id, kind, phase, name, created_at, updated_at')
+    .eq('client_id', params.id)
+    .eq('firm_id', me.firm_id!)
+    .order('created_at', { ascending: false });
+
   // Most recent search (the "deal")
   const { data: search } = await supabase
     .from('client_searches')
@@ -203,6 +211,50 @@ export default async function ClientDetailPage({
               );
             })}
           </div>
+        </section>
+      )}
+
+      {/* Deal switcher — shown when the client has more than one deal */}
+      {allDeals && allDeals.length > 1 && (
+        <section className="mb-5 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+            All deals with this client ({allDeals.length})
+          </div>
+          <ul className="mt-2 grid gap-2 sm:grid-cols-2">
+            {allDeals.map((d: any) => (
+              <li
+                key={d.id}
+                className={
+                  'rounded-lg border px-3 py-2 text-sm transition ' +
+                  (d.id === search?.id
+                    ? 'border-slate-900 bg-slate-50 ring-1 ring-slate-900/10'
+                    : 'border-slate-200 hover:bg-slate-50')
+                }
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate font-medium">
+                      {d.name || (d.kind === 'seller' ? 'Listing deal' : 'Buyer deal')}
+                    </div>
+                    <div className="text-xs text-slate-500">
+                      {d.kind} · {String(d.phase).replace(/_/g, ' ')} · started{' '}
+                      {new Date(d.created_at).toLocaleDateString()}
+                    </div>
+                  </div>
+                  {d.id !== search?.id && (
+                    <Link
+                      href={`/deal/${d.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs font-semibold text-blue-600 hover:underline"
+                    >
+                      Open ↗
+                    </Link>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
         </section>
       )}
 

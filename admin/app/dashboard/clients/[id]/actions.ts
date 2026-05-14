@@ -642,6 +642,52 @@ export async function massInviteAction(
   return { ok: true as const, added };
 }
 
+/**
+ * Spin up a new deal (client_searches row) for an existing client. Lets
+ * a realtor track repeat business — a buyer comes back next year, a seller
+ * who's also looking to buy, etc.
+ */
+export async function createNewDealAction(
+  clientId: string,
+  payload: { kind: 'buyer' | 'seller'; name?: string }
+) {
+  const me = await getMe();
+  if (!me?.firm_id) return { ok: false as const, error: 'Not authenticated.' };
+  if (
+    me.role !== 'realtor' &&
+    me.role !== 'firm_admin' &&
+    me.role !== 'super_admin'
+  )
+    return { ok: false as const, error: 'Forbidden.' };
+  const service = getSupabaseServiceRoleClient();
+  // Confirm client is in our firm.
+  const { data: client } = await service
+    .from('users')
+    .select('id, full_name')
+    .eq('id', clientId)
+    .eq('firm_id', me.firm_id)
+    .maybeSingle();
+  if (!client) return { ok: false as const, error: 'Client not found.' };
+  const { data: created, error } = await service
+    .from('client_searches')
+    .insert({
+      firm_id: me.firm_id,
+      client_id: clientId,
+      realtor_id: me.user_id,
+      kind: payload.kind,
+      name:
+        payload.name?.trim() ||
+        ((client as any).full_name || 'New') +
+          (payload.kind === 'buyer' ? ' — buyer deal' : ' — listing'),
+      phase: 'searching',
+    })
+    .select('id')
+    .single();
+  if (error) return { ok: false as const, error: error.message };
+  revalidatePath(`/dashboard/clients/${clientId}`);
+  return { ok: true as const, dealId: created?.id };
+}
+
 export async function quickMessageAction(clientId: string, body: string) {
   const a = await authorize(clientId);
   if ('error' in a) return { ok: false as const, error: a.error };
