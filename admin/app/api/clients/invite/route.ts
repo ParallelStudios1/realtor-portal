@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { getMe } from '@/lib/supabaseSsr';
 import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
+import { isFirmPlanActive } from '@/lib/planGate';
 
 export const runtime = 'nodejs';
 
@@ -54,6 +55,16 @@ export async function POST(req: Request) {
       return NextResponse.json(
         { error: 'Only realtors can invite clients.' },
         { status: 403 }
+      );
+    }
+    if (!(await isFirmPlanActive(me.firm_id))) {
+      return NextResponse.json(
+        {
+          error:
+            'Your free trial has ended. Pick a plan to invite more clients.',
+          code: 'plan_inactive',
+        },
+        { status: 402 }
       );
     }
 

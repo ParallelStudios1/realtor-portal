@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { getMe } from '@/lib/supabaseSsr';
 import { emailEveryoneDealEvent } from '@/lib/dealEmail';
+import { isFirmPlanActive } from '@/lib/planGate';
 
 /**
  * Called by the upload client after a successful storage write + documents
@@ -12,6 +13,12 @@ import { emailEveryoneDealEvent } from '@/lib/dealEmail';
 export async function POST(req: NextRequest) {
   const me = await getMe();
   if (!me?.firm_id) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  if (!(await isFirmPlanActive(me.firm_id))) {
+    return NextResponse.json(
+      { error: 'plan_inactive', code: 'plan_inactive' },
+      { status: 402 }
+    );
+  }
   const body = await req.json().catch(() => null);
   if (!body?.searchId || !Array.isArray(body.names) || body.names.length === 0) {
     return NextResponse.json({ error: 'bad request' }, { status: 400 });
