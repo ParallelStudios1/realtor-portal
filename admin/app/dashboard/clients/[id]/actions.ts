@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { getMe, getSupabaseServerClient } from '@/lib/supabaseSsr';
 import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
+import { sendEmail, escapeHtml } from '@/lib/email';
 
 /**
  * Server actions called from the rich realtor client-detail page. Each one
@@ -431,6 +432,56 @@ export async function addParticipantAction(
     payload.role + '_added',
     payload.name || payload.email || ''
   );
+
+  // Fire-and-forget invite email if we have an address. Pulls firm name +
+  // realtor name from the search context for personalization.
+  if (payload.email) {
+    try {
+      const { data: ctx } = await service
+        .from('client_searches')
+        .select(
+          `name, firm:firms ( name ), realtor:users!client_searches_realtor_id_fkey ( full_name, email )`
+        )
+        .eq('id', a.search.id)
+        .maybeSingle();
+      const firmName = (ctx as any)?.firm?.name || 'a Realtor Portal firm';
+      const realtorName =
+        (ctx as any)?.realtor?.full_name ||
+        (ctx as any)?.realtor?.email ||
+        'Your realtor';
+      const dealUrl =
+        (process.env.SITE_URL ||
+          'https://realtor-portal-ten.vercel.app') +
+        '/deal/' +
+        a.search.id;
+      const rolePretty = payload.role.replace(/_/g, ' ');
+      const safeName = escapeHtml(payload.name || payload.email);
+      const safeRealtor = escapeHtml(realtorName);
+      const safeFirm = escapeHtml(firmName);
+      const safeRole = escapeHtml(rolePretty);
+      await sendEmail({
+        to: payload.email,
+        subject: `${realtorName} added you to a real-estate deal at ${firmName}`,
+        text:
+          `${realtorName} at ${firmName} added you to a deal as ${rolePretty}.\n\n` +
+          `Open the deal:\n${dealUrl}\n\n` +
+          `You'll see whatever ${realtorName} chose to share with you (dates, documents, financials, messages).`,
+        html: `
+          <div style="font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial;font-size:15px;color:#0F172A;max-width:560px;padding:24px">
+            <h2 style="font-size:20px;margin:0 0 12px">You've been added to a deal</h2>
+            <p>${safeRealtor} at <strong>${safeFirm}</strong> added you to a real-estate deal as <strong>${safeRole}</strong>.</p>
+            <p style="margin:24px 0">
+              <a href="${dealUrl}" style="display:inline-block;background:#0F172A;color:#fff;padding:10px 18px;border-radius:8px;font-weight:600;text-decoration:none">Open the deal →</a>
+            </p>
+            <p style="color:#64748B;font-size:13px">You'll see whatever ${safeRealtor} chose to share with you: important dates, documents, financials, or messages. Hi ${safeName} 👋</p>
+          </div>
+        `,
+      });
+    } catch {
+      // Best-effort. Don't block the action on email failure.
+    }
+  }
+
   revalidatePath(`/dashboard/clients/${clientId}`);
   return { ok: true as const };
 }

@@ -28,6 +28,58 @@ function tempId(prefix: string) {
   return `${prefix}-${Math.random().toString(36).slice(2, 10)}-${Date.now()}`;
 }
 
+export function useSetAttorney() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      searchId,
+      name,
+      email,
+      phone,
+    }: {
+      searchId: string;
+      name: string;
+      email?: string;
+      phone?: string;
+    }) => {
+      const { error } = await supabase
+        .from('client_searches')
+        .update({
+          attorney_name: name,
+          attorney_email: email || null,
+          attorney_phone: phone || null,
+        })
+        .eq('id', searchId);
+      if (error) throw error;
+    },
+    onSettled: (_d, _e, v) => {
+      queryClient.invalidateQueries({ queryKey: ['search', v.searchId] });
+    },
+  });
+}
+
+export function useLinkDocusign() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      searchId,
+      url,
+    }: {
+      searchId: string;
+      url: string;
+    }) => {
+      const { error } = await supabase
+        .from('client_searches')
+        .update({ docusign_envelope_url: url })
+        .eq('id', searchId);
+      if (error) throw error;
+    },
+    onSettled: (_d, _e, v) => {
+      queryClient.invalidateQueries({ queryKey: ['search', v.searchId] });
+    },
+  });
+}
+
 /**
  * Update the financials/contract fields on a client_searches row.
  * Realtor-only. Pass null for any field to clear it; undefined to leave it.

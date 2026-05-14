@@ -265,10 +265,15 @@ export default function RealtorClientDetailScreen() {
               icon="pencil"
               label="DocuSign"
               onPress={() =>
-                Alert.alert(
-                  'Coming to mobile soon',
-                  'Link a DocuSign envelope from the web dashboard.',
-                )
+                router.push(`/(realtor)/clients/${id}/docusign` as any)
+              }
+            />
+            <ActionTile
+              tone="#475569"
+              icon="briefcase"
+              label="Attorney"
+              onPress={() =>
+                router.push(`/(realtor)/clients/${id}/attorney` as any)
               }
             />
             <ActionTile
