@@ -37,6 +37,7 @@ type Action =
 const PHASES = [
   { id: 'searching', label: 'Searching' },
   { id: 'offer_made', label: 'Offer made' },
+  { id: 'counter_offer', label: 'Counter offer' },
   { id: 'under_contract', label: 'Under contract' },
   { id: 'closing', label: 'Closing' },
   { id: 'closed', label: 'Closed' },

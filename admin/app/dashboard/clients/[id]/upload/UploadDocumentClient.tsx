@@ -5,6 +5,22 @@ import { useRouter } from 'next/navigation';
 import { getSupabaseBrowserClient } from '@/lib/supabaseBrowser';
 import { useToast } from '@/components/Toast';
 
+const FOLDERS = [
+  'Contracts',
+  'Disclosures',
+  'Inspection',
+  'Appraisal',
+  'Lender',
+  'Title',
+  'Closing',
+  'General',
+] as const;
+
+/**
+ * Drag-and-drop multi-file uploader. Files are pushed to the client-docs
+ * bucket in parallel and a documents row is inserted for each. Each can be
+ * tagged with a folder so the deal view groups them sensibly.
+ */
 export function UploadDocumentClient({
   firmId,
   searchId,
@@ -18,75 +34,166 @@ export function UploadDocumentClient({
   const router = useRouter();
   const toast = useToast();
   const fileRef = useRef<HTMLInputElement>(null);
-  const [title, setTitle] = useState('');
+  const [folder, setFolder] = useState<(typeof FOLDERS)[number]>('Contracts');
   const [pending, setPending] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const [files, setFiles] = useState<File[]>([]);
 
-  async function upload() {
-    const file = fileRef.current?.files?.[0];
-    if (!file) return toast.show('Pick a file first.', { variant: 'error' });
-    if (!title.trim())
-      return toast.show('Add a title for the document.', { variant: 'error' });
+  function addFiles(list: FileList | File[]) {
+    const arr = Array.from(list);
+    setFiles((prev) => [...prev, ...arr]);
+  }
+
+  async function uploadAll() {
+    if (files.length === 0) {
+      toast.show('Pick at least one file.', { variant: 'error' });
+      return;
+    }
     setPending(true);
-    try {
-      const path = `${firmId}/${searchId}/${Date.now()}-${file.name}`;
+    let ok = 0;
+    let failed = 0;
+    for (const file of files) {
+      const path = `${firmId}/${searchId}/${Date.now()}-${encodeURIComponent(file.name)}`;
       const { error: upErr } = await supabase.storage
         .from('client-docs')
         .upload(path, file, { upsert: false });
       if (upErr) {
-        toast.show('Upload failed: ' + upErr.message, { variant: 'error' });
-        setPending(false);
-        return;
+        failed++;
+        continue;
       }
       const { error: insertErr } = await supabase.from('documents').insert({
         firm_id: firmId,
         search_id: searchId,
-        name: title.trim(),
+        name: file.name,
         storage_path: path,
         mime_type: file.type || null,
         file_size: file.size || null,
+        folder,
       });
-      if (insertErr) {
-        toast.show('Saved file but DB row failed: ' + insertErr.message, {
-          variant: 'error',
-        });
-        setPending(false);
-        return;
-      }
-      toast.show('Document uploaded.', { variant: 'success' });
+      if (insertErr) failed++;
+      else ok++;
+    }
+    setPending(false);
+    if (ok > 0) {
+      toast.show(
+        ok + ' file' + (ok === 1 ? '' : 's') + ' uploaded' +
+          (failed > 0 ? ', ' + failed + ' failed' : '') +
+          '.',
+        { variant: failed === 0 ? 'success' : 'error' }
+      );
+    } else {
+      toast.show('Upload failed.', { variant: 'error' });
+    }
+    if (ok > 0) {
+      // Best-effort notify all parties.
+      fetch('/api/documents/notify', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          searchId,
+          folder,
+          names: files.slice(0, ok).map((f) => f.name),
+        }),
+      }).catch(() => {});
       router.push(`/dashboard/clients/${clientId}`);
       router.refresh();
-    } finally {
-      setPending(false);
     }
   }
 
   return (
     <div className="mt-6 space-y-4 rounded-xl border border-slate-200 bg-white p-5">
       <label className="block text-sm">
-        <span className="block text-xs font-medium text-slate-600">Title</span>
-        <input
-          className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Purchase contract, disclosure, etc."
-        />
+        <span className="block text-xs font-semibold uppercase tracking-wide text-slate-500">
+          Folder
+        </span>
+        <select
+          className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+          value={folder}
+          onChange={(e) => setFolder(e.target.value as any)}
+        >
+          {FOLDERS.map((f) => (
+            <option key={f}>{f}</option>
+          ))}
+        </select>
       </label>
-      <label className="block text-sm">
-        <span className="block text-xs font-medium text-slate-600">File</span>
+
+      <div
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragOver(true);
+        }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDragOver(false);
+          if (e.dataTransfer.files?.length) addFiles(e.dataTransfer.files);
+        }}
+        className={
+          'flex min-h-32 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-6 text-center transition ' +
+          (dragOver
+            ? 'border-slate-900 bg-slate-50'
+            : 'border-slate-300 bg-slate-50/40 hover:border-slate-400 hover:bg-slate-50')
+        }
+        onClick={() => fileRef.current?.click()}
+      >
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="text-slate-400">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" strokeLinecap="round" strokeLinejoin="round" />
+          <polyline points="17 8 12 3 7 8" strokeLinecap="round" strokeLinejoin="round" />
+          <line x1="12" y1="3" x2="12" y2="15" strokeLinecap="round" />
+        </svg>
+        <p className="mt-2 text-sm font-semibold text-slate-700">
+          Drag and drop files here
+        </p>
+        <p className="text-xs text-slate-500">
+          or click to pick — PDF, DOC, images, anything
+        </p>
         <input
           ref={fileRef}
           type="file"
-          className="mt-1 block w-full text-sm"
-          accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+          multiple
+          className="hidden"
+          accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.heic"
+          onChange={(e) => e.target.files && addFiles(e.target.files)}
         />
-      </label>
+      </div>
+
+      {files.length > 0 && (
+        <ul className="space-y-1.5 rounded-lg border border-slate-200 bg-slate-50/40 p-3">
+          {files.map((f, i) => (
+            <li
+              key={i}
+              className="flex items-center justify-between gap-3 text-xs"
+            >
+              <span className="truncate">📄 {f.name}</span>
+              <button
+                type="button"
+                onClick={() => setFiles((prev) => prev.filter((_, j) => j !== i))}
+                className="text-slate-400 hover:text-rose-600"
+                aria-label="Remove"
+              >
+                ✕
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
       <button
         type="button"
-        disabled={pending}
-        onClick={upload}
-        className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+        disabled={pending || files.length === 0}
+        onClick={uploadAll}
+        className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {pending ? 'Uploading…' : 'Upload document'}
+        {pending && (
+          <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <path d="M22 12a10 10 0 1 1-10-10" strokeLinecap="round" />
+          </svg>
+        )}
+        {pending
+          ? 'Uploading…'
+          : files.length === 0
+          ? 'Pick or drop files first'
+          : 'Upload ' + files.length + ' file' + (files.length === 1 ? '' : 's')}
       </button>
     </div>
   );

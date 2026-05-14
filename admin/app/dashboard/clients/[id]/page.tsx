@@ -88,7 +88,7 @@ export default async function ClientDetailPage({
   const { data: documents } = searchId
     ? await supabase
         .from('documents')
-        .select('id, name, storage_path, mime_type, created_at')
+        .select('id, name, storage_path, mime_type, folder, created_at')
         .eq('search_id', searchId)
         .order('created_at', { ascending: false })
         .limit(10)
@@ -494,14 +494,31 @@ export default async function ClientDetailPage({
               <p className="mt-3 text-xs text-slate-500">None yet.</p>
             ) : (
               <ul className="mt-3 divide-y divide-slate-100">
-                {documents.map((d: any) => (
-                  <li key={d.id} className="py-2 text-sm">
-                    <div className="font-medium">{d.name}</div>
-                    <div className="text-xs text-slate-500">
-                      {new Date(d.created_at).toLocaleDateString()}
-                    </div>
-                  </li>
-                ))}
+                {(() => {
+                  const grouped = new Map<string, any[]>();
+                  for (const d of documents) {
+                    const k = d.folder || 'General';
+                    if (!grouped.has(k)) grouped.set(k, []);
+                    grouped.get(k)!.push(d);
+                  }
+                  return Array.from(grouped.entries()).map(([folder, items]) => (
+                    <li key={folder} className="py-2">
+                      <div className="text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                        {folder}
+                      </div>
+                      <ul className="mt-1 space-y-1">
+                        {items.map((d: any) => (
+                          <li key={d.id} className="text-sm">
+                            <div className="font-medium">{d.name}</div>
+                            <div className="text-xs text-slate-500">
+                              {new Date(d.created_at).toLocaleDateString()}
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </li>
+                  ));
+                })()}
               </ul>
             )}
           </section>
