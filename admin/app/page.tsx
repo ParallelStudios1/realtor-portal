@@ -34,12 +34,21 @@ export default function HomePage() {
       </nav>
 
       {/* Hero */}
-      <section className="mx-auto max-w-6xl px-6 pb-16 pt-10 md:pt-20">
-        <div className="grid gap-12 md:grid-cols-2 md:items-center">
-          <div>
-            <span className="inline-block rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium uppercase tracking-wide text-slate-600">
-              Built for buyer's agents and listing agents
-            </span>
+      <section className="relative overflow-hidden">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 -z-10"
+        >
+          <div className="absolute -top-32 left-1/4 h-96 w-96 rounded-full bg-blue-200 opacity-30 blur-3xl" />
+          <div className="absolute -top-20 right-0 h-80 w-80 rounded-full bg-indigo-200 opacity-30 blur-3xl" />
+        </div>
+        <div className="mx-auto max-w-6xl px-6 pb-16 pt-10 md:pt-20">
+          <div className="grid gap-12 md:grid-cols-2 md:items-center">
+            <div>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-medium uppercase tracking-wide text-blue-700">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-blue-600" />
+                Built for buyer's agents and listing agents
+              </span>
             <h1 className="mt-5 text-4xl font-bold leading-[1.05] tracking-tight sm:text-5xl md:text-6xl">
               Your firm, your <span className="text-blue-600">client portal</span>, your brand.
             </h1>
@@ -90,6 +99,7 @@ export default function HomePage() {
               </div>
             </div>
           </div>
+        </div>
         </div>
       </section>
 

@@ -15,6 +15,7 @@ type Props = {
 const ITEMS = [
   { href: '/dashboard', label: 'Overview' },
   { href: '/dashboard/clients', label: 'Clients' },
+  { href: '/dashboard/inbox', label: 'Inbox' },
   { href: '/dashboard/messages', label: 'Messages' },
   { href: '/dashboard/tours', label: 'Tours' },
   { href: '/dashboard/branding', label: 'Branding' },
