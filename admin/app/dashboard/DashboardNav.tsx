@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { logoutAction } from '../login/actions';
 
 type Props = {
@@ -31,6 +31,25 @@ export function DashboardNav({
 }: Props) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [inboxCount, setInboxCount] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    const fetchCount = () => {
+      fetch('/api/inbox/count?h=24')
+        .then((r) => (r.ok ? r.json() : { count: 0 }))
+        .then((j) => {
+          if (!cancelled) setInboxCount(j?.count || 0);
+        })
+        .catch(() => {});
+    };
+    fetchCount();
+    const t = setInterval(fetchCount, 60_000);
+    return () => {
+      cancelled = true;
+      clearInterval(t);
+    };
+  }, []);
 
   const isActive = (href: string) =>
     href === '/dashboard'
@@ -63,20 +82,29 @@ export function DashboardNav({
 
       {/* Desktop nav */}
       <nav className="hidden items-center gap-1 text-sm md:flex">
-        {ITEMS.map((it) => (
-          <Link
-            key={it.href}
-            href={it.href}
-            className={
-              'rounded-md px-3 py-1.5 transition ' +
-              (isActive(it.href)
-                ? 'bg-slate-100 font-semibold text-slate-900'
-                : 'hover:bg-slate-100')
-            }
-          >
-            {it.label}
-          </Link>
-        ))}
+        {ITEMS.map((it) => {
+          const isInbox = it.href === '/dashboard/inbox';
+          const badge = isInbox && inboxCount > 0;
+          return (
+            <Link
+              key={it.href}
+              href={it.href}
+              className={
+                'relative rounded-md px-3 py-1.5 transition ' +
+                (isActive(it.href)
+                  ? 'bg-slate-100 font-semibold text-slate-900'
+                  : 'hover:bg-slate-100')
+              }
+            >
+              {it.label}
+              {badge && (
+                <span className="ml-1.5 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-rose-600 px-1.5 text-[10px] font-bold text-white">
+                  {inboxCount > 99 ? '99+' : inboxCount}
+                </span>
+              )}
+            </Link>
+          );
+        })}
         <form action={logoutAction}>
           <button className="ml-2 rounded-md border border-slate-300 px-3 py-1.5 text-slate-600 hover:bg-slate-50">
             Sign out
