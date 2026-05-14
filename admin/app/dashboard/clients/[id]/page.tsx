@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getMe, getSupabaseServerClient } from '@/lib/supabaseSsr';
-import { ClientDetailActions } from './ClientDetailActions';
+import { ClientDetailActions, ParticipantList } from './ClientDetailActions';
 
 export const dynamic = 'force-dynamic';
 
@@ -92,6 +92,17 @@ export default async function ClientDetailPage({
         .eq('search_id', searchId)
         .order('created_at', { ascending: false })
         .limit(10)
+    : { data: [] as any[] };
+
+  // Deal participants (multi-party)
+  const { data: participants } = searchId
+    ? await supabase
+        .from('deal_participants')
+        .select(
+          'id, role, external_name, external_email, external_phone, can_view_documents, can_view_financials, can_view_messages, can_view_dates'
+        )
+        .eq('search_id', searchId)
+        .order('role')
     : { data: [] as any[] };
 
   // Recent activity
@@ -375,13 +386,25 @@ export default async function ClientDetailPage({
 
           {/* People */}
           <section className="rounded-xl border border-slate-200 bg-white p-5">
-            <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-              People on this deal
-            </h2>
+            <div className="flex items-baseline justify-between">
+              <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                People on this deal
+              </h2>
+              {search && (
+                <a
+                  href={`/deal/${search.id}`}
+                  className="text-xs font-semibold text-blue-600 hover:underline"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Open deal view ↗
+                </a>
+              )}
+            </div>
             <ul className="mt-3 space-y-2 text-sm">
               <li>
                 <div className="font-medium">{client.full_name || client.email}</div>
-                <div className="text-xs text-slate-500">Client</div>
+                <div className="text-xs text-slate-500">Client (principal)</div>
               </li>
               {coRealtor && (
                 <li>
@@ -403,6 +426,10 @@ export default async function ClientDetailPage({
                 </li>
               )}
             </ul>
+            <ParticipantList
+              clientId={params.id}
+              participants={(participants || []) as any}
+            />
           </section>
 
           {/* Financials */}

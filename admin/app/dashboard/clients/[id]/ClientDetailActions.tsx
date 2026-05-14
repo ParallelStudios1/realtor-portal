@@ -4,12 +4,15 @@ import { useState, useTransition } from 'react';
 import {
   addHouseAction,
   addImportantDateAction,
+  addParticipantAction,
   linkDocusignAction,
   quickMessageAction,
+  removeParticipantAction,
   sendAlertAction,
   setAttorneyAction,
   updateDealFinancialsAction,
   updatePhaseAction,
+  type PartyRole,
 } from './actions';
 import { useToast } from '@/components/Toast';
 import { getSupabaseBrowserClient } from '@/lib/supabaseBrowser';
@@ -24,7 +27,8 @@ type Action =
   | 'attorney'
   | 'message'
   | 'alert'
-  | 'financials';
+  | 'financials'
+  | 'participant';
 
 const PHASES = [
   { id: 'searching', label: 'Searching' },
@@ -134,6 +138,13 @@ export function ClientDetailActions({
             title="Attorney"
             subtitle="Add to this deal"
             onClick={() => setOpen('attorney')}
+          />
+          <ActionCard
+            tone="emerald"
+            icon={<IconUsers />}
+            title="+ Party"
+            subtitle="Buyer / seller / co-realtor / etc."
+            onClick={() => setOpen('participant')}
           />
           <ActionCard
             tone="sky"
@@ -267,6 +278,18 @@ export function ClientDetailActions({
             const r = await sendAlertAction(clientId, body);
             if (!r.ok) return toast.show(r.error || 'Failed', { variant: 'error' });
             toast.show('Alert delivered.', { variant: 'success' });
+            close();
+          }}
+        />
+      )}
+
+      {open === 'participant' && (
+        <ParticipantModal
+          onClose={close}
+          onSubmit={async (payload) => {
+            const r = await addParticipantAction(clientId, payload);
+            if (!r.ok) return toast.show(r.error || 'Failed', { variant: 'error' });
+            toast.show('Party added to deal.', { variant: 'success' });
             close();
           }}
         />
@@ -493,6 +516,16 @@ function IconInbox() {
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
       <polyline points="22 12 16 12 14 15 10 15 8 12 2 12" />
       <path d="M5.5 5h13L22 12v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6z" />
+    </svg>
+  );
+}
+function IconUsers() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
     </svg>
   );
 }
@@ -999,6 +1032,246 @@ function MessageModal({
         {submitLabel}
       </PrimaryButton>
     </Modal>
+  );
+}
+
+const PARTY_ROLES: { id: PartyRole; label: string; helper: string }[] = [
+  { id: 'buyer', label: 'Buyer', helper: 'Second buyer (spouse, partner, co-purchaser)' },
+  { id: 'seller', label: 'Seller', helper: 'For listing-side deals' },
+  { id: 'co_realtor', label: 'Co-realtor', helper: 'Another agent on your firm' },
+  { id: 'attorney', label: 'Attorney', helper: 'Closing / real-estate counsel' },
+  { id: 'inspector', label: 'Inspector', helper: 'Property inspector' },
+  { id: 'lender', label: 'Lender', helper: 'Mortgage lender' },
+  { id: 'mortgage_broker', label: 'Mortgage broker', helper: 'Loan broker' },
+  { id: 'appraiser', label: 'Appraiser', helper: 'Home appraiser' },
+  { id: 'title_agent', label: 'Title agent', helper: 'Title insurance / escrow' },
+  { id: 'other', label: 'Other', helper: 'Anyone else on the deal' },
+];
+
+function ParticipantModal({
+  onClose,
+  onSubmit,
+}: {
+  onClose: () => void;
+  onSubmit: (payload: {
+    role: PartyRole;
+    name?: string;
+    email?: string;
+    phone?: string;
+    can_view_documents?: boolean;
+    can_view_financials?: boolean;
+    can_view_messages?: boolean;
+    can_view_dates?: boolean;
+  }) => Promise<void>;
+}) {
+  const [role, setRole] = useState<PartyRole>('buyer');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [docs, setDocs] = useState(true);
+  const [fin, setFin] = useState(false);
+  const [msgs, setMsgs] = useState(false);
+  const [dates, setDates] = useState(true);
+  const [pending, start] = useTransition();
+
+  return (
+    <Modal title="Add a party to this deal" onClose={onClose}>
+      <div className="space-y-3">
+        <Field label="Role">
+          <select
+            className={inputCls}
+            value={role}
+            onChange={(e) => setRole(e.target.value as PartyRole)}
+          >
+            {PARTY_ROLES.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.label}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-[11px] text-slate-400">
+            {PARTY_ROLES.find((r) => r.id === role)?.helper}
+          </p>
+        </Field>
+        <Field label="Name">
+          <input
+            className={inputCls}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Full name"
+          />
+        </Field>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Email" hint="Used to grant deal access if they sign in">
+            <input
+              type="email"
+              className={inputCls}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </Field>
+          <Field label="Phone">
+            <input
+              className={inputCls}
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+            />
+          </Field>
+        </div>
+
+        <fieldset className="rounded-lg border border-slate-200 p-3">
+          <legend className="px-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+            What this party can see
+          </legend>
+          <div className="space-y-1.5">
+            <CheckRow label="Important dates" checked={dates} onChange={setDates} />
+            <CheckRow label="Documents" checked={docs} onChange={setDocs} />
+            <CheckRow label="Financials" checked={fin} onChange={setFin} />
+            <CheckRow label="Messages" checked={msgs} onChange={setMsgs} />
+          </div>
+        </fieldset>
+      </div>
+      <PrimaryButton
+        pending={pending}
+        disabled={!name && !email}
+        onClick={() =>
+          start(() =>
+            onSubmit({
+              role,
+              name: name.trim() || undefined,
+              email: email.trim() || undefined,
+              phone: phone.trim() || undefined,
+              can_view_documents: docs,
+              can_view_financials: fin,
+              can_view_messages: msgs,
+              can_view_dates: dates,
+            })
+          )
+        }
+      >
+        Add party
+      </PrimaryButton>
+    </Modal>
+  );
+}
+
+function CheckRow({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <label className="flex cursor-pointer items-center gap-2.5 rounded px-1 py-1 text-sm hover:bg-slate-50">
+      <input
+        type="checkbox"
+        className="h-4 w-4 accent-slate-900"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+      />
+      <span>{label}</span>
+    </label>
+  );
+}
+
+export function ParticipantList({
+  clientId,
+  participants,
+}: {
+  clientId: string;
+  participants: Array<{
+    id: string;
+    role: string;
+    external_name: string | null;
+    external_email: string | null;
+    external_phone: string | null;
+    can_view_documents: boolean;
+    can_view_financials: boolean;
+    can_view_messages: boolean;
+    can_view_dates: boolean;
+  }>;
+}) {
+  const toast = useToast();
+  const [removing, start] = useTransition();
+  if (participants.length === 0) {
+    return (
+      <p className="mt-3 text-xs italic text-slate-500">
+        No extra parties. Use "+ Party" above to add a buyer's spouse,
+        attorney, inspector, lender, etc.
+      </p>
+    );
+  }
+  return (
+    <ul className="mt-3 space-y-2">
+      {participants.map((p) => (
+        <li
+          key={p.id}
+          className="rounded-lg border border-slate-200 bg-white p-3"
+        >
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-700">
+                  {p.role.replace(/_/g, ' ')}
+                </span>
+                <span className="truncate text-sm font-semibold">
+                  {p.external_name || p.external_email || '—'}
+                </span>
+              </div>
+              {p.external_email && (
+                <a
+                  href={'mailto:' + p.external_email}
+                  className="block text-xs text-blue-600 hover:underline"
+                >
+                  {p.external_email}
+                </a>
+              )}
+              {p.external_phone && (
+                <a
+                  href={'tel:' + p.external_phone}
+                  className="block text-xs text-blue-600 hover:underline"
+                >
+                  {p.external_phone}
+                </a>
+              )}
+              <div className="mt-1 flex flex-wrap gap-1 text-[10px] text-slate-500">
+                {p.can_view_dates && <Chip>Dates</Chip>}
+                {p.can_view_documents && <Chip>Docs</Chip>}
+                {p.can_view_financials && <Chip>Financials</Chip>}
+                {p.can_view_messages && <Chip>Messages</Chip>}
+              </div>
+            </div>
+            <button
+              type="button"
+              disabled={removing}
+              onClick={() =>
+                start(async () => {
+                  const r = await removeParticipantAction(clientId, p.id);
+                  if (!r.ok)
+                    return toast.show(r.error || 'Failed', { variant: 'error' });
+                  toast.show('Removed.', { variant: 'success' });
+                })
+              }
+              className="rounded p-1 text-slate-400 transition hover:bg-slate-100 hover:text-rose-600"
+              aria-label="Remove participant"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function Chip({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="rounded bg-slate-100 px-1.5 py-0.5 font-semibold uppercase tracking-wide">
+      {children}
+    </span>
   );
 }
 
