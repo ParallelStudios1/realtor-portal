@@ -64,27 +64,6 @@ export default async function InboxPage() {
       .limit(15),
   ]);
 
-  // Map search_id → client_id for deep-linking back to dashboard/clients/[id]
-  const searchIds = Array.from(
-    new Set(
-      [
-        ...(activities || []),
-        ...(messages || []),
-        ...(tours || []),
-        ...(docs || []),
-      ].map((x: any) => x.search_id)
-    )
-  );
-  const { data: searches } = searchIds.length
-    ? await supabase
-        .from('client_searches')
-        .select('id, client_id')
-        .in('id', searchIds)
-    : { data: [] as any[] };
-  const sIdToClientId = new Map(
-    (searches || []).map((s: any) => [s.id, s.client_id])
-  );
-
   type FeedItem = {
     key: string;
     kind: 'activity' | 'message' | 'tour' | 'doc';
@@ -111,9 +90,7 @@ export default async function InboxPage() {
           </span>
         </>
       ),
-      href:
-        '/dashboard/clients/' +
-        (sIdToClientId.get(a.search_id) || ''),
+      href: '/dashboard/deals/' + a.search_id,
       accent: '#2563EB',
     });
   }
@@ -170,9 +147,7 @@ export default async function InboxPage() {
           uploaded <span className="text-slate-700">{d.name}</span>
         </>
       ),
-      href:
-        '/dashboard/clients/' +
-        (sIdToClientId.get(d.search_id) || ''),
+      href: '/dashboard/deals/' + d.search_id,
       accent: '#7C3AED',
     });
   }

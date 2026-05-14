@@ -7,117 +7,189 @@ export default async function DashboardOverviewPage() {
   const me = (await getMe())!;
   const supabase = getSupabaseServerClient();
 
-  const [{ count: clientCount }, { count: dealCount }, { data: recentDeals }] = await Promise.all([
-    supabase.from('users').select('id', { count: 'exact', head: true }).eq('role', 'client').eq('firm_id', me.firm_id!),
-    supabase.from('client_searches').select('id', { count: 'exact', head: true }).eq('firm_id', me.firm_id!).neq('phase', 'closed'),
+  const [
+    { count: clientCount },
+    { count: activeDealCount },
+    { count: closedDealCount },
+    { data: recentDeals },
+    { data: upcoming },
+  ] = await Promise.all([
+    supabase
+      .from('users')
+      .select('id', { count: 'exact', head: true })
+      .eq('role', 'client')
+      .eq('firm_id', me.firm_id!),
+    supabase
+      .from('client_searches')
+      .select('id', { count: 'exact', head: true })
+      .eq('firm_id', me.firm_id!)
+      .neq('phase', 'closed'),
+    supabase
+      .from('client_searches')
+      .select('id', { count: 'exact', head: true })
+      .eq('firm_id', me.firm_id!)
+      .eq('phase', 'closed'),
     supabase
       .from('client_searches')
       .select(
-        `id, name, phase, updated_at,
+        `id, name, phase, updated_at, kind,
          client:users!client_searches_client_id_fkey ( id, full_name, email )`
       )
       .eq('firm_id', me.firm_id!)
       .order('updated_at', { ascending: false })
+      .limit(6),
+    supabase
+      .from('important_dates')
+      .select('id, label, date, search_id')
+      .eq('firm_id', me.firm_id!)
+      .gte('date', new Date().toISOString().slice(0, 10))
+      .order('date', { ascending: true })
       .limit(5),
   ]);
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-8">
-      <header className="mb-8 flex items-end justify-between">
+    <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+      <header className="mb-8 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
-            Welcome back, {me.full_name?.split(' ')[0]}
+            Welcome back, {me.full_name?.split(' ')[0] || 'there'}
           </h1>
-          <p className="mt-1 text-sm text-slate-600">Here's what's happening at {me.firm_name}.</p>
+          <p className="mt-1 text-sm text-slate-600">
+            Here's what's happening at {me.firm_name}.
+          </p>
         </div>
         <Link
           href="/dashboard/clients/new"
-          className="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700"
+          className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-700"
         >
           + Invite client
         </Link>
       </header>
 
-      {/* KPI cards */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card label="Clients" value={clientCount ?? 0} href="/dashboard/clients" />
-        <Card label="Active deals" value={dealCount ?? 0} href="/dashboard/clients" />
+      {/* KPI row */}
+      <div className="grid gap-3 md:grid-cols-4">
+        <Card
+          label="Active deals"
+          value={activeDealCount ?? 0}
+          href="/dashboard/deals"
+          accent="blue"
+        />
+        <Card
+          label="Closed deals"
+          value={closedDealCount ?? 0}
+          href="/dashboard/deals?phase=closed"
+          accent="emerald"
+        />
+        <Card
+          label="Clients"
+          value={clientCount ?? 0}
+          href="/dashboard/clients"
+          accent="slate"
+        />
         <Card
           label={me.firm_status === 'trial' ? 'Trial' : 'Plan'}
           value={trialStatusLabel(me)}
           href="/dashboard/billing"
+          accent="amber"
         />
       </div>
 
-      {/* Recent deals */}
-      <section className="mt-10">
-        <h2 className="mb-3 text-lg font-semibold">Recent activity</h2>
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-          {!recentDeals || recentDeals.length === 0 ? (
-            <div className="p-8 text-center text-sm text-slate-500">
-              No deals yet.{' '}
-              <Link href="/dashboard/clients/new" className="font-medium text-blue-600 hover:underline">
-                Invite your first client →
-              </Link>
-            </div>
-          ) : (
-            <table className="w-full text-sm">
-              <thead className="border-b border-slate-200 bg-slate-50 text-left text-xs uppercase text-slate-500">
-                <tr>
-                  <th className="px-4 py-3">Client</th>
-                  <th className="px-4 py-3">Property</th>
-                  <th className="px-4 py-3">Phase</th>
-                  <th className="px-4 py-3">Updated</th>
-                </tr>
-              </thead>
-              <tbody>
+      <div className="mt-8 grid gap-6 lg:grid-cols-3">
+        {/* Recent activity (deals) — links into /dashboard/deals/[id] */}
+        <section className="lg:col-span-2">
+          <div className="mb-3 flex items-baseline justify-between">
+            <h2 className="text-lg font-semibold">Recent deals</h2>
+            <Link
+              href="/dashboard/deals"
+              className="text-xs font-semibold text-blue-600 hover:underline"
+            >
+              View all →
+            </Link>
+          </div>
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+            {!recentDeals || recentDeals.length === 0 ? (
+              <div className="p-8 text-center text-sm text-slate-500">
+                No deals yet.{' '}
+                <Link
+                  href="/dashboard/clients/new"
+                  className="font-medium text-blue-600 hover:underline"
+                >
+                  Invite your first client →
+                </Link>
+              </div>
+            ) : (
+              <ul className="divide-y divide-slate-100">
                 {recentDeals.map((d: any) => (
-                  <tr
-                    key={d.id}
-                    className="cursor-pointer border-b border-slate-100 transition hover:bg-slate-50 last:border-0"
-                  >
-                    <td className="px-4 py-3 font-medium">
-                      <Link
-                        href={`/dashboard/clients/${d.client?.id}`}
-                        className="block"
-                      >
-                        {d.client?.full_name || d.client?.email || '—'}
-                      </Link>
-                    </td>
-                    <td className="px-4 py-3 text-slate-600">
-                      {d.name || 'Deal'}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
+                  <li key={d.id}>
+                    <Link
+                      href={`/dashboard/deals/${d.id}`}
+                      className="flex items-center gap-3 px-4 py-3 transition hover:bg-slate-50"
+                    >
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-700">
+                        {initials(d.client?.full_name || d.client?.email)}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate font-medium">
+                          {d.client?.full_name || d.client?.email || '—'}
+                        </div>
+                        <div className="truncate text-xs text-slate-500">
+                          {d.name ||
+                            (d.kind === 'seller' ? 'Listing' : 'Buyer deal')}
+                        </div>
+                      </div>
+                      <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold uppercase text-blue-700">
                         {String(d.phase || 'pending').replace(/_/g, ' ')}
                       </span>
-                    </td>
-                    <td className="px-4 py-3 text-xs text-slate-500">
-                      {new Date(d.updated_at).toLocaleDateString()}
-                    </td>
-                  </tr>
+                      <span className="ml-2 hidden text-xs text-slate-400 sm:inline">
+                        {new Date(d.updated_at).toLocaleDateString()}
+                      </span>
+                    </Link>
+                  </li>
                 ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-      </section>
+              </ul>
+            )}
+          </div>
+        </section>
 
-      {/* Quick links */}
-      <section className="mt-10 grid gap-4 md:grid-cols-2">
-        <QuickAction
-          title="Make it yours"
-          body="Update your logo, brand colors, and contact info."
-          href="/dashboard/branding"
-          cta="Edit branding"
-        />
-        <QuickAction
-          title="Get the mobile app"
-          body="Download Realtor Portal on your phone to manage clients on the go."
-          href="/dashboard/settings#mobile"
-          cta="Get the app"
-        />
-      </section>
+        {/* Upcoming dates */}
+        <section>
+          <div className="mb-3 flex items-baseline justify-between">
+            <h2 className="text-lg font-semibold">Upcoming dates</h2>
+          </div>
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+            {!upcoming || upcoming.length === 0 ? (
+              <div className="p-6 text-center text-sm text-slate-500">
+                Nothing on the calendar.
+              </div>
+            ) : (
+              <ul className="divide-y divide-slate-100">
+                {upcoming.map((u: any) => (
+                  <li key={u.id}>
+                    <Link
+                      href={`/dashboard/deals/${u.search_id}`}
+                      className="flex items-center gap-3 px-4 py-3 transition hover:bg-slate-50"
+                    >
+                      <div className="flex w-12 shrink-0 flex-col items-center rounded-md bg-slate-50 py-1">
+                        <span className="text-[10px] font-bold uppercase text-slate-500">
+                          {new Date(u.date).toLocaleString('en-US', {
+                            month: 'short',
+                          })}
+                        </span>
+                        <span className="text-lg font-bold leading-none text-slate-900">
+                          {new Date(u.date).getDate()}
+                        </span>
+                      </div>
+                      <div className="min-w-0 flex-1 text-sm">
+                        <div className="truncate font-medium">{u.label}</div>
+                      </div>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </section>
+      </div>
     </main>
   );
 }
@@ -133,39 +205,47 @@ function trialStatusLabel(me: any): string {
   return hours + 'h left';
 }
 
-function Card({ label, value, href }: { label: string; value: string | number; href: string }) {
+function Card({
+  label,
+  value,
+  href,
+  accent,
+}: {
+  label: string;
+  value: string | number;
+  href: string;
+  accent: 'slate' | 'blue' | 'emerald' | 'amber';
+}) {
+  const bar =
+    accent === 'blue'
+      ? 'from-blue-500 to-blue-600'
+      : accent === 'emerald'
+      ? 'from-emerald-500 to-emerald-600'
+      : accent === 'amber'
+      ? 'from-amber-500 to-amber-600'
+      : 'from-slate-500 to-slate-700';
   return (
     <Link
       href={href}
-      className="rounded-xl border border-slate-200 bg-white p-5 transition hover:border-slate-300 hover:shadow-sm"
+      className="group relative overflow-hidden rounded-xl border border-slate-200 bg-white p-5 transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
     >
+      <div
+        className={
+          'absolute inset-x-0 top-0 h-1 bg-gradient-to-r ' + bar
+        }
+      />
       <div className="text-xs uppercase tracking-wide text-slate-500">{label}</div>
-      <div className="mt-1 text-3xl font-bold">{value}</div>
+      <div className="mt-1 text-3xl font-bold tracking-tight">{value}</div>
     </Link>
   );
 }
 
-function QuickAction({
-  title,
-  body,
-  href,
-  cta,
-}: {
-  title: string;
-  body: string;
-  href: string;
-  cta: string;
-}) {
-  return (
-    <div className="rounded-xl border border-slate-200 bg-white p-6">
-      <h3 className="font-semibold">{title}</h3>
-      <p className="mt-1 text-sm text-slate-600">{body}</p>
-      <Link
-        href={href}
-        className="mt-4 inline-block rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold hover:bg-slate-50"
-      >
-        {cta} →
-      </Link>
-    </div>
-  );
+function initials(s: string | null | undefined) {
+  if (!s) return '?';
+  return s
+    .split(' ')
+    .map((w) => w[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
 }

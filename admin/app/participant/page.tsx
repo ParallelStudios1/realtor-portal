@@ -85,12 +85,17 @@ export default async function ParticipantHome() {
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-8">
-      <header className="mb-6">
-        <h1 className="text-3xl font-bold tracking-tight">Your deals</h1>
-        <p className="mt-1 text-sm text-slate-600">
-          Every real-estate deal you've been added to. Tap any to see what the
-          realtor shared with you.
-        </p>
+      <header className="mb-6 flex items-end justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Your deals</h1>
+          <p className="mt-1 text-sm text-slate-600">
+            Every real-estate deal you've been added to. Tap any to see what
+            the realtor shared with you.
+          </p>
+        </div>
+        <span className="hidden rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700 sm:inline">
+          {items.length} {items.length === 1 ? 'deal' : 'deals'}
+        </span>
       </header>
 
       {items.length === 0 ? (

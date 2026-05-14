@@ -88,16 +88,22 @@ export async function inviteClientAction(fd: FormData) {
     .eq('firm_id', me!.firm_id)
     .maybeSingle();
 
+  let dealId: string | null = existing?.id ?? null;
+
   if (!existing) {
-    const { error: searchErr } = await service.from('client_searches').insert({
-      firm_id: me!.firm_id,
-      client_id: clientId,
-      realtor_id: me!.user_id,
-      name:
-        fullName + (roleInDeal === 'seller' ? "'s Listing" : "'s Search"),
-      phase: 'searching',
-      kind: roleInDeal,
-    });
+    const { data: created, error: searchErr } = await service
+      .from('client_searches')
+      .insert({
+        firm_id: me!.firm_id,
+        client_id: clientId,
+        realtor_id: me!.user_id,
+        name:
+          fullName + (roleInDeal === 'seller' ? "'s Listing" : "'s Search"),
+        phase: 'searching',
+        kind: roleInDeal,
+      })
+      .select('id')
+      .single();
     if (searchErr) {
       redirect(
         '/dashboard/clients/new?error=' +
@@ -106,7 +112,10 @@ export async function inviteClientAction(fd: FormData) {
           )
       );
     }
+    dealId = created?.id ?? null;
   }
 
-  redirect('/dashboard/clients/new?ok=1');
+  // Land directly on the new deal's workspace — saves a click.
+  if (dealId) redirect('/dashboard/deals/' + dealId);
+  redirect('/dashboard/deals');
 }

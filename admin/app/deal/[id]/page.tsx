@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { getMe } from '@/lib/supabaseSsr';
 import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
 
@@ -25,8 +25,10 @@ const PHASES = [
  */
 export default async function DealPage({
   params,
+  searchParams,
 }: {
   params: { id: string };
+  searchParams?: { as?: string };
 }) {
   const me = await getMe();
   if (!me?.user_id) {
@@ -74,6 +76,13 @@ export default async function DealPage({
   const isStaffSameFirm =
     (me.firm_id === d.firm.id) &&
     ['realtor', 'firm_admin', 'super_admin'].includes(me.role || '');
+
+  // Staff at the originating firm see the canonical editor view by default.
+  // They can still preview the client-facing render via /deal/[id]?as=client
+  // (used by the "Client view ↗" button on the workspace).
+  if (isStaffSameFirm && searchParams?.as !== 'client') {
+    redirect('/dashboard/deals/' + params.id);
+  }
   const isPrincipalClient = d.client?.id === me.user_id;
   const myParticipantRow = parts.find(
     (p) =>

@@ -86,122 +86,153 @@ export function ClientDetailActions({
 
   return (
     <>
-      <section className="rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50/50 p-5 shadow-sm">
+      <section className="surface-muted overflow-hidden p-5 shadow-soft">
         <div className="mb-4 flex items-baseline justify-between">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500">
-            Quick actions
-          </h2>
-          <span className="text-xs text-slate-400">
-            Everything you can do for this deal
-          </span>
+          <div>
+            <h2 className="text-lg font-bold tracking-tight text-ink-900">
+              Deal actions
+            </h2>
+            <p className="mt-0.5 text-xs text-ink-500">
+              Everything you can do for this deal — grouped by what they affect.
+            </p>
+          </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
-          <ActionCard
-            tone="blue"
-            icon={<IconHouse />}
-            title="Add house"
-            subtitle="With photo or Zillow link"
-            onClick={() => setOpen('house')}
-          />
-          <ActionCard
-            tone="indigo"
-            icon={<IconFlag />}
-            title="Update phase"
-            subtitle={phaseLabel(currentPhase)}
-            onClick={() => setOpen('phase')}
-          />
-          <ActionCard
-            tone="emerald"
-            icon={<IconCalendar />}
-            title="Important date"
-            subtitle="Closing, appraisal, etc."
-            onClick={() => setOpen('date')}
-          />
-          <ActionCard
-            tone="amber"
-            icon={<IconDollar />}
-            title="Financials"
-            subtitle="Price, earnest, commission"
-            onClick={() => setOpen('financials')}
-          />
-          <ActionCard
-            tone="violet"
-            icon={<IconDocument />}
-            title="Upload document"
-            subtitle="PDFs, disclosures"
-            href={`/dashboard/clients/${clientId}/upload`}
-          />
-          <ActionCard
-            tone="orange"
-            icon={<IconSignature />}
-            title="DocuSign envelope"
-            subtitle="Paste signing link"
-            onClick={() => setOpen('docusign')}
-          />
-          <ActionCard
-            tone="slate"
-            icon={<IconBriefcase />}
-            title="Attorney"
-            subtitle="Add to this deal"
-            onClick={() => setOpen('attorney')}
-          />
-          <ActionCard
-            tone="emerald"
-            icon={<IconUsers />}
-            title="+ Party"
-            subtitle="Buyer / seller / co-realtor / etc."
-            onClick={() => setOpen('participant')}
-          />
-          <ActionCard
-            tone="sky"
-            icon={<IconMail />}
-            title="Mass invite"
-            subtitle="Paste many emails at once"
-            onClick={() => setOpen('mass_invite')}
-          />
-          <ActionCard
-            tone="rose"
-            icon={<IconSparkle />}
-            title="Go under contract"
-            subtitle="Dates + contract + email all"
-            onClick={() => setOpen('under_contract')}
-          />
-          <ActionCard
-            tone="indigo"
-            icon={<IconPlus />}
-            title="New deal"
-            subtitle="Start another deal w/ this client"
-            onClick={() => setOpen('new_deal')}
-          />
-          <ActionCard
-            tone="sky"
-            icon={<IconMessage />}
-            title="Quick message"
-            subtitle="Send to your client"
-            onClick={() => setOpen('message')}
-          />
-          <ActionCard
-            tone="rose"
-            icon={<IconAlert />}
-            title="Send alert"
-            subtitle="Urgent — pushes notification"
-            onClick={() => setOpen('alert')}
-          />
-          <ActionCard
-            tone="slate"
-            icon={<IconInbox />}
-            title="All messages"
-            subtitle="Open thread list"
-            href="/dashboard/messages"
-          />
-          <ActionCard
-            tone="slate"
-            icon={<IconRoute />}
-            title="Tour requests"
-            subtitle="Pending tours"
-            href="/dashboard/tours"
-          />
+        <div className="space-y-5">
+          <ActionGroup
+            label="Deal Control"
+            hint="Phase, financials, dates, and contract"
+          >
+            <ActionCard
+              tone="indigo"
+              icon={<IconFlag />}
+              title="Update phase"
+              subtitle={phaseLabel(currentPhase)}
+              onClick={() => setOpen('phase')}
+            />
+            <ActionCard
+              tone="rose"
+              icon={<IconSparkle />}
+              title="Go under contract"
+              subtitle="Dates + contract + email all"
+              onClick={() => setOpen('under_contract')}
+            />
+            <ActionCard
+              tone="amber"
+              icon={<IconDollar />}
+              title="Financials"
+              subtitle="Price, earnest, commission"
+              onClick={() => setOpen('financials')}
+            />
+            <ActionCard
+              tone="emerald"
+              icon={<IconCalendar />}
+              title="Important date"
+              subtitle="Closing, appraisal, etc."
+              onClick={() => setOpen('date')}
+            />
+            <ActionCard
+              tone="indigo"
+              icon={<IconPlus />}
+              title="New deal"
+              subtitle="Another deal with this client"
+              onClick={() => setOpen('new_deal')}
+            />
+          </ActionGroup>
+
+          <ActionGroup
+            label="Property"
+            hint="Houses and tour scheduling"
+          >
+            <ActionCard
+              tone="blue"
+              icon={<IconHouse />}
+              title="Add house"
+              subtitle="Photo or Zillow link"
+              onClick={() => setOpen('house')}
+            />
+            <ActionCard
+              tone="slate"
+              icon={<IconRoute />}
+              title="Tour requests"
+              subtitle="Pending tours"
+              href="/dashboard/tours"
+            />
+          </ActionGroup>
+
+          <ActionGroup
+            label="People"
+            hint="Co-realtors, attorneys, inspectors, lenders"
+          >
+            <ActionCard
+              tone="emerald"
+              icon={<IconUsers />}
+              title="+ Party"
+              subtitle="Anyone on the deal"
+              onClick={() => setOpen('participant')}
+            />
+            <ActionCard
+              tone="sky"
+              icon={<IconMail />}
+              title="Mass invite"
+              subtitle="Paste many emails at once"
+              onClick={() => setOpen('mass_invite')}
+            />
+            <ActionCard
+              tone="slate"
+              icon={<IconBriefcase />}
+              title="Attorney"
+              subtitle="Add closing counsel"
+              onClick={() => setOpen('attorney')}
+            />
+          </ActionGroup>
+
+          <ActionGroup
+            label="Documents & Signatures"
+            hint="Contracts, disclosures, DocuSign"
+          >
+            <ActionCard
+              tone="violet"
+              icon={<IconDocument />}
+              title="Upload document"
+              subtitle="Drag & drop, PDFs"
+              href={`/dashboard/clients/${clientId}/upload`}
+            />
+            <ActionCard
+              tone="orange"
+              icon={<IconSignature />}
+              title="DocuSign link"
+              subtitle="Paste signing URL"
+              onClick={() => setOpen('docusign')}
+            />
+          </ActionGroup>
+
+          <ActionGroup
+            label="Communication"
+            hint="Messages and alerts to the client"
+          >
+            <ActionCard
+              tone="sky"
+              icon={<IconMessage />}
+              title="Quick message"
+              subtitle="Send to client thread"
+              onClick={() => setOpen('message')}
+            />
+            <ActionCard
+              tone="rose"
+              icon={<IconAlert />}
+              title="Send alert"
+              subtitle="Urgent — pushes notification"
+              onClick={() => setOpen('alert')}
+            />
+            <ActionCard
+              tone="slate"
+              icon={<IconInbox />}
+              title="All messages"
+              subtitle="Open thread list"
+              href="/dashboard/messages"
+            />
+          </ActionGroup>
         </div>
       </section>
 
@@ -442,6 +473,30 @@ const TONE_STYLES: Record<
   },
 };
 
+function ActionGroup({
+  label,
+  hint,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <div className="mb-2 flex items-baseline justify-between">
+        <h3 className="text-[11px] font-bold uppercase tracking-wider text-ink-500">
+          {label}
+        </h3>
+        {hint && <span className="text-[11px] text-ink-400">{hint}</span>}
+      </div>
+      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5">
+        {children}
+      </div>
+    </div>
+  );
+}
+
 function ActionCard({
   tone,
   icon,
@@ -459,15 +514,12 @@ function ActionCard({
 }) {
   const t = TONE_STYLES[tone];
   const cls =
-    'group flex flex-col items-start gap-2 rounded-xl border border-slate-200 bg-white p-3 text-left shadow-sm ring-1 ring-transparent transition ' +
-    t.bg +
-    ' ' +
-    t.ring;
+    'group relative flex items-start gap-3 overflow-hidden rounded-xl border border-ink-200 bg-white p-3 text-left shadow-soft-xs transition hover:-translate-y-0.5 hover:shadow-soft-md hover:border-ink-300 active:scale-[0.98]';
   const inner = (
     <>
       <span
         className={
-          'flex h-9 w-9 items-center justify-center rounded-lg ' +
+          'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition group-hover:scale-105 ' +
           t.iconBg +
           ' ' +
           t.icon
@@ -475,11 +527,11 @@ function ActionCard({
       >
         {icon}
       </span>
-      <div className="min-w-0">
-        <div className="truncate text-sm font-semibold text-slate-900">
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-sm font-semibold text-ink-900">
           {title}
         </div>
-        <div className="line-clamp-1 text-xs text-slate-500">{subtitle}</div>
+        <div className="line-clamp-1 text-[11px] text-ink-500">{subtitle}</div>
       </div>
     </>
   );
@@ -645,21 +697,34 @@ function Modal({
 }) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-ink-900/40 p-0 backdrop-blur-sm animate-fade-in sm:items-center sm:p-4"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-t-2xl bg-white shadow-2xl sm:rounded-2xl"
+        className="w-full max-w-md rounded-t-2xl bg-white shadow-soft-xl sm:rounded-2xl animate-slide-up"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-3.5">
-          <h3 className="text-base font-semibold text-slate-900">{title}</h3>
+        <div className="flex items-center justify-between border-b border-ink-100 px-5 py-3.5">
+          <h3 className="text-base font-bold tracking-tight text-ink-900">
+            {title}
+          </h3>
           <button
             onClick={onClose}
-            className="-mr-1.5 rounded-md p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+            className="-mr-1.5 rounded-lg p-1.5 text-ink-400 transition hover:bg-ink-100 hover:text-ink-700"
             aria-label="Close"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M18 6 6 18M6 6l12 12" />
+            </svg>
           </button>
         </div>
         <div className="p-5">{children}</div>
@@ -687,10 +752,10 @@ function PrimaryButton({
       disabled={pending || disabled}
       onClick={onClick}
       className={
-        'mt-5 inline-flex w-full items-center justify-center rounded-lg px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition disabled:cursor-not-allowed disabled:opacity-50 ' +
+        'mt-5 inline-flex w-full items-center justify-center rounded-lg px-4 py-2.5 text-sm font-semibold text-white shadow-soft-sm transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 ' +
         (variant === 'danger'
           ? 'bg-rose-600 hover:bg-rose-700'
-          : 'bg-slate-900 hover:bg-slate-700')
+          : 'bg-ink-900 hover:bg-ink-700')
       }
     >
       {pending ? 'Saving…' : children}
@@ -709,7 +774,7 @@ function Field({ label, children, hint }: { label: string; children: React.React
 }
 
 const inputCls =
-  'w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm transition focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10';
+  'w-full rounded-lg border border-ink-300 bg-white px-3 py-2 text-sm shadow-soft-xs transition placeholder:text-ink-400 focus:border-ink-900 focus:outline-none focus:ring-2 focus:ring-ink-900/10';
 
 // -- Specific modals ------------------------------------------------------
 
@@ -775,6 +840,9 @@ function HouseModal({
     listing_url?: string | null;
     photo_url?: string | null;
     notes?: string | null;
+    bedrooms?: number | null;
+    bathrooms?: number | null;
+    square_feet?: number | null;
   }) => Promise<void>;
 }) {
   const [address, setAddress] = useState('');
@@ -782,11 +850,51 @@ function HouseModal({
   const [listingUrl, setListingUrl] = useState('');
   const [photoUrl, setPhotoUrl] = useState('');
   const [notes, setNotes] = useState('');
+  const [bedrooms, setBedrooms] = useState('');
+  const [bathrooms, setBathrooms] = useState('');
+  const [sqft, setSqft] = useState('');
   const [pending, start] = useTransition();
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [aiBusy, setAiBusy] = useState(false);
   const toast = useToast();
   const supabase = getSupabaseBrowserClient();
+
+  async function generateAIDescription() {
+    if (!address.trim()) {
+      toast.show('Add an address first.', { variant: 'error' });
+      return;
+    }
+    setAiBusy(true);
+    try {
+      const r = await fetch('/api/ai/listing-description', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          address,
+          price: listPrice || undefined,
+          bedrooms: bedrooms || undefined,
+          bathrooms: bathrooms || undefined,
+          squareFeet: sqft || undefined,
+          notes,
+          tone: 'warm',
+        }),
+      });
+      const j = await r.json();
+      if (!r.ok || !j.description) {
+        toast.show(j.error || 'Could not generate description.', {
+          variant: 'error',
+        });
+        return;
+      }
+      setNotes(j.description);
+      toast.show('Description drafted.', { variant: 'success' });
+    } catch {
+      toast.show('AI service unavailable.', { variant: 'error' });
+    } finally {
+      setAiBusy(false);
+    }
+  }
 
   async function importFromUrl() {
     if (!listingUrl) return;
@@ -893,6 +1001,36 @@ function HouseModal({
             placeholder="…or paste a photo URL"
           />
         </Field>
+        <div className="grid grid-cols-3 gap-2">
+          <Field label="Beds">
+            <input
+              type="number"
+              className={inputCls}
+              value={bedrooms}
+              onChange={(e) => setBedrooms(e.target.value)}
+              placeholder="3"
+            />
+          </Field>
+          <Field label="Baths">
+            <input
+              type="number"
+              step="0.5"
+              className={inputCls}
+              value={bathrooms}
+              onChange={(e) => setBathrooms(e.target.value)}
+              placeholder="2"
+            />
+          </Field>
+          <Field label="Sq ft">
+            <input
+              type="number"
+              className={inputCls}
+              value={sqft}
+              onChange={(e) => setSqft(e.target.value)}
+              placeholder="1850"
+            />
+          </Field>
+        </div>
         <Field label="List price (USD)">
           <input
             type="number"
@@ -901,14 +1039,39 @@ function HouseModal({
             onChange={(e) => setListPrice(e.target.value)}
           />
         </Field>
-        <Field label="Notes">
-          <textarea
-            className={inputCls}
-            rows={3}
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Why is this a fit, what to flag, etc."
-          />
+        <Field
+          label="Notes / description"
+          hint="Tap the sparkle to let AI draft something you can send to the client."
+        >
+          <div className="relative">
+            <textarea
+              className={inputCls + ' pr-12'}
+              rows={4}
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Why is this a fit, what to flag, etc."
+            />
+            <button
+              type="button"
+              onClick={generateAIDescription}
+              disabled={aiBusy || !address.trim()}
+              title={
+                !address.trim()
+                  ? 'Add an address first'
+                  : 'AI: draft a description'
+              }
+              className="absolute right-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white shadow-soft-sm transition hover:scale-105 disabled:opacity-50 disabled:hover:scale-100"
+              aria-label="Generate AI description"
+            >
+              {aiBusy ? (
+                <span className="block h-3 w-3 animate-spin rounded-full border-2 border-white/70 border-t-white" />
+              ) : (
+                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
+                  <path d="M11 3l1.5 4.5L17 9l-4.5 1.5L11 15l-1.5-4.5L5 9l4.5-1.5L11 3zm7 9l.9 2.7 2.7.9-2.7.9L18 19l-.9-2.7-2.7-.9 2.7-.9L18 12z" />
+                </svg>
+              )}
+            </button>
+          </div>
         </Field>
       </div>
       <PrimaryButton
@@ -922,6 +1085,9 @@ function HouseModal({
               listing_url: listingUrl.trim() || null,
               photo_url: photoUrl.trim() || null,
               notes: notes.trim() || null,
+              bedrooms: bedrooms ? Number(bedrooms) : null,
+              bathrooms: bathrooms ? Number(bathrooms) : null,
+              square_feet: sqft ? Number(sqft) : null,
             })
           )
         }

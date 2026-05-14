@@ -17,6 +17,9 @@
         "resourceClass": "m-medium",
         "simulator": false
       },
+      "android": {
+        "buildType": "apk"
+      },
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "https://epagiepzartckjqzbsxi.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVwYWdpZXB6YXJ0Y2tqcXpic3hpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4Njk2MzQsImV4cCI6MjA5MzQ0NTYzNH0.5jDiEQDh9vPP9hfrMN4zm2hnORJlxKrFTQ1uqyoP6YQ",
@@ -27,6 +30,9 @@
       "autoIncrement": true,
       "ios": {
         "resourceClass": "m-medium"
+      },
+      "android": {
+        "buildType": "app-bundle"
       },
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "https://epagiepzartckjqzbsxi.supabase.co",
@@ -44,6 +50,11 @@
         "ascApiKeyPath": "/Users/turnerlogan/Downloads/AuthKey_544WW2NRWY.p8",
         "ascApiKeyId": "544WW2NRWY",
         "ascApiKeyIssuerId": "907a18b2-6f6a-40ee-9e58-7ad1fbb63f6a"
+      },
+      "android": {
+        "serviceAccountKeyPath": "/Users/turnerlogan/Downloads/google-play-service-account.json",
+        "track": "internal",
+        "releaseStatus": "draft"
       }
     }
   }

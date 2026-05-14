@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { getMe, getSupabaseServerClient } from '@/lib/supabaseSsr';
 import { SettingsForm } from './SettingsForm';
 
@@ -35,6 +36,38 @@ export default async function SettingsPage() {
       <p className="mt-1 text-sm text-slate-600">
         Manage your profile, account security, and firm details.
       </p>
+
+      {/* Quick links to formerly top-level sections */}
+      <div className="mt-6 grid gap-3 sm:grid-cols-2">
+        <Link
+          href="/dashboard/branding"
+          className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-4 transition hover:border-slate-300 hover:shadow-sm"
+        >
+          <div>
+            <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Branding
+            </div>
+            <div className="mt-0.5 text-sm font-semibold">
+              Logo, colors, tagline
+            </div>
+          </div>
+          <span aria-hidden className="text-slate-400">→</span>
+        </Link>
+        <Link
+          href="/dashboard/billing"
+          className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-4 transition hover:border-slate-300 hover:shadow-sm"
+        >
+          <div>
+            <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Billing
+            </div>
+            <div className="mt-0.5 text-sm font-semibold">
+              Plan, payment, invoices
+            </div>
+          </div>
+          <span aria-hidden className="text-slate-400">→</span>
+        </Link>
+      </div>
 
       <div className="mt-8">
         <SettingsForm

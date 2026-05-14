@@ -4,8 +4,110 @@
 
 :root {
   color-scheme: light;
+  --brand: #0F172A;
+  --accent: #2563EB;
 }
 
+html,
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-feature-settings: 'cv11', 'ss01';
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Make page-level scrollbars unobtrusive — most modern OS scrollbars are
+   overlayed, but Windows + many Linux distros still render bulky default
+   ones. */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(15, 23, 42, 0.12);
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(15, 23, 42, 0.22);
+}
+
+/* Focus polish — use a soft ring rather than the default 3px blue outline. */
+*:focus-visible {
+  outline: 2px solid rgba(37, 99, 235, 0.4);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Reusable surface utility — call this on hero blocks where you want the
+   subtle gradient feel without writing it 10 times. */
+@layer components {
+  .surface {
+    @apply rounded-2xl border border-ink-200 bg-white shadow-soft;
+  }
+  .surface-elev {
+    @apply rounded-2xl border border-ink-200 bg-white shadow-soft-md;
+  }
+  .surface-muted {
+    @apply rounded-2xl border border-ink-200 bg-gradient-to-br from-white to-ink-50/60;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-full bg-ink-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-ink-700;
+  }
+  .chip-blue {
+    @apply inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-blue-800;
+  }
+  .chip-emerald {
+    @apply inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-emerald-800;
+  }
+  .chip-amber {
+    @apply inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-amber-800;
+  }
+  .chip-rose {
+    @apply inline-flex items-center gap-1 rounded-full bg-rose-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-rose-800;
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-lg bg-ink-900 px-4 py-2 text-sm font-semibold text-white shadow-soft-sm transition hover:bg-ink-700 active:scale-[0.98] disabled:opacity-60 disabled:pointer-events-none;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-lg border border-ink-300 bg-white px-4 py-2 text-sm font-semibold text-ink-700 transition hover:bg-ink-50 active:scale-[0.98] disabled:opacity-60 disabled:pointer-events-none;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold text-ink-700 transition hover:bg-ink-100 active:scale-[0.98] disabled:opacity-60 disabled:pointer-events-none;
+  }
+  .input {
+    @apply w-full rounded-lg border border-ink-300 bg-white px-3 py-2 text-sm placeholder:text-ink-400 focus:border-ink-500 focus:outline-none focus:ring-2 focus:ring-ink-200;
+  }
+  .label {
+    @apply block text-xs font-semibold uppercase tracking-wide text-ink-500;
+  }
+  /* Subtle dotted background — used on empty-state cards to give them
+     personality without distracting from the message. */
+  .bg-dotted {
+    background-image: radial-gradient(
+      circle at 1px 1px,
+      rgba(15, 23, 42, 0.08) 1px,
+      transparent 0
+    );
+    background-size: 16px 16px;
+  }
+}
+
+/* Skeleton shimmer for loading states. */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(226, 232, 240, 0.6) 0%,
+    rgba(241, 245, 249, 1) 50%,
+    rgba(226, 232, 240, 0.6) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
 }
