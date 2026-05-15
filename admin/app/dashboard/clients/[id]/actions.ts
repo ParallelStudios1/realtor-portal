@@ -66,6 +66,8 @@ async function activity(
 const PHASE_CELEBRATIONS: Record<string, string> = {
   offer_made:
     '🎯 Offer is in! Your agent has submitted your offer. Fingers crossed.',
+  counter_offer:
+    '↩️ Counter offer phase — your agent is negotiating. Hang tight.',
   under_contract:
     '🎉 Congrats — you are UNDER CONTRACT! Big step. Your agent will line up inspection and appraisal next.',
   closing:
@@ -728,6 +730,103 @@ export async function createNewDealAction(
   revalidatePath('/dashboard/deals/[id]', 'page');
   revalidatePath('/dashboard/deals');
   return { ok: true as const, dealId: created?.id };
+}
+
+/**
+ * Return everyone in the firm we could add as a party — clients, realtors,
+ * staff — plus the de-duplicated set of external people that have been
+ * added to other deals (so the realtor doesn't have to re-type that
+ * inspector / lender / mortgage broker every time).
+ */
+export async function searchFirmPeopleAction(clientId: string) {
+  const a = await authorize(clientId);
+  if ('error' in a) return { ok: false as const, error: a.error };
+  const service = getSupabaseServiceRoleClient();
+
+  const [users, externals] = await Promise.all([
+    service
+      .from('users')
+      .select('id, full_name, email, role')
+      .eq('firm_id', a.search.firm_id)
+      .order('full_name'),
+    service
+      .from('deal_participants')
+      .select('external_email, external_name, external_phone, role')
+      .eq('firm_id', a.search.firm_id)
+      .not('external_email', 'is', null),
+  ]);
+
+  // Dedupe external people by lower(email).
+  const seen = new Set<string>();
+  const externalList: {
+    email: string;
+    name: string | null;
+    phone: string | null;
+    role: string;
+  }[] = [];
+  for (const p of (externals.data || []) as any[]) {
+    const key = (p.external_email as string).toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    externalList.push({
+      email: p.external_email,
+      name: p.external_name,
+      phone: p.external_phone,
+      role: p.role,
+    });
+  }
+
+  return {
+    ok: true as const,
+    users: (users.data || []) as Array<{
+      id: string;
+      full_name: string | null;
+      email: string;
+      role: string;
+    }>,
+    externals: externalList,
+  };
+}
+
+/**
+ * Add many participants at once. Each row carries its own role so a realtor
+ * can paste 'lender@bank.com:lender, inspector@x.com:inspector' style or
+ * use the typed form to pick role-per-person.
+ */
+export async function massAddPartiesAction(
+  clientId: string,
+  payload: {
+    rows: Array<{
+      role: PartyRole;
+      name?: string;
+      email?: string;
+      phone?: string;
+    }>;
+  }
+) {
+  const a = await authorize(clientId);
+  if ('error' in a) return { ok: false as const, error: a.error };
+  if (!payload.rows?.length)
+    return { ok: false as const, error: 'No rows to add.' };
+
+  let added = 0;
+  let failed = 0;
+  for (const row of payload.rows) {
+    if (!row.email && !row.name) continue;
+    const r = await addParticipantAction(clientId, {
+      role: row.role,
+      email: row.email,
+      name: row.name,
+      phone: row.phone,
+      can_view_documents: true,
+      can_view_financials: false,
+      can_view_messages: false,
+      can_view_dates: true,
+    });
+    if (r.ok) added++;
+    else failed++;
+  }
+  return { ok: true as const, added, failed };
 }
 
 export async function moveDocumentFolderAction(

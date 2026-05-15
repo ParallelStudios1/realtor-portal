@@ -124,7 +124,51 @@ export async function POST(req: Request) {
     // Cap how much HTML we'll parse so a hostile page can't OOM us.
     const html = (await res.text()).slice(0, 1_000_000);
 
+    // Detect bot-block pages so we surface a clear error to the user
+    // instead of "Could not read that listing".
+    if (
+      /press\s*&\s*hold|are you a human|verify you('|')re human|recaptcha/i.test(
+        html
+      )
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            'That listing site is blocking automated requests right now. Paste the address and a photo URL manually instead.',
+          blocked: true,
+        },
+        { status: 502 }
+      );
+    }
+
     const extracted = extractMeta(html);
+
+    // Fallback: parse JSON-LD blocks for SingleFamilyResidence / Product
+    // schemas (Redfin, Realtor.com, sometimes Zillow). Fills in fields the
+    // og: extraction missed.
+    if (!extracted.title || !extracted.image || !extracted.address) {
+      const ld = extractJsonLd(html);
+      if (ld) {
+        if (!extracted.title && ld.name) extracted.title = ld.name;
+        if (!extracted.image && ld.image)
+          extracted.image = Array.isArray(ld.image) ? ld.image[0] : ld.image;
+        if (!extracted.address && ld.address) {
+          const a = ld.address;
+          if (typeof a === 'string') extracted.address = a;
+          else if (a.streetAddress)
+            extracted.address = [
+              a.streetAddress,
+              a.addressLocality,
+              a.addressRegion,
+              a.postalCode,
+            ]
+              .filter(Boolean)
+              .join(', ');
+        }
+        if (!extracted.description && ld.description)
+          extracted.description = ld.description;
+      }
+    }
 
     // Resolve a relative og:image against the final URL.
     if (extracted.image) {
@@ -279,4 +323,50 @@ function safeFromCharCode(code: number): string {
   } catch {
     return '';
   }
+}
+
+/**
+ * Pull JSON-LD <script type="application/ld+json"> blocks out of the page
+ * and return the first one whose @type looks property-ish (House, Product,
+ * SingleFamilyResidence, etc.). Falls back to the first parseable block.
+ */
+function extractJsonLd(html: string): any | null {
+  const matches = [
+    ...html.matchAll(
+      /<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi
+    ),
+  ];
+  if (matches.length === 0) return null;
+  const PROPERTY_TYPES = new Set([
+    'SingleFamilyResidence',
+    'Residence',
+    'House',
+    'Apartment',
+    'Product',
+    'RealEstateListing',
+    'Place',
+  ]);
+  for (const m of matches) {
+    try {
+      const raw = m[1].trim();
+      const parsed = JSON.parse(raw);
+      const nodes = Array.isArray(parsed) ? parsed : [parsed];
+      const flatten = (n: any): any[] => {
+        if (!n) return [];
+        if (Array.isArray(n)) return n.flatMap(flatten);
+        if (n['@graph']) return flatten(n['@graph']);
+        return [n];
+      };
+      for (const node of nodes.flatMap(flatten)) {
+        const t = node['@type'];
+        const types = Array.isArray(t) ? t : t ? [t] : [];
+        if (types.some((x: string) => PROPERTY_TYPES.has(x))) {
+          return node;
+        }
+      }
+    } catch {
+      // bad JSON in this block — try the next one.
+    }
+  }
+  return null;
 }

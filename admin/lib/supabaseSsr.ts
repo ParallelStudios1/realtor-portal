@@ -75,7 +75,15 @@ export async function getMe() {
     user_id: string;
     email: string;
     full_name: string;
-    role: 'super_admin' | 'firm_admin' | 'realtor' | 'client';
+    role:
+      | 'super_admin'
+      | 'firm_admin'
+      | 'realtor'
+      | 'client'
+      | 'owner'
+      | 'manager'
+      | 'agent'
+      | 'attorney';
     firm_id: string | null;
     firm_name: string | null;
     firm_subdomain: string | null;

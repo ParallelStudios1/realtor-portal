@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState, useTransition } from 'react';
 import {
   addHouseAction,
   addImportantDateAction,
@@ -8,9 +9,11 @@ import {
   createNewDealAction,
   goUnderContractAction,
   linkDocusignAction,
+  massAddPartiesAction,
   massInviteAction,
   quickMessageAction,
   removeParticipantAction,
+  searchFirmPeopleAction,
   sendAlertAction,
   setAttorneyAction,
   updateDealFinancialsAction,
@@ -79,9 +82,19 @@ export function ClientDetailActions({
 }) {
   const [open, setOpen] = useState<Action | null>(null);
   const toast = useToast();
+  const router = useRouter();
 
   function close() {
     setOpen(null);
+  }
+  // After a server action mutates, revalidatePath flushes the cache but the
+  // visible client tree doesn't re-render unless we tell it to. Call this
+  // after every successful mutation so the new participant / house / date /
+  // doc / phase shows up immediately.
+  function done(msg: string) {
+    toast.show(msg, { variant: 'success' });
+    close();
+    router.refresh();
   }
 
   return (
@@ -243,8 +256,7 @@ export function ClientDetailActions({
           onSubmit={async (phase) => {
             const r = await updatePhaseAction(clientId, phase as any);
             if (!r.ok) return toast.show(r.error || 'Failed', { variant: 'error' });
-            toast.show('Phase updated.', { variant: 'success' });
-            close();
+            done('Phase updated.');
           }}
         />
       )}
@@ -256,8 +268,7 @@ export function ClientDetailActions({
           onSubmit={async (payload) => {
             const r = await addHouseAction(clientId, payload);
             if (!r.ok) return toast.show(r.error || 'Failed', { variant: 'error' });
-            toast.show('House added.', { variant: 'success' });
-            close();
+            done('House added.');
           }}
         />
       )}
@@ -268,8 +279,7 @@ export function ClientDetailActions({
           onSubmit={async (payload) => {
             const r = await addImportantDateAction(clientId, payload);
             if (!r.ok) return toast.show(r.error || 'Failed', { variant: 'error' });
-            toast.show('Date saved.', { variant: 'success' });
-            close();
+            done('Date saved.');
           }}
         />
       )}
@@ -281,8 +291,7 @@ export function ClientDetailActions({
           onSubmit={async (payload) => {
             const r = await updateDealFinancialsAction(clientId, payload);
             if (!r.ok) return toast.show(r.error || 'Failed', { variant: 'error' });
-            toast.show('Deal updated.', { variant: 'success' });
-            close();
+            done('Deal updated.');
           }}
         />
       )}
@@ -293,8 +302,7 @@ export function ClientDetailActions({
           onSubmit={async (url) => {
             const r = await linkDocusignAction(clientId, url);
             if (!r.ok) return toast.show(r.error || 'Failed', { variant: 'error' });
-            toast.show('DocuSign link saved.', { variant: 'success' });
-            close();
+            done('DocuSign link saved.');
           }}
         />
       )}
@@ -305,8 +313,7 @@ export function ClientDetailActions({
           onSubmit={async (payload) => {
             const r = await setAttorneyAction(clientId, payload);
             if (!r.ok) return toast.show(r.error || 'Failed', { variant: 'error' });
-            toast.show('Attorney saved.', { variant: 'success' });
-            close();
+            done('Attorney saved.');
           }}
         />
       )}
@@ -320,8 +327,7 @@ export function ClientDetailActions({
           onSubmit={async (body) => {
             const r = await quickMessageAction(clientId, body);
             if (!r.ok) return toast.show(r.error || 'Failed', { variant: 'error' });
-            toast.show('Message sent.', { variant: 'success' });
-            close();
+            done('Message sent.');
           }}
         />
       )}
@@ -336,20 +342,19 @@ export function ClientDetailActions({
           onSubmit={async (body) => {
             const r = await sendAlertAction(clientId, body);
             if (!r.ok) return toast.show(r.error || 'Failed', { variant: 'error' });
-            toast.show('Alert delivered.', { variant: 'success' });
-            close();
+            done('Alert delivered.');
           }}
         />
       )}
 
       {open === 'participant' && (
         <ParticipantModal
+          clientId={clientId}
           onClose={close}
           onSubmit={async (payload) => {
             const r = await addParticipantAction(clientId, payload);
             if (!r.ok) return toast.show(r.error || 'Failed', { variant: 'error' });
-            toast.show('Party added to deal.', { variant: 'success' });
-            close();
+            done('Party added to deal.');
           }}
         />
       )}
@@ -357,14 +362,18 @@ export function ClientDetailActions({
       {open === 'mass_invite' && (
         <MassInviteModal
           onClose={close}
-          onSubmit={async (payload) => {
-            const r = await massInviteAction(clientId, payload);
+          onSubmitRows={async (rows) => {
+            const r = await massAddPartiesAction(clientId, { rows });
             if (!r.ok) return toast.show(r.error || 'Failed', { variant: 'error' });
-            toast.show(
-              'Invited ' + (r as any).added + ' people.',
-              { variant: 'success' }
+            done(
+              'Added ' +
+                (r as any).added +
+                ' parties' +
+                ((r as any).failed
+                  ? ' (' + (r as any).failed + ' failed)'
+                  : '') +
+                '.'
             );
-            close();
           }}
         />
       )}
@@ -376,9 +385,14 @@ export function ClientDetailActions({
             const r = await createNewDealAction(clientId, payload);
             if (!r.ok)
               return toast.show(r.error || 'Failed', { variant: 'error' });
-            toast.show('New deal started.', { variant: 'success' });
-            close();
-            window.location.reload();
+            // Jump to the new deal workspace directly.
+            if ((r as any).dealId) {
+              toast.show('New deal started.', { variant: 'success' });
+              close();
+              router.push('/dashboard/deals/' + (r as any).dealId);
+              return;
+            }
+            done('New deal started.');
           }}
         />
       )}
@@ -389,10 +403,7 @@ export function ClientDetailActions({
           onSubmit={async (payload) => {
             const r = await goUnderContractAction(clientId, payload);
             if (!r.ok) return toast.show(r.error || 'Failed', { variant: 'error' });
-            toast.show('Under contract — every party was notified.', {
-              variant: 'success',
-            });
-            close();
+            done('Under contract — every party was notified.');
           }}
         />
       )}
@@ -905,15 +916,44 @@ function HouseModal({
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ url: listingUrl }),
       });
+      const j = await r.json().catch(() => ({}));
       if (!r.ok) {
-        toast.show('Could not read that listing.', { variant: 'error' });
+        // Bot-block pages now return a friendlier message + blocked: true.
+        toast.show(
+          j?.error ||
+            'Could not read that listing — try pasting the address and a photo URL manually.',
+          { variant: 'error' }
+        );
         return;
       }
-      const j = await r.json();
-      if (j.image && !photoUrl) setPhotoUrl(j.image);
-      if (j.title && !address) setAddress(j.title);
-      if (j.description && !notes) setNotes(j.description);
-      toast.show('Imported.', { variant: 'success' });
+      const got: string[] = [];
+      if (j.image && !photoUrl) {
+        setPhotoUrl(j.image);
+        got.push('photo');
+      }
+      if (j.title && !address) {
+        setAddress(j.address || j.title);
+        got.push('address');
+      } else if (j.address && !address) {
+        setAddress(j.address);
+        got.push('address');
+      }
+      if (j.description && !notes) {
+        setNotes(j.description);
+        got.push('description');
+      }
+      if (got.length === 0) {
+        toast.show(
+          "Couldn't find listing details on that page. Fill the fields manually.",
+          { variant: 'error' }
+        );
+      } else {
+        toast.show('Imported ' + got.join(', ') + '.', { variant: 'success' });
+      }
+    } catch (e: any) {
+      toast.show('Import failed: ' + (e?.message || 'unknown error'), {
+        variant: 'error',
+      });
     } finally {
       setImporting(false);
     }
@@ -1308,9 +1348,11 @@ const PARTY_ROLES: { id: PartyRole; label: string; helper: string }[] = [
 ];
 
 function ParticipantModal({
+  clientId,
   onClose,
   onSubmit,
 }: {
+  clientId: string;
   onClose: () => void;
   onSubmit: (payload: {
     role: PartyRole;
@@ -1323,6 +1365,7 @@ function ParticipantModal({
     can_view_dates?: boolean;
   }) => Promise<void>;
 }) {
+  const [tab, setTab] = useState<'existing' | 'new'>('existing');
   const [role, setRole] = useState<PartyRole>('buyer');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -1332,10 +1375,181 @@ function ParticipantModal({
   const [msgs, setMsgs] = useState(false);
   const [dates, setDates] = useState(true);
   const [pending, start] = useTransition();
+  const [people, setPeople] = useState<{
+    users: Array<{ id: string; full_name: string | null; email: string; role: string }>;
+    externals: Array<{ email: string; name: string | null; phone: string | null; role: string }>;
+  }>({ users: [], externals: [] });
+  const [filter, setFilter] = useState('');
+
+  // Lazy-load the firm people on first mount.
+  useEffect(() => {
+    let cancelled = false;
+    searchFirmPeopleAction(clientId).then((r) => {
+      if (cancelled || !r.ok) return;
+      setPeople({ users: r.users, externals: r.externals });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [clientId]);
+
+  const q = filter.trim().toLowerCase();
+  const filteredUsers = people.users.filter(
+    (u) =>
+      !q ||
+      (u.full_name || '').toLowerCase().includes(q) ||
+      u.email.toLowerCase().includes(q)
+  );
+  const filteredExternals = people.externals.filter(
+    (e) =>
+      !q ||
+      (e.name || '').toLowerCase().includes(q) ||
+      e.email.toLowerCase().includes(q)
+  );
 
   return (
     <Modal title="Add a party to this deal" onClose={onClose}>
-      <div className="space-y-3">
+      <div className="mb-3 flex gap-1 rounded-lg bg-ink-100 p-1">
+        <button
+          type="button"
+          onClick={() => setTab('existing')}
+          className={
+            'flex-1 rounded-md px-3 py-1.5 text-xs font-semibold transition ' +
+            (tab === 'existing'
+              ? 'bg-white text-ink-900 shadow-soft-sm'
+              : 'text-ink-600 hover:text-ink-900')
+          }
+        >
+          Pick from your people
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab('new')}
+          className={
+            'flex-1 rounded-md px-3 py-1.5 text-xs font-semibold transition ' +
+            (tab === 'new'
+              ? 'bg-white text-ink-900 shadow-soft-sm'
+              : 'text-ink-600 hover:text-ink-900')
+          }
+        >
+          Add someone new
+        </button>
+      </div>
+
+      {tab === 'existing' ? (
+        <div className="space-y-3">
+          <Field label="Role">
+            <select
+              className={inputCls}
+              value={role}
+              onChange={(e) => setRole(e.target.value as PartyRole)}
+            >
+              {PARTY_ROLES.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.label}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Search clients / staff / past parties">
+            <input
+              className={inputCls}
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              placeholder="Type a name or email…"
+              autoFocus
+            />
+          </Field>
+          <div className="max-h-72 overflow-y-auto rounded-lg border border-ink-200 bg-ink-50/50">
+            {filteredUsers.length === 0 && filteredExternals.length === 0 ? (
+              <p className="p-4 text-center text-xs italic text-ink-500">
+                No people found. Switch to "Add someone new" to invite by email.
+              </p>
+            ) : (
+              <>
+                {filteredUsers.length > 0 && (
+                  <div className="border-b border-ink-200 bg-ink-100/60 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-ink-500">
+                    People in your firm
+                  </div>
+                )}
+                {filteredUsers.map((u) => (
+                  <button
+                    key={u.id}
+                    type="button"
+                    disabled={pending}
+                    onClick={() =>
+                      start(() =>
+                        onSubmit({
+                          role,
+                          name: u.full_name || undefined,
+                          email: u.email,
+                          can_view_documents: docs,
+                          can_view_financials: fin,
+                          can_view_messages: msgs,
+                          can_view_dates: dates,
+                        })
+                      )
+                    }
+                    className="flex w-full items-center justify-between gap-3 border-b border-ink-100 bg-white px-3 py-2 text-left transition hover:bg-ink-50"
+                  >
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-semibold">
+                        {u.full_name || u.email}
+                      </div>
+                      <div className="truncate text-[11px] text-ink-500">
+                        {u.email} · {u.role}
+                      </div>
+                    </div>
+                    <span className="rounded-full bg-ink-900 px-2 py-1 text-[10px] font-bold uppercase text-white">
+                      Add
+                    </span>
+                  </button>
+                ))}
+                {filteredExternals.length > 0 && (
+                  <div className="border-b border-ink-200 bg-ink-100/60 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-ink-500">
+                    Used on past deals
+                  </div>
+                )}
+                {filteredExternals.map((e) => (
+                  <button
+                    key={e.email}
+                    type="button"
+                    disabled={pending}
+                    onClick={() =>
+                      start(() =>
+                        onSubmit({
+                          role,
+                          name: e.name || undefined,
+                          email: e.email,
+                          phone: e.phone || undefined,
+                          can_view_documents: docs,
+                          can_view_financials: fin,
+                          can_view_messages: msgs,
+                          can_view_dates: dates,
+                        })
+                      )
+                    }
+                    className="flex w-full items-center justify-between gap-3 border-b border-ink-100 bg-white px-3 py-2 text-left transition hover:bg-ink-50"
+                  >
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-semibold">
+                        {e.name || e.email}
+                      </div>
+                      <div className="truncate text-[11px] text-ink-500">
+                        {e.email} · previously {e.role}
+                      </div>
+                    </div>
+                    <span className="rounded-full bg-ink-900 px-2 py-1 text-[10px] font-bold uppercase text-white">
+                      Add
+                    </span>
+                  </button>
+                ))}
+              </>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-3">
         <Field label="Role">
           <select
             className={inputCls}
@@ -1389,27 +1603,42 @@ function ParticipantModal({
             <CheckRow label="Messages" checked={msgs} onChange={setMsgs} />
           </div>
         </fieldset>
-      </div>
-      <PrimaryButton
-        pending={pending}
-        disabled={!name && !email}
-        onClick={() =>
-          start(() =>
-            onSubmit({
-              role,
-              name: name.trim() || undefined,
-              email: email.trim() || undefined,
-              phone: phone.trim() || undefined,
-              can_view_documents: docs,
-              can_view_financials: fin,
-              can_view_messages: msgs,
-              can_view_dates: dates,
-            })
-          )
-        }
-      >
-        Add party
-      </PrimaryButton>
+        <PrimaryButton
+          pending={pending}
+          disabled={!name && !email}
+          onClick={() =>
+            start(() =>
+              onSubmit({
+                role,
+                name: name.trim() || undefined,
+                email: email.trim() || undefined,
+                phone: phone.trim() || undefined,
+                can_view_documents: docs,
+                can_view_financials: fin,
+                can_view_messages: msgs,
+                can_view_dates: dates,
+              })
+            )
+          }
+        >
+          Add party
+        </PrimaryButton>
+        </div>
+      )}
+
+      {tab === 'existing' && (
+        <fieldset className="mt-3 rounded-lg border border-ink-200 p-3">
+          <legend className="px-2 text-[10px] font-bold uppercase tracking-wider text-ink-500">
+            What this party can see
+          </legend>
+          <div className="grid grid-cols-2 gap-x-3 gap-y-1.5">
+            <CheckRow label="Important dates" checked={dates} onChange={setDates} />
+            <CheckRow label="Documents" checked={docs} onChange={setDocs} />
+            <CheckRow label="Financials" checked={fin} onChange={setFin} />
+            <CheckRow label="Messages" checked={msgs} onChange={setMsgs} />
+          </div>
+        </fieldset>
+      )}
     </Modal>
   );
 }
@@ -1454,6 +1683,7 @@ export function ParticipantList({
   }>;
 }) {
   const toast = useToast();
+  const router = useRouter();
   const [removing, start] = useTransition();
   if (participants.length === 0) {
     return (
@@ -1512,6 +1742,7 @@ export function ParticipantList({
                   if (!r.ok)
                     return toast.show(r.error || 'Failed', { variant: 'error' });
                   toast.show('Removed.', { variant: 'success' });
+                  router.refresh();
                 })
               }
               className="rounded p-1 text-slate-400 transition hover:bg-slate-100 hover:text-rose-600"
@@ -1662,40 +1893,138 @@ function UnderContractModal({
   );
 }
 
+type MassRow = { id: string; email: string; name: string; role: PartyRole };
+
 function MassInviteModal({
   onClose,
-  onSubmit,
+  onSubmitRows,
 }: {
   onClose: () => void;
-  onSubmit: (p: { emails: string; role: PartyRole }) => Promise<void>;
+  onSubmitRows: (
+    rows: Array<{ role: PartyRole; email: string; name?: string }>
+  ) => Promise<void>;
 }) {
-  const [emails, setEmails] = useState('');
-  const [role, setRole] = useState<PartyRole>('buyer');
+  const [rows, setRows] = useState<MassRow[]>([
+    { id: crypto.randomUUID(), email: '', name: '', role: 'buyer' },
+  ]);
   const [pending, start] = useTransition();
+
+  function addRow() {
+    setRows((r) => [
+      ...r,
+      { id: crypto.randomUUID(), email: '', name: '', role: 'buyer' },
+    ]);
+  }
+  function removeRow(id: string) {
+    setRows((r) => (r.length === 1 ? r : r.filter((x) => x.id !== id)));
+  }
+  function update(id: string, patch: Partial<MassRow>) {
+    setRows((r) => r.map((x) => (x.id === id ? { ...x, ...patch } : x)));
+  }
+
+  // Bulk paste — if someone pastes a list of emails into ANY email field,
+  // explode it into multiple rows so they don't have to add+paste each.
+  function handlePaste(id: string, text: string) {
+    const found = text
+      .split(/[\s,;]+/)
+      .map((s) => s.trim())
+      .filter((s) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s));
+    if (found.length <= 1) return false;
+    setRows((r) => {
+      const target = r.find((x) => x.id === id);
+      const role = target?.role || 'buyer';
+      const rest = r.filter((x) => x.id !== id || x.email.trim() !== '');
+      const additions = found.map((email) => ({
+        id: crypto.randomUUID(),
+        email,
+        name: '',
+        role,
+      }));
+      return [...rest.filter((x) => x.id !== id), ...additions];
+    });
+    return true;
+  }
+
+  const valid = rows.filter(
+    (r) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(r.email) || r.name.trim()
+  );
+
   return (
-    <Modal title="Mass invite to this deal" onClose={onClose}>
-      <Field label="Role for everyone">
-        <select className={inputCls} value={role} onChange={(e) => setRole(e.target.value as PartyRole)}>
-          {PARTY_ROLES.map((r) => (
-            <option key={r.id} value={r.id}>{r.label}</option>
-          ))}
-        </select>
-      </Field>
-      <Field label="Emails" hint="One per line — or paste comma/space-separated. We dedupe + validate.">
-        <textarea
-          rows={6}
-          className={inputCls}
-          value={emails}
-          onChange={(e) => setEmails(e.target.value)}
-          placeholder={'alice@example.com\nbob@example.com\ncharlie@example.com'}
-        />
-      </Field>
+    <Modal title="Add many parties at once" onClose={onClose}>
+      <p className="mb-3 text-xs text-ink-500">
+        One row per person. Each can have its own role. Paste a list of emails
+        into any email field and we'll expand it for you.
+      </p>
+      <div className="max-h-[60vh] space-y-2 overflow-y-auto">
+        {rows.map((r) => (
+          <div
+            key={r.id}
+            className="grid grid-cols-12 items-center gap-1.5 rounded-lg border border-ink-200 bg-white p-2"
+          >
+            <input
+              className={inputCls + ' col-span-5 text-xs'}
+              placeholder="email@example.com"
+              value={r.email}
+              onChange={(e) => update(r.id, { email: e.target.value })}
+              onPaste={(e) => {
+                const text = e.clipboardData.getData('text');
+                if (handlePaste(r.id, text)) e.preventDefault();
+              }}
+            />
+            <input
+              className={inputCls + ' col-span-4 text-xs'}
+              placeholder="Name (optional)"
+              value={r.name}
+              onChange={(e) => update(r.id, { name: e.target.value })}
+            />
+            <select
+              className={inputCls + ' col-span-2 text-xs px-2'}
+              value={r.role}
+              onChange={(e) =>
+                update(r.id, { role: e.target.value as PartyRole })
+              }
+            >
+              {PARTY_ROLES.map((pr) => (
+                <option key={pr.id} value={pr.id}>
+                  {pr.label}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={() => removeRow(r.id)}
+              disabled={rows.length === 1}
+              className="col-span-1 rounded p-1 text-ink-400 transition hover:bg-ink-100 hover:text-rose-600 disabled:opacity-30"
+              aria-label="Remove row"
+            >
+              ✕
+            </button>
+          </div>
+        ))}
+      </div>
+      <button
+        type="button"
+        onClick={addRow}
+        className="mt-3 w-full rounded-lg border border-dashed border-ink-300 px-3 py-2 text-xs font-semibold text-ink-600 transition hover:border-ink-500 hover:bg-ink-50"
+      >
+        + Add another row
+      </button>
       <PrimaryButton
         pending={pending}
-        disabled={!emails.trim()}
-        onClick={() => start(() => onSubmit({ emails, role }))}
+        disabled={valid.length === 0}
+        onClick={() =>
+          start(() =>
+            onSubmitRows(
+              valid.map((r) => ({
+                role: r.role,
+                email: r.email.trim() || undefined as any,
+                name: r.name.trim() || undefined,
+              }))
+            )
+          )
+        }
       >
-        Invite everyone
+        Add {valid.length || 0} {valid.length === 1 ? 'party' : 'parties'}
       </PrimaryButton>
     </Modal>
   );

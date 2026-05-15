@@ -40,6 +40,11 @@ export default async function DashboardLayout({
           firmLogoUrl={me.firm_logo_url || null}
           firmBrandColor={me.firm_brand_color || null}
           email={me.email || null}
+          isFirmAdmin={
+            me.role === 'owner' ||
+            me.role === 'firm_admin' ||
+            me.role === 'super_admin'
+          }
         />
 
         {trialExpired ? (

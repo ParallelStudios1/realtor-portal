@@ -82,10 +82,12 @@ export async function POST(req: Request) {
 
     const service = getSupabaseServiceRoleClient();
 
-    // Authorization. Two acceptable cases:
+    // Authorization. Three acceptable cases:
     //  1) Caller is realtor/firm_admin AND their firm_id matches the path.
     //  2) Caller is a client AND they own a client_searches row whose
     //     firm_id and id match the path.
+    //  3) Caller is on deal_participants for this search with
+    //     can_view_documents=true (attorney/inspector/lender/etc).
     let allowed = false;
     if (
       (me.role === 'realtor' ||
@@ -104,6 +106,37 @@ export async function POST(req: Request) {
         .eq('client_id', me.id)
         .maybeSingle();
       if (search?.id) allowed = true;
+    }
+    if (!allowed) {
+      // Look up the caller's email so we can match deal_participants rows
+      // that link by email (when the participant hasn't signed in yet).
+      const { data: meRow } = await service
+        .from('users')
+        .select('email')
+        .eq('id', me.id)
+        .maybeSingle();
+      const myEmail = (meRow?.email || '').toLowerCase();
+
+      const { data: ptpRows } = await service
+        .from('deal_participants')
+        .select('id, can_view_documents, user_id, external_email, role')
+        .eq('search_id', pathSearchId)
+        .eq('firm_id', pathFirmId);
+
+      const myRow = (ptpRows || []).find(
+        (p: any) =>
+          p.user_id === me.id ||
+          (p.external_email && p.external_email.toLowerCase() === myEmail)
+      );
+      // Cross-firm realtors / co-realtors always get document access on
+      // deals they collaborate on. Other roles need the visibility flag.
+      if (
+        myRow &&
+        (['realtor', 'co_realtor'].includes(myRow.role) ||
+          myRow.can_view_documents)
+      ) {
+        allowed = true;
+      }
     }
 
     if (!allowed) {

@@ -10,6 +10,7 @@ type Props = {
   firmLogoUrl: string | null;
   firmBrandColor: string | null;
   email: string | null;
+  isFirmAdmin?: boolean;
 };
 
 const ITEMS = [
@@ -21,18 +22,26 @@ const ITEMS = [
   { href: '/dashboard/tours', label: 'Tours', icon: TourIcon },
 ];
 
-const SECONDARY = [
+const SECONDARY_BASE = [
   { href: '/dashboard/branding', label: 'Branding' },
   { href: '/dashboard/billing', label: 'Billing' },
   { href: '/dashboard/settings', label: 'Settings' },
 ];
+
+// "Firm control" appears in the More menu only for owners / firm_admins.
+function buildSecondary(isFirmAdmin?: boolean) {
+  if (!isFirmAdmin) return SECONDARY_BASE;
+  return [{ href: '/dashboard/firm', label: 'Firm control' }, ...SECONDARY_BASE];
+}
 
 export function DashboardNav({
   firmName,
   firmLogoUrl,
   firmBrandColor,
   email,
+  isFirmAdmin,
 }: Props) {
+  const SECONDARY = buildSecondary(isFirmAdmin);
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [menu, setMenu] = useState(false);

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   RefreshControl,
   Pressable,
   Linking,
+  Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -22,6 +23,42 @@ import { Skeleton, SkeletonRow } from '@/components/Skeleton';
 import { EmptyState } from '@/components/EmptyState';
 import { supabase } from '@/lib/supabase';
 import { useQuery } from '@tanstack/react-query';
+
+/**
+ * Pop these on the client when the realtor advances the deal phase. Shown
+ * exactly once per (user, search, phase) — the mark_deal_phase_seen RPC
+ * records the dismissal so we don't nag the next time the screen opens.
+ */
+const CELEBRATIONS: Record<
+  string,
+  { emoji: string; title: string; body: string }
+> = {
+  offer_made: {
+    emoji: '🎯',
+    title: 'Offer is in!',
+    body: 'Your agent submitted your offer. Fingers crossed — we\'ll let you know the moment we hear back.',
+  },
+  counter_offer: {
+    emoji: '↩️',
+    title: 'Counter on the table',
+    body: 'You\'re in counter-offer mode. Your agent is negotiating on your behalf.',
+  },
+  under_contract: {
+    emoji: '🎉',
+    title: 'You\'re under contract!',
+    body: 'Huge step. Inspection and appraisal come next — your important dates are in this app.',
+  },
+  closing: {
+    emoji: '🏁',
+    title: 'Closing time!',
+    body: 'Wire instructions and final paperwork are headed your way. Almost home.',
+  },
+  closed: {
+    emoji: '🏡',
+    title: 'Welcome home!',
+    body: 'The house is officially yours. Congrats — your agent will be in touch about handoff details.',
+  },
+};
 
 const PHASES = [
   { id: 'searching', label: 'Searching' },
@@ -75,8 +112,144 @@ export default function ClientHomeScreen() {
 
   const brand = firm?.brand_color || colors.primary;
 
+  // Phase celebration. The first time this user opens the client home
+  // after a phase change, pop a celebration modal. Persistence lives in
+  // public.user_deal_views via the mark_deal_phase_seen RPC.
+  const [celebration, setCelebration] = useState<null | {
+    emoji: string;
+    title: string;
+    body: string;
+    phase: string;
+    searchId: string;
+  }>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!activeSearch?.id || !activeSearch?.phase || !user?.id) return;
+      const sb: any = supabase;
+      const { data } = await sb
+        .from('user_deal_views')
+        .select('last_seen_phase')
+        .eq('user_id', user.id)
+        .eq('search_id', activeSearch.id)
+        .maybeSingle();
+      if (cancelled) return;
+      const seen: string | null | undefined = data?.last_seen_phase;
+      if (seen !== activeSearch.phase) {
+        const c = CELEBRATIONS[activeSearch.phase as string];
+        if (c && activeSearch.phase !== 'searching') {
+          setCelebration({
+            emoji: c.emoji,
+            title: c.title,
+            body: c.body,
+            phase: activeSearch.phase as string,
+            searchId: activeSearch.id,
+          });
+        } else {
+          await sb.rpc('mark_deal_phase_seen', {
+            p_search_id: activeSearch.id,
+            p_phase: activeSearch.phase,
+          });
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeSearch?.id, activeSearch?.phase, user?.id]);
+
+  async function dismissCelebration() {
+    if (celebration) {
+      try {
+        const sb: any = supabase;
+        await sb.rpc('mark_deal_phase_seen', {
+          p_search_id: celebration.searchId,
+          p_phase: celebration.phase,
+        });
+      } catch {}
+    }
+    setCelebration(null);
+  }
+
   return (
     <SafeAreaView style={[s.container, { backgroundColor: colors.background }]}>
+      {/* Phase celebration popup */}
+      <Modal
+        visible={!!celebration}
+        transparent
+        animationType="fade"
+        onRequestClose={dismissCelebration}
+      >
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: 'rgba(15,23,42,0.45)',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: 24,
+          }}
+        >
+          <View
+            style={{
+              width: '100%',
+              maxWidth: 360,
+              backgroundColor: '#fff',
+              borderRadius: 24,
+              padding: 28,
+              alignItems: 'center',
+              shadowColor: '#000',
+              shadowOpacity: 0.2,
+              shadowRadius: 24,
+              shadowOffset: { width: 0, height: 12 },
+              elevation: 12,
+            }}
+          >
+            <Text style={{ fontSize: 56, marginBottom: 8 }}>
+              {celebration?.emoji}
+            </Text>
+            <Text
+              style={{
+                fontSize: 22,
+                fontWeight: '800',
+                textAlign: 'center',
+                color: '#0F172A',
+              }}
+            >
+              {celebration?.title}
+            </Text>
+            <Text
+              style={{
+                marginTop: 10,
+                fontSize: 14,
+                lineHeight: 20,
+                textAlign: 'center',
+                color: '#475569',
+              }}
+            >
+              {celebration?.body}
+            </Text>
+            <Pressable
+              onPress={dismissCelebration}
+              style={({ pressed }) => ({
+                marginTop: 22,
+                paddingHorizontal: 28,
+                paddingVertical: 12,
+                borderRadius: 12,
+                backgroundColor: brand,
+                opacity: pressed ? 0.85 : 1,
+              })}
+            >
+              <Text
+                style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}
+              >
+                Got it
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
+
       <ScrollView
         refreshControl={
           <RefreshControl
