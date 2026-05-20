@@ -80,42 +80,54 @@ export async function inviteClientAction(fd: FormData) {
     );
   }
 
-  // Step 3 — client_searches row so threads/houses/messages have a parent
-  const { data: existing } = await service
-    .from('client_searches')
-    .select('id')
-    .eq('client_id', clientId)
-    .eq('firm_id', me!.firm_id)
-    .maybeSingle();
-
-  let dealId: string | null = existing?.id ?? null;
-
-  if (!existing) {
-    const { data: created, error: searchErr } = await service
+  // Step 3 — DON'T auto-create a deal anymore. A client can have many deals
+  // over time (a buyer search this year, a listing next year, an investment
+  // property the year after). Auto-creating a stub deal whenever you invite
+  // a client clutters the deals workspace and forces the realtor to delete
+  // empties. Instead, land them on the client profile and let them hit
+  // "+ New deal" when they have one.
+  //
+  // We do however check if the realtor passed ?withDeal=1 (set from the
+  // "Invite + start a deal now" toggle in the new-client form) so the old
+  // flow stays available with a single click.
+  const wantDealNow = fd.get('start_deal') === '1';
+  let dealId: string | null = null;
+  if (wantDealNow) {
+    const { data: existing } = await service
       .from('client_searches')
-      .insert({
-        firm_id: me!.firm_id,
-        client_id: clientId,
-        realtor_id: me!.user_id,
-        name:
-          fullName + (roleInDeal === 'seller' ? "'s Listing" : "'s Search"),
-        phase: 'searching',
-        kind: roleInDeal,
-      })
       .select('id')
-      .single();
-    if (searchErr) {
-      redirect(
-        '/dashboard/clients/new?error=' +
-          encodeURIComponent(
-            'Profile saved but search creation failed: ' + searchErr.message
-          )
-      );
+      .eq('client_id', clientId)
+      .eq('firm_id', me!.firm_id)
+      .maybeSingle();
+    dealId = existing?.id ?? null;
+    if (!existing) {
+      const { data: created, error: searchErr } = await service
+        .from('client_searches')
+        .insert({
+          firm_id: me!.firm_id,
+          client_id: clientId,
+          realtor_id: me!.user_id,
+          name:
+            fullName + (roleInDeal === 'seller' ? "'s Listing" : "'s Search"),
+          phase: 'searching',
+          kind: roleInDeal,
+        })
+        .select('id')
+        .single();
+      if (searchErr) {
+        redirect(
+          '/dashboard/clients/new?error=' +
+            encodeURIComponent(
+              'Profile saved but search creation failed: ' + searchErr.message
+            )
+        );
+      }
+      dealId = created?.id ?? null;
     }
-    dealId = created?.id ?? null;
   }
 
-  // Land directly on the new deal's workspace — saves a click.
   if (dealId) redirect('/dashboard/deals/' + dealId);
-  redirect('/dashboard/deals');
+  // Otherwise land on the brand-new client's profile so the realtor can
+  // immediately add a deal, log notes, etc.
+  redirect('/dashboard/clients/' + clientId + '?welcome=1');
 }

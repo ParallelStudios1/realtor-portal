@@ -70,6 +70,26 @@ export default function NewClientPage({ searchParams }: { searchParams: { error?
             <option value="both">Both</option>
           </select>
         </div>
+
+        {/* Default OFF — we no longer auto-create a deal when a client is
+            invited. A client can have many deals over time. Toggle this on
+            when you're inviting them because a specific transaction is
+            starting today. */}
+        <label className="flex items-start gap-2 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm">
+          <input
+            type="checkbox"
+            name="start_deal"
+            value="1"
+            className="mt-0.5 h-4 w-4 accent-slate-900"
+          />
+          <span>
+            <span className="font-medium">Start a deal now too</span>
+            <span className="block text-xs text-slate-500">
+              On = land directly on a fresh deal workspace. Off = just create
+              the client; start the deal later when one materializes.
+            </span>
+          </span>
+        </label>
         <button
           type="submit"
           className="w-full rounded-md bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-700"

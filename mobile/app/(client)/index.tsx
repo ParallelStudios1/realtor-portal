@@ -360,6 +360,89 @@ export default function ClientHomeScreen() {
               </View>
             </Card>
 
+            {/* Deal milestones — surfaces whatever the realtor stamped on
+                the deal as they moved through phases. Shows up only when
+                there's something worth showing so an early-stage deal
+                doesn't waste space. */}
+            {(((activeSearch as any).offer_amount &&
+              (activeSearch as any).offer_amount > 0) ||
+              ((activeSearch as any).counter_offer_amount &&
+                (activeSearch as any).counter_offer_amount > 0) ||
+              (activeSearch as any).agreed_price ||
+              (activeSearch as any).closing_date ||
+              (activeSearch as any).closed_message) && (
+              <Card colors={colors}>
+                <Label colors={colors}>DEAL MILESTONES</Label>
+                <View style={{ gap: 8, marginTop: 4 }}>
+                  {(activeSearch as any).offer_amount ? (
+                    <MilestoneRow
+                      colors={colors}
+                      label="Offer made"
+                      value={
+                        '$' +
+                        Number(
+                          (activeSearch as any).offer_amount
+                        ).toLocaleString()
+                      }
+                    />
+                  ) : null}
+                  {(activeSearch as any).counter_offer_amount ? (
+                    <MilestoneRow
+                      colors={colors}
+                      label="Counter offer"
+                      value={
+                        '$' +
+                        Number(
+                          (activeSearch as any).counter_offer_amount
+                        ).toLocaleString()
+                      }
+                    />
+                  ) : null}
+                  {(activeSearch as any).agreed_price ? (
+                    <MilestoneRow
+                      colors={colors}
+                      label="Agreed price"
+                      value={
+                        '$' +
+                        Number(
+                          (activeSearch as any).agreed_price
+                        ).toLocaleString()
+                      }
+                    />
+                  ) : null}
+                  {(activeSearch as any).closing_date ? (
+                    <MilestoneRow
+                      colors={colors}
+                      label="Closing day"
+                      value={new Date(
+                        (activeSearch as any).closing_date
+                      ).toLocaleDateString()}
+                    />
+                  ) : null}
+                  {(activeSearch as any).closed_message ? (
+                    <View
+                      style={{
+                        marginTop: 4,
+                        padding: 10,
+                        borderRadius: 10,
+                        backgroundColor: brand + '11',
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontSize: 13,
+                          color: colors.text,
+                          lineHeight: 18,
+                        }}
+                      >
+                        💬 {(activeSearch as any).closed_message}
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
+              </Card>
+            )}
+
             {/* Realtor */}
             {realtor && (
               <Card colors={colors}>
@@ -513,6 +596,36 @@ function Label({
 }) {
   return (
     <Text style={[s.label, { color: colors.textSecondary }]}>{children}</Text>
+  );
+}
+
+function MilestoneRow({
+  colors,
+  label,
+  value,
+}: {
+  colors: ReturnType<typeof useTheme>['colors'];
+  label: string;
+  value: string;
+}) {
+  return (
+    <View
+      style={{
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingVertical: 6,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: colors.border,
+      }}
+    >
+      <Text style={{ fontSize: 13, color: colors.textSecondary }}>
+        {label}
+      </Text>
+      <Text style={{ fontSize: 14, color: colors.text, fontWeight: '700' }}>
+        {value}
+      </Text>
+    </View>
   );
 }
 
