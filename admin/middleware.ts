@@ -63,7 +63,7 @@ export async function middleware(req: NextRequest) {
   }
 
   const homeForRole = (r: string | null) =>
-    r === 'attorney' ? '/participant' : r === 'client' ? '/client' : '/dashboard';
+    r === 'attorney' ? '/attorney' : r === 'client' ? '/client' : '/dashboard';
 
   // Logged in + visiting auth pages → role-aware home
   if (user && (path === '/login' || path === '/signup')) {

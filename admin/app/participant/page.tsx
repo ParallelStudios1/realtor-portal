@@ -99,12 +99,16 @@ export default async function ParticipantHome() {
       </header>
 
       {items.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center">
-          <h2 className="font-semibold">No deals yet</h2>
-          <p className="mt-1 text-sm text-slate-600">
-            When a realtor adds you to a deal using your email
-            <span className="ml-1 font-mono">({me.email})</span>, it'll appear
-            here automatically. You'll also get an email invitation.
+        <div className="rounded-2xl border border-dashed border-ink-300 bg-white p-12 text-center shadow-soft-sm">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-ink-100 text-2xl">
+            ✉️
+          </div>
+          <h2 className="mt-4 text-lg font-semibold">No deals yet</h2>
+          <p className="mx-auto mt-1 max-w-md text-sm text-ink-600">
+            When a realtor adds you to a deal using your email{' '}
+            <span className="font-mono text-ink-800">({me.email})</span>{' '}
+            it&apos;ll appear here automatically. You&apos;ll also get an email
+            invitation.
           </p>
         </div>
       ) : (

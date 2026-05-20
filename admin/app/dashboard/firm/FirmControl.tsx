@@ -7,8 +7,18 @@ import {
   inviteFirmMemberAction,
   changeMemberRoleAction,
   removeMemberAction,
+  saveFirmPhaseLabelsAction,
   type FirmRole,
 } from './actions';
+
+const PHASES = [
+  { id: 'searching', defaultLabel: 'Searching' },
+  { id: 'offer_made', defaultLabel: 'Offer made' },
+  { id: 'counter_offer', defaultLabel: 'Counter offer' },
+  { id: 'under_contract', defaultLabel: 'Under contract' },
+  { id: 'closing', defaultLabel: 'Closing' },
+  { id: 'closed', defaultLabel: 'Closed' },
+];
 
 type Member = {
   id: string;
@@ -68,12 +78,16 @@ export function FirmControl({
   members,
   invites,
   dealCountByRealtor,
+  phaseLabels,
+  phaseMessages,
 }: {
   meId: string;
   meRole: string;
   members: Member[];
   invites: Invite[];
   dealCountByRealtor: Record<string, number>;
+  phaseLabels: Record<string, string>;
+  phaseMessages: Record<string, string>;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -120,6 +134,13 @@ export function FirmControl({
             </ul>
           )}
         </section>
+
+        {/* Phase labels editor — only owners/firm admins land on this page,
+            so we don't need to gate it further. */}
+        <PhaseLabelsCard
+          phaseLabels={phaseLabels}
+          phaseMessages={phaseMessages}
+        />
 
         {pendingInvites.length > 0 && (
           <section className="overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-soft">
@@ -423,6 +444,112 @@ function InviteModal({
         </div>
       </div>
     </div>
+  );
+}
+
+function PhaseLabelsCard({
+  phaseLabels,
+  phaseMessages,
+}: {
+  phaseLabels: Record<string, string>;
+  phaseMessages: Record<string, string>;
+}) {
+  const toast = useToast();
+  const router = useRouter();
+  const [labels, setLabels] = useState<Record<string, string>>(phaseLabels);
+  const [messages, setMessages] = useState<Record<string, string>>(
+    phaseMessages
+  );
+  const [editing, setEditing] = useState(false);
+  const [pending, start] = useTransition();
+
+  return (
+    <section className="overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-soft">
+      <div className="flex items-center justify-between gap-3 border-b border-ink-100 px-5 py-3.5">
+        <div>
+          <h2 className="text-[11px] font-bold uppercase tracking-wider text-ink-500">
+            Phase labels
+          </h2>
+          <p className="mt-0.5 text-[11px] text-ink-400">
+            Customize what each phase is called for your firm.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setEditing((v) => !v)}
+          className="btn-secondary text-xs"
+        >
+          {editing ? 'Cancel' : 'Customize'}
+        </button>
+      </div>
+      <div className="px-5 py-4">
+        {!editing ? (
+          <ul className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+            {PHASES.map((p) => (
+              <li
+                key={p.id}
+                className="flex items-center justify-between border-b border-ink-50 py-1"
+              >
+                <span className="text-[11px] uppercase tracking-wider text-ink-400">
+                  {p.defaultLabel}
+                </span>
+                <span className="font-semibold">
+                  {phaseLabels[p.id] || p.defaultLabel}
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <div className="space-y-3">
+            {PHASES.map((p) => (
+              <div key={p.id} className="grid grid-cols-12 items-center gap-2">
+                <span className="col-span-3 text-[11px] uppercase tracking-wider text-ink-500">
+                  {p.defaultLabel}
+                </span>
+                <input
+                  className="input col-span-4 text-xs"
+                  value={labels[p.id] || ''}
+                  placeholder={p.defaultLabel}
+                  onChange={(e) =>
+                    setLabels((l) => ({ ...l, [p.id]: e.target.value }))
+                  }
+                />
+                <input
+                  className="input col-span-5 text-xs"
+                  value={messages[p.id] || ''}
+                  placeholder="Celebration message (optional)"
+                  onChange={(e) =>
+                    setMessages((m) => ({ ...m, [p.id]: e.target.value }))
+                  }
+                />
+              </div>
+            ))}
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() =>
+                start(async () => {
+                  const r = await saveFirmPhaseLabelsAction({
+                    labels,
+                    messages,
+                  });
+                  if (!r.ok) {
+                    toast.show(r.error || 'Failed', { variant: 'error' });
+                    return;
+                  }
+                  toast.show('Phase labels saved.', { variant: 'success' });
+                  setEditing(false);
+                  router.refresh();
+                })
+              }
+              className="btn-primary text-xs"
+            >
+              {pending ? 'Saving…' : 'Save'}
+            </button>
+          </div>
+        )}
+      </div>
+    </section>
   );
 }
 

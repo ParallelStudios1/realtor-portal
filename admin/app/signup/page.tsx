@@ -15,23 +15,36 @@ export default function SignupPage({
   searchParams: { error?: string; role?: string };
 }) {
   return (
-    <main className="min-h-screen bg-slate-50 py-12">
+    <main className="relative min-h-screen overflow-hidden bg-ink-50 py-12">
+      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
+        <div className="absolute -top-32 right-1/4 h-96 w-96 rounded-full bg-emerald-200 opacity-30 blur-3xl" />
+        <div className="absolute -top-20 left-0 h-80 w-80 rounded-full bg-blue-200 opacity-30 blur-3xl" />
+      </div>
+
       <div className="mx-auto max-w-md px-6">
         <Link
           href="/"
-          className="mb-8 inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900"
+          className="mb-8 inline-flex items-center gap-1 text-sm text-ink-600 transition hover:text-ink-900"
         >
-          ← Back to home
+          <span aria-hidden>←</span> Back to home
         </Link>
 
-        <div className="rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
-          <h1 className="text-2xl font-bold tracking-tight">Get started</h1>
-          <p className="mt-1 text-sm text-slate-600">
+        <div className="rounded-2xl border border-ink-200 bg-white p-8 shadow-soft-lg">
+          <div className="mb-1 flex items-center gap-2">
+            <span className="inline-block h-7 w-7 rounded-lg bg-ink-900" />
+            <span className="text-sm font-bold tracking-tight">
+              Realtor Portal
+            </span>
+          </div>
+          <h1 className="mt-4 text-3xl font-bold tracking-tight">
+            Get started
+          </h1>
+          <p className="mt-1 text-sm text-ink-600">
             Pick the option that describes you.
           </p>
 
           {searchParams.error && (
-            <div className="mt-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+            <div className="mt-4 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">
               {searchParams.error}
             </div>
           )}
@@ -43,24 +56,24 @@ export default function SignupPage({
             }
           />
 
-          <p className="mt-6 text-center text-sm text-slate-600">
+          <p className="mt-6 text-center text-sm text-ink-600">
             Already have an account?{' '}
             <Link
               href="/login"
-              className="font-medium text-blue-600 hover:text-blue-700"
+              className="font-semibold text-blue-600 hover:text-blue-700"
             >
-              Sign in
+              Sign in →
             </Link>
           </p>
         </div>
 
-        <p className="mt-6 text-center text-xs text-slate-500">
+        <p className="mt-6 text-center text-xs text-ink-400">
           By signing up you agree to our{' '}
-          <Link href="/terms" className="underline">
+          <Link href="/terms" className="underline hover:text-ink-700">
             Terms
           </Link>{' '}
           and{' '}
-          <Link href="/privacy" className="underline">
+          <Link href="/privacy" className="underline hover:text-ink-700">
             Privacy Policy
           </Link>
           .

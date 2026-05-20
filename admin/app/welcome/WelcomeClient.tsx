@@ -30,14 +30,17 @@ export function WelcomeClient({ firm, hasSession, email, fullName }: Props) {
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
-  // Detect a magic-link hash on the very first render so we don't flash the
-  // "Open in app / browser" buttons before the session is set.
-  const hashHasToken =
+  // Detect any magic-link parameter style on first render so we don't flash
+  // the "Open in app / browser" buttons before the session is set. We watch
+  // for hash tokens, ?code=, and ?token_hash= (Supabase emits all three).
+  const linkInProgress =
     typeof window !== 'undefined' &&
-    window.location.hash.includes('access_token');
+    (window.location.hash.includes('access_token') ||
+      window.location.search.includes('code=') ||
+      window.location.search.includes('token_hash='));
 
   const [step, setStep] = useState<'redeeming' | 'setPassword' | 'openApp'>(() => {
-    if (hashHasToken) return 'redeeming';
+    if (linkInProgress) return 'redeeming';
     return hasSession ? 'setPassword' : 'openApp';
   });
   // Client-side mirror of hasSession — the server prop is captured at render
@@ -46,40 +49,75 @@ export function WelcomeClient({ firm, hasSession, email, fullName }: Props) {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
-  // Magic-link hash handling. The token only exists in `window.location.hash`
-  // (server can't see it). We exchange it for a session, then HARD redirect
-  // to the destination so the cookie is fresh and there's no flicker.
+  // Magic-link redemption. Supabase emits two link formats:
+  //
+  //   (a) #access_token=...&refresh_token=...  (implicit hash flow — works
+  //       reliably on mobile Safari + Chrome but desktop email clients
+  //       sometimes strip the fragment on copy/paste or on a server-side
+  //       302 redirect through an inbox-tracker domain).
+  //   (b) ?code=...                           (PKCE flow — survives any
+  //       redirect chain because it's in the query string).
+  //
+  // We accept both. The hash branch runs setSession; the code branch runs
+  // exchangeCodeForSession. Either lands us with a fresh cookie and we
+  // router.refresh() so the server-rendered props (email, firm, etc.) pick
+  // up the session on the first paint.
   useEffect(() => {
-    const hash = typeof window !== 'undefined' ? window.location.hash : '';
-    if (!hash.includes('access_token')) return;
+    if (typeof window === 'undefined') return;
+    const hash = window.location.hash || '';
+    const url = new URL(window.location.href);
+    const code = url.searchParams.get('code');
+    const tokenHash = url.searchParams.get('token_hash');
+    const otpType = url.searchParams.get('type');
 
-    const params = new URLSearchParams(hash.slice(1));
-    const access_token = params.get('access_token');
-    const refresh_token = params.get('refresh_token');
-    if (!access_token || !refresh_token) {
-      setError('Invite link is missing a token. Ask your realtor to resend.');
-      setStep('openApp');
+    const finish = async (
+      label: string,
+      promise: Promise<{ error: any } | { data?: any; error?: any }>
+    ) => {
+      const r: any = await promise;
+      const e = r?.error;
+      if (e) {
+        setError(`${label}: ${e.message || 'invalid or expired link'}`);
+        setStep('openApp');
+        return;
+      }
+      window.history.replaceState(null, '', window.location.pathname);
+      setSessionReady(true);
+      setStep('setPassword');
+      router.refresh();
+    };
+
+    if (hash.includes('access_token')) {
+      const params = new URLSearchParams(hash.slice(1));
+      const access_token = params.get('access_token');
+      const refresh_token = params.get('refresh_token');
+      if (!access_token || !refresh_token) {
+        setError('Invite link is missing a token. Ask your realtor to resend.');
+        setStep('openApp');
+        return;
+      }
+      finish('Invite', supabase.auth.setSession({ access_token, refresh_token }));
       return;
     }
-    supabase.auth
-      .setSession({ access_token, refresh_token })
-      .then(async ({ error: e }) => {
-        if (e) {
-          setError(e.message);
-          setStep('openApp');
-          return;
-        }
-        // Clean the URL.
-        window.history.replaceState(null, '', window.location.pathname);
-        setSessionReady(true);
-        setStep('setPassword');
-        // Re-fetch the server-rendered props now that the session cookie is
-        // set — without this, email / fullName / firm branding stay at their
-        // pre-session values and the user has to refresh the page once for
-        // anything to show. This is the bug Turner reported as
-        // "have to refresh the page one time for their email to show up".
-        router.refresh();
-      });
+
+    if (code) {
+      // PKCE flow — exchangeCodeForSession works for desktop & mobile.
+      finish('Sign-in', supabase.auth.exchangeCodeForSession(code));
+      return;
+    }
+
+    if (tokenHash && otpType) {
+      // OTP-style invite (verifyOtp). Triggered when Supabase emits a
+      // token-hash URL instead of an access-token one.
+      finish(
+        'Verification',
+        (supabase.auth as any).verifyOtp({
+          token_hash: tokenHash,
+          type: otpType,
+        })
+      );
+      return;
+    }
   }, [supabase, router]);
 
   const brandColor = firm?.brand_color || '#0F172A';

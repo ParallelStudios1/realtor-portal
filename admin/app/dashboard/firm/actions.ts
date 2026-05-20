@@ -216,6 +216,30 @@ export async function removeMemberAction(user_id: string) {
   return { ok: true as const };
 }
 
+/**
+ * Save per-firm phase label overrides. JSONB so we can add phases later
+ * without re-migrating. Owners + firm_admins only.
+ */
+export async function saveFirmPhaseLabelsAction(payload: {
+  labels: Record<string, string>;
+  messages?: Record<string, string>;
+}) {
+  const a = await authorize('admin');
+  if ('error' in a) return { ok: false as const, error: a.error };
+  const service = getSupabaseServiceRoleClient();
+  const update: Record<string, any> = {
+    phase_labels: payload.labels || {},
+  };
+  if (payload.messages) update.phase_messages = payload.messages;
+  const { error } = await service
+    .from('firms')
+    .update(update)
+    .eq('id', a.me.firm_id!);
+  if (error) return { ok: false as const, error: error.message };
+  revalidatePath('/dashboard/firm');
+  return { ok: true as const };
+}
+
 /** Manager+ assigns or reassigns the realtor on a deal. */
 export async function assignDealRealtorAction(payload: {
   search_id: string;

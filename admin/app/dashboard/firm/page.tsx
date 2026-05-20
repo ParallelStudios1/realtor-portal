@@ -22,24 +22,33 @@ export default async function FirmControlPage() {
 
   const supabase = getSupabaseServerClient();
 
-  const [{ data: members }, { data: invites }, { data: dealCounts }] =
-    await Promise.all([
-      supabase
-        .from('users')
-        .select('id, full_name, email, role, created_at')
-        .eq('firm_id', me.firm_id!)
-        .neq('role', 'client')
-        .order('created_at', { ascending: true }),
-      supabase
-        .from('firm_invites')
-        .select('id, email, full_name, role, created_at, accepted_at')
-        .eq('firm_id', me.firm_id!)
-        .order('created_at', { ascending: false }),
-      supabase
-        .from('client_searches')
-        .select('realtor_id')
-        .eq('firm_id', me.firm_id!),
-    ]);
+  const [
+    { data: members },
+    { data: invites },
+    { data: dealCounts },
+    { data: firmRow },
+  ] = await Promise.all([
+    supabase
+      .from('users')
+      .select('id, full_name, email, role, created_at')
+      .eq('firm_id', me.firm_id!)
+      .neq('role', 'client')
+      .order('created_at', { ascending: true }),
+    supabase
+      .from('firm_invites')
+      .select('id, email, full_name, role, created_at, accepted_at')
+      .eq('firm_id', me.firm_id!)
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('client_searches')
+      .select('realtor_id')
+      .eq('firm_id', me.firm_id!),
+    supabase
+      .from('firms')
+      .select('phase_labels, phase_messages')
+      .eq('id', me.firm_id!)
+      .maybeSingle(),
+  ]);
 
   const deals = (dealCounts as any[] | null) || [];
   const dealCountByRealtor: Record<string, number> = {};
@@ -75,6 +84,8 @@ export default async function FirmControlPage() {
         members={(members || []) as any}
         invites={(invites || []) as any}
         dealCountByRealtor={dealCountByRealtor}
+        phaseLabels={((firmRow as any)?.phase_labels as Record<string, string>) || {}}
+        phaseMessages={((firmRow as any)?.phase_messages as Record<string, string>) || {}}
       />
     </main>
   );
