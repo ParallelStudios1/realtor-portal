@@ -95,7 +95,11 @@ export default function ClientHouseDetailScreen() {
         variant: 'success',
       });
       setTourNotes('');
-      setTourWhen('');
+      // BUG FIX: was `setTourWhen('')` which crashed (no such setter) and the
+      // catch below fired a misleading 'preferred_when ... doesn't exist'
+      // toast even though the row was already in the DB. The actual state
+      // setter is setTourWhenDate(Date | null).
+      setTourWhenDate(null);
     } catch (e: any) {
       toast.show(humanError(e), { variant: 'error' });
     } finally {
@@ -142,7 +146,10 @@ export default function ClientHouseDetailScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <ScrollView>
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+      >
         {house.photo_url ? (
           <Image source={{ uri: house.photo_url }} style={styles.photo} contentFit="cover" />
         ) : (

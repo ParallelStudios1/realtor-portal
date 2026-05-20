@@ -8,6 +8,14 @@ export const metadata = { title: 'Branding · Realtor Portal' };
 export default async function BrandingPage() {
   const me = await getMe();
   if (!me?.firm_id) redirect('/login');
+  // Branding is firm-level — only owners and firm admins can edit it.
+  // Realtors / managers / agents see the dashboard normally but can't
+  // accidentally change the logo or color palette.
+  const isAdmin =
+    me.role === 'owner' ||
+    me.role === 'firm_admin' ||
+    me.role === 'super_admin';
+  if (!isAdmin) redirect('/dashboard');
 
   const supabase = getSupabaseServerClient();
   const { data: firm } = await supabase

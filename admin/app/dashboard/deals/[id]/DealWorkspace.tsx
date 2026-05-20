@@ -1,12 +1,15 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useState, useTransition } from 'react';
+import { useToast } from '@/components/Toast';
 import {
   ClientDetailActions,
   ParticipantList,
 } from '../../clients/[id]/ClientDetailActions';
 import { DocumentRow } from '../../clients/[id]/DocumentRow';
+import { assignDealRealtorAction } from '../../firm/actions';
 
 /**
  * The canonical interactive deal workspace. Compared to the old per-client
@@ -22,7 +25,13 @@ import { DocumentRow } from '../../clients/[id]/DocumentRow';
  */
 export function DealWorkspace(props: {
   clientId: string;
-  me: { firmId: string | null; userId: string; fullName: string | null };
+  me: {
+    firmId: string | null;
+    userId: string;
+    fullName: string | null;
+    role?: string;
+    canAssignRealtor?: boolean;
+  };
   deal: any;
   phases: { id: string; label: string }[];
   phaseIdx: number;
@@ -33,7 +42,12 @@ export function DealWorkspace(props: {
   documents: any[];
   participants: any[];
   activity: any[];
-  teammates: any[];
+  teammates: Array<{
+    id: string;
+    full_name: string | null;
+    email: string;
+    role?: string;
+  }>;
   recentMessages: any[];
 }) {
   const {
@@ -54,6 +68,10 @@ export function DealWorkspace(props: {
   } = props;
 
   const [docFolder, setDocFolder] = useState<string>('all');
+  const [assigning, setAssigning] = useState(false);
+  const [savingAssignment, startAssignment] = useTransition();
+  const router = useRouter();
+  const toast = useToast();
 
   const folders = Array.from(
     new Set((documents || []).map((d: any) => d.folder || 'General'))
@@ -212,6 +230,84 @@ export function DealWorkspace(props: {
           </ol>
         </div>
       </section>
+
+      {/* Realtor assignment — owners / firm_admins / managers only. */}
+      {me.canAssignRealtor && (
+        <section className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-ink-200 bg-white p-4 shadow-soft-sm">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-violet-100 text-violet-700">
+              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" strokeLinecap="round" strokeLinejoin="round" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M22 11h-6M19 8v6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
+            <div>
+              <div className="text-[11px] font-bold uppercase tracking-wider text-ink-500">
+                Assigned realtor
+              </div>
+              <div className="text-sm font-semibold text-ink-900">
+                {deal.realtor?.full_name || deal.realtor?.email || (
+                  <span className="text-amber-700">Unassigned</span>
+                )}
+              </div>
+            </div>
+          </div>
+          {assigning ? (
+            <div className="flex items-center gap-2">
+              <select
+                defaultValue={deal.realtor_id || ''}
+                disabled={savingAssignment}
+                onChange={(e) => {
+                  const v = e.target.value || null;
+                  startAssignment(async () => {
+                    const r = await assignDealRealtorAction({
+                      search_id: deal.id,
+                      realtor_id: v,
+                    });
+                    if (!r.ok) {
+                      toast.show(r.error || 'Failed', { variant: 'error' });
+                      return;
+                    }
+                    toast.show('Deal reassigned.', { variant: 'success' });
+                    setAssigning(false);
+                    router.refresh();
+                  });
+                }}
+                className="rounded-lg border border-ink-300 bg-white px-3 py-2 text-sm"
+              >
+                <option value="">Unassigned</option>
+                {teammates
+                  .filter((t) =>
+                    ['realtor', 'firm_admin', 'owner', 'manager'].includes(
+                      t.role || ''
+                    )
+                  )
+                  .map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.full_name || t.email}
+                    </option>
+                  ))}
+              </select>
+              <button
+                type="button"
+                onClick={() => setAssigning(false)}
+                className="btn-ghost text-xs px-2 py-1"
+              >
+                Cancel
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setAssigning(true)}
+              className="btn-secondary text-xs"
+            >
+              {deal.realtor_id ? 'Reassign' : 'Assign realtor'}
+            </button>
+          )}
+        </section>
+      )}
 
       {/* Action surface — the existing component already groups actions well */}
       <div className="mt-6">

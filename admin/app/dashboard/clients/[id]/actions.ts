@@ -78,18 +78,55 @@ const PHASE_CELEBRATIONS: Record<string, string> = {
 
 export async function updatePhaseAction(
   clientId: string,
-  phase: 'searching' | 'offer_made' | 'under_contract' | 'closing' | 'closed'
+  phase:
+    | 'searching'
+    | 'offer_made'
+    | 'counter_offer'
+    | 'under_contract'
+    | 'closing'
+    | 'closed',
+  extras?: {
+    offer_amount?: number | null;
+    counter_offer_amount?: number | null;
+    closing_date?: string | null;
+    closed_message?: string | null;
+    contract_url?: string | null;
+    docusign_envelope_url?: string | null;
+  }
 ) {
   const a = await authorize(clientId);
   if ('error' in a) return { ok: false as const, error: a.error };
   const service = getSupabaseServiceRoleClient();
   const previousPhase = a.search.phase;
+  // Build update payload — include any phase-specific extras the modal collected.
+  const updates: Record<string, any> = { phase };
+  if (extras?.offer_amount != null) updates.offer_amount = extras.offer_amount;
+  if (extras?.counter_offer_amount != null)
+    updates.counter_offer_amount = extras.counter_offer_amount;
+  if (extras?.closing_date) updates.closing_date = extras.closing_date;
+  if (extras?.closed_message) updates.closed_message = extras.closed_message;
+  if (extras?.contract_url) updates.contract_url = extras.contract_url;
+  if (extras?.docusign_envelope_url)
+    updates.docusign_envelope_url = extras.docusign_envelope_url;
   const { error } = await service
     .from('client_searches')
-    .update({ phase })
+    .update(updates)
     .eq('id', a.search.id);
   if (error) return { ok: false as const, error: error.message };
-  await activity(a.search.id, a.search.firm_id, a.me.user_id, 'phase_change', phase);
+  await activity(a.search.id, a.search.firm_id, a.me.user_id, 'phase_change', phase, extras);
+  // Auto-add the closing date as an important_dates row when we get one.
+  if (extras?.closing_date) {
+    await service.from('important_dates').upsert(
+      {
+        firm_id: a.search.firm_id,
+        search_id: a.search.id,
+        label: 'Closing day',
+        date: extras.closing_date,
+        created_by: a.me.user_id,
+      },
+      { onConflict: 'search_id,label' as any, ignoreDuplicates: false }
+    );
+  }
 
   // Auto-celebrate transitions to milestone phases.
   if (phase !== previousPhase && PHASE_CELEBRATIONS[phase]) {

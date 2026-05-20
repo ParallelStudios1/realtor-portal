@@ -33,10 +33,12 @@ export default async function DealDetailPage({
     .from('client_searches')
     .select(
       `id, kind, phase, name, description, attorney_name, attorney_email,
-       attorney_phone, docusign_envelope_url, co_realtor_id, agreed_price,
-       closing_amount, earnest_money, commission_pct, contract_url, notes,
-       created_at, updated_at,
-       client:users!client_searches_client_id_fkey ( id, full_name, email, created_at )`
+       attorney_phone, docusign_envelope_url, co_realtor_id, realtor_id,
+       agreed_price, closing_amount, earnest_money, commission_pct,
+       contract_url, notes, offer_amount, counter_offer_amount,
+       closing_date, closed_message, created_at, updated_at,
+       client:users!client_searches_client_id_fkey ( id, full_name, email, created_at ),
+       realtor:users!client_searches_realtor_id_fkey ( id, full_name, email )`
     )
     .eq('id', params.id)
     .eq('firm_id', me.firm_id)
@@ -100,9 +102,9 @@ export default async function DealDetailPage({
       .limit(20),
     supabase
       .from('users')
-      .select('id, full_name, email')
+      .select('id, full_name, email, role')
       .eq('firm_id', me.firm_id)
-      .in('role', ['realtor', 'firm_admin'])
+      .in('role', ['realtor', 'firm_admin', 'owner', 'manager', 'agent'])
       .neq('id', me.user_id),
     supabase
       .from('messages')
@@ -114,6 +116,12 @@ export default async function DealDetailPage({
 
   const phaseIdx = PHASES.findIndex((p) => p.id === (deal as any).phase);
 
+  const canAssignRealtor =
+    me.role === 'owner' ||
+    me.role === 'firm_admin' ||
+    me.role === 'super_admin' ||
+    me.role === 'manager';
+
   return (
     <DealWorkspace
       clientId={clientId}
@@ -121,6 +129,8 @@ export default async function DealDetailPage({
         firmId: me.firm_id,
         userId: me.user_id,
         fullName: me.full_name,
+        role: me.role || '',
+        canAssignRealtor,
       }}
       deal={deal as any}
       phases={PHASES as any}

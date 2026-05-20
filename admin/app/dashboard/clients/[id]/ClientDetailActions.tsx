@@ -253,10 +253,10 @@ export function ClientDetailActions({
         <PhaseModal
           currentPhase={currentPhase}
           onClose={close}
-          onSubmit={async (phase) => {
-            const r = await updatePhaseAction(clientId, phase as any);
+          onSubmit={async (phase, extras) => {
+            const r = await updatePhaseAction(clientId, phase as any, extras as any);
             if (!r.ok) return toast.show(r.error || 'Failed', { variant: 'error' });
-            done('Phase updated.');
+            done('Phase updated — everyone on the deal was emailed.');
           }}
         />
       )}
@@ -796,10 +796,44 @@ function PhaseModal({
 }: {
   currentPhase: string;
   onClose: () => void;
-  onSubmit: (phase: string) => Promise<void>;
+  onSubmit: (
+    phase: string,
+    extras?: {
+      offer_amount?: number | null;
+      counter_offer_amount?: number | null;
+      closing_date?: string | null;
+      closed_message?: string | null;
+      docusign_envelope_url?: string | null;
+    }
+  ) => Promise<void>;
 }) {
   const [phase, setPhase] = useState(currentPhase);
+  // Phase-specific extras. We only read out the field(s) relevant to the
+  // chosen phase when we submit — keeping them all in state lets the user
+  // freely toggle between phases without losing typed values.
+  const [offer, setOffer] = useState('');
+  const [counter, setCounter] = useState('');
+  const [closingDate, setClosingDate] = useState('');
+  const [closedMsg, setClosedMsg] = useState('');
+  const [docusignUrl, setDocusignUrl] = useState('');
   const [pending, start] = useTransition();
+
+  function buildExtras() {
+    if (phase === 'offer_made')
+      return { offer_amount: offer ? Number(offer) : null };
+    if (phase === 'counter_offer')
+      return { counter_offer_amount: counter ? Number(counter) : null };
+    if (phase === 'under_contract')
+      return {
+        docusign_envelope_url: docusignUrl.trim() || null,
+      };
+    if (phase === 'closing')
+      return { closing_date: closingDate || null };
+    if (phase === 'closed')
+      return { closed_message: closedMsg.trim() || null };
+    return undefined;
+  }
+
   return (
     <Modal title="Update deal phase" onClose={onClose}>
       <div className="space-y-2">
@@ -811,28 +845,124 @@ function PhaseModal({
               className={
                 'flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 text-sm transition ' +
                 (selected
-                  ? 'border-slate-900 bg-slate-50 ring-1 ring-slate-900'
-                  : 'border-slate-200 hover:bg-slate-50')
+                  ? 'border-ink-900 bg-ink-50 ring-1 ring-ink-900'
+                  : 'border-ink-200 hover:bg-ink-50')
               }
             >
               <input
                 type="radio"
                 name="phase"
-                className="accent-slate-900"
+                className="accent-ink-900"
                 value={p.id}
                 checked={selected}
                 onChange={() => setPhase(p.id)}
               />
-              <span className="font-medium text-slate-800">{p.label}</span>
+              <span className="font-medium text-ink-800">{p.label}</span>
               {p.id === currentPhase && (
-                <span className="ml-auto text-[10px] font-bold uppercase tracking-wide text-slate-400">Current</span>
+                <span className="ml-auto text-[10px] font-bold uppercase tracking-wide text-ink-400">
+                  Current
+                </span>
               )}
             </label>
           );
         })}
       </div>
-      <PrimaryButton pending={pending} onClick={() => start(() => onSubmit(phase))}>
-        Save phase
+
+      {/* Phase-specific fields. These collect the info you would have asked
+          the client about anyway and stash it on client_searches so it shows
+          up in the deal workspace immediately. */}
+      {phase === 'offer_made' && phase !== currentPhase && (
+        <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50/60 p-3">
+          <Field
+            label="Offer amount (USD)"
+            hint="Goes on the deal record and into the celebration message."
+          >
+            <input
+              type="number"
+              className={inputCls}
+              value={offer}
+              onChange={(e) => setOffer(e.target.value)}
+              placeholder="425000"
+              autoFocus
+            />
+          </Field>
+        </div>
+      )}
+      {phase === 'counter_offer' && phase !== currentPhase && (
+        <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50/60 p-3">
+          <Field label="Counter offer amount (USD)">
+            <input
+              type="number"
+              className={inputCls}
+              value={counter}
+              onChange={(e) => setCounter(e.target.value)}
+              placeholder="430000"
+              autoFocus
+            />
+          </Field>
+        </div>
+      )}
+      {phase === 'under_contract' && phase !== currentPhase && (
+        <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50/60 p-3 text-xs">
+          <Field
+            label="DocuSign envelope URL (optional)"
+            hint="Paste the link to the signed contract — it appears as a tappable card to every party."
+          >
+            <input
+              className={inputCls}
+              value={docusignUrl}
+              onChange={(e) => setDocusignUrl(e.target.value)}
+              placeholder="https://app.docusign.com/…"
+            />
+          </Field>
+          <p className="mt-2 text-[11px] text-blue-900">
+            Want the full form (binding date, earnest money, due diligence,
+            closing day, contract upload, email-everyone)? Cancel here and use
+            <strong> Go under contract </strong> on the action grid instead.
+          </p>
+        </div>
+      )}
+      {phase === 'closing' && phase !== currentPhase && (
+        <div className="mt-4 rounded-lg border border-indigo-200 bg-indigo-50/60 p-3">
+          <Field
+            label="Closing date"
+            hint="Auto-added as an Important Date for the deal."
+          >
+            <input
+              type="date"
+              className={inputCls}
+              value={closingDate}
+              onChange={(e) => setClosingDate(e.target.value)}
+              autoFocus
+            />
+          </Field>
+        </div>
+      )}
+      {phase === 'closed' && phase !== currentPhase && (
+        <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50/60 p-3">
+          <Field
+            label="Closing wrap-up message (optional)"
+            hint="Sent to everyone on the deal — client, co-realtor, attorney, lender, etc."
+          >
+            <textarea
+              rows={4}
+              className={inputCls}
+              value={closedMsg}
+              onChange={(e) => setClosedMsg(e.target.value)}
+              placeholder="Congrats again on closing 123 Main St! It's been a pleasure…"
+              autoFocus
+            />
+          </Field>
+        </div>
+      )}
+
+      <PrimaryButton
+        pending={pending}
+        onClick={() =>
+          start(() => onSubmit(phase, buildExtras() as any))
+        }
+      >
+        {phase === currentPhase ? 'Already on this phase' : 'Save phase'}
       </PrimaryButton>
     </Modal>
   );

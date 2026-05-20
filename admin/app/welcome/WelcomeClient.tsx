@@ -73,8 +73,14 @@ export function WelcomeClient({ firm, hasSession, email, fullName }: Props) {
         window.history.replaceState(null, '', window.location.pathname);
         setSessionReady(true);
         setStep('setPassword');
+        // Re-fetch the server-rendered props now that the session cookie is
+        // set — without this, email / fullName / firm branding stay at their
+        // pre-session values and the user has to refresh the page once for
+        // anything to show. This is the bug Turner reported as
+        // "have to refresh the page one time for their email to show up".
+        router.refresh();
       });
-  }, [supabase]);
+  }, [supabase, router]);
 
   const brandColor = firm?.brand_color || '#0F172A';
   const accentColor = firm?.accent_color || '#2563EB';

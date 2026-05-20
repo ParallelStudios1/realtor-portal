@@ -101,7 +101,10 @@ export default function RealtorHouseDetailScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <ScrollView>
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+      >
         {house.photo_url ? (
           <Image source={{ uri: house.photo_url }} style={styles.photo} contentFit="cover" />
         ) : (
