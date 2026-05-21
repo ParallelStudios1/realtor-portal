@@ -92,6 +92,7 @@ export async function updatePhaseAction(
     closed_message?: string | null;
     contract_url?: string | null;
     docusign_envelope_url?: string | null;
+    offer_house_id?: string | null;
   }
 ) {
   const a = await authorize(clientId);
@@ -108,6 +109,7 @@ export async function updatePhaseAction(
   if (extras?.contract_url) updates.contract_url = extras.contract_url;
   if (extras?.docusign_envelope_url)
     updates.docusign_envelope_url = extras.docusign_envelope_url;
+  if (extras?.offer_house_id) updates.offer_house_id = extras.offer_house_id;
   const { error } = await service
     .from('client_searches')
     .update(updates)
@@ -165,7 +167,14 @@ export async function updatePhaseAction(
 
 export async function addImportantDateAction(
   clientId: string,
-  payload: { label: string; date: string; kind?: string }
+  payload: {
+    label: string;
+    date: string;
+    kind?: string;
+    event_time?: string | null;
+    location?: string | null;
+    things_to_bring?: string | null;
+  }
 ) {
   const a = await authorize(clientId);
   if ('error' in a) return { ok: false as const, error: a.error };
@@ -177,6 +186,9 @@ export async function addImportantDateAction(
     search_id: a.search.id,
     label: payload.label,
     date: payload.date,
+    event_time: payload.event_time || null,
+    location: payload.location?.trim() || null,
+    things_to_bring: payload.things_to_bring?.trim() || null,
     notes: payload.kind && payload.kind !== 'custom' ? payload.kind : null,
     created_by: a.me.user_id,
   });
@@ -908,6 +920,70 @@ export async function deleteDocumentAction(
   }
   const { error } = await service.from('documents').delete().eq('id', documentId);
   if (error) return { ok: false as const, error: error.message };
+  revalidatePath(`/dashboard/clients/${clientId}`);
+  revalidatePath('/dashboard/deals/[id]', 'page');
+  revalidatePath('/dashboard/deals');
+  return { ok: true as const };
+}
+
+/**
+ * Realtor counter-proposes a tour time. After the buyer requests one and
+ * the realtor (or seller) wants a different time, they fire this from the
+ * tour request card. We store realtor_proposed_when alongside the original
+ * preferred_when so both are visible to everyone, and we drop a message
+ * in the deal thread explaining the new time.
+ */
+export async function proposeAlternativeTourTimeAction(
+  clientId: string,
+  payload: {
+    tour_request_id: string;
+    proposed_when: string;
+    note?: string;
+  }
+) {
+  const a = await authorize(clientId);
+  if ('error' in a) return { ok: false as const, error: a.error };
+  if (!payload.tour_request_id || !payload.proposed_when)
+    return { ok: false as const, error: 'Tour and proposed time required.' };
+  const service = getSupabaseServiceRoleClient();
+  // Make sure the tour request belongs to this firm's deal.
+  const { data: tour } = await service
+    .from('tour_requests')
+    .select('id, firm_id, search_id, house_id, preferred_when, client_id')
+    .eq('id', payload.tour_request_id)
+    .maybeSingle();
+  if (!tour || tour.firm_id !== a.search.firm_id)
+    return { ok: false as const, error: 'Tour not in your firm.' };
+
+  const { error } = await service
+    .from('tour_requests')
+    .update({
+      realtor_proposed_when: payload.proposed_when,
+      realtor_proposed_note: payload.note?.trim() || null,
+      status: 'proposed_alternative',
+    })
+    .eq('id', payload.tour_request_id);
+  if (error) return { ok: false as const, error: error.message };
+
+  // Drop a chat message so the client gets notified.
+  const when = new Date(payload.proposed_when).toLocaleString();
+  await service.from('messages').insert({
+    firm_id: a.search.firm_id,
+    search_id: a.search.id,
+    sender_id: a.me.user_id,
+    body:
+      '📅 New time proposed for your tour: ' +
+      when +
+      (payload.note ? '. ' + payload.note : '. Let me know if that works.'),
+  });
+  await activity(
+    a.search.id,
+    a.search.firm_id,
+    a.me.user_id,
+    'tour_alt_proposed',
+    when
+  );
+
   revalidatePath(`/dashboard/clients/${clientId}`);
   revalidatePath('/dashboard/deals/[id]', 'page');
   revalidatePath('/dashboard/deals');

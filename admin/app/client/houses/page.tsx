@@ -8,13 +8,28 @@ export default async function ClientHousesPage() {
   const me = (await getMe())!;
   const supabase = getSupabaseServerClient();
 
-  // Find this client's active searches → all houses across them
+  // Find this client's active searches → all houses across them. We also
+  // pull each search's phase + offer_house_id so we can flag the home they
+  // actually bought once a deal closes ("Your home" badge).
   const { data: searches } = await supabase
     .from('client_searches')
-    .select('id')
+    .select('id, phase, offer_house_id')
     .eq('client_id', me.user_id);
 
   const searchIds = (searches || []).map((s: any) => s.id);
+  // Map of house id -> 'closed-home' | 'pending-home' | undefined
+  const homeBadge = new Map<string, 'closed-home' | 'pending-home'>();
+  for (const s of (searches || []) as any[]) {
+    if (!s.offer_house_id) continue;
+    if (s.phase === 'closed') homeBadge.set(s.offer_house_id, 'closed-home');
+    else if (
+      s.phase === 'under_contract' ||
+      s.phase === 'closing' ||
+      s.phase === 'offer_made' ||
+      s.phase === 'counter_offer'
+    )
+      homeBadge.set(s.offer_house_id, 'pending-home');
+  }
 
   const { data: houses } = searchIds.length
     ? await supabase
@@ -44,12 +59,24 @@ export default async function ClientHousesPage() {
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
-          {houses.map((h: any) => (
+          {houses.map((h: any) => {
+            const badge = homeBadge.get(h.id);
+            return (
             <Link
               key={h.id}
               href={`/client/houses/${h.id}`}
-              className="group overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md"
+              className="group relative overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md"
             >
+              {badge === 'closed-home' && (
+                <div className="absolute left-3 top-3 z-10 flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow-md">
+                  <span aria-hidden>🏡</span> Your home
+                </div>
+              )}
+              {badge === 'pending-home' && (
+                <div className="absolute left-3 top-3 z-10 flex items-center gap-1 rounded-full bg-amber-500 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow-md">
+                  <span aria-hidden>📝</span> Your offer
+                </div>
+              )}
               <div className="aspect-video w-full bg-slate-100">
                 {h.photo_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -87,7 +114,8 @@ export default async function ClientHousesPage() {
                 )}
               </div>
             </Link>
-          ))}
+            );
+          })}
         </div>
       )}
     </main>

@@ -78,7 +78,7 @@ export default async function DealDetailPage({
       .limit(6),
     supabase
       .from('important_dates')
-      .select('id, label, date, notes')
+      .select('id, label, date, notes, event_time, location, things_to_bring')
       .eq('search_id', params.id)
       .order('date', { ascending: true }),
     supabase

@@ -1277,11 +1277,17 @@ function DateModal({
     label: string;
     date: string;
     kind?: string;
+    event_time?: string | null;
+    location?: string | null;
+    things_to_bring?: string | null;
   }) => Promise<void>;
 }) {
   const [preset, setPreset] = useState(DATE_PRESETS[0]);
   const [customLabel, setCustomLabel] = useState('');
   const [date, setDate] = useState('');
+  const [eventTime, setEventTime] = useState('');
+  const [location, setLocation] = useState('');
+  const [bring, setBring] = useState('');
   const [pending, start] = useTransition();
   return (
     <Modal title="Add an important date" onClose={onClose}>
@@ -1307,12 +1313,48 @@ function DateModal({
             />
           </Field>
         )}
-        <Field label="Date">
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Date">
+            <input
+              type="date"
+              className={inputCls}
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+            />
+          </Field>
+          <Field
+            label="Time (optional)"
+            hint="If you set a time, it shows up in everyone's calendar export."
+          >
+            <input
+              type="time"
+              className={inputCls}
+              value={eventTime}
+              onChange={(e) => setEventTime(e.target.value)}
+            />
+          </Field>
+        </div>
+        <Field
+          label="Location (optional)"
+          hint="Address, room number, Zoom link — anything participants need to find the event."
+        >
           <input
-            type="date"
             className={inputCls}
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            placeholder="123 Main St, Title Co., or https://zoom.us/…"
+          />
+        </Field>
+        <Field
+          label="Things to bring (optional)"
+          hint="Especially useful for closing day."
+        >
+          <textarea
+            className={inputCls}
+            rows={2}
+            value={bring}
+            onChange={(e) => setBring(e.target.value)}
+            placeholder="Driver's license, certified funds, contract copy…"
           />
         </Field>
       </div>
@@ -1324,6 +1366,9 @@ function DateModal({
             onSubmit({
               label: preset === 'Custom' ? customLabel : preset,
               date,
+              event_time: eventTime || null,
+              location: location.trim() || null,
+              things_to_bring: bring.trim() || null,
               kind:
                 preset === 'Closing day'
                   ? 'closing'

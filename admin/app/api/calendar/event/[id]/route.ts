@@ -24,7 +24,7 @@ export async function GET(
   const { data: row } = await service
     .from('important_dates')
     .select(
-      `id, label, date, notes, search_id,
+      `id, label, date, notes, event_time, location, things_to_bring, search_id,
        search:client_searches ( id, name, firm:firms ( name ) )`
     )
     .eq('id', params.id)
@@ -33,17 +33,13 @@ export async function GET(
     return new NextResponse('Not found', { status: 404 });
 
   const d = row as any;
-  const start = formatIcsDate(d.date);
-  // 1-day all-day blocks for now. We can extend with time-of-day later.
-  const endDate = new Date(d.date);
-  endDate.setDate(endDate.getDate() + 1);
-  const end = formatIcsDate(endDate.toISOString().slice(0, 10));
   const stamp =
     new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
 
   const summary = escIcs(d.label);
   const description = escIcs(
     [
+      d.things_to_bring ? 'Bring: ' + d.things_to_bring : null,
       d.notes,
       d.search?.firm?.name ? 'Firm: ' + d.search.firm.name : null,
       d.search?.name ? 'Deal: ' + d.search.name : null,
@@ -51,8 +47,11 @@ export async function GET(
       .filter(Boolean)
       .join('\\n')
   );
+  const location = d.location ? escIcs(d.location) : '';
 
-  const ics = [
+  // If event_time is set, emit a timed event (default 1 hour). Otherwise
+  // emit an all-day block.
+  const lines: string[] = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
     'PRODID:-//Realtor Portal//EN',
@@ -61,15 +60,40 @@ export async function GET(
     'BEGIN:VEVENT',
     'UID:' + d.id + '@realtor-portal',
     'DTSTAMP:' + stamp,
-    'DTSTART;VALUE=DATE:' + start,
-    'DTEND;VALUE=DATE:' + end,
-    'SUMMARY:' + summary,
-    description ? 'DESCRIPTION:' + description : '',
-    'END:VEVENT',
-    'END:VCALENDAR',
-  ]
-    .filter(Boolean)
-    .join('\r\n');
+  ];
+  if (d.event_time) {
+    // YYYY-MM-DD + HH:MM:SS → YYYYMMDDTHHMMSS (floating local time)
+    const datePart = d.date.includes('T')
+      ? d.date.slice(0, 10)
+      : d.date;
+    const [hh, mm, ss] = String(d.event_time).split(':');
+    const start =
+      datePart.replace(/-/g, '') +
+      'T' +
+      hh.padStart(2, '0') +
+      (mm || '00').padStart(2, '0') +
+      (ss || '00').padStart(2, '0');
+    // +1 hour
+    const sh = (Number(hh) + 1) % 24;
+    const end =
+      datePart.replace(/-/g, '') +
+      'T' +
+      String(sh).padStart(2, '0') +
+      (mm || '00').padStart(2, '0') +
+      (ss || '00').padStart(2, '0');
+    lines.push('DTSTART:' + start, 'DTEND:' + end);
+  } else {
+    const start = formatIcsDate(d.date);
+    const endDate = new Date(d.date);
+    endDate.setDate(endDate.getDate() + 1);
+    const end = formatIcsDate(endDate.toISOString().slice(0, 10));
+    lines.push('DTSTART;VALUE=DATE:' + start, 'DTEND;VALUE=DATE:' + end);
+  }
+  lines.push('SUMMARY:' + summary);
+  if (location) lines.push('LOCATION:' + location);
+  if (description) lines.push('DESCRIPTION:' + description);
+  lines.push('END:VEVENT', 'END:VCALENDAR');
+  const ics = lines.join('\r\n');
 
   return new NextResponse(ics, {
     status: 200,

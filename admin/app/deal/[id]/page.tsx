@@ -124,7 +124,7 @@ export default async function DealPage({
       canSeeDates
         ? service
             .from('important_dates')
-            .select('id, label, date, notes')
+            .select('id, label, date, notes, event_time, location, things_to_bring')
             .eq('search_id', params.id)
             .order('date', { ascending: true })
         : Promise.resolve({ data: [] as any[] }),
@@ -331,17 +331,54 @@ export default async function DealPage({
                     {dates.map((dd: any) => (
                       <li
                         key={dd.id}
-                        className="flex items-center justify-between py-2 text-sm"
+                        className="py-2 text-sm"
                       >
-                        <div>
+                        <div className="flex items-baseline justify-between gap-2">
                           <div className="font-medium">{dd.label}</div>
-                          {dd.notes && (
-                            <div className="text-xs text-slate-500">
-                              {dd.notes}
-                            </div>
-                          )}
+                          <span className="text-xs text-slate-600 font-semibold">
+                            {new Date(dd.date).toLocaleDateString()}
+                            {dd.event_time
+                              ? ' · ' +
+                                (() => {
+                                  const [h, m] = String(dd.event_time).split(':');
+                                  const hi = Number(h);
+                                  const mi = Number(m || 0);
+                                  const am = hi < 12;
+                                  const h12 = ((hi + 11) % 12) + 1;
+                                  return (
+                                    h12 +
+                                    ':' +
+                                    (mi < 10 ? '0' : '') +
+                                    mi +
+                                    (am ? ' AM' : ' PM')
+                                  );
+                                })()
+                              : ''}
+                          </span>
                         </div>
-                        <span className="text-xs text-slate-500">
+                        {(dd.location || dd.things_to_bring || dd.notes) && (
+                          <div className="mt-1 space-y-0.5 text-[11px] text-slate-500">
+                            {dd.location && (
+                              <div>📍 {dd.location}</div>
+                            )}
+                            {dd.things_to_bring && (
+                              <div>📋 Bring: {dd.things_to_bring}</div>
+                            )}
+                            {dd.notes && (
+                              <div className="text-slate-400">{dd.notes}</div>
+                            )}
+                          </div>
+                        )}
+                        <div className="mt-1">
+                          <a
+                            href={`/api/calendar/event/${dd.id}`}
+                            className="text-[10px] font-semibold uppercase tracking-wide"
+                            style={{ color: accent }}
+                          >
+                            Add to calendar ↗
+                          </a>
+                        </div>
+                        <span className="hidden">
                           {new Date(dd.date).toLocaleDateString()}
                         </span>
                       </li>

@@ -514,30 +514,56 @@ export function DealWorkspace(props: {
           {/* Important dates */}
           <Card title={`Important dates (${dates.length})`}>
             {dates.length === 0 ? (
-              <p className="px-5 py-4 text-xs italic text-slate-500">
+              <p className="px-5 py-4 text-xs italic text-ink-500">
                 None yet.
               </p>
             ) : (
-              <ul className="divide-y divide-slate-100">
+              <ul className="divide-y divide-ink-100">
                 {dates.map((d: any) => (
-                  <li
-                    key={d.id}
-                    className="flex items-center justify-between px-5 py-2.5 text-sm"
-                  >
-                    <span>{d.label}</span>
-                    <span className="text-xs font-semibold text-slate-700">
-                      {new Date(d.date).toLocaleDateString()}
-                    </span>
+                  <li key={d.id} className="px-5 py-2.5 text-sm">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <span className="font-medium">{d.label}</span>
+                      <span className="text-xs font-semibold text-ink-700">
+                        {new Date(d.date).toLocaleDateString()}
+                        {d.event_time ? ' · ' + formatTime(d.event_time) : ''}
+                      </span>
+                    </div>
+                    {(d.location || d.things_to_bring) && (
+                      <div className="mt-1 space-y-0.5 text-[11px] text-ink-500">
+                        {d.location && (
+                          <div className="flex items-start gap-1">
+                            <span aria-hidden>📍</span>
+                            <span className="break-words">{d.location}</span>
+                          </div>
+                        )}
+                        {d.things_to_bring && (
+                          <div className="flex items-start gap-1">
+                            <span aria-hidden>📋</span>
+                            <span className="break-words">
+                              Bring: {d.things_to_bring}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    <div className="mt-1 text-right">
+                      <a
+                        href={`/api/calendar/event/${d.id}`}
+                        className="text-[10px] font-semibold uppercase tracking-wide text-blue-600 hover:underline"
+                      >
+                        Add to calendar ↗
+                      </a>
+                    </div>
                   </li>
                 ))}
               </ul>
             )}
-            <div className="border-t border-slate-100 px-5 py-2 text-right">
+            <div className="border-t border-ink-100 px-5 py-2 text-right">
               <a
                 href={`/api/calendar/${deal.id}.ics`}
                 className="text-xs font-semibold text-blue-600 hover:underline"
               >
-                Subscribe ↗
+                Subscribe to all ↗
               </a>
             </div>
           </Card>
@@ -720,6 +746,17 @@ function initials(s: string | null | undefined) {
     .slice(0, 2)
     .join('')
     .toUpperCase();
+}
+
+function formatTime(t: string): string {
+  // "14:30:00" -> "2:30 PM"
+  const [hStr, mStr] = (t || '').split(':');
+  const h = Number(hStr);
+  const m = Number(mStr || '0');
+  if (!Number.isFinite(h)) return t;
+  const am = h < 12;
+  const h12 = ((h + 11) % 12) + 1;
+  return h12 + ':' + (m < 10 ? '0' : '') + m + (am ? ' AM' : ' PM');
 }
 
 function timeAgoShort(iso: string) {

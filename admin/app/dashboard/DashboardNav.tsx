@@ -17,12 +17,13 @@ const ITEMS = [
   { href: '/dashboard', label: 'Overview', icon: HomeIcon },
   { href: '/dashboard/deals', label: 'Deals', icon: DealsIcon },
   { href: '/dashboard/clients', label: 'Clients', icon: ClientsIcon },
+  { href: '/dashboard/contacts', label: 'Contacts', icon: ContactsIcon },
   { href: '/dashboard/inbox', label: 'Inbox', icon: InboxIcon },
   { href: '/dashboard/messages', label: 'Messages', icon: MessagesIcon },
-  { href: '/dashboard/tours', label: 'Tours', icon: TourIcon },
 ];
 
 const SECONDARY_BASE = [
+  { href: '/dashboard/tours', label: 'Tour requests' },
   { href: '/dashboard/branding', label: 'Branding' },
   { href: '/dashboard/billing', label: 'Billing' },
   { href: '/dashboard/settings', label: 'Settings' },
@@ -325,6 +326,15 @@ function TourIcon({ className }: { className?: string }) {
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className}>
       <rect x="3" y="5" width="18" height="16" rx="2" />
       <path d="M3 9h18M8 3v4M16 3v4" strokeLinecap="round" />
+    </svg>
+  );
+}
+function ContactsIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className}>
+      <rect x="4" y="3" width="16" height="18" rx="2" />
+      <circle cx="12" cy="11" r="3" />
+      <path d="M7 18c.8-2 2.7-3 5-3s4.2 1 5 3" strokeLinecap="round" />
     </svg>
   );
 }
