@@ -1552,7 +1552,14 @@ function ParticipantModal({
   const [pending, start] = useTransition();
   const [people, setPeople] = useState<{
     users: Array<{ id: string; full_name: string | null; email: string; role: string }>;
-    externals: Array<{ email: string; name: string | null; phone: string | null; role: string }>;
+    externals: Array<{
+      email: string;
+      name: string | null;
+      phone: string | null;
+      role: string;
+      company: string | null;
+      source: 'contact' | 'past_deal';
+    }>;
   }>({ users: [], externals: [] });
   const [filter, setFilter] = useState('');
 
@@ -1579,7 +1586,14 @@ function ParticipantModal({
     (e) =>
       !q ||
       (e.name || '').toLowerCase().includes(q) ||
-      e.email.toLowerCase().includes(q)
+      e.email.toLowerCase().includes(q) ||
+      (e.company || '').toLowerCase().includes(q)
+  );
+  const filteredContacts = filteredExternals.filter(
+    (e) => e.source === 'contact'
+  );
+  const filteredPastDeals = filteredExternals.filter(
+    (e) => e.source === 'past_deal'
   );
 
   return (
@@ -1680,14 +1694,55 @@ function ParticipantModal({
                     </span>
                   </button>
                 ))}
-                {filteredExternals.length > 0 && (
+                {filteredContacts.length > 0 && (
+                  <div className="border-b border-ink-200 bg-ink-100/60 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-ink-500">
+                    From your contacts
+                  </div>
+                )}
+                {filteredContacts.map((e) => (
+                  <button
+                    key={'c:' + e.email}
+                    type="button"
+                    disabled={pending}
+                    onClick={() =>
+                      start(() =>
+                        onSubmit({
+                          role,
+                          name: e.name || undefined,
+                          email: e.email,
+                          phone: e.phone || undefined,
+                          can_view_documents: docs,
+                          can_view_financials: fin,
+                          can_view_messages: msgs,
+                          can_view_dates: dates,
+                        })
+                      )
+                    }
+                    className="flex w-full items-center justify-between gap-3 border-b border-ink-100 bg-white px-3 py-2 text-left transition hover:bg-ink-50"
+                  >
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-semibold">
+                        {e.name || e.email}
+                      </div>
+                      <div className="truncate text-[11px] text-ink-500">
+                        {e.email}
+                        {e.company ? ' · ' + e.company : ''}
+                        {' · contact (' + (e.role || 'other') + ')'}
+                      </div>
+                    </div>
+                    <span className="rounded-full bg-ink-900 px-2 py-1 text-[10px] font-bold uppercase text-white">
+                      Add
+                    </span>
+                  </button>
+                ))}
+                {filteredPastDeals.length > 0 && (
                   <div className="border-b border-ink-200 bg-ink-100/60 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-ink-500">
                     Used on past deals
                   </div>
                 )}
-                {filteredExternals.map((e) => (
+                {filteredPastDeals.map((e) => (
                   <button
-                    key={e.email}
+                    key={'p:' + e.email}
                     type="button"
                     disabled={pending}
                     onClick={() =>

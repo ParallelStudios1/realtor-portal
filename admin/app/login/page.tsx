@@ -84,7 +84,12 @@ export default function LoginPage({
           <p className="mt-6 text-center text-sm text-ink-600">
             New here?{' '}
             <Link
-              href="/signup"
+              href={
+                searchParams.next
+                  ? '/signup?role=realtor&next=' +
+                    encodeURIComponent(searchParams.next)
+                  : '/signup'
+              }
               className="font-semibold text-blue-600 hover:text-blue-700"
             >
               Start a free trial →

@@ -20,12 +20,19 @@ export async function signupAction(formData: FormData) {
   const realtorEmail = (formData.get('realtor_email') as string | null)
     ?.trim()
     .toLowerCase();
+  // `next` comes from cross-firm invite links (/signup?next=/deal/<id>).
+  // Sanitize to internal paths only so this can't be turned into an
+  // open redirect by tampering with the URL.
+  const rawNext = (formData.get('next') as string | null)?.trim();
+  const next = rawNext && rawNext.startsWith('/') ? rawNext : null;
 
   const back = (msg: string) =>
     redirect(
       '/signup?error=' +
         encodeURIComponent(msg) +
-        (role ? '&role=' + role : '')
+        (role ? '&role=' + role : '') +
+        (email ? '&email=' + encodeURIComponent(email) : '') +
+        (next ? '&next=' + encodeURIComponent(next) : '')
     );
 
   if (!role || !['realtor', 'buyer', 'seller'].includes(role)) {
@@ -69,5 +76,7 @@ export async function signupAction(formData: FormData) {
   });
   if (signInError) back('Account created but sign-in failed: ' + signInError.message);
 
-  redirect(role === 'realtor' ? '/onboarding' : '/client');
+  // If they came in via a cross-firm invite link, drop them straight onto
+  // the deal. Otherwise fall back to the role's default landing.
+  redirect(next ?? (role === 'realtor' ? '/onboarding' : '/client'));
 }

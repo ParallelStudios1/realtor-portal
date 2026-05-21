@@ -12,8 +12,28 @@ export const metadata = { title: 'Sign up · Realtor Portal' };
 export default function SignupPage({
   searchParams,
 }: {
-  searchParams: { error?: string; role?: string };
+  searchParams: {
+    error?: string;
+    role?: string;
+    email?: string;
+    next?: string;
+  };
 }) {
+  // Cross-firm invite links land here with ?role=realtor&email=...&next=/deal/<id>.
+  // We prefill the email field and forward `next` into the signed-in landing.
+  // `next` is only honored when it starts with "/" so it can't be turned into
+  // an open redirect.
+  const prefilledEmail = (searchParams.email || '').trim() || undefined;
+  const safeNext =
+    typeof searchParams.next === 'string' && searchParams.next.startsWith('/')
+      ? searchParams.next
+      : undefined;
+  const isInvite = Boolean(prefilledEmail && safeNext);
+  // Pass a sign-in link that preserves the same `next` so existing-account
+  // collaborators don't lose the deep link.
+  const loginHref = safeNext
+    ? '/login?next=' + encodeURIComponent(safeNext)
+    : '/login';
   return (
     <main className="min-h-screen bg-ink-50 py-12">
       <div className="mx-auto max-w-md px-6">
@@ -32,10 +52,12 @@ export default function SignupPage({
             </span>
           </div>
           <h1 className="mt-4 text-3xl font-bold tracking-tight">
-            Get started
+            {isInvite ? "You've been invited to a deal" : 'Get started'}
           </h1>
           <p className="mt-1 text-sm text-ink-600">
-            Pick the option that describes you.
+            {isInvite
+              ? "Set up your free account and we'll drop you straight into the deal."
+              : 'Pick the option that describes you.'}
           </p>
 
           {searchParams.error && (
@@ -49,12 +71,14 @@ export default function SignupPage({
             initialRole={
               (searchParams.role as 'realtor' | 'buyer' | 'seller') || null
             }
+            prefilledEmail={prefilledEmail}
+            next={safeNext}
           />
 
           <p className="mt-6 text-center text-sm text-ink-600">
             Already have an account?{' '}
             <Link
-              href="/login"
+              href={loginHref}
               className="font-semibold text-blue-600 hover:text-blue-700"
             >
               Sign in →

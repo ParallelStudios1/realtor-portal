@@ -636,6 +636,14 @@ export async function addParticipantAction(
 
   // Fire-and-forget invite email if we have an address. Pulls firm name +
   // realtor name from the search context for personalization.
+  //
+  // When the participant role is realtor/co_realtor AND there isn't already
+  // an account for that email, we send a "set up your free Realtor Portal
+  // account to collaborate on this deal" version of the email. They land on
+  // /signup as a realtor; once signed up, the existing can_collab_on_search
+  // RLS function recognizes their email and grants deal access. They also
+  // get to use premium features ON THIS DEAL even on the free plan, because
+  // the deal is hosted by the inviting firm (see canUsePremiumForDeal).
   if (payload.email) {
     try {
       const { data: ctx } = await service
@@ -650,33 +658,63 @@ export async function addParticipantAction(
         (ctx as any)?.realtor?.full_name ||
         (ctx as any)?.realtor?.email ||
         'Your realtor';
-      const dealUrl =
-        (process.env.SITE_URL ||
-          'https://realtor-portal-ten.vercel.app') +
-        '/deal/' +
-        a.search.id;
+      const siteUrl =
+        process.env.SITE_URL || 'https://realtor-portal-ten.vercel.app';
+      const dealUrl = siteUrl + '/deal/' + a.search.id;
+      const isRealtorRole =
+        payload.role === 'realtor' || payload.role === 'co_realtor';
+      // Cross-firm invite link: realtor signup pre-filled with their email,
+      // and once they finish onboarding we route them back to the deal.
+      const signupUrl =
+        siteUrl +
+        '/signup?role=realtor&email=' +
+        encodeURIComponent(payload.email) +
+        '&next=' +
+        encodeURIComponent('/deal/' + a.search.id);
       const rolePretty = payload.role.replace(/_/g, ' ');
       const safeName = escapeHtml(payload.name || payload.email);
       const safeRealtor = escapeHtml(realtorName);
       const safeFirm = escapeHtml(firmName);
       const safeRole = escapeHtml(rolePretty);
-      await sendEmail({
-        to: payload.email,
-        subject: `${realtorName} added you to a real-estate deal at ${firmName}`,
-        text:
-          `${realtorName} at ${firmName} added you to a deal as ${rolePretty}.\n\n` +
-          `Open the deal:\n${dealUrl}\n\n` +
-          `You'll see whatever ${realtorName} chose to share with you (dates, documents, financials, messages).`,
-        html: `
+      const subject = isRealtorRole
+        ? `${realtorName} invited you to co-broker a deal at ${firmName}`
+        : `${realtorName} added you to a real-estate deal at ${firmName}`;
+      const realtorBody = `
+          <div style="font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial;font-size:15px;color:#0F172A;max-width:560px;padding:24px">
+            <h2 style="font-size:20px;margin:0 0 12px">You've been invited to co-broker a deal</h2>
+            <p>${safeRealtor} at <strong>${safeFirm}</strong> added you as <strong>${safeRole}</strong> on a real-estate deal in Realtor Portal.</p>
+            <p>Set up your free Realtor Portal account (or sign in if you already have one) and you'll see the deal in your dashboard. You can add <em>your own client</em> as a buyer or seller from your own firm, and use Realtor Portal's deal tools on this deal even if your firm doesn't have a paid plan.</p>
+            <p style="margin:24px 0">
+              <a href="${signupUrl}" style="display:inline-block;background:#0F172A;color:#fff;padding:10px 18px;border-radius:8px;font-weight:600;text-decoration:none">Set up free account &amp; open the deal &rarr;</a>
+            </p>
+            <p style="color:#64748B;font-size:13px">Already on Realtor Portal? <a href="${dealUrl}" style="color:#0F172A">Open the deal directly</a>.</p>
+            <p style="color:#64748B;font-size:13px">Hi ${safeName} &mdash; on this deal you can share documents, line up tours, message your client and ${safeRealtor}, and track closing milestones.</p>
+          </div>
+        `;
+      const partyBody = `
           <div style="font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial;font-size:15px;color:#0F172A;max-width:560px;padding:24px">
             <h2 style="font-size:20px;margin:0 0 12px">You've been added to a deal</h2>
             <p>${safeRealtor} at <strong>${safeFirm}</strong> added you to a real-estate deal as <strong>${safeRole}</strong>.</p>
             <p style="margin:24px 0">
-              <a href="${dealUrl}" style="display:inline-block;background:#0F172A;color:#fff;padding:10px 18px;border-radius:8px;font-weight:600;text-decoration:none">Open the deal →</a>
+              <a href="${dealUrl}" style="display:inline-block;background:#0F172A;color:#fff;padding:10px 18px;border-radius:8px;font-weight:600;text-decoration:none">Open the deal &rarr;</a>
             </p>
-            <p style="color:#64748B;font-size:13px">You'll see whatever ${safeRealtor} chose to share with you: important dates, documents, financials, or messages. Hi ${safeName} 👋</p>
+            <p style="color:#64748B;font-size:13px">You'll see whatever ${safeRealtor} chose to share with you: important dates, documents, financials, or messages. Hi ${safeName}.</p>
           </div>
-        `,
+        `;
+      const realtorText =
+        `${realtorName} at ${firmName} invited you to co-broker a deal as ${rolePretty}.\n\n` +
+        `Set up your free Realtor Portal account (or sign in):\n${signupUrl}\n\n` +
+        `Already have an account? Open the deal directly:\n${dealUrl}\n\n` +
+        `You can add your own client (buyer or seller) from your own firm, and use Realtor Portal's deal tools on this deal even if your firm doesn't have a paid plan.`;
+      const partyText =
+        `${realtorName} at ${firmName} added you to a deal as ${rolePretty}.\n\n` +
+        `Open the deal:\n${dealUrl}\n\n` +
+        `You'll see whatever ${realtorName} chose to share with you (dates, documents, financials, messages).`;
+      await sendEmail({
+        to: payload.email,
+        subject,
+        text: isRealtorRole ? realtorText : partyText,
+        html: isRealtorRole ? realtorBody : partyBody,
       });
     } catch {
       // Best-effort. Don't block the action on email failure.
@@ -800,16 +838,23 @@ export async function createNewDealAction(
 
 /**
  * Return everyone in the firm we could add as a party — clients, realtors,
- * staff — plus the de-duplicated set of external people that have been
- * added to other deals (so the realtor doesn't have to re-type that
- * inspector / lender / mortgage broker every time).
+ * staff — plus the de-duplicated set of external people the realtor knows.
+ *
+ * Sources merged together:
+ *   1. users in this firm  (other realtors, firm_admins, managers, clients)
+ *   2. firm_contacts       (manually-added address-book entries:
+ *                            external co-realtors, lenders, inspectors, etc.)
+ *   3. deal_participants   (people previously added to a deal by external_email)
+ *
+ * All three are dedupe-merged by lower(email). Firm users win when an email
+ * collides — that gives the modal the user_id so logging in just works.
  */
 export async function searchFirmPeopleAction(clientId: string) {
   const a = await authorize(clientId);
   if ('error' in a) return { ok: false as const, error: a.error };
   const service = getSupabaseServiceRoleClient();
 
-  const [users, externals] = await Promise.all([
+  const [users, externals, contacts] = await Promise.all([
     service
       .from('users')
       .select('id, full_name, email, role')
@@ -820,17 +865,47 @@ export async function searchFirmPeopleAction(clientId: string) {
       .select('external_email, external_name, external_phone, role')
       .eq('firm_id', a.search.firm_id)
       .not('external_email', 'is', null),
+    service
+      .from('firm_contacts')
+      .select('id, name, email, phone, role, company')
+      .eq('firm_id', a.search.firm_id)
+      .order('name'),
   ]);
 
-  // Dedupe external people by lower(email).
+  // Users are returned as-is; the modal renders them in a separate section.
+  // For "non-user" people (firm_contacts + past externals), dedupe by email
+  // and keep the richest record (firm_contacts wins over deal_participants
+  // because it carries name + company that the realtor curated).
   const seen = new Set<string>();
-  const externalList: {
+  type ExternalRow = {
     email: string;
     name: string | null;
     phone: string | null;
     role: string;
-  }[] = [];
+    company: string | null;
+    // Whether this row came from the curated firm_contacts list vs.
+    // auto-discovered from past deal_participants. UI uses it to label.
+    source: 'contact' | 'past_deal';
+  };
+  const externalList: ExternalRow[] = [];
+
+  // firm_contacts first so they take precedence in the dedup.
+  for (const c of (contacts.data || []) as any[]) {
+    if (!c.email) continue;
+    const key = (c.email as string).toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    externalList.push({
+      email: c.email,
+      name: c.name,
+      phone: c.phone,
+      role: c.role || 'other',
+      company: c.company,
+      source: 'contact',
+    });
+  }
   for (const p of (externals.data || []) as any[]) {
+    if (!p.external_email) continue;
     const key = (p.external_email as string).toLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);
@@ -839,8 +914,18 @@ export async function searchFirmPeopleAction(clientId: string) {
       name: p.external_name,
       phone: p.external_phone,
       role: p.role,
+      company: null,
+      source: 'past_deal',
     });
   }
+
+  // Also drop firm-user emails from externalList so they don't double-render.
+  const userEmails = new Set(
+    ((users.data || []) as any[]).map((u) => (u.email || '').toLowerCase())
+  );
+  const externalsFiltered = externalList.filter(
+    (e) => !userEmails.has(e.email.toLowerCase())
+  );
 
   return {
     ok: true as const,
@@ -850,7 +935,7 @@ export async function searchFirmPeopleAction(clientId: string) {
       email: string;
       role: string;
     }>,
-    externals: externalList,
+    externals: externalsFiltered,
   };
 }
 

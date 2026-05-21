@@ -7,15 +7,20 @@ type Role = 'realtor' | 'buyer' | 'seller' | null;
 export function SignupForm({
   action,
   initialRole,
+  prefilledEmail,
+  next,
 }: {
   action: (formData: FormData) => Promise<void> | void;
   initialRole: Role;
+  prefilledEmail?: string;
+  next?: string;
 }) {
   const [role, setRole] = useState<Role>(initialRole);
 
   return (
     <form action={action} className="mt-6 space-y-4">
       <input type="hidden" name="role" value={role || ''} />
+      {next && <input type="hidden" name="next" value={next} />}
 
       {/* Role picker */}
       <div className="grid grid-cols-3 gap-2">
@@ -47,6 +52,7 @@ export function SignupForm({
             name="email"
             type="email"
             placeholder="you@example.com"
+            defaultValue={prefilledEmail}
           />
           <Field
             label="Password"
@@ -121,6 +127,7 @@ function Field({
   placeholder,
   minLength,
   hint,
+  defaultValue,
 }: {
   label: string;
   name: string;
@@ -128,6 +135,7 @@ function Field({
   placeholder?: string;
   minLength?: number;
   hint?: string;
+  defaultValue?: string;
 }) {
   return (
     <div>
@@ -141,6 +149,7 @@ function Field({
         required
         minLength={minLength}
         placeholder={placeholder}
+        defaultValue={defaultValue}
         className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
       />
       {hint && <p className="mt-1 text-xs text-slate-500">{hint}</p>}

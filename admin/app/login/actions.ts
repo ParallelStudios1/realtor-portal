@@ -6,7 +6,9 @@ import { getSupabaseServerClient } from '@/lib/supabaseSsr';
 export async function loginAction(formData: FormData) {
   const email = (formData.get('email') as string | null)?.trim().toLowerCase();
   const password = formData.get('password') as string | null;
-  const next = (formData.get('next') as string | null) || '/dashboard';
+  // Only honor internal paths so this can't be turned into an open redirect.
+  const rawNext = (formData.get('next') as string | null) || '/dashboard';
+  const next = rawNext.startsWith('/') ? rawNext : '/dashboard';
 
   if (!email || !password) {
     redirect('/login?error=' + encodeURIComponent('Email and password required.'));
