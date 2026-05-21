@@ -25,6 +25,7 @@ import { assignDealRealtorAction } from '../../firm/actions';
  */
 export function DealWorkspace(props: {
   clientId: string;
+  isGuestFirm?: boolean;
   me: {
     firmId: string | null;
     userId: string;
@@ -52,6 +53,7 @@ export function DealWorkspace(props: {
 }) {
   const {
     clientId,
+    isGuestFirm,
     me,
     deal,
     phases,
@@ -85,6 +87,32 @@ export function DealWorkspace(props: {
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
+      {/* "Guest on this deal" banner — appears when this deal is hosted by
+          a firm other than the viewer's own. Explains the premium-perk
+          arrangement so the cross-firm collaborator understands what they
+          get for free here vs. what their own firm would have to pay for. */}
+      {isGuestFirm && (
+        <div className="mb-4 flex flex-wrap items-start gap-3 rounded-2xl border border-blue-200 bg-blue-50/60 px-4 py-3 text-sm">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-600 text-white">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
+              <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM10 6v4M10 14h.01" strokeLinecap="round" />
+            </svg>
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="font-semibold text-blue-950">
+              You&rsquo;re a guest on this deal
+            </p>
+            <p className="mt-0.5 text-xs text-blue-900/80">
+              This deal is hosted by another firm. While you work on it, you
+              get all of Realtor Portal&rsquo;s premium tools &mdash; documents,
+              messages, tours, calendar, financials &mdash; on the host
+              firm&rsquo;s plan. Your own firm&rsquo;s deals run on whatever
+              plan you choose.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Breadcrumb + deal switcher */}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3 text-xs">
         <nav className="flex items-center gap-2 text-slate-500">

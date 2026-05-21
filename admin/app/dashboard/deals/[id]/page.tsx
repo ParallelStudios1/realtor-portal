@@ -141,6 +141,7 @@ export default async function DealDetailPage({
   return (
     <DealWorkspace
       clientId={clientId}
+      isGuestFirm={isGuestFirm}
       me={{
         firmId: me.firm_id,
         userId: me.user_id,

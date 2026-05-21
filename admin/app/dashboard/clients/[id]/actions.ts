@@ -777,6 +777,43 @@ export async function addParticipantAction(
         (payload.email ? '&email=' + encodeURIComponent(payload.email) : '') +
         '&next=' +
         encodeURIComponent('/deal/' + a.search.id);
+
+      // Cross-firm realtor invites get a Supabase magic link too. The link
+      // creates their auth user the moment they tap it, lands them on
+      // /welcome/realtor which auto-creates their firm + public.users row,
+      // then forwards into the deal. Zero passwords, one tap. We use it as
+      // the primary CTA in the SMS so they don't have to type anything.
+      //
+      // Only do this when we have an email — magic links are email-bound.
+      let magicLinkUrl: string | null = null;
+      if (isRealtorRole && payload.email && !userId) {
+        try {
+          const onboardingPath =
+            '/welcome/realtor?next=' +
+            encodeURIComponent('/deal/' + a.search.id) +
+            '&host_firm=' +
+            encodeURIComponent(a.search.firm_id);
+          const { data: linkData } = await service.auth.admin.generateLink({
+            type: 'magiclink',
+            email: payload.email,
+            options: {
+              redirectTo: siteUrl + onboardingPath,
+              data: {
+                full_name: payload.name || '',
+                invited_by_firm: a.search.firm_id,
+                invited_to_deal: a.search.id,
+              },
+            },
+          });
+          magicLinkUrl =
+            (linkData as any)?.properties?.action_link || null;
+        } catch (e: any) {
+          console.error(
+            '[addParticipantAction] generateLink failed',
+            e?.message || e
+          );
+        }
+      }
       const rolePretty = payload.role.replace(/_/g, ' ');
       const displayName = payload.name || payload.email || 'there';
       const safeName = escapeHtml(displayName);
@@ -786,13 +823,18 @@ export async function addParticipantAction(
       const subject = isRealtorRole
         ? `${realtorName} invited you to co-broker a deal at ${firmName}`
         : `${realtorName} added you to a real-estate deal at ${firmName}`;
+      // Prefer the magic link when we generated one — it's a one-tap
+      // experience (Supabase signs them in, our /welcome/realtor route
+      // sets up their firm, then they land on the deal). Fall back to
+      // the password-based /signup link otherwise.
+      const primaryUrl = magicLinkUrl || signupUrl;
       const realtorBody = `
           <div style="font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial;font-size:15px;color:#0F172A;max-width:560px;padding:24px">
             <h2 style="font-size:20px;margin:0 0 12px">You've been invited to co-broker a deal</h2>
             <p>${safeRealtor} at <strong>${safeFirm}</strong> added you as <strong>${safeRole}</strong> on a real-estate deal in Realtor Portal.</p>
-            <p>Set up your free Realtor Portal account (or sign in if you already have one) and you'll see the deal in your dashboard. You can add <em>your own client</em> as a buyer or seller from your own firm, and use Realtor Portal's deal tools on this deal even if your firm doesn't have a paid plan.</p>
+            <p>Tap below to set up your free account and open the deal. You can add <em>your own client</em> as a buyer or seller from your own firm, and use Realtor Portal's deal tools on this deal even if your firm doesn't have a paid plan.</p>
             <p style="margin:24px 0">
-              <a href="${signupUrl}" style="display:inline-block;background:#0F172A;color:#fff;padding:10px 18px;border-radius:8px;font-weight:600;text-decoration:none">Set up free account &amp; open the deal &rarr;</a>
+              <a href="${primaryUrl}" style="display:inline-block;background:#0F172A;color:#fff;padding:10px 18px;border-radius:8px;font-weight:600;text-decoration:none">${magicLinkUrl ? 'Open the deal &rarr;' : 'Set up free account &amp; open the deal &rarr;'}</a>
             </p>
             <p style="color:#64748B;font-size:13px">Already on Realtor Portal? <a href="${dealUrl}" style="color:#0F172A">Open the deal directly</a>.</p>
             <p style="color:#64748B;font-size:13px">Hi ${safeName} &mdash; on this deal you can share documents, line up tours, message your client and ${safeRealtor}, and track closing milestones.</p>
@@ -810,7 +852,7 @@ export async function addParticipantAction(
         `;
       const realtorText =
         `${realtorName} at ${firmName} invited you to co-broker a deal as ${rolePretty}.\n\n` +
-        `Set up your free Realtor Portal account (or sign in):\n${signupUrl}\n\n` +
+        `Tap to ${magicLinkUrl ? 'open the deal' : 'set up your free account'}:\n${primaryUrl}\n\n` +
         `Already have an account? Open the deal directly:\n${dealUrl}\n\n` +
         `You can add your own client (buyer or seller) from your own firm, and use Realtor Portal's deal tools on this deal even if your firm doesn't have a paid plan.`;
       const partyText =
@@ -820,7 +862,7 @@ export async function addParticipantAction(
       // Compact SMS body — Twilio cuts at 1600, but real-world deliverability
       // is much better under 320 (which fits in 2 SMS segments).
       const smsBody = isRealtorRole
-        ? `${realtorName} (${firmName}) invited you to co-broker a deal on Realtor Portal. Sign up free & open: ${signupUrl}`
+        ? `${realtorName} (${firmName}) invited you to co-broker a deal on Realtor Portal. Tap to open: ${primaryUrl}`
         : `${realtorName} (${firmName}) added you to a real-estate deal as ${rolePretty}. Open: ${dealUrl}`;
 
       notifyResult = await notify({
