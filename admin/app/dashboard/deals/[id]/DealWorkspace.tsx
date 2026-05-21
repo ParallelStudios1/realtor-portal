@@ -588,6 +588,7 @@ export function DealWorkspace(props: {
               )}
               <ParticipantList
                 clientId={clientId}
+                searchId={deal.id}
                 participants={(participants || []) as any}
               />
             </div>

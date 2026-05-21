@@ -1840,40 +1840,114 @@ function CheckRow({
   );
 }
 
+type ParticipantRow = {
+  id: string;
+  role: string;
+  external_name: string | null;
+  external_email: string | null;
+  external_phone: string | null;
+  can_view_documents: boolean;
+  can_view_financials: boolean;
+  can_view_messages: boolean;
+  can_view_dates: boolean;
+  search_id?: string;
+};
+
 export function ParticipantList({
   clientId,
   participants,
+  searchId,
 }: {
   clientId: string;
-  participants: Array<{
-    id: string;
-    role: string;
-    external_name: string | null;
-    external_email: string | null;
-    external_phone: string | null;
-    can_view_documents: boolean;
-    can_view_financials: boolean;
-    can_view_messages: boolean;
-    can_view_dates: boolean;
-  }>;
+  participants: ParticipantRow[];
+  searchId?: string;
 }) {
   const toast = useToast();
   const router = useRouter();
   const [removing, start] = useTransition();
-  if (participants.length === 0) {
+  // Local mirror so we don't have to wait for router.refresh() to roundtrip.
+  // Seeded from the server prop, then kept in sync with realtime INSERT /
+  // DELETE events on deal_participants. Whichever side ships data first wins.
+  const [live, setLive] = useState<ParticipantRow[]>(participants);
+
+  // Re-seed when the server prop changes (e.g. after router.refresh()).
+  useEffect(() => {
+    setLive(participants);
+  }, [participants]);
+
+  // Realtime subscription. Listens to inserts/updates/deletes for this
+  // deal's participants and patches `live` directly. Means a new party
+  // shows up the moment the server INSERT commits — no caching games.
+  useEffect(() => {
+    if (!searchId) return;
+    const sb = getSupabaseBrowserClient();
+    const channel = sb
+      .channel('deal-participants:' + searchId)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'deal_participants',
+          filter: 'search_id=eq.' + searchId,
+        },
+        (payload) => {
+          setLive((cur) => {
+            const next = payload.new as ParticipantRow;
+            if (cur.some((p) => p.id === next.id)) return cur;
+            return [...cur, next];
+          });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'deal_participants',
+          filter: 'search_id=eq.' + searchId,
+        },
+        (payload) => {
+          const gone = (payload.old as any)?.id as string | undefined;
+          if (!gone) return;
+          setLive((cur) => cur.filter((p) => p.id !== gone));
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'deal_participants',
+          filter: 'search_id=eq.' + searchId,
+        },
+        (payload) => {
+          const updated = payload.new as ParticipantRow;
+          setLive((cur) =>
+            cur.map((p) => (p.id === updated.id ? { ...p, ...updated } : p))
+          );
+        }
+      )
+      .subscribe();
+    return () => {
+      sb.removeChannel(channel);
+    };
+  }, [searchId]);
+
+  if (live.length === 0) {
     return (
-      <p className="mt-3 text-xs italic text-slate-500">
-        No extra parties. Use "+ Party" above to add a buyer's spouse,
+      <p className="mt-3 text-xs italic text-ink-500">
+        No extra parties. Use &ldquo;+ Party&rdquo; above to add a buyer&apos;s spouse,
         attorney, inspector, lender, etc.
       </p>
     );
   }
   return (
     <ul className="mt-3 space-y-2">
-      {participants.map((p) => (
+      {live.map((p) => (
         <li
           key={p.id}
-          className="rounded-lg border border-slate-200 bg-white p-3"
+          className="rounded-lg border border-ink-200 bg-white p-3"
         >
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
@@ -1917,6 +1991,9 @@ export function ParticipantList({
                   if (!r.ok)
                     return toast.show(r.error || 'Failed', { variant: 'error' });
                   toast.show('Removed.', { variant: 'success' });
+                  // Optimistically drop the row in the live list — the
+                  // realtime DELETE event will arrive shortly and confirm.
+                  setLive((cur) => cur.filter((x) => x.id !== p.id));
                   router.refresh();
                 })
               }
