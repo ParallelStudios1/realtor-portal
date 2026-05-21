@@ -5,7 +5,7 @@ import { getMe, getSupabaseServerClient } from '@/lib/supabaseSsr';
 import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
 import { sendEmail, escapeHtml } from '@/lib/email';
 import { emailEveryoneOnPhaseChange } from '@/lib/dealEmail';
-import { isFirmPlanActive } from '@/lib/planGate';
+import { isFirmPlanActive, canUsePremiumForDeal } from '@/lib/planGate';
 import { notify, notifyDealParticipants } from '@/lib/notify';
 
 /**
@@ -30,21 +30,21 @@ async function authorize(idOrSearchId: string) {
     me.role !== 'manager'
   )
     return { error: 'Forbidden.' as const };
-  const planOk = await isFirmPlanActive(me.firm_id);
-  if (!planOk)
-    return {
-      error:
-        'Your free trial has ended. Pick a plan in Settings → Billing to continue.' as const,
-    };
   const supabase = getSupabaseServerClient();
   // The action grid lives on both the legacy /dashboard/clients/[id] page
   // (passes a public.users.id) and the new /dashboard/deals/[id] page
   // (which falls back to the search id when the deal has no principal
   // client yet). Resolve either: try client_id first, then search id.
+  //
+  // We don't pre-filter by firm_id here. The query runs as the caller's
+  // user, so RLS already enforces visibility — and that includes the
+  // cross-firm collab path (can_collab_on_search) that lets an invited
+  // realtor from another firm operate on the deal they've been added to.
+  // Pre-filtering by firm_id would short-circuit that and 404 every
+  // cross-firm action.
   let { data: search } = await supabase
     .from('client_searches')
     .select('id, firm_id, client_id, realtor_id, phase')
-    .eq('firm_id', me.firm_id)
     .eq('client_id', idOrSearchId)
     .order('created_at', { ascending: false })
     .limit(1)
@@ -53,12 +53,26 @@ async function authorize(idOrSearchId: string) {
     const fallback = await supabase
       .from('client_searches')
       .select('id, firm_id, client_id, realtor_id, phase')
-      .eq('firm_id', me.firm_id)
       .eq('id', idOrSearchId)
       .maybeSingle();
     search = fallback.data;
   }
   if (!search) return { error: 'No deal found.' as const };
+  // Plan gate: use the per-deal helper so a paying host firm's plan covers
+  // their invited cross-firm collaborators on this specific deal, even if
+  // the collaborator's home firm is on the free plan. Their own firm still
+  // pays for everything else they do outside of guest deals.
+  const planOk = await canUsePremiumForDeal(
+    me.firm_id,
+    (search as any).id,
+    me.email,
+    me.user_id
+  );
+  if (!planOk)
+    return {
+      error:
+        'Your free trial has ended. Pick a plan in Settings → Billing to continue.' as const,
+    };
   return { me, search };
 }
 

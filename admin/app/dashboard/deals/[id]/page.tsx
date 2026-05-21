@@ -29,10 +29,16 @@ export default async function DealDetailPage({
 
   const supabase = getSupabaseServerClient();
 
+  // No firm filter here on purpose. RLS handles the "can this user see
+  // this deal?" check — and that includes the cross-firm collab path
+  // (searches_collab_read via can_collab_on_search), which lets an invited
+  // realtor from another firm open a deal they've been added to as
+  // realtor/co_realtor. If we pre-filter by firm_id, the visiting
+  // collaborator 404s even though RLS would have happily returned the row.
   const { data: deal } = await supabase
     .from('client_searches')
     .select(
-      `id, kind, phase, name, description, attorney_name, attorney_email,
+      `id, firm_id, kind, phase, name, description, attorney_name, attorney_email,
        attorney_phone, docusign_envelope_url, co_realtor_id, realtor_id,
        agreed_price, closing_amount, earnest_money, commission_pct,
        contract_url, notes, offer_amount, counter_offer_amount,
@@ -41,9 +47,14 @@ export default async function DealDetailPage({
        realtor:users!client_searches_realtor_id_fkey ( id, full_name, email )`
     )
     .eq('id', params.id)
-    .eq('firm_id', me.firm_id)
     .maybeSingle();
   if (!deal) notFound();
+  // True when the deal belongs to a different firm than the caller's — i.e.
+  // they're a cross-firm guest collaborator (invited realtor from another
+  // firm). UI can use this to swap chrome ("Viewing as guest" badge,
+  // different action grid, etc.). All RLS checks downstream still apply.
+  const dealFirmId = (deal as any).firm_id as string;
+  const isGuestFirm = dealFirmId !== me.firm_id;
   // clientId may be null — a deal can exist before there's a principal client.
   // The Add Party flow inside the workspace covers the "who's on this deal"
   // question. We still need a non-null clientId for the legacy action paths
