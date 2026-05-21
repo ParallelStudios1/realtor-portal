@@ -1,0 +1,287 @@
+import { NextResponse } from 'next/server';
+import { getMe, getSupabaseServerClient } from '@/lib/supabaseSsr';
+import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
+import { notify } from '@/lib/notify';
+import { canUsePremiumForDeal } from '@/lib/planGate';
+import { escapeHtml } from '@/lib/email';
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
+/**
+ * POST /api/participants/add
+ *
+ * Mobile-friendly wrapper around the same Add Party logic as the
+ * server-action addParticipantAction(). Same auth (cookie session OR
+ * Bearer token from mobile), same SMS-first invite flow, same magic-link
+ * generation for cross-firm realtors.
+ *
+ * Body:
+ *   {
+ *     search_id: uuid,           // the deal
+ *     role: PartyRole,
+ *     name?, email?, phone?,
+ *     can_view_documents?, can_view_financials?,
+ *     can_view_messages?, can_view_dates?
+ *   }
+ *
+ * Response:
+ *   { ok: true, participant: <row>, notify: { email, sms } }
+ *
+ * Why a separate route from the server action: the action lives at
+ * /dashboard/clients/[id]/actions.ts and is called via React server-action
+ * RPC — that doesn't work from the mobile app, which is a plain HTTPS
+ * client. This endpoint accepts JSON + Bearer tokens.
+ */
+export async function POST(req: Request) {
+  try {
+    const me = await getMe();
+    if (!me?.firm_id) {
+      return NextResponse.json(
+        { ok: false, error: 'Not authenticated.' },
+        { status: 401 }
+      );
+    }
+    if (
+      me.role !== 'realtor' &&
+      me.role !== 'firm_admin' &&
+      me.role !== 'super_admin' &&
+      me.role !== 'owner' &&
+      me.role !== 'manager'
+    ) {
+      return NextResponse.json(
+        { ok: false, error: 'Forbidden.' },
+        { status: 403 }
+      );
+    }
+
+    const body = (await req.json().catch(() => ({}))) as {
+      search_id?: string;
+      role?: string;
+      name?: string;
+      email?: string;
+      phone?: string;
+      can_view_documents?: boolean;
+      can_view_financials?: boolean;
+      can_view_messages?: boolean;
+      can_view_dates?: boolean;
+    };
+
+    if (!body.search_id || !body.role) {
+      return NextResponse.json(
+        { ok: false, error: 'search_id and role are required.' },
+        { status: 400 }
+      );
+    }
+    if (!body.name && !body.email && !body.phone) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: 'Give me a name, phone, or email so we can identify them.',
+        },
+        { status: 400 }
+      );
+    }
+
+    const supabase = getSupabaseServerClient();
+    const { data: search } = await supabase
+      .from('client_searches')
+      .select('id, firm_id, client_id, realtor_id, phase')
+      .eq('id', body.search_id)
+      .maybeSingle();
+    if (!search) {
+      return NextResponse.json(
+        { ok: false, error: 'Deal not found.' },
+        { status: 404 }
+      );
+    }
+
+    const planOk = await canUsePremiumForDeal(
+      me.firm_id,
+      (search as any).id,
+      me.email,
+      me.user_id
+    );
+    if (!planOk) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error:
+            'Your free trial has ended. Pick a plan in Settings → Billing.',
+        },
+        { status: 402 }
+      );
+    }
+
+    const service = getSupabaseServiceRoleClient();
+
+    // Resolve a matching firm user (so the auth.uid path of the cross-firm
+    // RLS function works once they sign in) and their phone-on-file.
+    let userId: string | null = null;
+    let userPhone: string | null = null;
+    if (body.email) {
+      const { data: u } = await service
+        .from('users')
+        .select('id, phone')
+        .ilike('email', body.email)
+        .maybeSingle();
+      userId = (u as any)?.id ?? null;
+      userPhone = (u as any)?.phone ?? null;
+    }
+
+    const { data: inserted, error } = await service
+      .from('deal_participants')
+      .insert({
+        search_id: (search as any).id,
+        firm_id: (search as any).firm_id,
+        user_id: userId,
+        external_email: body.email || null,
+        external_name: body.name || null,
+        external_phone: body.phone || null,
+        role: body.role,
+        can_view_documents: body.can_view_documents ?? true,
+        can_view_financials: body.can_view_financials ?? false,
+        can_view_messages: body.can_view_messages ?? false,
+        can_view_dates: body.can_view_dates ?? true,
+        created_by: me.user_id,
+      })
+      .select(
+        'id, role, external_name, external_email, external_phone, can_view_documents, can_view_financials, can_view_messages, can_view_dates'
+      )
+      .single();
+    if (error) {
+      return NextResponse.json(
+        { ok: false, error: error.message },
+        { status: 500 }
+      );
+    }
+
+    // Activity row
+    await service.from('activities').insert({
+      firm_id: (search as any).firm_id,
+      search_id: (search as any).id,
+      actor_id: me.user_id,
+      action: body.role + '_added',
+      target: body.name || body.email || '',
+    });
+
+    // Resolve context + magic-link + SMS body, then fire notify
+    let notifyResult: any = null;
+    if (body.email || body.phone || userPhone) {
+      try {
+        const { data: ctx } = await service
+          .from('client_searches')
+          .select(
+            `name, firm:firms ( name ), realtor:users!client_searches_realtor_id_fkey ( full_name, email, phone )`
+          )
+          .eq('id', (search as any).id)
+          .maybeSingle();
+        const firmName = (ctx as any)?.firm?.name || 'a Realtor Portal firm';
+        const realtorName =
+          (ctx as any)?.realtor?.full_name ||
+          (ctx as any)?.realtor?.email ||
+          'Your realtor';
+        const siteUrl =
+          process.env.SITE_URL || 'https://realtor-portal-ten.vercel.app';
+        const dealUrl = siteUrl + '/deal/' + (search as any).id;
+        const isRealtorRole =
+          body.role === 'realtor' || body.role === 'co_realtor';
+        const signupUrl =
+          siteUrl +
+          '/signup?role=realtor' +
+          (body.email ? '&email=' + encodeURIComponent(body.email) : '') +
+          '&next=' +
+          encodeURIComponent('/deal/' + (search as any).id);
+
+        let magicLinkUrl: string | null = null;
+        if (isRealtorRole && body.email && !userId) {
+          try {
+            const onboardingPath =
+              '/welcome/realtor?next=' +
+              encodeURIComponent('/deal/' + (search as any).id) +
+              '&host_firm=' +
+              encodeURIComponent((search as any).firm_id);
+            const { data: linkData } = await service.auth.admin.generateLink({
+              type: 'magiclink',
+              email: body.email,
+              options: {
+                redirectTo: siteUrl + onboardingPath,
+                data: {
+                  full_name: body.name || '',
+                  invited_by_firm: (search as any).firm_id,
+                  invited_to_deal: (search as any).id,
+                },
+              },
+            });
+            magicLinkUrl =
+              (linkData as any)?.properties?.action_link || null;
+          } catch (e: any) {
+            console.error(
+              '[/api/participants/add] generateLink failed',
+              e?.message || e
+            );
+          }
+        }
+
+        const primaryUrl = magicLinkUrl || signupUrl;
+        const rolePretty = body.role.replace(/_/g, ' ');
+        const safeRealtor = escapeHtml(realtorName);
+        const safeFirm = escapeHtml(firmName);
+        const safeRole = escapeHtml(rolePretty);
+        const subject = isRealtorRole
+          ? `${realtorName} invited you to co-broker a deal at ${firmName}`
+          : `${realtorName} added you to a real-estate deal at ${firmName}`;
+
+        const realtorBody = `
+          <div style="font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial;font-size:15px;color:#0F172A;max-width:560px;padding:24px">
+            <h2 style="font-size:20px;margin:0 0 12px">You've been invited to co-broker a deal</h2>
+            <p>${safeRealtor} at <strong>${safeFirm}</strong> added you as <strong>${safeRole}</strong>.</p>
+            <p style="margin:24px 0">
+              <a href="${primaryUrl}" style="display:inline-block;background:#0F172A;color:#fff;padding:10px 18px;border-radius:8px;font-weight:600;text-decoration:none">Open the deal &rarr;</a>
+            </p>
+          </div>`;
+        const partyBody = `
+          <div style="font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial;font-size:15px;color:#0F172A;max-width:560px;padding:24px">
+            <h2 style="font-size:20px;margin:0 0 12px">You've been added to a deal</h2>
+            <p>${safeRealtor} at <strong>${safeFirm}</strong> added you to a deal as <strong>${safeRole}</strong>.</p>
+            <p style="margin:24px 0">
+              <a href="${dealUrl}" style="display:inline-block;background:#0F172A;color:#fff;padding:10px 18px;border-radius:8px;font-weight:600;text-decoration:none">Open the deal &rarr;</a>
+            </p>
+          </div>`;
+        const realtorText =
+          `${realtorName} (${firmName}) invited you to co-broker a deal as ${rolePretty}.\n\nTap to open: ${primaryUrl}`;
+        const partyText =
+          `${realtorName} (${firmName}) added you to a real-estate deal as ${rolePretty}.\n\nOpen: ${dealUrl}`;
+        const smsBody = isRealtorRole
+          ? `${realtorName} (${firmName}) invited you to co-broker a deal on Realtor Portal. Tap to open: ${primaryUrl}`
+          : `${realtorName} (${firmName}) added you to a real-estate deal as ${rolePretty}. Open: ${dealUrl}`;
+
+        notifyResult = await notify({
+          email: body.email || null,
+          phone: body.phone || userPhone,
+          subject,
+          text: isRealtorRole ? realtorText : partyText,
+          html: isRealtorRole ? realtorBody : partyBody,
+          sms_text: smsBody,
+        });
+      } catch (e: any) {
+        console.error(
+          '[/api/participants/add] notify failed',
+          e?.message || e
+        );
+      }
+    }
+
+    return NextResponse.json({
+      ok: true,
+      participant: inserted,
+      notify: notifyResult,
+    });
+  } catch (err: any) {
+    console.error('[/api/participants/add]', err);
+    return NextResponse.json(
+      { ok: false, error: err?.message || 'Unexpected error' },
+      { status: 500 }
+    );
+  }
+}

@@ -20,6 +20,7 @@ import {
   useImportantDates,
   useDocuments,
   useActivities,
+  useDealParticipants,
 } from '@/lib/queries';
 import { useUpdatePhase, useLogActivity } from '@/lib/mutations';
 import { ActivityRow } from '@/components/ActivityRow';
@@ -47,6 +48,8 @@ export default function RealtorClientDetailScreen() {
   const { data: dates, refetch: refetchDates } = useImportantDates(id);
   const { data: documents, refetch: refetchDocs } = useDocuments(id);
   const { data: activities, refetch: refetchActivities } = useActivities(id);
+  const { data: participants, refetch: refetchParticipants } =
+    useDealParticipants(id);
 
   const updatePhase = useUpdatePhase();
   const logActivity = useLogActivity();
@@ -58,6 +61,7 @@ export default function RealtorClientDetailScreen() {
       refetchDates(),
       refetchDocs(),
       refetchActivities(),
+      refetchParticipants(),
     ]);
   };
 
@@ -290,6 +294,14 @@ export default function RealtorClientDetailScreen() {
                 router.push(`/(realtor)/clients/${id}/alert` as any)
               }
             />
+            <ActionTile
+              tone="#0F766E"
+              icon="people"
+              label="Add party"
+              onPress={() =>
+                router.push(`/(realtor)/clients/${id}/add-party` as any)
+              }
+            />
           </View>
         </View>
 
@@ -438,6 +450,58 @@ export default function RealtorClientDetailScreen() {
                 >
                   {d.name}
                 </Text>
+              </View>
+            ))
+          )}
+        </SectionCard>
+
+        {/* People on this deal — mirrors web's "People" card. Shows everyone
+            we've added as a deal_participants row (co-realtors, attorneys,
+            inspectors, lenders, etc.). Tapping "+ Add" opens the same
+            SMS-first Add Party screen. */}
+        <SectionCard
+          title="People on this deal"
+          colors={colors}
+          count={participants?.length}
+          actionLabel="+ Add"
+          onActionPress={() =>
+            router.push(`/(realtor)/clients/${id}/add-party` as any)
+          }
+        >
+          {(participants ?? []).length === 0 ? (
+            <Text style={[styles.empty, { color: colors.textSecondary }]}>
+              No extra parties yet. Tap “+ Add” to invite the opposing realtor,
+              an attorney, inspector, lender, etc.
+            </Text>
+          ) : (
+            (participants ?? []).map((p: any) => (
+              <View
+                key={p.id}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  paddingVertical: 10,
+                  borderBottomWidth: 1,
+                  borderBottomColor: colors.border,
+                }}
+              >
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text
+                    style={{ color: colors.text, fontWeight: '600', fontSize: 14 }}
+                    numberOfLines={1}
+                  >
+                    {p.external_name || p.external_email || p.external_phone || 'Unnamed'}
+                  </Text>
+                  <Text
+                    style={{ color: colors.textSecondary, fontSize: 12, marginTop: 2 }}
+                    numberOfLines={1}
+                  >
+                    {(p.role || 'other').replace(/_/g, ' ')}
+                    {p.external_email ? ' · ' + p.external_email : ''}
+                    {p.external_phone ? ' · ' + p.external_phone : ''}
+                  </Text>
+                </View>
               </View>
             ))
           )}

@@ -110,6 +110,31 @@ export function useHouses(searchId: string | null | undefined) {
   });
 }
 
+/**
+ * Every party on the deal: principal client, assigned realtor, plus
+ * deal_participants rows (co-realtors, attorneys, inspectors, lenders, etc.).
+ * Mirror of the web's deal-detail participants query — selects whatever
+ * the People section needs to render.
+ */
+export function useDealParticipants(searchId: string | null | undefined) {
+  return useQuery({
+    queryKey: ['deal-participants', searchId],
+    queryFn: async () => {
+      if (!searchId) return [];
+      const { data, error } = await supabase
+        .from('deal_participants')
+        .select(
+          'id, role, external_name, external_email, external_phone, can_view_documents, can_view_financials, can_view_messages, can_view_dates'
+        )
+        .eq('search_id', searchId)
+        .order('role');
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!searchId,
+  });
+}
+
 export function useHouse(houseId: string | null | undefined) {
   return useQuery({
     queryKey: ['house', houseId],
