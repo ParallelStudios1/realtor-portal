@@ -13,6 +13,7 @@ import {
   massInviteAction,
   quickMessageAction,
   removeParticipantAction,
+  sendPrivatePartyMessageAction,
   updateParticipantAction,
   searchFirmPeopleAction,
   sendAlertAction,
@@ -1977,6 +1978,8 @@ export function ParticipantList({
   const [removing, start] = useTransition();
   // When set, the Edit Party modal is shown for this participant.
   const [editing, setEditing] = useState<ParticipantRow | null>(null);
+  // When set, the private DM thread modal is shown for this participant.
+  const [messaging, setMessaging] = useState<ParticipantRow | null>(null);
   // Local mirror so we don't have to wait for router.refresh() to roundtrip.
   // Seeded from the server prop, then kept in sync with realtime INSERT /
   // DELETE events on deal_participants. Whichever side ships data first wins.
@@ -2163,6 +2166,15 @@ export function ParticipantList({
             <div className="flex items-center gap-1">
               <button
                 type="button"
+                onClick={() => setMessaging(p)}
+                className="rounded p-1 text-slate-400 transition hover:bg-slate-100 hover:text-blue-600"
+                aria-label="Send private message"
+                title="Send a private message just to this party"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              </button>
+              <button
+                type="button"
                 onClick={() => setEditing(p)}
                 className="rounded p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-900"
                 aria-label="Edit participant"
@@ -2192,6 +2204,13 @@ export function ParticipantList({
           </div>
         </li>
       ))}
+      {messaging && (
+        <PrivatePartyMessageModal
+          clientId={clientId}
+          participant={messaging}
+          onClose={() => setMessaging(null)}
+        />
+      )}
       {editing && (
         <EditPartyModal
           participant={editing}
@@ -2330,6 +2349,179 @@ function EditPartyModal({
       </div>
     </Modal>
   );
+}
+
+/**
+ * Private 1:1 DM thread between the realtor and a specific deal party.
+ * Shows the running thread between the caller and this party on this
+ * deal (RLS scope sender_id=auth.uid() OR recipient_user_id/email match),
+ * lets the realtor send another. Notifications fire via SMS + email.
+ */
+function PrivatePartyMessageModal({
+  clientId,
+  participant,
+  onClose,
+}: {
+  clientId: string;
+  participant: ParticipantRow;
+  onClose: () => void;
+}) {
+  const toast = useToast();
+  const router = useRouter();
+  const [body, setBody] = useState('');
+  const [pending, start] = useTransition();
+  const [thread, setThread] = useState<
+    Array<{ id: string; body: string; sender_id: string; created_at: string }>
+  >([]);
+  const me = useMe(); // best-effort current user id (just to label rows)
+
+  // Pull the prior DM thread from Supabase via the browser client. RLS
+  // (migration 0029) ensures only sender + recipient see the rows.
+  useEffect(() => {
+    let cancelled = false;
+    const sb = getSupabaseBrowserClient();
+    (async () => {
+      const { data } = await sb
+        .from('messages')
+        .select('id, body, sender_id, created_at, recipient_user_id, recipient_email')
+        .or(
+          [
+            participant.external_email
+              ? 'recipient_email.eq.' + participant.external_email
+              : null,
+            // Fallback to user_id when the participant has signed up.
+            (participant as any).user_id
+              ? 'recipient_user_id.eq.' + (participant as any).user_id
+              : null,
+          ]
+            .filter(Boolean)
+            .join(',')
+        )
+        .order('created_at', { ascending: true })
+        .limit(50);
+      if (!cancelled && data) setThread(data as any);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [participant.id, participant.external_email]);
+
+  const displayName =
+    participant.external_name ||
+    participant.external_email ||
+    participant.external_phone ||
+    'this party';
+  return (
+    <Modal title={`Message ${displayName}`} onClose={onClose}>
+      <p className="mb-3 text-xs text-ink-500">
+        Private — only you and {displayName} can see this thread. We&apos;ll
+        also text + email them so they actually catch the message.
+      </p>
+      <div className="mb-3 max-h-56 overflow-y-auto rounded-lg border border-ink-200 bg-ink-50/40 p-2">
+        {thread.length === 0 ? (
+          <p className="px-2 py-3 text-center text-xs italic text-ink-500">
+            No messages yet. Start the conversation.
+          </p>
+        ) : (
+          <ul className="space-y-1.5">
+            {thread.map((m) => {
+              const mine = me?.userId && m.sender_id === me.userId;
+              return (
+                <li
+                  key={m.id}
+                  className={
+                    'rounded px-2 py-1.5 text-xs ' +
+                    (mine
+                      ? 'ml-6 bg-ink-900 text-white'
+                      : 'mr-6 bg-white text-ink-900 border border-ink-200')
+                  }
+                >
+                  <p className="whitespace-pre-wrap">{m.body}</p>
+                  <p
+                    className={
+                      'mt-1 text-[10px] ' +
+                      (mine ? 'text-white/70' : 'text-ink-500')
+                    }
+                  >
+                    {new Date(m.created_at).toLocaleString(undefined, {
+                      month: 'short',
+                      day: 'numeric',
+                      hour: 'numeric',
+                      minute: '2-digit',
+                    })}
+                  </p>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+      <textarea
+        className={inputCls + ' min-h-[80px]'}
+        value={body}
+        onChange={(e) => setBody(e.target.value)}
+        placeholder="Type your message…"
+      />
+      <div className="mt-3 flex justify-end gap-2">
+        <button type="button" onClick={onClose} className="btn-secondary text-xs">
+          Close
+        </button>
+        <PrimaryButton
+          pending={pending}
+          disabled={!body.trim()}
+          onClick={() =>
+            start(async () => {
+              const r = await sendPrivatePartyMessageAction(
+                clientId,
+                participant.id,
+                body.trim()
+              );
+              if (!r.ok) {
+                toast.show(r.error || 'Failed', { variant: 'error' });
+                return;
+              }
+              toast.show('Sent — they were texted + emailed.', {
+                variant: 'success',
+              });
+              // Append optimistically to the thread.
+              setThread((cur) => [
+                ...cur,
+                {
+                  id: (r as any).messageId || 'tmp',
+                  body: body.trim(),
+                  sender_id: me?.userId || '',
+                  created_at: new Date().toISOString(),
+                },
+              ]);
+              setBody('');
+              router.refresh();
+            })
+          }
+        >
+          Send
+        </PrimaryButton>
+      </div>
+    </Modal>
+  );
+}
+
+/** Tiny "who am I" hook just for the thread bubble alignment. */
+function useMe(): { userId: string } | null {
+  const [me, setMe] = useState<{ userId: string } | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    const sb = getSupabaseBrowserClient();
+    (async () => {
+      const {
+        data: { user },
+      } = await sb.auth.getUser();
+      if (!cancelled && user) setMe({ userId: user.id });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  return me;
 }
 
 function Chip({ children }: { children: React.ReactNode }) {

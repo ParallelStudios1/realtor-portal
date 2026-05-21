@@ -1321,6 +1321,111 @@ export async function proposeAlternativeTourTimeAction(
   return { ok: true as const };
 }
 
+/**
+ * Send a PRIVATE message to one specific party on this deal. Goes only
+ * to them — group messaging on the deal stays open via quickMessageAction.
+ *
+ * Resolves the recipient either by user_id (firm member or invited
+ * realtor who has an account) or by their external_email. The new RLS
+ * policies (migration 0029) gate visibility to sender + recipient only.
+ *
+ * Also fires SMS + email to the recipient via notify() so they actually
+ * see the message when they're not in the app.
+ */
+export async function sendPrivatePartyMessageAction(
+  clientId: string,
+  participantId: string,
+  body: string
+) {
+  const a = await authorize(clientId);
+  if ('error' in a) return { ok: false as const, error: a.error };
+  if (!body.trim())
+    return { ok: false as const, error: 'Message body is required.' };
+
+  const service = getSupabaseServiceRoleClient();
+  // Resolve the participant on this deal (gives us a recipient identity
+  // even if they don't have a public.users row yet).
+  const { data: party } = await service
+    .from('deal_participants')
+    .select('id, user_id, external_email, external_phone, external_name, role')
+    .eq('id', participantId)
+    .eq('search_id', a.search.id)
+    .maybeSingle();
+  if (!party)
+    return { ok: false as const, error: 'Party not found on this deal.' };
+
+  const { data: msg, error } = await service
+    .from('messages')
+    .insert({
+      firm_id: a.search.firm_id,
+      search_id: a.search.id,
+      sender_id: a.me.user_id,
+      body: body.trim(),
+      recipient_user_id: (party as any).user_id || null,
+      recipient_email: (party as any).user_id
+        ? null
+        : (party as any).external_email,
+    })
+    .select('id')
+    .single();
+  if (error) return { ok: false as const, error: error.message };
+
+  // Best-effort notify the recipient via SMS + email so they actually
+  // see the DM, not just when they happen to open the deal page.
+  try {
+    const siteUrl =
+      process.env.SITE_URL || 'https://realtor-portal-ten.vercel.app';
+    const dealUrl = siteUrl + '/deal/' + a.search.id;
+    const senderName = a.me.full_name || 'Your realtor';
+    const trimmed = body.trim();
+    let recipientEmail: string | null = (party as any).external_email;
+    let recipientPhone: string | null = (party as any).external_phone;
+    if ((party as any).user_id) {
+      const { data: u } = await service
+        .from('users')
+        .select('email, phone')
+        .eq('id', (party as any).user_id)
+        .maybeSingle();
+      recipientEmail = (u as any)?.email ?? recipientEmail;
+      recipientPhone = (u as any)?.phone ?? recipientPhone;
+    }
+    await notify({
+      email: recipientEmail,
+      phone: recipientPhone,
+      subject: 'Private message from ' + senderName,
+      text:
+        senderName +
+        ' sent you a private message on the deal:\n\n' +
+        trimmed +
+        '\n\nReply in the deal: ' +
+        dealUrl,
+      html: `<p><strong>${escapeHtml(
+        senderName
+      )}</strong> sent you a private message on the deal:</p><p>${escapeHtml(
+        trimmed
+      )}</p><p><a href="${dealUrl}">Reply in the deal &rarr;</a></p>`,
+      sms_text:
+        senderName + ' (private): ' + trimmed.slice(0, 240) + ' — ' + dealUrl,
+    });
+  } catch (e: any) {
+    console.error('[sendPrivatePartyMessageAction] notify failed', e?.message || e);
+  }
+
+  await activity(
+    a.search.id,
+    a.search.firm_id,
+    a.me.user_id,
+    'private_message',
+    (party as any).external_name ||
+      (party as any).external_email ||
+      participantId
+  );
+
+  revalidatePath(`/dashboard/clients/${clientId}`);
+  revalidatePath('/dashboard/deals/[id]', 'page');
+  return { ok: true as const, messageId: (msg as any)?.id };
+}
+
 export async function quickMessageAction(clientId: string, body: string) {
   const a = await authorize(clientId);
   if ('error' in a) return { ok: false as const, error: a.error };
