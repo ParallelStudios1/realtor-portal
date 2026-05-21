@@ -18,6 +18,7 @@ import {
   useClientSearches,
   useImportantDates,
   useActivities,
+  useDealParticipants,
 } from '@/lib/queries';
 import { Skeleton, SkeletonRow } from '@/components/Skeleton';
 import { EmptyState } from '@/components/EmptyState';
@@ -85,6 +86,9 @@ export default function ClientHomeScreen() {
     activeSearch?.id,
   );
   const { data: activities } = useActivities(activeSearch?.id);
+  // Everyone else on the deal: co-realtors, attorneys, inspectors, lenders.
+  // Mirror of the realtor's People card so the client sees who's involved.
+  const { data: participants } = useDealParticipants(activeSearch?.id);
 
   const { data: realtor } = useQuery({
     queryKey: ['realtor-for-search', activeSearch?.id],
@@ -491,7 +495,8 @@ export default function ClientHomeScreen() {
               </Card>
             )}
 
-            {/* Important dates */}
+            {/* Important dates — full detail including the new event_time,
+                location, and things_to_bring fields the realtor can set. */}
             <Card colors={colors}>
               <Label colors={colors}>IMPORTANT DATES</Label>
               {upcoming.length === 0 ? (
@@ -502,18 +507,156 @@ export default function ClientHomeScreen() {
                 upcoming.map((d: any) => (
                   <View
                     key={d.id}
-                    style={[s.dateRow, { borderBottomColor: colors.border }]}
+                    style={[s.dateRow, { borderBottomColor: colors.border, alignItems: 'flex-start' }]}
                   >
-                    <Text style={{ color: colors.text, fontWeight: '500' }}>
-                      {d.label}
-                    </Text>
-                    <Text style={{ color: colors.textSecondary, fontSize: 12 }}>
-                      {new Date(d.date).toLocaleDateString()}
-                    </Text>
+                    <View style={{ flex: 1, minWidth: 0 }}>
+                      <Text style={{ color: colors.text, fontWeight: '600' }}>
+                        {d.label}
+                      </Text>
+                      {d.location ? (
+                        <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 2 }}>
+                          📍 {d.location}
+                        </Text>
+                      ) : null}
+                      {d.things_to_bring ? (
+                        <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 2 }}>
+                          🧰 Bring: {d.things_to_bring}
+                        </Text>
+                      ) : null}
+                    </View>
+                    <View style={{ alignItems: 'flex-end' }}>
+                      <Text style={{ color: colors.textSecondary, fontSize: 12 }}>
+                        {new Date(d.date).toLocaleDateString(undefined, {
+                          month: 'short',
+                          day: 'numeric',
+                        })}
+                      </Text>
+                      {d.event_time ? (
+                        <Text style={{ color: colors.textSecondary, fontSize: 11, marginTop: 2 }}>
+                          {d.event_time}
+                        </Text>
+                      ) : null}
+                    </View>
                   </View>
                 ))
               )}
             </Card>
+
+            {/* People on this deal — everyone besides the principal client
+                and lead realtor. So the client knows who their attorney is,
+                if there's a co-realtor on the other side, etc. */}
+            {(participants ?? []).length > 0 && (
+              <Card colors={colors}>
+                <Label colors={colors}>PEOPLE ON THIS DEAL</Label>
+                {(participants ?? []).map((p: any) => {
+                  const display =
+                    p.external_name || p.external_email || p.external_phone || 'Unnamed';
+                  return (
+                    <View
+                      key={p.id}
+                      style={[s.dateRow, { borderBottomColor: colors.border, alignItems: 'flex-start' }]}
+                    >
+                      <View style={{ flex: 1, minWidth: 0 }}>
+                        <Text style={{ color: colors.text, fontWeight: '600' }}>
+                          {display}
+                        </Text>
+                        <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 2 }}>
+                          {(p.role || 'other').replace(/_/g, ' ')}
+                        </Text>
+                      </View>
+                      <View style={{ alignItems: 'flex-end' }}>
+                        {p.external_phone ? (
+                          <Pressable onPress={() => Linking.openURL('tel:' + p.external_phone)}>
+                            <Text style={{ color: colors.primary, fontSize: 12 }}>
+                              Call
+                            </Text>
+                          </Pressable>
+                        ) : null}
+                        {p.external_email ? (
+                          <Pressable
+                            onPress={() => Linking.openURL('mailto:' + p.external_email)}
+                            style={{ marginTop: 4 }}
+                          >
+                            <Text style={{ color: colors.primary, fontSize: 12 }}>
+                              Email
+                            </Text>
+                          </Pressable>
+                        ) : null}
+                      </View>
+                    </View>
+                  );
+                })}
+              </Card>
+            )}
+
+            {/* Attorney + contract + DocuSign info — anything the realtor
+                attached to the deal record. Hide when nothing's set. */}
+            {((activeSearch as any).attorney_name ||
+              (activeSearch as any).attorney_email ||
+              (activeSearch as any).attorney_phone ||
+              (activeSearch as any).contract_url ||
+              (activeSearch as any).docusign_envelope_url) && (
+              <Card colors={colors}>
+                <Label colors={colors}>ATTORNEY &amp; CONTRACT</Label>
+                {(activeSearch as any).attorney_name ||
+                (activeSearch as any).attorney_email ||
+                (activeSearch as any).attorney_phone ? (
+                  <View style={{ paddingVertical: 8 }}>
+                    {(activeSearch as any).attorney_name ? (
+                      <Text style={{ color: colors.text, fontWeight: '600' }}>
+                        {(activeSearch as any).attorney_name}
+                      </Text>
+                    ) : null}
+                    {(activeSearch as any).attorney_email ? (
+                      <Pressable
+                        onPress={() =>
+                          Linking.openURL('mailto:' + (activeSearch as any).attorney_email)
+                        }
+                      >
+                        <Text style={{ color: colors.primary, fontSize: 13, marginTop: 2 }}>
+                          {(activeSearch as any).attorney_email}
+                        </Text>
+                      </Pressable>
+                    ) : null}
+                    {(activeSearch as any).attorney_phone ? (
+                      <Pressable
+                        onPress={() =>
+                          Linking.openURL('tel:' + (activeSearch as any).attorney_phone)
+                        }
+                      >
+                        <Text style={{ color: colors.primary, fontSize: 13, marginTop: 2 }}>
+                          {(activeSearch as any).attorney_phone}
+                        </Text>
+                      </Pressable>
+                    ) : null}
+                  </View>
+                ) : null}
+                {(activeSearch as any).docusign_envelope_url ? (
+                  <Pressable
+                    onPress={() =>
+                      Linking.openURL((activeSearch as any).docusign_envelope_url)
+                    }
+                    style={{ paddingVertical: 8 }}
+                  >
+                    <Text style={{ color: colors.primary, fontSize: 14, fontWeight: '600' }}>
+                      ✍️ Open DocuSign envelope
+                    </Text>
+                  </Pressable>
+                ) : null}
+                {(activeSearch as any).contract_url ? (
+                  <Pressable
+                    onPress={() =>
+                      Linking.openURL((activeSearch as any).contract_url)
+                    }
+                    style={{ paddingVertical: 8 }}
+                  >
+                    <Text style={{ color: colors.primary, fontSize: 14, fontWeight: '600' }}>
+                      📄 View signed contract
+                    </Text>
+                  </Pressable>
+                ) : null}
+              </Card>
+            )}
 
             {/* Quick links */}
             <View style={s.quickRow}>
