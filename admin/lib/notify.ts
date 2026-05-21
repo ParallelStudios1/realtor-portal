@@ -53,7 +53,18 @@ export async function notify(target: NotifyTarget): Promise<{
         text: target.text,
         html: target.html || `<p>${escapeMinimal(target.text)}</p>`,
       });
-      result.email = { ok: !!(r as any)?.id || true };
+      // sendEmail returns either { ok: true, id } when it actually called
+      // Resend, or { ok: false, skipped: true, reason: 'no_api_key' } when
+      // RESEND_API_KEY isn't set, or { ok: false, error } on a real failure.
+      // Report ok ONLY when an email actually went out so the UI toast
+      // doesn't lie about "email sent".
+      if ((r as any).ok && !(r as any).skipped) {
+        result.email = { ok: true };
+      } else if ((r as any).skipped) {
+        result.email = { ok: false, error: (r as any).reason || 'skipped' };
+      } else {
+        result.email = { ok: false, error: (r as any).error || 'email_failed' };
+      }
     } catch (err: any) {
       result.email = { ok: false, error: err?.message || 'email_failed' };
       console.error('[notify] email failed', err);
