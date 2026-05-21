@@ -36,7 +36,7 @@ export async function GET(req: Request) {
     .select(
       `id, firm_id, search_id, recipient_user_id, recipient_email, channel,
        kind, subject, body,
-       user:users!scheduled_messages_recipient_user_id_fkey ( email, phone_number, sms_opt_in, full_name ),
+       user:users!scheduled_messages_recipient_user_id_fkey ( email, phone, sms_opt_in, full_name ),
        firm:firms ( name )`
     )
     .lte('scheduled_for', now)
@@ -73,7 +73,7 @@ export async function GET(req: Request) {
         });
         ok = !!r;
       } else if (m.channel === 'sms') {
-        const phone = m.user?.phone_number;
+        const phone = m.user?.phone;
         if (!phone || !m.user?.sms_opt_in) {
           skipped++;
           continue;

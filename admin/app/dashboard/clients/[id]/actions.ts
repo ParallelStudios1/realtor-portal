@@ -18,12 +18,17 @@ import { isFirmPlanActive } from '@/lib/planGate';
  *   - Every write also inserts an `activities` row so the timeline updates.
  */
 
-async function authorize(clientId: string) {
+async function authorize(idOrSearchId: string) {
   const me = await getMe();
   if (!me?.firm_id) return { error: 'Not authenticated.' as const };
-  if (me.role !== 'realtor' && me.role !== 'firm_admin' && me.role !== 'super_admin')
+  if (
+    me.role !== 'realtor' &&
+    me.role !== 'firm_admin' &&
+    me.role !== 'super_admin' &&
+    me.role !== 'owner' &&
+    me.role !== 'manager'
+  )
     return { error: 'Forbidden.' as const };
-  // Block write actions when the firm's trial has lapsed.
   const planOk = await isFirmPlanActive(me.firm_id);
   if (!planOk)
     return {
@@ -31,16 +36,28 @@ async function authorize(clientId: string) {
         'Your free trial has ended. Pick a plan in Settings → Billing to continue.' as const,
     };
   const supabase = getSupabaseServerClient();
-  // Find the active search for (firm, client). All actions are scoped to it.
-  const { data: search } = await supabase
+  // The action grid lives on both the legacy /dashboard/clients/[id] page
+  // (passes a public.users.id) and the new /dashboard/deals/[id] page
+  // (which falls back to the search id when the deal has no principal
+  // client yet). Resolve either: try client_id first, then search id.
+  let { data: search } = await supabase
     .from('client_searches')
     .select('id, firm_id, client_id, realtor_id, phase')
     .eq('firm_id', me.firm_id)
-    .eq('client_id', clientId)
+    .eq('client_id', idOrSearchId)
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle();
-  if (!search) return { error: 'No deal found for this client.' as const };
+  if (!search) {
+    const fallback = await supabase
+      .from('client_searches')
+      .select('id, firm_id, client_id, realtor_id, phase')
+      .eq('firm_id', me.firm_id)
+      .eq('id', idOrSearchId)
+      .maybeSingle();
+    search = fallback.data;
+  }
+  if (!search) return { error: 'No deal found.' as const };
   return { me, search };
 }
 

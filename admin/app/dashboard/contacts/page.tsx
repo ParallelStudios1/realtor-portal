@@ -37,7 +37,7 @@ export default async function ContactsPage({
   ] = await Promise.all([
     supabase
       .from('users')
-      .select('id, full_name, email, phone_number, role')
+      .select('id, full_name, email, phone, role')
       .eq('firm_id', me.firm_id!),
     supabase
       .from('deal_participants')
@@ -81,7 +81,7 @@ export default async function ContactsPage({
   };
 
   for (const u of (firmUsers || []) as any[]) {
-    add(u.email, u.full_name, u.phone_number, u.role || 'user', 'user');
+    add(u.email, u.full_name, u.phone, u.role || 'user', 'user');
   }
   for (const p of (participants || []) as any[]) {
     add(

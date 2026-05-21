@@ -44,7 +44,12 @@ export default async function DealDetailPage({
     .eq('firm_id', me.firm_id)
     .maybeSingle();
   if (!deal) notFound();
-  const clientId = (deal as any).client?.id as string;
+  // clientId may be null — a deal can exist before there's a principal client.
+  // The Add Party flow inside the workspace covers the "who's on this deal"
+  // question. We still need a non-null clientId for the legacy action paths
+  // that revalidatePath /dashboard/clients/[id], so fall back to the deal's
+  // own id when the client is missing.
+  const clientId = ((deal as any).client?.id as string) || (deal as any).id;
 
   const [
     { data: allDeals },

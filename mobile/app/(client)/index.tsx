@@ -92,7 +92,7 @@ export default function ClientHomeScreen() {
       if (!activeSearch?.realtor_id) return null;
       const { data } = await supabase
         .from('users')
-        .select('full_name, email, phone_number')
+        .select('full_name, email, phone')
         .eq('id', activeSearch.realtor_id)
         .maybeSingle();
       return data;
@@ -479,11 +479,11 @@ export default function ClientHomeScreen() {
                       tone={brand}
                     />
                   )}
-                  {realtor.phone_number && (
+                  {realtor.phone && (
                     <RealtorAction
                       icon="call"
                       label="Call"
-                      onPress={() => Linking.openURL('tel:' + realtor.phone_number)}
+                      onPress={() => Linking.openURL('tel:' + realtor.phone)}
                       tone={brand}
                     />
                   )}

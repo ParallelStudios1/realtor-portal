@@ -38,7 +38,7 @@ export default async function ClientProfilePage({
 
   const { data: client } = await supabase
     .from('users')
-    .select('id, full_name, email, role, phone_number, firm_id, created_at')
+    .select('id, full_name, email, role, phone, firm_id, created_at')
     .eq('id', params.id)
     .eq('firm_id', me.firm_id!)
     .maybeSingle();
@@ -94,14 +94,14 @@ export default async function ClientProfilePage({
               >
                 {client.email}
               </a>
-              {client.phone_number && (
+              {client.phone && (
                 <>
                   <span>·</span>
                   <a
-                    href={'tel:' + client.phone_number}
+                    href={'tel:' + client.phone}
                     className="hover:text-blue-600"
                   >
-                    {client.phone_number}
+                    {client.phone}
                   </a>
                 </>
               )}

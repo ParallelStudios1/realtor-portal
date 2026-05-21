@@ -77,10 +77,7 @@ export default async function DealsListPage({
             {active} active · {total} total
           </p>
         </div>
-        <Link
-          href="/dashboard/clients/new"
-          className="btn-primary"
-        >
+        <Link href="/dashboard/deals/new" className="btn-primary">
           <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5">
             <path d="M10 4v12M4 10h12" strokeLinecap="round" />
           </svg>
@@ -104,14 +101,21 @@ export default async function DealsListPage({
               <p className="mt-1 text-sm text-blue-900/80">
                 Every deal you run gets its own workspace with phase tracking,
                 shared documents, financials, messages, and a branded client app.
-                Start by inviting your first client.
+                You can start a deal now and add the client (or anyone else)
+                inside it, or invite a client first if you prefer.
               </p>
               <div className="mt-3 flex flex-wrap gap-2 text-xs">
                 <Link
-                  href="/dashboard/clients/new"
+                  href="/dashboard/deals/new"
                   className="rounded-lg bg-blue-600 px-3 py-2 font-semibold text-white shadow-soft-sm transition hover:bg-blue-700"
                 >
-                  Invite first client →
+                  Start a deal →
+                </Link>
+                <Link
+                  href="/dashboard/clients/new"
+                  className="rounded-lg border border-blue-300 bg-white px-3 py-2 font-semibold text-blue-800 transition hover:bg-blue-50"
+                >
+                  Invite a client
                 </Link>
                 <Link
                   href="/dashboard/branding"
