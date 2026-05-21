@@ -47,9 +47,12 @@ export default function LoginPage({
               name="next"
               value={searchParams.next || '/dashboard'}
             />
-            <label className="block text-sm">
-              <span className="label">Email</span>
+            <div>
+              <label htmlFor="login-email" className="label">
+                Email
+              </label>
               <input
+                id="login-email"
                 name="email"
                 type="email"
                 required
@@ -57,10 +60,13 @@ export default function LoginPage({
                 className="input mt-1.5"
                 placeholder="you@firm.com"
               />
-            </label>
-            <label className="block text-sm">
-              <span className="label">Password</span>
+            </div>
+            <div>
+              <label htmlFor="login-password" className="label">
+                Password
+              </label>
               <input
+                id="login-password"
                 name="password"
                 type="password"
                 required
@@ -68,7 +74,7 @@ export default function LoginPage({
                 className="input mt-1.5"
                 placeholder="••••••••"
               />
-            </label>
+            </div>
 
             <button type="submit" className="btn-primary mt-2 w-full">
               Sign in
