@@ -365,13 +365,14 @@ export function ClientDetailActions({
               );
             }
             // Surface what we actually did so the realtor sees confirmation.
+            // SMS is the primary channel. Email is a nice-to-have when wired.
             const n = (r as any).notify || {};
-            const channels: string[] = [];
-            if (n.email?.ok) channels.push('email');
-            if (n.sms?.ok) channels.push('SMS');
-            const sentVia =
-              channels.length > 0 ? ' (' + channels.join(' + ') + ' sent)' : '';
-            done('Party added to deal' + sentVia + '.');
+            const bits: string[] = [];
+            if (n.sms?.ok) bits.push('Text sent');
+            if (n.email?.ok) bits.push('Email sent');
+            const suffix =
+              bits.length > 0 ? ' — ' + bits.join(' · ') : '';
+            done('Party added to deal' + suffix + '.');
           }}
         />
       )}
@@ -1822,19 +1823,24 @@ function ParticipantModal({
           />
         </Field>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Email" hint="Used to grant deal access if they sign in">
+          <Field
+            label="Phone (text invite)"
+            hint="We'll text them the deal link. US numbers OK in any format."
+          >
+            <input
+              type="tel"
+              className={inputCls}
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="(555) 123-4567"
+            />
+          </Field>
+          <Field label="Email (optional)" hint="If they have an account, we grant access by email.">
             <input
               type="email"
               className={inputCls}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-            />
-          </Field>
-          <Field label="Phone">
-            <input
-              className={inputCls}
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
             />
           </Field>
         </div>
@@ -1852,7 +1858,7 @@ function ParticipantModal({
         </fieldset>
         <PrimaryButton
           pending={pending}
-          disabled={!name && !email}
+          disabled={!name && !email && !phone}
           onClick={() =>
             start(() =>
               onSubmit({

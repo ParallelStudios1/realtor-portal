@@ -684,10 +684,10 @@ export async function addParticipantAction(
 ) {
   const a = await authorize(clientId);
   if ('error' in a) return { ok: false as const, error: a.error };
-  if (!payload.name && !payload.email)
+  if (!payload.name && !payload.email && !payload.phone)
     return {
       ok: false as const,
-      error: 'Add a name or email so this party can be identified.',
+      error: 'Give me a name, phone, or email so we can identify them.',
     };
   const service = getSupabaseServiceRoleClient();
   // Match an existing user by email so logging in works automatically.
