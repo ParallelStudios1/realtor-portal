@@ -9,13 +9,7 @@ export default function LoginPage({
   searchParams: { error?: string; notice?: string; next?: string };
 }) {
   return (
-    <main className="relative min-h-screen overflow-hidden bg-ink-50 py-12">
-      {/* Background gradient orbs for visual interest without distracting. */}
-      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute -top-32 left-1/4 h-96 w-96 rounded-full bg-blue-200 opacity-30 blur-3xl" />
-        <div className="absolute -top-20 right-0 h-80 w-80 rounded-full bg-indigo-200 opacity-30 blur-3xl" />
-      </div>
-
+    <main className="min-h-screen bg-ink-50 py-12">
       <div className="mx-auto max-w-md px-6">
         <Link
           href="/"

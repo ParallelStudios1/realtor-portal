@@ -15,12 +15,7 @@ export default function SignupPage({
   searchParams: { error?: string; role?: string };
 }) {
   return (
-    <main className="relative min-h-screen overflow-hidden bg-ink-50 py-12">
-      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute -top-32 right-1/4 h-96 w-96 rounded-full bg-emerald-200 opacity-30 blur-3xl" />
-        <div className="absolute -top-20 left-0 h-80 w-80 rounded-full bg-blue-200 opacity-30 blur-3xl" />
-      </div>
-
+    <main className="min-h-screen bg-ink-50 py-12">
       <div className="mx-auto max-w-md px-6">
         <Link
           href="/"
