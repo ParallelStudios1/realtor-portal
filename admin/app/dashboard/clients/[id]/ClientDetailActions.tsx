@@ -1942,10 +1942,43 @@ export function ParticipantList({
   // DELETE events on deal_participants. Whichever side ships data first wins.
   const [live, setLive] = useState<ParticipantRow[]>(participants);
 
-  // Re-seed when the server prop changes (e.g. after router.refresh()).
+  // MERGE the server prop on every render, don't REPLACE. When the modal
+  // adds a participant we patch `live` instantly via window event; if we
+  // then blindly replace from `participants` (which may still be Next.js's
+  // stale-cached server prop), we lose the new row. Merge by id so the
+  // server prop "wins" for matches but locally-added rows survive a
+  // stale-prop reset.
   useEffect(() => {
-    setLive(participants);
+    setLive((cur) => {
+      const byId = new Map<string, ParticipantRow>();
+      // Server prop first (canonical visibility flags / role).
+      for (const p of participants) byId.set(p.id, p);
+      // Local rows fill in anything the server hasn't caught up to yet.
+      for (const p of cur) if (!byId.has(p.id)) byId.set(p.id, p);
+      return Array.from(byId.values());
+    });
   }, [participants]);
+
+  /**
+   * Pull the latest deal_participants for this search directly from
+   * Supabase via the browser client. RLS makes sure we only see rows
+   * we're allowed to. Used as the source-of-truth refresh whenever the
+   * modal triggers an add — bypasses any Next.js caching by going straight
+   * to the database.
+   */
+  async function refetchParticipants() {
+    if (!searchId) return;
+    const sb = getSupabaseBrowserClient();
+    const { data, error } = await sb
+      .from('deal_participants')
+      .select(
+        'id, role, external_name, external_email, external_phone, can_view_documents, can_view_financials, can_view_messages, can_view_dates'
+      )
+      .eq('search_id', searchId)
+      .order('role');
+    if (error || !data) return;
+    setLive(data as any);
+  }
 
   // Realtime subscription. Listens to inserts/updates/deletes for this
   // deal's participants and patches `live` directly. Means a new party
@@ -2010,15 +2043,21 @@ export function ParticipantList({
   // running on the same page. Realtime is great when the change comes from
   // a DIFFERENT browser session, but for the user adding parties themselves
   // the round-trip through Supabase Realtime is slow + can be lost. We have
-  // the row in hand the moment the server action returns — patch directly.
+  // the row in hand the moment the server action returns — patch directly,
+  // then re-fetch from the DB as ground truth.
   useEffect(() => {
     const onAdded = (e: Event) => {
       const detail = (e as CustomEvent).detail as ParticipantRow | undefined;
-      if (!detail || !detail.id) return;
-      setLive((cur) => {
-        if (cur.some((p) => p.id === detail.id)) return cur;
-        return [...cur, detail];
-      });
+      if (detail && detail.id) {
+        setLive((cur) => {
+          if (cur.some((p) => p.id === detail.id)) return cur;
+          return [...cur, detail];
+        });
+      }
+      // Always re-pull from the DB after the event so the UI catches up
+      // even when the action's return shape changes or the event detail
+      // is missing fields. Direct browser → Supabase, no Next cache.
+      void refetchParticipants();
     };
     window.addEventListener('rp:participant:added', onAdded);
     return () => window.removeEventListener('rp:participant:added', onAdded);
