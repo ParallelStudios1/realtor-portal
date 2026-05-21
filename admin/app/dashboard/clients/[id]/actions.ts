@@ -910,6 +910,72 @@ export async function removeParticipantAction(
 }
 
 /**
+ * Edit an existing party on this deal. Lets the realtor change the role
+ * (e.g. promote someone from buyer to co_realtor), rename them, fix a
+ * typo'd email/phone, or flip any of the visibility flags. Returns the
+ * updated row so the client can refresh its local state.
+ */
+export async function updateParticipantAction(
+  clientId: string,
+  participantId: string,
+  patch: {
+    role?: PartyRole;
+    name?: string | null;
+    email?: string | null;
+    phone?: string | null;
+    can_view_documents?: boolean;
+    can_view_financials?: boolean;
+    can_view_messages?: boolean;
+    can_view_dates?: boolean;
+  }
+) {
+  const a = await authorize(clientId);
+  if ('error' in a) return { ok: false as const, error: a.error };
+  const service = getSupabaseServiceRoleClient();
+  // Build a fresh update payload — only set keys that were provided so we
+  // don't overwrite the others to undefined/null by accident.
+  const update: Record<string, any> = {};
+  if (patch.role !== undefined) update.role = patch.role;
+  if (patch.name !== undefined) update.external_name = patch.name;
+  if (patch.email !== undefined) update.external_email = patch.email;
+  if (patch.phone !== undefined) update.external_phone = patch.phone;
+  if (patch.can_view_documents !== undefined)
+    update.can_view_documents = patch.can_view_documents;
+  if (patch.can_view_financials !== undefined)
+    update.can_view_financials = patch.can_view_financials;
+  if (patch.can_view_messages !== undefined)
+    update.can_view_messages = patch.can_view_messages;
+  if (patch.can_view_dates !== undefined)
+    update.can_view_dates = patch.can_view_dates;
+
+  const { data: updated, error } = await service
+    .from('deal_participants')
+    .update(update)
+    .eq('id', participantId)
+    .eq('search_id', a.search.id)
+    .select(
+      'id, role, external_name, external_email, external_phone, can_view_documents, can_view_financials, can_view_messages, can_view_dates'
+    )
+    .single();
+  if (error) return { ok: false as const, error: error.message };
+
+  await activity(
+    a.search.id,
+    a.search.firm_id,
+    a.me.user_id,
+    'participant_updated',
+    (updated as any).external_name ||
+      (updated as any).external_email ||
+      ''
+  );
+
+  revalidatePath(`/dashboard/clients/${clientId}`);
+  revalidatePath('/dashboard/deals/[id]', 'page');
+  revalidatePath('/dashboard/deals');
+  return { ok: true as const, participant: updated };
+}
+
+/**
  * Mass-invite many emails to a single deal as buyer / seller / attorney /
  * etc. Splits the input on comma, semicolon, newline, or whitespace. Adds
  * each as a deal_participants row with default visibility and fires off

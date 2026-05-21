@@ -13,6 +13,7 @@ import {
   massInviteAction,
   quickMessageAction,
   removeParticipantAction,
+  updateParticipantAction,
   searchFirmPeopleAction,
   sendAlertAction,
   setAttorneyAction,
@@ -364,15 +365,46 @@ export function ClientDetailActions({
                 })
               );
             }
-            // Surface what we actually did so the realtor sees confirmation.
-            // SMS is the primary channel. Email is a nice-to-have when wired.
+            // Truthful toast — tells the realtor exactly which channel went
+            // out (so they don't believe an email was sent when it wasn't)
+            // AND prompts them to add a phone if NOTHING went out.
             const n = (r as any).notify || {};
-            const bits: string[] = [];
-            if (n.sms?.ok) bits.push('Text sent');
-            if (n.email?.ok) bits.push('Email sent');
-            const suffix =
-              bits.length > 0 ? ' — ' + bits.join(' · ') : '';
-            done('Party added to deal' + suffix + '.');
+            const sent: string[] = [];
+            const failed: string[] = [];
+            if (n.sms?.ok) sent.push('Text sent');
+            else if (n.sms?.error) failed.push('Text: ' + n.sms.error);
+            if (n.email?.ok) sent.push('Email sent');
+            else if (n.email?.error) failed.push('Email: ' + n.email.error);
+
+            // If we had no channel to send via, say so explicitly.
+            // (e.g. realtor entered only a name, no phone, no email — the
+            // participant is added but they won't hear about it yet.)
+            const hadContact = Boolean(payload.email || payload.phone);
+            const anySent = sent.length > 0;
+            if (!hadContact) {
+              toast.show(
+                'Party added — but no phone or email, so no invite was sent. Tap Edit to add one.',
+                { variant: 'info' as any }
+              );
+              if ((r as any).participant) {
+                window.dispatchEvent(
+                  new CustomEvent('rp:participant:added', {
+                    detail: (r as any).participant,
+                  })
+                );
+              }
+              close();
+              router.refresh();
+              return;
+            }
+            if (!anySent) {
+              toast.show(
+                'Party added, but invite did not send: ' + failed.join(', '),
+                { variant: 'error' }
+              );
+            } else {
+              done('Party added to deal — ' + sent.join(' · ') + '.');
+            }
           }}
         />
       )}
@@ -1943,24 +1975,26 @@ export function ParticipantList({
   const toast = useToast();
   const router = useRouter();
   const [removing, start] = useTransition();
+  // When set, the Edit Party modal is shown for this participant.
+  const [editing, setEditing] = useState<ParticipantRow | null>(null);
   // Local mirror so we don't have to wait for router.refresh() to roundtrip.
   // Seeded from the server prop, then kept in sync with realtime INSERT /
   // DELETE events on deal_participants. Whichever side ships data first wins.
   const [live, setLive] = useState<ParticipantRow[]>(participants);
 
-  // MERGE the server prop on every render, don't REPLACE. When the modal
-  // adds a participant we patch `live` instantly via window event; if we
-  // then blindly replace from `participants` (which may still be Next.js's
-  // stale-cached server prop), we lose the new row. Merge by id so the
-  // server prop "wins" for matches but locally-added rows survive a
-  // stale-prop reset.
+  // ADDITIVE merge of the server prop. We never REMOVE a row from `live`
+  // by this path — only an explicit Remove click does that. This matters
+  // because Next.js can serve stale `participants` during a router.refresh
+  // race, and we don't want a just-added row to flash on then disappear.
+  //
+  // Order: start from local `cur` (keeps any locally-added rows), then
+  // overlay the server prop so server-side field updates (role, visibility
+  // flags after Edit) win where ids match.
   useEffect(() => {
     setLive((cur) => {
       const byId = new Map<string, ParticipantRow>();
-      // Server prop first (canonical visibility flags / role).
+      for (const p of cur) byId.set(p.id, p);
       for (const p of participants) byId.set(p.id, p);
-      // Local rows fill in anything the server hasn't caught up to yet.
-      for (const p of cur) if (!byId.has(p.id)) byId.set(p.id, p);
       return Array.from(byId.values());
     });
   }, [participants]);
@@ -1983,7 +2017,16 @@ export function ParticipantList({
       .eq('search_id', searchId)
       .order('role');
     if (error || !data) return;
-    setLive(data as any);
+    // Additive merge — same rules as the prop-effect. NEVER drop rows
+    // locally; only the Remove button can do that. This prevents a brief
+    // appear-then-vanish if the fresh fetch arrives before RLS has caught
+    // up to the just-inserted row (rare but I've watched it happen).
+    setLive((cur) => {
+      const byId = new Map<string, ParticipantRow>();
+      for (const p of cur) byId.set(p.id, p);
+      for (const p of data as any[]) byId.set(p.id, p);
+      return Array.from(byId.values());
+    });
   }
 
   // Realtime subscription. Listens to inserts/updates/deletes for this
@@ -2117,30 +2160,175 @@ export function ParticipantList({
                 {p.can_view_messages && <Chip>Messages</Chip>}
               </div>
             </div>
-            <button
-              type="button"
-              disabled={removing}
-              onClick={() =>
-                start(async () => {
-                  const r = await removeParticipantAction(clientId, p.id);
-                  if (!r.ok)
-                    return toast.show(r.error || 'Failed', { variant: 'error' });
-                  toast.show('Removed.', { variant: 'success' });
-                  // Optimistically drop the row in the live list — the
-                  // realtime DELETE event will arrive shortly and confirm.
-                  setLive((cur) => cur.filter((x) => x.id !== p.id));
-                  router.refresh();
-                })
-              }
-              className="rounded p-1 text-slate-400 transition hover:bg-slate-100 hover:text-rose-600"
-              aria-label="Remove participant"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setEditing(p)}
+                className="rounded p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-900"
+                aria-label="Edit participant"
+                title="Edit role and what they can see"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="m18.5 2.5 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </button>
+              <button
+                type="button"
+                disabled={removing}
+                onClick={() =>
+                  start(async () => {
+                    const r = await removeParticipantAction(clientId, p.id);
+                    if (!r.ok)
+                      return toast.show(r.error || 'Failed', { variant: 'error' });
+                    toast.show('Removed.', { variant: 'success' });
+                    setLive((cur) => cur.filter((x) => x.id !== p.id));
+                    router.refresh();
+                  })
+                }
+                className="rounded p-1 text-slate-400 transition hover:bg-slate-100 hover:text-rose-600"
+                aria-label="Remove participant"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              </button>
+            </div>
           </div>
         </li>
       ))}
+      {editing && (
+        <EditPartyModal
+          participant={editing}
+          onClose={() => setEditing(null)}
+          onSave={async (patch) => {
+            const r = await updateParticipantAction(clientId, editing.id, patch);
+            if (!r.ok) {
+              toast.show(r.error || 'Failed', { variant: 'error' });
+              return;
+            }
+            if ((r as any).participant) {
+              // Local-state update so the row reflects the new
+              // role/visibility immediately, without waiting for refresh.
+              setLive((cur) =>
+                cur.map((x) =>
+                  x.id === (r as any).participant.id
+                    ? { ...x, ...(r as any).participant }
+                    : x
+                )
+              );
+            }
+            toast.show('Updated.', { variant: 'success' });
+            setEditing(null);
+            router.refresh();
+          }}
+        />
+      )}
     </ul>
+  );
+}
+
+/**
+ * Inline Edit Party modal. Lets the realtor change role + visibility
+ * flags + correct the name/email/phone after the fact. Submitted patch
+ * only includes fields the realtor changed, so the server action can
+ * NULL-out keys safely with an explicit empty string.
+ */
+function EditPartyModal({
+  participant,
+  onClose,
+  onSave,
+}: {
+  participant: ParticipantRow;
+  onClose: () => void;
+  onSave: (patch: {
+    role?: PartyRole;
+    name?: string | null;
+    email?: string | null;
+    phone?: string | null;
+    can_view_documents?: boolean;
+    can_view_financials?: boolean;
+    can_view_messages?: boolean;
+    can_view_dates?: boolean;
+  }) => Promise<void>;
+}) {
+  const [role, setRole] = useState<PartyRole>(participant.role as PartyRole);
+  const [name, setName] = useState(participant.external_name || '');
+  const [email, setEmail] = useState(participant.external_email || '');
+  const [phone, setPhone] = useState(participant.external_phone || '');
+  const [docs, setDocs] = useState(participant.can_view_documents);
+  const [fin, setFin] = useState(participant.can_view_financials);
+  const [msgs, setMsgs] = useState(participant.can_view_messages);
+  const [dates, setDates] = useState(participant.can_view_dates);
+  const [pending, start] = useTransition();
+  return (
+    <Modal title="Edit party" onClose={onClose}>
+      <div className="space-y-3">
+        <Field label="Role">
+          <select
+            className={inputCls}
+            value={role}
+            onChange={(e) => setRole(e.target.value as PartyRole)}
+          >
+            {PARTY_ROLES.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.label}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Name">
+          <input
+            className={inputCls}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+        </Field>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Phone">
+            <input
+              type="tel"
+              className={inputCls}
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+            />
+          </Field>
+          <Field label="Email">
+            <input
+              type="email"
+              className={inputCls}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </Field>
+        </div>
+        <fieldset className="rounded-lg border border-ink-200 p-3">
+          <legend className="px-2 text-[10px] font-bold uppercase tracking-wider text-ink-500">
+            What this party can see
+          </legend>
+          <div className="grid grid-cols-2 gap-x-3 gap-y-1.5">
+            <CheckRow label="Important dates" checked={dates} onChange={setDates} />
+            <CheckRow label="Documents" checked={docs} onChange={setDocs} />
+            <CheckRow label="Financials" checked={fin} onChange={setFin} />
+            <CheckRow label="Messages" checked={msgs} onChange={setMsgs} />
+          </div>
+        </fieldset>
+        <PrimaryButton
+          pending={pending}
+          onClick={() =>
+            start(() =>
+              onSave({
+                role,
+                name: name.trim() || null,
+                email: email.trim() || null,
+                phone: phone.trim() || null,
+                can_view_documents: docs,
+                can_view_financials: fin,
+                can_view_messages: msgs,
+                can_view_dates: dates,
+              })
+            )
+          }
+        >
+          Save changes
+        </PrimaryButton>
+      </div>
+    </Modal>
   );
 }
 
