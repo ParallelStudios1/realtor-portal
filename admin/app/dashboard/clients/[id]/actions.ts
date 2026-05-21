@@ -6,6 +6,7 @@ import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
 import { sendEmail, escapeHtml } from '@/lib/email';
 import { emailEveryoneOnPhaseChange } from '@/lib/dealEmail';
 import { isFirmPlanActive } from '@/lib/planGate';
+import { notify, notifyDealParticipants } from '@/lib/notify';
 
 /**
  * Server actions called from the rich realtor client-detail page. Each one
@@ -174,6 +175,23 @@ export async function updatePhaseAction(
         newPhase: phase,
       });
     } catch {}
+    // SMS milestone announcement — short, punchy, links to the deal.
+    try {
+      const siteUrl =
+        process.env.SITE_URL || 'https://realtor-portal-ten.vercel.app';
+      const dealUrl = siteUrl + '/deal/' + a.search.id;
+      const phaseLabel = phase.replace(/_/g, ' ');
+      await notifyDealParticipants({
+        searchId: a.search.id,
+        subject: `Deal milestone: ${phaseLabel}`,
+        text: PHASE_CELEBRATIONS[phase] + '\n\nOpen the deal: ' + dealUrl,
+        html: `<p>${escapeHtml(PHASE_CELEBRATIONS[phase])}</p><p><a href="${dealUrl}">Open the deal &rarr;</a></p>`,
+        sms_text: PHASE_CELEBRATIONS[phase] + ' — ' + dealUrl,
+        excludeUserId: a.me.user_id,
+      });
+    } catch (e: any) {
+      console.error('[updatePhaseAction] notify failed', e?.message || e);
+    }
   }
 
   revalidatePath(`/dashboard/clients/${clientId}`);
@@ -218,6 +236,41 @@ export async function addImportantDateAction(
     payload.label,
     { date: payload.date, kind: payload.kind }
   );
+  // Email + SMS everyone about the new date so it lands in their calendar.
+  try {
+    const siteUrl =
+      process.env.SITE_URL || 'https://realtor-portal-ten.vercel.app';
+    const dealUrl = siteUrl + '/deal/' + a.search.id;
+    const pretty =
+      payload.label +
+      ' — ' +
+      new Date(payload.date + 'T12:00:00').toLocaleDateString(undefined, {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      }) +
+      (payload.event_time ? ' @ ' + payload.event_time : '');
+    const extras =
+      (payload.location ? '\nLocation: ' + payload.location : '') +
+      (payload.things_to_bring
+        ? '\nBring: ' + payload.things_to_bring
+        : '');
+    await notifyDealParticipants({
+      searchId: a.search.id,
+      subject: 'New date on your deal: ' + payload.label,
+      text: 'A new date was added to your deal:\n\n' + pretty + extras + '\n\nOpen the deal: ' + dealUrl,
+      html: `<p><strong>New date on your deal:</strong></p><p>${escapeHtml(pretty)}</p>${
+        payload.location ? `<p><strong>Location:</strong> ${escapeHtml(payload.location)}</p>` : ''
+      }${
+        payload.things_to_bring ? `<p><strong>Bring:</strong> ${escapeHtml(payload.things_to_bring)}</p>` : ''
+      }<p><a href="${dealUrl}">Open the deal &rarr;</a></p>`,
+      sms_text: pretty + (payload.location ? ' @ ' + payload.location : '') + ' — ' + dealUrl,
+      excludeUserId: a.me.user_id,
+    });
+  } catch (e: any) {
+    console.error('[addImportantDateAction] notify failed', e?.message || e);
+  }
   revalidatePath(`/dashboard/clients/${clientId}`);
   revalidatePath('/dashboard/deals/[id]', 'page');
   revalidatePath('/dashboard/deals');
@@ -370,6 +423,28 @@ export async function sendAlertAction(clientId: string, message: string) {
       }),
     });
   } catch {}
+  // Email + SMS every person on this deal.
+  try {
+    const siteUrl =
+      process.env.SITE_URL || 'https://realtor-portal-ten.vercel.app';
+    const dealUrl = siteUrl + '/deal/' + a.search.id;
+    await notifyDealParticipants({
+      searchId: a.search.id,
+      subject: 'Alert from your realtor',
+      text:
+        'Alert from your realtor:\n\n' +
+        message.trim() +
+        '\n\nOpen the deal: ' +
+        dealUrl,
+      html: `<p><strong>Alert from your realtor:</strong></p><p>${escapeHtml(
+        message.trim()
+      )}</p><p><a href="${dealUrl}">Open the deal &rarr;</a></p>`,
+      sms_text: 'ALERT: ' + message.trim().slice(0, 240) + ' — ' + dealUrl,
+      excludeUserId: a.me.user_id,
+    });
+  } catch (e: any) {
+    console.error('[sendAlertAction] notify failed', e?.message || e);
+  }
   revalidatePath(`/dashboard/clients/${clientId}`);
   revalidatePath('/dashboard/deals/[id]', 'page');
   revalidatePath('/dashboard/deals');
@@ -603,28 +678,40 @@ export async function addParticipantAction(
   const service = getSupabaseServiceRoleClient();
   // Match an existing user by email so logging in works automatically.
   let userId: string | null = null;
+  let userPhone: string | null = null;
   if (payload.email) {
     const { data: u } = await service
       .from('users')
-      .select('id')
+      .select('id, phone')
       .ilike('email', payload.email)
       .maybeSingle();
-    userId = u?.id ?? null;
+    userId = (u as any)?.id ?? null;
+    userPhone = (u as any)?.phone ?? null;
   }
-  const { error } = await service.from('deal_participants').insert({
-    search_id: a.search.id,
-    firm_id: a.search.firm_id,
-    user_id: userId,
-    external_email: payload.email || null,
-    external_name: payload.name || null,
-    external_phone: payload.phone || null,
-    role: payload.role,
-    can_view_documents: payload.can_view_documents ?? true,
-    can_view_financials: payload.can_view_financials ?? false,
-    can_view_messages: payload.can_view_messages ?? false,
-    can_view_dates: payload.can_view_dates ?? true,
-    created_by: a.me.user_id,
-  });
+  // RETURN the inserted row so the client can patch its local "People"
+  // list directly without waiting on revalidatePath or realtime. This is
+  // the source of truth — realtime is purely a "make it nicer when other
+  // people add parties" mechanism.
+  const { data: inserted, error } = await service
+    .from('deal_participants')
+    .insert({
+      search_id: a.search.id,
+      firm_id: a.search.firm_id,
+      user_id: userId,
+      external_email: payload.email || null,
+      external_name: payload.name || null,
+      external_phone: payload.phone || null,
+      role: payload.role,
+      can_view_documents: payload.can_view_documents ?? true,
+      can_view_financials: payload.can_view_financials ?? false,
+      can_view_messages: payload.can_view_messages ?? false,
+      can_view_dates: payload.can_view_dates ?? true,
+      created_by: a.me.user_id,
+    })
+    .select(
+      'id, role, external_name, external_email, external_phone, can_view_documents, can_view_financials, can_view_messages, can_view_dates'
+    )
+    .single();
   if (error) return { ok: false as const, error: error.message };
   await activity(
     a.search.id,
@@ -634,8 +721,7 @@ export async function addParticipantAction(
     payload.name || payload.email || ''
   );
 
-  // Fire-and-forget invite email if we have an address. Pulls firm name +
-  // realtor name from the search context for personalization.
+  // Fire-and-forget invite email + SMS via the unified notify() helper.
   //
   // When the participant role is realtor/co_realtor AND there isn't already
   // an account for that email, we send a "set up your free Realtor Portal
@@ -644,12 +730,18 @@ export async function addParticipantAction(
   // RLS function recognizes their email and grants deal access. They also
   // get to use premium features ON THIS DEAL even on the free plan, because
   // the deal is hosted by the inviting firm (see canUsePremiumForDeal).
-  if (payload.email) {
+  //
+  // Notification channels:
+  //   - email — if we have an address
+  //   - SMS   — if the inviter typed a phone number, OR the matching
+  //             firm-user has a phone on file
+  let notifyResult: any = null;
+  if (payload.email || payload.phone || userPhone) {
     try {
       const { data: ctx } = await service
         .from('client_searches')
         .select(
-          `name, firm:firms ( name ), realtor:users!client_searches_realtor_id_fkey ( full_name, email )`
+          `name, firm:firms ( name ), realtor:users!client_searches_realtor_id_fkey ( full_name, email, phone )`
         )
         .eq('id', a.search.id)
         .maybeSingle();
@@ -667,12 +759,13 @@ export async function addParticipantAction(
       // and once they finish onboarding we route them back to the deal.
       const signupUrl =
         siteUrl +
-        '/signup?role=realtor&email=' +
-        encodeURIComponent(payload.email) +
+        '/signup?role=realtor' +
+        (payload.email ? '&email=' + encodeURIComponent(payload.email) : '') +
         '&next=' +
         encodeURIComponent('/deal/' + a.search.id);
       const rolePretty = payload.role.replace(/_/g, ' ');
-      const safeName = escapeHtml(payload.name || payload.email);
+      const displayName = payload.name || payload.email || 'there';
+      const safeName = escapeHtml(displayName);
       const safeRealtor = escapeHtml(realtorName);
       const safeFirm = escapeHtml(firmName);
       const safeRole = escapeHtml(rolePretty);
@@ -710,21 +803,35 @@ export async function addParticipantAction(
         `${realtorName} at ${firmName} added you to a deal as ${rolePretty}.\n\n` +
         `Open the deal:\n${dealUrl}\n\n` +
         `You'll see whatever ${realtorName} chose to share with you (dates, documents, financials, messages).`;
-      await sendEmail({
-        to: payload.email,
+      // Compact SMS body — Twilio cuts at 1600, but real-world deliverability
+      // is much better under 320 (which fits in 2 SMS segments).
+      const smsBody = isRealtorRole
+        ? `${realtorName} (${firmName}) invited you to co-broker a deal on Realtor Portal. Sign up free & open: ${signupUrl}`
+        : `${realtorName} (${firmName}) added you to a real-estate deal as ${rolePretty}. Open: ${dealUrl}`;
+
+      notifyResult = await notify({
+        email: payload.email || null,
+        phone: payload.phone || userPhone,
         subject,
         text: isRealtorRole ? realtorText : partyText,
         html: isRealtorRole ? realtorBody : partyBody,
+        sms_text: smsBody,
       });
-    } catch {
-      // Best-effort. Don't block the action on email failure.
+    } catch (e: any) {
+      console.error('[addParticipantAction] notify failed', e?.message || e);
     }
   }
 
   revalidatePath(`/dashboard/clients/${clientId}`);
   revalidatePath('/dashboard/deals/[id]', 'page');
   revalidatePath('/dashboard/deals');
-  return { ok: true as const };
+  // Return the new row so the client can patch the People list immediately
+  // without depending on revalidatePath or realtime delivery.
+  return {
+    ok: true as const,
+    participant: inserted as any,
+    notify: notifyResult,
+  };
 }
 
 export async function removeParticipantAction(
@@ -1105,6 +1212,35 @@ export async function quickMessageAction(clientId: string, body: string) {
     body: body.trim(),
   });
   if (error) return { ok: false as const, error: error.message };
+  // Email + SMS every party on this deal except the sender. The deal-link
+  // takes them to the same conversation in-app.
+  try {
+    const siteUrl =
+      process.env.SITE_URL || 'https://realtor-portal-ten.vercel.app';
+    const dealUrl = siteUrl + '/deal/' + a.search.id;
+    const senderName = a.me.full_name || 'Your realtor';
+    const trimmed = body.trim();
+    await notifyDealParticipants({
+      searchId: a.search.id,
+      subject: 'New message from ' + senderName,
+      text:
+        senderName +
+        ' sent you a message:\n\n' +
+        trimmed +
+        '\n\nReply in the deal: ' +
+        dealUrl,
+      html: `<p><strong>${escapeHtml(
+        senderName
+      )}</strong> sent you a message:</p><p>${escapeHtml(
+        trimmed
+      )}</p><p><a href="${dealUrl}">Reply in the deal &rarr;</a></p>`,
+      sms_text:
+        senderName + ': ' + trimmed.slice(0, 240) + ' — reply: ' + dealUrl,
+      excludeUserId: a.me.user_id,
+    });
+  } catch (e: any) {
+    console.error('[quickMessageAction] notify failed', e?.message || e);
+  }
   revalidatePath(`/dashboard/clients/${clientId}`);
   revalidatePath('/dashboard/deals/[id]', 'page');
   revalidatePath('/dashboard/deals');

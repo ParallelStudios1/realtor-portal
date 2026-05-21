@@ -354,7 +354,24 @@ export function ClientDetailActions({
           onSubmit={async (payload) => {
             const r = await addParticipantAction(clientId, payload);
             if (!r.ok) return toast.show(r.error || 'Failed', { variant: 'error' });
-            done('Party added to deal.');
+            // Broadcast the new row so ParticipantList patches itself
+            // immediately. Realtime + router.refresh() are still wired up
+            // as belt-and-suspenders, but this is the source of truth.
+            if ((r as any).participant) {
+              window.dispatchEvent(
+                new CustomEvent('rp:participant:added', {
+                  detail: (r as any).participant,
+                })
+              );
+            }
+            // Surface what we actually did so the realtor sees confirmation.
+            const n = (r as any).notify || {};
+            const channels: string[] = [];
+            if (n.email?.ok) channels.push('email');
+            if (n.sms?.ok) channels.push('SMS');
+            const sentVia =
+              channels.length > 0 ? ' (' + channels.join(' + ') + ' sent)' : '';
+            done('Party added to deal' + sentVia + '.');
           }}
         />
       )}
@@ -1988,6 +2005,24 @@ export function ParticipantList({
       sb.removeChannel(channel);
     };
   }, [searchId]);
+
+  // Window-event hook for instant local updates from the Add Party modal
+  // running on the same page. Realtime is great when the change comes from
+  // a DIFFERENT browser session, but for the user adding parties themselves
+  // the round-trip through Supabase Realtime is slow + can be lost. We have
+  // the row in hand the moment the server action returns — patch directly.
+  useEffect(() => {
+    const onAdded = (e: Event) => {
+      const detail = (e as CustomEvent).detail as ParticipantRow | undefined;
+      if (!detail || !detail.id) return;
+      setLive((cur) => {
+        if (cur.some((p) => p.id === detail.id)) return cur;
+        return [...cur, detail];
+      });
+    };
+    window.addEventListener('rp:participant:added', onAdded);
+    return () => window.removeEventListener('rp:participant:added', onAdded);
+  }, []);
 
   if (live.length === 0) {
     return (
