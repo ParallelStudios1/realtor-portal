@@ -96,6 +96,39 @@ export async function POST(req: Request) {
       );
     }
 
+    // ACCESS: caller must be (a) staff in the deal's host firm, OR
+    // (b) a participating realtor on the deal (cross-firm collab), OR
+    // (c) the deal's principal client. Otherwise reject — without this
+    // check, a knowledgeable caller could POST any search_id they once
+    // had visibility to and add participants there.
+    const service = getSupabaseServiceRoleClient();
+    const callerIsInHostFirm = (search as any).firm_id === me.firm_id;
+    let allowed = callerIsInHostFirm;
+    if (!allowed) {
+      const { data: parts } = await service
+        .from('deal_participants')
+        .select('id, role')
+        .eq('search_id', (search as any).id)
+        .or(
+          [
+            'user_id.eq.' + me.user_id,
+            me.email ? 'external_email.eq.' + me.email.toLowerCase() : null,
+          ]
+            .filter(Boolean)
+            .join(',')
+        )
+        .in('role', ['realtor', 'co_realtor']);
+      allowed =
+        (parts && parts.length > 0) ||
+        (search as any).client_id === me.user_id;
+    }
+    if (!allowed) {
+      return NextResponse.json(
+        { ok: false, error: 'Not allowed on this deal.' },
+        { status: 403 }
+      );
+    }
+
     const planOk = await canUsePremiumForDeal(
       me.firm_id,
       (search as any).id,
@@ -112,8 +145,6 @@ export async function POST(req: Request) {
         { status: 402 }
       );
     }
-
-    const service = getSupabaseServiceRoleClient();
 
     // Resolve a matching firm user (so the auth.uid path of the cross-firm
     // RLS function works once they sign in) and their phone-on-file.

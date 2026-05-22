@@ -306,16 +306,9 @@ export function ClientDetailActions({
         />
       )}
 
-      {open === 'attorney' && (
-        <AttorneyModal
-          onClose={close}
-          onSubmit={async (payload) => {
-            const r = await setAttorneyAction(clientId, payload);
-            if (!r.ok) return toast.show(r.error || 'Failed', { variant: 'error' });
-            done('Attorney saved.');
-          }}
-        />
-      )}
+      {/* Attorney modal removed — attorneys are now added through the
+          Add Party flow with role='attorney'. That path sends them a
+          magic-link signup that routes to /welcome/attorney. */}
 
       {open === 'message' && (
         <MessageModal
@@ -380,17 +373,11 @@ export function ClientDetailActions({
             const hadContact = Boolean(payload.email || payload.phone);
             const anySent = sent.length > 0;
             if (!hadContact) {
+              // Row was already dispatched above; just toast + close.
               toast.show(
                 'Party added — but no phone or email, so no invite was sent. Tap Edit to add one.',
                 { variant: 'info' as any }
               );
-              if ((r as any).participant) {
-                window.dispatchEvent(
-                  new CustomEvent('rp:participant:added', {
-                    detail: (r as any).participant,
-                  })
-                );
-              }
               close();
               router.refresh();
               return;

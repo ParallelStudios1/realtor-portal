@@ -209,7 +209,7 @@ export async function updatePhaseAction(
   }
 
   revalidatePath(`/dashboard/clients/${clientId}`);
-  revalidatePath('/dashboard/deals/[id]', 'page');
+  revalidatePath('/dashboard/deals/' + a.search.id);
   revalidatePath('/dashboard/deals');
   return { ok: true as const };
 }
@@ -286,7 +286,7 @@ export async function addImportantDateAction(
     console.error('[addImportantDateAction] notify failed', e?.message || e);
   }
   revalidatePath(`/dashboard/clients/${clientId}`);
-  revalidatePath('/dashboard/deals/[id]', 'page');
+  revalidatePath('/dashboard/deals/' + a.search.id);
   revalidatePath('/dashboard/deals');
   return { ok: true as const };
 }
@@ -335,7 +335,7 @@ export async function addHouseAction(
     { houseId: data?.id, list_price: payload.list_price }
   );
   revalidatePath(`/dashboard/clients/${clientId}`);
-  revalidatePath('/dashboard/deals/[id]', 'page');
+  revalidatePath('/dashboard/deals/' + a.search.id);
   revalidatePath('/dashboard/deals');
   return { ok: true as const, houseId: data?.id };
 }
@@ -362,7 +362,7 @@ export async function linkDocusignAction(clientId: string, url: string) {
     url
   );
   revalidatePath(`/dashboard/clients/${clientId}`);
-  revalidatePath('/dashboard/deals/[id]', 'page');
+  revalidatePath('/dashboard/deals/' + a.search.id);
   revalidatePath('/dashboard/deals');
   return { ok: true as const };
 }
@@ -394,7 +394,7 @@ export async function setAttorneyAction(
     { email: payload.email, phone: payload.phone }
   );
   revalidatePath(`/dashboard/clients/${clientId}`);
-  revalidatePath('/dashboard/deals/[id]', 'page');
+  revalidatePath('/dashboard/deals/' + a.search.id);
   revalidatePath('/dashboard/deals');
   return { ok: true as const };
 }
@@ -460,7 +460,7 @@ export async function sendAlertAction(clientId: string, message: string) {
     console.error('[sendAlertAction] notify failed', e?.message || e);
   }
   revalidatePath(`/dashboard/clients/${clientId}`);
-  revalidatePath('/dashboard/deals/[id]', 'page');
+  revalidatePath('/dashboard/deals/' + a.search.id);
   revalidatePath('/dashboard/deals');
   return { ok: true as const };
 }
@@ -491,7 +491,10 @@ export async function goUnderContractAction(
   if ('error' in a) return { ok: false as const, error: a.error };
   const service = getSupabaseServiceRoleClient();
 
-  await service
+  // Phase update is the source-of-truth write — bail out on failure so we
+  // don't create a half-state (dates inserted, message posted, parties
+  // emailed) without the phase actually flipping.
+  const { error: phaseErr } = await service
     .from('client_searches')
     .update({
       phase: 'under_contract',
@@ -499,6 +502,8 @@ export async function goUnderContractAction(
       earnest_money: payload.earnest_money_amount ?? null,
     })
     .eq('id', a.search.id);
+  if (phaseErr)
+    return { ok: false as const, error: phaseErr.message };
 
   // Insert important dates (replace any existing rows with same label).
   const dates: Array<{ label: string; date: string }> = [];
@@ -553,7 +558,7 @@ export async function goUnderContractAction(
   } catch {}
 
   revalidatePath(`/dashboard/clients/${clientId}`);
-  revalidatePath('/dashboard/deals/[id]', 'page');
+  revalidatePath('/dashboard/deals/' + a.search.id);
   revalidatePath('/dashboard/deals');
   return { ok: true as const };
 }
@@ -593,7 +598,7 @@ export async function updateDealFinancialsAction(
     update
   );
   revalidatePath(`/dashboard/clients/${clientId}`);
-  revalidatePath('/dashboard/deals/[id]', 'page');
+  revalidatePath('/dashboard/deals/' + a.search.id);
   revalidatePath('/dashboard/deals');
   return { ok: true as const };
 }
@@ -635,7 +640,7 @@ export async function editHouseAction(
     .eq('firm_id', a.search.firm_id);
   if (error) return { ok: false as const, error: error.message };
   revalidatePath(`/dashboard/clients/${clientId}`);
-  revalidatePath('/dashboard/deals/[id]', 'page');
+  revalidatePath('/dashboard/deals/' + a.search.id);
   revalidatePath('/dashboard/deals');
   return { ok: true as const };
 }
@@ -651,7 +656,7 @@ export async function deleteHouseAction(clientId: string, houseId: string) {
     .eq('firm_id', a.search.firm_id);
   if (error) return { ok: false as const, error: error.message };
   revalidatePath(`/dashboard/clients/${clientId}`);
-  revalidatePath('/dashboard/deals/[id]', 'page');
+  revalidatePath('/dashboard/deals/' + a.search.id);
   revalidatePath('/dashboard/deals');
   return { ok: true as const };
 }
@@ -944,7 +949,7 @@ export async function addParticipantAction(
   }
 
   revalidatePath(`/dashboard/clients/${clientId}`);
-  revalidatePath('/dashboard/deals/[id]', 'page');
+  revalidatePath('/dashboard/deals/' + a.search.id);
   revalidatePath('/dashboard/deals');
   // Return the new row so the client can patch the People list immediately
   // without depending on revalidatePath or realtime delivery.
@@ -969,7 +974,7 @@ export async function removeParticipantAction(
     .eq('search_id', a.search.id);
   if (error) return { ok: false as const, error: error.message };
   revalidatePath(`/dashboard/clients/${clientId}`);
-  revalidatePath('/dashboard/deals/[id]', 'page');
+  revalidatePath('/dashboard/deals/' + a.search.id);
   revalidatePath('/dashboard/deals');
   return { ok: true as const };
 }
@@ -1035,7 +1040,7 @@ export async function updateParticipantAction(
   );
 
   revalidatePath(`/dashboard/clients/${clientId}`);
-  revalidatePath('/dashboard/deals/[id]', 'page');
+  revalidatePath('/dashboard/deals/' + a.search.id);
   revalidatePath('/dashboard/deals');
   return { ok: true as const, participant: updated };
 }
@@ -1077,7 +1082,7 @@ export async function massInviteAction(
   }
 
   revalidatePath(`/dashboard/clients/${clientId}`);
-  revalidatePath('/dashboard/deals/[id]', 'page');
+  revalidatePath('/dashboard/deals/' + a.search.id);
   revalidatePath('/dashboard/deals');
   return { ok: true as const, added };
 }
@@ -1125,7 +1130,7 @@ export async function createNewDealAction(
     .single();
   if (error) return { ok: false as const, error: error.message };
   revalidatePath(`/dashboard/clients/${clientId}`);
-  revalidatePath('/dashboard/deals/[id]', 'page');
+  if (created?.id) revalidatePath('/dashboard/deals/' + created.id);
   revalidatePath('/dashboard/deals');
   return { ok: true as const, dealId: created?.id };
 }
@@ -1288,7 +1293,7 @@ export async function moveDocumentFolderAction(
     .eq('firm_id', a.search.firm_id);
   if (error) return { ok: false as const, error: error.message };
   revalidatePath(`/dashboard/clients/${clientId}`);
-  revalidatePath('/dashboard/deals/[id]', 'page');
+  revalidatePath('/dashboard/deals/' + a.search.id);
   revalidatePath('/dashboard/deals');
   return { ok: true as const };
 }
@@ -1317,7 +1322,7 @@ export async function deleteDocumentAction(
   const { error } = await service.from('documents').delete().eq('id', documentId);
   if (error) return { ok: false as const, error: error.message };
   revalidatePath(`/dashboard/clients/${clientId}`);
-  revalidatePath('/dashboard/deals/[id]', 'page');
+  revalidatePath('/dashboard/deals/' + a.search.id);
   revalidatePath('/dashboard/deals');
   return { ok: true as const };
 }
@@ -1381,7 +1386,7 @@ export async function proposeAlternativeTourTimeAction(
   );
 
   revalidatePath(`/dashboard/clients/${clientId}`);
-  revalidatePath('/dashboard/deals/[id]', 'page');
+  revalidatePath('/dashboard/deals/' + a.search.id);
   revalidatePath('/dashboard/deals');
   return { ok: true as const };
 }
@@ -1487,7 +1492,7 @@ export async function sendPrivatePartyMessageAction(
   );
 
   revalidatePath(`/dashboard/clients/${clientId}`);
-  revalidatePath('/dashboard/deals/[id]', 'page');
+  revalidatePath('/dashboard/deals/' + a.search.id);
   return { ok: true as const, messageId: (msg as any)?.id };
 }
 
@@ -1534,7 +1539,7 @@ export async function quickMessageAction(clientId: string, body: string) {
     console.error('[quickMessageAction] notify failed', e?.message || e);
   }
   revalidatePath(`/dashboard/clients/${clientId}`);
-  revalidatePath('/dashboard/deals/[id]', 'page');
+  revalidatePath('/dashboard/deals/' + a.search.id);
   revalidatePath('/dashboard/deals');
   return { ok: true as const };
 }
