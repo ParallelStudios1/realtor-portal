@@ -16,6 +16,7 @@ type Props = {
 const ITEMS = [
   { href: '/dashboard', label: 'Overview', icon: HomeIcon },
   { href: '/dashboard/deals', label: 'Deals', icon: DealsIcon },
+  { href: '/dashboard/analytics', label: 'Analytics', icon: AnalyticsIcon },
   { href: '/dashboard/clients', label: 'Clients', icon: ClientsIcon },
   { href: '/dashboard/contacts', label: 'Contacts', icon: ContactsIcon },
   { href: '/dashboard/inbox', label: 'Inbox', icon: InboxIcon },
@@ -287,6 +288,16 @@ function DealsIcon({ className }: { className?: string }) {
       <rect x="3" y="5" width="18" height="14" rx="2" strokeLinejoin="round" />
       <path d="M3 9h18" strokeLinecap="round" />
       <path d="M9 13h2M9 16h6" strokeLinecap="round" />
+    </svg>
+  );
+}
+function AnalyticsIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className}>
+      <path d="M4 20V10" strokeLinecap="round" />
+      <path d="M10 20V4" strokeLinecap="round" />
+      <path d="M16 20v-7" strokeLinecap="round" />
+      <path d="M22 20H2" strokeLinecap="round" />
     </svg>
   );
 }
