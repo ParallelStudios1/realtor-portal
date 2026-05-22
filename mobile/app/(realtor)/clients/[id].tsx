@@ -24,6 +24,7 @@ import {
 } from '@/lib/queries';
 import { useUpdatePhase, useLogActivity } from '@/lib/mutations';
 import { ActivityRow } from '@/components/ActivityRow';
+import { Skeleton } from '@/components/Skeleton';
 import { formatPhase } from '@/lib/format';
 import type { DealPhase } from '@/lib/database.types';
 
@@ -117,15 +118,50 @@ export default function RealtorClientDetailScreen() {
   };
 
   if (isLoading || !search) {
+    // Skeleton layout that mirrors the real screen so it doesn't feel
+    // like a stalled spinner — same header, same action-grid silhouette,
+    // same card stack. Animation is in lib/Skeleton.tsx.
     return (
       <SafeAreaView
         style={[styles.container, { backgroundColor: colors.background }]}
       >
-        <ActivityIndicator
-          size="large"
-          color={colors.primary}
-          style={{ marginTop: 60 }}
-        />
+        <ScrollView contentContainerStyle={{ padding: 16 }}>
+          <Skeleton width={'60%'} height={22} style={{ marginTop: 8 }} />
+          <Skeleton width={'40%'} height={14} style={{ marginTop: 8 }} />
+          <View
+            style={{
+              flexDirection: 'row',
+              flexWrap: 'wrap',
+              marginTop: 16,
+            }}
+          >
+            {Array.from({ length: 8 }).map((_, i) => (
+              <Skeleton
+                key={i}
+                width={'22%'}
+                height={64}
+                borderRadius={12}
+                style={{ margin: '1.5%' }}
+              />
+            ))}
+          </View>
+          {Array.from({ length: 3 }).map((_, i) => (
+            <View
+              key={i}
+              style={{
+                marginTop: 16,
+                padding: 14,
+                borderRadius: 14,
+                borderWidth: 1,
+                borderColor: colors.border,
+              }}
+            >
+              <Skeleton width={120} height={12} />
+              <Skeleton width={'90%'} height={14} style={{ marginTop: 10 }} />
+              <Skeleton width={'70%'} height={14} style={{ marginTop: 6 }} />
+            </View>
+          ))}
+        </ScrollView>
       </SafeAreaView>
     );
   }
