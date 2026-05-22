@@ -80,6 +80,34 @@ body {
   .label {
     @apply block text-xs font-semibold uppercase tracking-wide text-ink-500;
   }
+  /* Universal pending-button spinner. Any element with [data-loading="true"]
+     gets a spinner prepended via CSS — no React change needed. Pair with
+     `disabled` or `aria-disabled="true"` to fade the button so it's obvious
+     the press registered and the action is in flight. */
+  [data-loading='true'] {
+    position: relative;
+    pointer-events: none;
+    cursor: progress;
+    opacity: 0.85;
+  }
+  [data-loading='true']::before {
+    content: '';
+    display: inline-block;
+    width: 0.875rem;
+    height: 0.875rem;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: rp-spin 0.6s linear infinite;
+    margin-right: 0.5rem;
+    vertical-align: -2px;
+  }
+  @keyframes rp-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
   /* Subtle dotted background — used on empty-state cards to give them
      personality without distracting from the message. */
   .bg-dotted {

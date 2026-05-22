@@ -811,14 +811,32 @@ function PrimaryButton({
       disabled={pending || disabled}
       onClick={onClick}
       className={
-        'mt-5 inline-flex w-full items-center justify-center rounded-lg px-4 py-2.5 text-sm font-semibold text-white shadow-soft-sm transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 ' +
+        'mt-5 inline-flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white shadow-soft-sm transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 ' +
         (variant === 'danger'
           ? 'bg-rose-600 hover:bg-rose-700'
           : 'bg-ink-900 hover:bg-ink-700')
       }
     >
-      {pending ? 'Saving…' : children}
+      {pending && <Spinner />}
+      <span>{pending ? 'Working…' : children}</span>
     </button>
+  );
+}
+
+/** Reusable inline spinner that matches the button text color. */
+function Spinner({ className }: { className?: string }) {
+  return (
+    <svg
+      className={'animate-spin h-4 w-4 ' + (className || '')}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      aria-hidden
+    >
+      <circle cx="12" cy="12" r="9" strokeOpacity="0.25" />
+      <path d="M21 12a9 9 0 0 0-9-9" strokeLinecap="round" />
+    </svg>
   );
 }
 

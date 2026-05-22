@@ -106,25 +106,23 @@ export default async function SettingsPage() {
       <section id="mobile" className="mt-8 rounded-xl border border-slate-200 bg-white p-6">
         <h2 className="text-lg font-semibold">Mobile app</h2>
         <p className="mt-1 text-sm text-slate-600">
-          Download Realtor Portal on iOS or Android. Sign in with the same email and password.
+          Download Realtor Portal on iOS or Android. Sign in with the same
+          email and password you use here.
         </p>
         <div className="mt-4 flex gap-3">
           <a
-            href="#"
+            href="https://apps.apple.com/app/realtor-portal/id6768115138"
             className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:border-slate-400"
           >
-            App Store (coming soon)
+            App Store
           </a>
           <a
-            href="#"
+            href="https://play.google.com/store/apps/details?id=com.parallelstudios.realtorportal"
             className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:border-slate-400"
           >
-            Google Play (coming soon)
+            Google Play
           </a>
         </div>
-        <p className="mt-3 text-xs text-slate-500">
-          Beta testing? Email <a href="mailto:turnerlogan@parallelstudios.co" className="underline">us</a> for an early TestFlight invite.
-        </p>
       </section>
 
       <section className="mt-8 rounded-xl border border-red-200 bg-red-50 p-6">
