@@ -64,11 +64,63 @@ export async function POST(req: Request) {
       '.',
   });
 
+  // Twilio's REST returns "queued" instantly even when the carrier later
+  // drops the message (most common reason: US A2P 10DLC — the sending
+  // number isn't registered with The Campaign Registry, so every US
+  // carrier rejects it with error_code 30034). Wait a couple seconds and
+  // ask Twilio for the actual delivery status + error code so we surface
+  // the real reason in the diagnostic, not just "queued".
+  let twilioStatus: any = null;
+  if (r.ok && r.sid) {
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 3500));
+      const sid = process.env.TWILIO_ACCOUNT_SID!;
+      const token = process.env.TWILIO_AUTH_TOKEN!;
+      const auth = Buffer.from(sid + ':' + token).toString('base64');
+      const sr = await fetch(
+        'https://api.twilio.com/2010-04-01/Accounts/' +
+          encodeURIComponent(sid) +
+          '/Messages/' +
+          encodeURIComponent(r.sid) +
+          '.json',
+        { headers: { Authorization: 'Basic ' + auth } }
+      );
+      if (sr.ok) {
+        const j = await sr.json();
+        twilioStatus = {
+          status: j.status,
+          error_code: j.error_code,
+          error_message: j.error_message,
+        };
+      }
+    } catch {
+      // best-effort; don't fail the test if the polling call breaks
+    }
+  }
+
+  // Friendly hint for the carrier-rejection case so the realtor knows
+  // exactly what's wrong and what to do about it.
+  let hint: string | null = null;
+  if (twilioStatus?.error_code === 30034) {
+    hint =
+      'US carriers blocked this text because your Twilio number is not registered with The Campaign Registry (A2P 10DLC). Fastest fix: buy a toll-free number in Twilio Console + submit Toll-Free Verification (1–2 business days). Then swap TWILIO_FROM_NUMBER in Vercel.';
+  } else if (
+    twilioStatus?.error_code &&
+    Number(twilioStatus.error_code) >= 30000
+  ) {
+    hint =
+      'Twilio carrier-rejected the message (error ' +
+      twilioStatus.error_code +
+      '). Check Twilio Console → Monitor → Logs → Errors for details.';
+  }
+
   return NextResponse.json({
-    ok: r.ok,
+    ok: r.ok && twilioStatus?.status !== 'undelivered',
     error: r.error,
     sid: r.sid,
     to: e164,
+    twilio: twilioStatus,
+    hint,
     env: {
       account_sid_set: Boolean(process.env.TWILIO_ACCOUNT_SID),
       auth_token_set: Boolean(process.env.TWILIO_AUTH_TOKEN),

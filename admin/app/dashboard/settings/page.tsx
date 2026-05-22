@@ -92,11 +92,21 @@ export default async function SettingsPage() {
       </div>
 
       <section id="sms" className="mt-8 rounded-xl border border-slate-200 bg-white p-6">
-        <h2 className="text-lg font-semibold">Test SMS</h2>
+        <h2 className="text-lg font-semibold">SMS</h2>
         <p className="mt-1 text-sm text-slate-600">
-          Fire a real text from your firm&apos;s Twilio number so you can
-          confirm SMS works end-to-end. The full response from Twilio is
-          shown so you see exactly what happened.
+          We send invite + alert texts through Twilio. To send to US numbers
+          your sending number must be registered for A2P 10DLC (long-code) or
+          go through Toll-Free Verification. Without it, US carriers silently
+          drop every text (Twilio error 30034). Set this up in{' '}
+          <a
+            href="https://console.twilio.com/us1/develop/sms/regulatory-compliance"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline"
+          >
+            Twilio Console → Regulatory Compliance
+          </a>
+          . Toll-Free is fastest (1–2 business days).
         </p>
         <div className="mt-4">
           <TestSmsButton />
