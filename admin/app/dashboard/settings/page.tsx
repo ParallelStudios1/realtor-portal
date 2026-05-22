@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { getMe, getSupabaseServerClient } from '@/lib/supabaseSsr';
 import { SettingsForm } from './SettingsForm';
+import { TestSmsButton } from '@/components/TestSmsButton';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Settings · Realtor Portal' };
@@ -89,6 +90,18 @@ export default async function SettingsPage() {
           }
         />
       </div>
+
+      <section id="sms" className="mt-8 rounded-xl border border-slate-200 bg-white p-6">
+        <h2 className="text-lg font-semibold">Test SMS</h2>
+        <p className="mt-1 text-sm text-slate-600">
+          Fire a real text from your firm&apos;s Twilio number so you can
+          confirm SMS works end-to-end. The full response from Twilio is
+          shown so you see exactly what happened.
+        </p>
+        <div className="mt-4">
+          <TestSmsButton />
+        </div>
+      </section>
 
       <section id="mobile" className="mt-8 rounded-xl border border-slate-200 bg-white p-6">
         <h2 className="text-lg font-semibold">Mobile app</h2>
