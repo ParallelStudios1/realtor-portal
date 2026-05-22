@@ -788,19 +788,24 @@ export async function addParticipantAction(
         : isAttorneyRole
           ? 'attorney'
           : null;
-      // The route that completes their onboarding. For attorneys, /welcome/realtor
-      // also handles their case — we just mark them with role=attorney via
-      // the supabase user_metadata.role so /welcome/realtor can branch.
+      // CRITICAL: Supabase magic links arrive at the redirectTo URL with
+      // a URL fragment (#access_token=...). Server components can't see
+      // hashes — only client JS can. So we ALWAYS redirect through
+      // /welcome (which has the hash-handling client) and let it forward
+      // by role to /welcome/realtor or /welcome/attorney AFTER setSession
+      // succeeds. Anything else and the user lands on a server route
+      // that thinks they're unauthenticated → middleware bounces to /login.
+      const nextPath =
+        collabRole === 'attorney'
+          ? '/attorney/deals/' + a.search.id
+          : '/deal/' + a.search.id;
       const onboardingPath = collabRole
-        ? (collabRole === 'attorney'
-            ? '/welcome/attorney?next=' +
-              encodeURIComponent('/attorney/deals/' + a.search.id) +
-              '&host_firm=' +
-              encodeURIComponent(a.search.firm_id)
-            : '/welcome/realtor?next=' +
-              encodeURIComponent('/deal/' + a.search.id) +
-              '&host_firm=' +
-              encodeURIComponent(a.search.firm_id))
+        ? '/welcome?role=' +
+          encodeURIComponent(collabRole) +
+          '&next=' +
+          encodeURIComponent(nextPath) +
+          '&host_firm=' +
+          encodeURIComponent(a.search.firm_id)
         : null;
 
       let invitedViaSupabase = false;

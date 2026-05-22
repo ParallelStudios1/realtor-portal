@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { getMe, getSupabaseServerClient } from '@/lib/supabaseSsr';
+import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
 import { DealWorkspace } from './DealWorkspace';
 
 export const dynamic = 'force-dynamic';
@@ -29,16 +30,18 @@ export default async function DealDetailPage({
 
   const supabase = getSupabaseServerClient();
 
-  // No firm filter here on purpose. RLS handles the "can this user see
-  // this deal?" check — and that includes the cross-firm collab path
-  // (searches_collab_read via can_collab_on_search), which lets an invited
-  // realtor from another firm open a deal they've been added to as
-  // realtor/co_realtor. If we pre-filter by firm_id, the visiting
-  // collaborator 404s even though RLS would have happily returned the row.
-  const { data: deal } = await supabase
+  // INTERMITTENT 404 FIX: rely on the SERVICE ROLE for the deal lookup,
+  // then do our own access check. We were hitting a race where the
+  // user-scoped query returned null when the SSR auth context was still
+  // mid-refresh — first paint = empty cookie → RLS bounces row → notFound.
+  // With service role, the deal is always findable; we just gate by
+  // (firm_id match) OR (caller is a deal_participants row on this deal)
+  // — the same predicate as can_collab_on_search.
+  const service = getSupabaseServiceRoleClient();
+  const { data: deal } = await service
     .from('client_searches')
     .select(
-      `id, firm_id, kind, phase, name, description, attorney_name, attorney_email,
+      `id, firm_id, client_id, kind, phase, name, description, attorney_name, attorney_email,
        attorney_phone, docusign_envelope_url, co_realtor_id, realtor_id,
        agreed_price, closing_amount, earnest_money, commission_pct,
        contract_url, notes, offer_amount, counter_offer_amount,
@@ -49,6 +52,31 @@ export default async function DealDetailPage({
     .eq('id', params.id)
     .maybeSingle();
   if (!deal) notFound();
+
+  // Access check (replaces what RLS would have done in the user-scoped
+  // query). Either: caller's home firm matches, or caller is a participant
+  // on this deal via user_id or external_email, or caller is the client.
+  const callerIsInHostFirm = (deal as any).firm_id === me.firm_id;
+  if (!callerIsInHostFirm) {
+    const { data: participant } = await service
+      .from('deal_participants')
+      .select('id')
+      .eq('search_id', (deal as any).id)
+      .or(
+        [
+          `user_id.eq.${me.user_id}`,
+          me.email ? `external_email.ilike.${me.email}` : null,
+        ]
+          .filter(Boolean)
+          .join(',')
+      )
+      .limit(1);
+    const isParticipant = (participant?.length ?? 0) > 0;
+    const isPrincipalClient = (deal as any).client_id === me.user_id;
+    if (!isParticipant && !isPrincipalClient) {
+      notFound();
+    }
+  }
   // True when the deal belongs to a different firm than the caller's — i.e.
   // they're a cross-firm guest collaborator (invited realtor from another
   // firm). UI can use this to swap chrome ("Viewing as guest" badge,

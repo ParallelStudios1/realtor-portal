@@ -81,8 +81,33 @@ export function WelcomeClient({ firm, hasSession, email, fullName }: Props) {
         setStep('openApp');
         return;
       }
+      // Pull the routing hints out of the URL BEFORE we wipe it.
+      const usp = new URLSearchParams(window.location.search);
+      const role = (usp.get('role') || '').toLowerCase();
+      const next = usp.get('next') || '';
+      const hostFirm = usp.get('host_firm') || '';
       window.history.replaceState(null, '', window.location.pathname);
       setSessionReady(true);
+
+      // External-collaborator role detected — forward to the right
+      // onboarding flow. This is how cross-firm realtor + attorney
+      // invites land on the dedicated setup screen instead of the
+      // generic client "set password" flow.
+      if (role === 'realtor' || role === 'co_realtor') {
+        const params = new URLSearchParams();
+        if (next) params.set('next', next);
+        if (hostFirm) params.set('host_firm', hostFirm);
+        router.replace('/welcome/realtor?' + params.toString());
+        return;
+      }
+      if (role === 'attorney') {
+        const params = new URLSearchParams();
+        if (next) params.set('next', next);
+        if (hostFirm) params.set('host_firm', hostFirm);
+        router.replace('/welcome/attorney?' + params.toString());
+        return;
+      }
+
       setStep('setPassword');
       router.refresh();
     };
