@@ -769,8 +769,13 @@ export async function addParticipantAction(
       const dealUrl = siteUrl + '/deal/' + a.search.id;
       const isRealtorRole =
         payload.role === 'realtor' || payload.role === 'co_realtor';
-      // Cross-firm invite link: realtor signup pre-filled with their email,
-      // and once they finish onboarding we route them back to the deal.
+      const isAttorneyRole = payload.role === 'attorney';
+      // For external collaborators (realtor / co_realtor / attorney) we
+      // use Supabase's inviteUserByEmail. That ships an actual email
+      // through Supabase's own SMTP — no Resend dependency. The redirect
+      // sends them to /welcome/<role> which sets up their account + lands
+      // them on the deal. For everyone else we still fall back to a
+      // password-based /signup link, which is safe in the SMS body.
       const signupUrl =
         siteUrl +
         '/signup?role=realtor' +
@@ -778,21 +783,64 @@ export async function addParticipantAction(
         '&next=' +
         encodeURIComponent('/deal/' + a.search.id);
 
-      // Cross-firm realtor invites get a Supabase magic link too. The link
-      // creates their auth user the moment they tap it, lands them on
-      // /welcome/realtor which auto-creates their firm + public.users row,
-      // then forwards into the deal. Zero passwords, one tap. We use it as
-      // the primary CTA in the SMS so they don't have to type anything.
-      //
-      // Only do this when we have an email — magic links are email-bound.
-      let magicLinkUrl: string | null = null;
-      if (isRealtorRole && payload.email && !userId) {
+      const collabRole = isRealtorRole
+        ? 'realtor'
+        : isAttorneyRole
+          ? 'attorney'
+          : null;
+      // The route that completes their onboarding. For attorneys, /welcome/realtor
+      // also handles their case — we just mark them with role=attorney via
+      // the supabase user_metadata.role so /welcome/realtor can branch.
+      const onboardingPath = collabRole
+        ? (collabRole === 'attorney'
+            ? '/welcome/attorney?next=' +
+              encodeURIComponent('/attorney/deals/' + a.search.id) +
+              '&host_firm=' +
+              encodeURIComponent(a.search.firm_id)
+            : '/welcome/realtor?next=' +
+              encodeURIComponent('/deal/' + a.search.id) +
+              '&host_firm=' +
+              encodeURIComponent(a.search.firm_id))
+        : null;
+
+      let invitedViaSupabase = false;
+      if (collabRole && payload.email && !userId) {
         try {
-          const onboardingPath =
-            '/welcome/realtor?next=' +
-            encodeURIComponent('/deal/' + a.search.id) +
-            '&host_firm=' +
-            encodeURIComponent(a.search.firm_id);
+          const { error: inviteErr } = await service.auth.admin.inviteUserByEmail(
+            payload.email,
+            {
+              data: {
+                full_name: payload.name || '',
+                invited_by_firm: a.search.firm_id,
+                invited_to_deal: a.search.id,
+                role: collabRole,
+              },
+              redirectTo: siteUrl + (onboardingPath || ''),
+            }
+          );
+          if (!inviteErr) {
+            invitedViaSupabase = true;
+          } else if (/already/i.test(inviteErr.message)) {
+            // They already have an auth account. Fall through to magic link.
+          } else {
+            console.error(
+              '[addParticipantAction] inviteUserByEmail failed',
+              inviteErr.message
+            );
+          }
+        } catch (e: any) {
+          console.error(
+            '[addParticipantAction] inviteUserByEmail threw',
+            e?.message || e
+          );
+        }
+      }
+
+      // Magic link as the SMS-friendly link AND as a fallback for
+      // already-existing accounts where invite-by-email is a no-op.
+      let magicLinkUrl: string | null = null;
+      if (collabRole && payload.email && onboardingPath) {
+        try {
           const { data: linkData } = await service.auth.admin.generateLink({
             type: 'magiclink',
             email: payload.email,
@@ -802,6 +850,7 @@ export async function addParticipantAction(
                 full_name: payload.name || '',
                 invited_by_firm: a.search.firm_id,
                 invited_to_deal: a.search.id,
+                role: collabRole,
               },
             },
           });
@@ -865,14 +914,25 @@ export async function addParticipantAction(
         ? `${realtorName} (${firmName}) invited you to co-broker a deal on Realtor Portal. Tap to open: ${primaryUrl}`
         : `${realtorName} (${firmName}) added you to a real-estate deal as ${rolePretty}. Open: ${dealUrl}`;
 
+      // If Supabase already sent the invite email via inviteUserByEmail,
+      // don't double-send via Resend. notify() will skip email when we
+      // pass null and we synthesize the email-sent half of the result.
+      const skipEmail = invitedViaSupabase;
       notifyResult = await notify({
-        email: payload.email || null,
+        email: skipEmail ? null : payload.email || null,
         phone: payload.phone || userPhone,
         subject,
-        text: isRealtorRole ? realtorText : partyText,
-        html: isRealtorRole ? realtorBody : partyBody,
+        text: isRealtorRole || isAttorneyRole ? realtorText : partyText,
+        html: isRealtorRole || isAttorneyRole ? realtorBody : partyBody,
         sms_text: smsBody,
       });
+      if (skipEmail) {
+        // Tell the UI an invite email DID go out, just via Supabase SMTP.
+        notifyResult = {
+          ...notifyResult,
+          email: { ok: true, via: 'supabase' as const },
+        };
+      }
     } catch (e: any) {
       console.error('[addParticipantAction] notify failed', e?.message || e);
     }

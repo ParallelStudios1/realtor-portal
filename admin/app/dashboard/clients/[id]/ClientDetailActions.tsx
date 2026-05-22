@@ -193,13 +193,10 @@ export function ClientDetailActions({
               subtitle="Paste many emails at once"
               onClick={() => setOpen('mass_invite')}
             />
-            <ActionCard
-              tone="slate"
-              icon={<IconBriefcase />}
-              title="Attorney"
-              subtitle="Add closing counsel"
-              onClick={() => setOpen('attorney')}
-            />
+            {/* Attorney removed: attorneys are now added via "+ Party" with
+                role=attorney. That path sends them their own magic-link
+                signup that routes them to the attorney dashboard, so a
+                separate "Add attorney" button is redundant. */}
           </ActionGroup>
 
           <ActionGroup

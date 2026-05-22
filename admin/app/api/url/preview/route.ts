@@ -107,6 +107,26 @@ export async function POST(req: Request) {
     clearTimeout(t);
 
     if (!res.ok) {
+      // Specific message for Zillow / Redfin — they actively block server
+      // IPs, especially Vercel/AWS ranges. There's no fix from our side
+      // short of proxying through residential IPs (paid service). Tell
+      // the user what to do instead instead of returning a vague error.
+      if (res.status === 403 || res.status === 429) {
+        const host = parsed.hostname.toLowerCase();
+        const isZillow = host.endsWith('zillow.com');
+        const isRedfin = host.endsWith('redfin.com');
+        return NextResponse.json(
+          {
+            blocked: true,
+            error: isZillow
+              ? "Zillow is blocking automatic imports right now. Copy the property's address and photo URL from the page and paste them into the form."
+              : isRedfin
+                ? 'Redfin is blocking automatic imports right now. Copy the address and a photo URL from the page and paste them into the form.'
+                : 'That listing site is blocking automated requests. Paste the address + a photo URL manually.',
+          },
+          { status: 502 }
+        );
+      }
       return NextResponse.json(
         { error: `Listing site returned HTTP ${res.status}.` },
         { status: 502 }
