@@ -23,6 +23,9 @@ export async function middleware(req: NextRequest) {
     path.startsWith('/participant') ||
     path.startsWith('/privacy') ||
     path.startsWith('/terms') ||
+    // Public seller-lead AVM landing page. Lives at /value/[firmSlug] and
+    // collects seller leads for whichever firm owns the slug. No auth.
+    path.startsWith('/value/') ||
     // All /api routes do their own auth (cookie session OR Bearer token).
     // Letting middleware redirect them to /login was breaking every mobile
     // call: fetch followed the 307 → got /login HTML at 200 → "Failed HTTP 200".
