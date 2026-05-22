@@ -84,7 +84,7 @@ export function ValueClient({
       const r = await fetch('/api/value/estimate', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ address: trimmed }),
+        body: JSON.stringify({ address: trimmed, firmId }),
       });
       const json = await r.json().catch(() => ({}));
       if (!r.ok) {

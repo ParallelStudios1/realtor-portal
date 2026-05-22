@@ -24,7 +24,7 @@ export const runtime = 'nodejs';
  * otherwise we wrap their point estimate with the same ±8% band.
  */
 
-type EstimateBody = { address?: string };
+type EstimateBody = { address?: string; firmId?: string };
 
 // Rough city → median single-family price baseline (USD). Used only to
 // nudge the simulated number into a believable bucket so a Manhattan
@@ -98,6 +98,33 @@ export async function POST(req: Request) {
       return NextResponse.json(
         { error: 'Please enter a full street address.' },
         { status: 400 }
+      );
+    }
+    // Validate firmId — must be a UUID and exist in the firms table.
+    // Without this, anyone can POST estimates with no firm attribution,
+    // which breaks per-firm rate-limiting / attribution tracking later.
+    const firmId = (body.firmId || '').trim();
+    if (
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        firmId
+      )
+    ) {
+      return NextResponse.json(
+        { error: 'Invalid firmId.' },
+        { status: 400 }
+      );
+    }
+    const { getSupabaseServiceRoleClient } = await import('@/lib/supabaseServer');
+    const service = getSupabaseServiceRoleClient();
+    const { data: firm } = await service
+      .from('firms')
+      .select('id')
+      .eq('id', firmId)
+      .maybeSingle();
+    if (!firm) {
+      return NextResponse.json(
+        { error: 'Unknown firm.' },
+        { status: 404 }
       );
     }
 

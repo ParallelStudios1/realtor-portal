@@ -59,6 +59,14 @@ export async function POST(req: Request) {
     if (!address) {
       return NextResponse.json({ error: 'Missing address.' }, { status: 400 });
     }
+    // Reject malformed emails so we don't persist garbage like "notanemail"
+    // as a seller lead.
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return NextResponse.json(
+        { error: 'That email address looks wrong. Double-check it.' },
+        { status: 400 }
+      );
+    }
     if (!email && !phone) {
       return NextResponse.json(
         { error: 'Please provide an email or phone so we can send your report.' },
