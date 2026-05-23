@@ -756,9 +756,47 @@ export async function addParticipantAction(
   //             firm-user has a phone on file
   let notifyResult: any = null;
   // Hoisted outside the inner try so the return value can pass the
-  // magic-link URL back to the realtor's UI for a "copy invite link"
+  // invite URL back to the realtor's UI for a "copy invite link"
   // fallback when email/SMS delivery is unreliable.
   let outerMagicLinkUrl: string | null = null;
+
+  // FIRST-CLASS INVITE TOKEN.
+  // Every party we add with contact info gets a row in deal_invites and
+  // a /invite/<token> URL. That URL serves a branded role-aware landing
+  // page that knows (without auth) who the recipient is, what role
+  // they're being added as, whether they already have an account, and
+  // routes them to the right onboarding. The SMS body + the toast's
+  // copy-to-clipboard fallback both use this URL instead of the
+  // Supabase magic link (which is fragile, requires email delivery,
+  // and dumps un-authenticated visitors on /login).
+  let invitePath: string | null = null;
+  if (payload.email || payload.phone) {
+    try {
+      const { data: inviteRow } = await service
+        .from('deal_invites')
+        .insert({
+          search_id: a.search.id,
+          firm_id: a.search.firm_id,
+          participant_id: (inserted as any).id,
+          role: payload.role,
+          name: payload.name || null,
+          email: payload.email ? payload.email.toLowerCase() : null,
+          phone: payload.phone || null,
+          created_by: a.me.user_id,
+        })
+        .select('token')
+        .single();
+      if (inviteRow) {
+        invitePath =
+          '/invite/' + (inviteRow as any).token;
+      }
+    } catch (e: any) {
+      console.error(
+        '[addParticipantAction] deal_invites insert failed',
+        e?.message || e
+      );
+    }
+  }
   if (payload.email || payload.phone || userPhone) {
     try {
       const { data: ctx } = await service
@@ -905,11 +943,16 @@ export async function addParticipantAction(
       const subject = isRealtorRole
         ? `${realtorName} invited you to co-broker a deal at ${firmName}`
         : `${realtorName} added you to a real-estate deal at ${firmName}`;
-      // Prefer the magic link when we generated one — it's a one-tap
-      // experience (Supabase signs them in, our /welcome/realtor route
-      // sets up their firm, then they land on the deal). Fall back to
-      // the password-based /signup link otherwise.
-      const primaryUrl = magicLinkUrl || signupUrl;
+      // The /invite/<token> landing is now ALWAYS the primary URL — it
+      // works without auth, is fully branded, and routes the recipient
+      // by role automatically. Magic link + signup URL are kept as
+      // fallbacks but never preferred.
+      const primaryUrl = invitePath
+        ? siteUrl + invitePath
+        : magicLinkUrl || signupUrl;
+      // Track the URL on the hoisted var so the action's return value
+      // surfaces it for the realtor's copy/share fallback.
+      outerMagicLinkUrl = primaryUrl;
       const realtorBody = `
           <div style="font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial;font-size:15px;color:#0F172A;max-width:560px;padding:24px">
             <h2 style="font-size:20px;margin:0 0 12px">You've been invited to co-broker a deal</h2>
