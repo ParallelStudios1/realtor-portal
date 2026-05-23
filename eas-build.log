@@ -1,0 +1,86 @@
+★ eas-cli@19.0.6 is now available.
+To upgrade, run:
+npm install -g eas-cli
+Proceeding with outdated version.
+
+Found eas-cli in your project dependencies.
+It's recommended to use the "cli.version" field in eas.json to enforce the eas-cli version for your project.
+Learn more: https://github.com/expo/eas-cli#enforcing-eas-cli-version-for-your-project
+
+
+⚠️ Detected that your app uses Expo Go for development, this is not recommended when building production apps.
+Learn more: https://expo.fyi/why-not-build-expo-go-for-production
+To suppress this warning, set EAS_BUILD_NO_EXPO_GO_WARNING=true.
+
+Resolved "production" environment for the build. Learn more: https://docs.expo.dev/eas/environment-variables/#setting-the-environment-for-your-builds
+No environment variables with visibility "Plain text" and "Sensitive" found for the "production" environment on EAS.
+Environment variables loaded from the "production" build profile "env" configuration: EXPO_PUBLIC_SUPABASE_URL, EXPO_PUBLIC_SUPABASE_ANON_KEY, EXPO_PUBLIC_API_URL.
+
+- Incrementing versionCode from 5 to 6.
+✔ Incremented versionCode from 5 to 6.
+
+
+🤖 Android build
+✔ Using remote Android credentials (Expo server)
+✔ Using Keystore from configuration: Build Credentials reU9T26q4Z (default)
+
+Compressing project files and uploading to EAS Build. Learn more: https://expo.fyi/eas-build-archive
+- Compressing project files
+- Uploading to EAS Build (0 / 1.3 MB)
+✔ Uploaded to EAS 
+- Computing project fingerprint
+✔ Computed project fingerprint
+Resolved "production" environment for the build. Learn more: https://docs.expo.dev/eas/environment-variables/#setting-the-environment-for-your-builds
+No environment variables with visibility "Plain text" and "Sensitive" found for the "production" environment on EAS.
+Environment variables loaded from the "production" build profile "env" configuration: EXPO_PUBLIC_SUPABASE_URL, EXPO_PUBLIC_SUPABASE_ANON_KEY, EXPO_PUBLIC_API_URL.
+
+- Incrementing buildNumber from 21 to 22.
+✔ Incremented buildNumber from 21 to 22.
+
+🍏 iOS build
+✔ Using remote iOS credentials (Expo server)
+
+Distribution Certificate is not validated for non-interactive builds.
+Skipping Provisioning Profile validation on Apple Servers because we aren't authenticated.
+
+Project Credentials Configuration
+
+Project                   @parallelstudios/realtor-portal
+Bundle Identifier         com.parallelstudios.realtorportal
+                          
+App Store Configuration   
+                          
+Distribution Certificate  
+Serial Number             71D3F5011A265906FFA2AF102E53763
+Expiration Date           Fri, 07 May 2027 22:43:18 EDT
+Apple Team                W4K7G5YF5D (Parallel Studios LLC (Company/Organization))
+Updated                   13 days ago
+                          
+Provisioning Profile      
+Developer Portal ID       6M256P4LJP
+Status                    active
+Expiration                Fri, 07 May 2027 22:43:18 EDT
+Apple Team                W4K7G5YF5D (Parallel Studios LLC (Company/Organization))
+Updated                   11 days ago
+                          
+All credentials are ready to build @parallelstudios/realtor-portal (com.parallelstudios.realtorportal)
+
+
+Compressing project files and uploading to EAS Build. Learn more: https://expo.fyi/eas-build-archive
+- Compressing project files
+- Uploading to EAS Build (0 / 1.3 MB)
+✔ Uploaded to EAS 
+- Computing project fingerprint
+✔ Computed project fingerprint
+
+See 🤖 Android logs: https://expo.dev/accounts/parallelstudios/projects/realtor-portal/builds/26cb9563-f4d5-4030-8e1d-6a8d75e7ebad
+See 🍏 iOS logs: https://expo.dev/accounts/parallelstudios/projects/realtor-portal/builds/3b4c1712-3241-40d4-8e6f-87e5a6eceb1c
+
+
+🤖 Android submission
+
+File /Users/turnerlogan/Downloads/google-play-service-account.json doesn't exist.
+A Google Service Account JSON key is required to upload your app to Google Play Store.
+If you're not sure what this is or how to create one, learn more: https://expo.fyi/creating-google-service-account
+Input is required, but stdin is not readable. Failed to display prompt: Path to Google Service Account file:
+    Error: build command failed.

@@ -1,0 +1,30 @@
+★ eas-cli@19.0.6 is now available.
+To upgrade, run:
+npm install -g eas-cli
+Proceeding with outdated version.
+
+Found eas-cli in your project dependencies.
+It's recommended to use the "cli.version" field in eas.json to enforce the eas-cli version for your project.
+Learn more: https://github.com/expo/eas-cli#enforcing-eas-cli-version-for-your-project
+
+
+ASC App ID:                 6768115138
+Project ID:                 2ec40b9d-760a-4b14-81eb-8de0f06e9fdb
+App Store Connect API Key:  
+    Key ID    :  544WW2NRWY
+    Key Source:  local
+    Key Path  :  /Users/turnerlogan/Downloads/AuthKey_544WW2NRWY.p8
+Build:                      
+    Build ID    :  3b4c1712-3241-40d4-8e6f-87e5a6eceb1c
+    Build Date  :  5/21/2026, 6:40:13 PM
+    App Version :  0.1.1
+    Build number:  22
+
+- Scheduling iOS submission
+✔ Scheduled iOS submission
+
+Submission details: https://expo.dev/accounts/parallelstudios/projects/realtor-portal/submissions/39d17509-02bf-40c3-8675-221377488f1a
+
+Waiting for submission to complete. You can press Ctrl+C to exit.
+- Submitting
+✖ Something went wrong when submitting your app to Apple App Store Connect.

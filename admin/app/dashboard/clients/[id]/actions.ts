@@ -772,7 +772,7 @@ export async function addParticipantAction(
   let invitePath: string | null = null;
   if (payload.email || payload.phone) {
     try {
-      const { data: inviteRow } = await service
+      const { data: inviteRow, error: inviteErr } = await service
         .from('deal_invites')
         .insert({
           search_id: a.search.id,
@@ -786,14 +786,31 @@ export async function addParticipantAction(
         })
         .select('token')
         .single();
-      if (inviteRow) {
+      if (inviteErr) {
+        // Surface the actual error so we can debug from Vercel logs
+        // instead of silently falling back to the supabase magic link.
+        console.error(
+          '[addParticipantAction] deal_invites insert error',
+          {
+            code: (inviteErr as any).code,
+            message: inviteErr.message,
+            details: (inviteErr as any).details,
+            hint: (inviteErr as any).hint,
+          }
+        );
+      } else if (inviteRow) {
         invitePath =
           '/invite/' + (inviteRow as any).token;
+        console.log(
+          '[addParticipantAction] deal_invites inserted ok',
+          { token: (inviteRow as any).token, role: payload.role }
+        );
       }
     } catch (e: any) {
       console.error(
-        '[addParticipantAction] deal_invites insert failed',
-        e?.message || e
+        '[addParticipantAction] deal_invites insert threw',
+        e?.message || e,
+        e?.stack
       );
     }
   }
@@ -970,9 +987,10 @@ export async function addParticipantAction(
             <h2 style="font-size:20px;margin:0 0 12px">You've been added to a deal</h2>
             <p>${safeRealtor} at <strong>${safeFirm}</strong> added you to a real-estate deal as <strong>${safeRole}</strong>.</p>
             <p style="margin:24px 0">
-              <a href="${dealUrl}" style="display:inline-block;background:#0F172A;color:#fff;padding:10px 18px;border-radius:8px;font-weight:600;text-decoration:none">Open the deal &rarr;</a>
+              <a href="${primaryUrl}" style="display:inline-block;background:#0F172A;color:#fff;padding:10px 18px;border-radius:8px;font-weight:600;text-decoration:none">Accept invite &amp; open the deal &rarr;</a>
             </p>
             <p style="color:#64748B;font-size:13px">You'll see whatever ${safeRealtor} chose to share with you: important dates, documents, financials, or messages. Hi ${safeName}.</p>
+            <p style="color:#94A3B8;font-size:12px">If the button above doesn't work, paste this link into your browser: ${primaryUrl}</p>
           </div>
         `;
       const realtorText =
@@ -982,13 +1000,15 @@ export async function addParticipantAction(
         `You can add your own client (buyer or seller) from your own firm, and use Realtor Portal's deal tools on this deal even if your firm doesn't have a paid plan.`;
       const partyText =
         `${realtorName} at ${firmName} added you to a deal as ${rolePretty}.\n\n` +
-        `Open the deal:\n${dealUrl}\n\n` +
+        `Tap to accept and open the deal:\n${primaryUrl}\n\n` +
         `You'll see whatever ${realtorName} chose to share with you (dates, documents, financials, messages).`;
       // Compact SMS body — Twilio cuts at 1600, but real-world deliverability
       // is much better under 320 (which fits in 2 SMS segments).
+      // ALWAYS use primaryUrl (the /invite/<token> landing). The deal URL
+      // requires auth and dumps un-authenticated visitors on /login.
       const smsBody = isRealtorRole
         ? `${realtorName} (${firmName}) invited you to co-broker a deal on Realtor Portal. Tap to open: ${primaryUrl}`
-        : `${realtorName} (${firmName}) added you to a real-estate deal as ${rolePretty}. Open: ${dealUrl}`;
+        : `${realtorName} (${firmName}) added you to a real-estate deal as ${rolePretty}. Tap to accept: ${primaryUrl}`;
 
       // If Supabase already sent the invite email via inviteUserByEmail,
       // don't double-send via Resend. notify() will skip email when we
