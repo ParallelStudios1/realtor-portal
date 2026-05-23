@@ -382,6 +382,28 @@ export function ClientDetailActions({
               router.refresh();
               return;
             }
+            const inviteUrl: string | null = (r as any).invite_url || null;
+            if (!anySent && inviteUrl) {
+              // Email + SMS didn't go through but we have a magic link
+              // ready. Copy it to the clipboard and tell the realtor to
+              // paste it into iMessage / WhatsApp / their own email so
+              // the recipient still gets it. Works zero-setup.
+              try {
+                await navigator.clipboard.writeText(inviteUrl);
+                toast.show(
+                  'Party added. Invite link copied to your clipboard — paste it into a text or email to send it.',
+                  { variant: 'success' }
+                );
+              } catch {
+                toast.show(
+                  'Party added. Couldn’t auto-copy the invite link — open the Edit pane to grab it.',
+                  { variant: 'info' as any }
+                );
+              }
+              close();
+              router.refresh();
+              return;
+            }
             if (!anySent) {
               toast.show(
                 'Party added, but invite did not send: ' + failed.join(', '),

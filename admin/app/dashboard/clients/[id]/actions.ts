@@ -755,6 +755,10 @@ export async function addParticipantAction(
   //   - SMS   — if the inviter typed a phone number, OR the matching
   //             firm-user has a phone on file
   let notifyResult: any = null;
+  // Hoisted outside the inner try so the return value can pass the
+  // magic-link URL back to the realtor's UI for a "copy invite link"
+  // fallback when email/SMS delivery is unreliable.
+  let outerMagicLinkUrl: string | null = null;
   if (payload.email || payload.phone || userPhone) {
     try {
       const { data: ctx } = await service
@@ -813,34 +817,52 @@ export async function addParticipantAction(
           encodeURIComponent(a.search.firm_id)
         : null;
 
+      // We previously used `auth.admin.inviteUserByEmail`, which silently
+      // no-ops when the recipient already exists in auth.users (so a
+      // re-invite to the same email never fires). Switch to a public
+      // anon-key client + `signInWithOtp` which:
+      //   1. Works for NEW users (creates them with shouldCreateUser:true)
+      //   2. Works for EXISTING users (sends them a fresh magic link)
+      //   3. Triggers Supabase's email send in both cases via the same
+      //      SMTP that powers the working `/api/clients/invite` flow.
+      // Both paths surface the same magic-link target (/welcome?role=...)
+      // so the recipient ends up on the right onboarding screen.
       let invitedViaSupabase = false;
-      if (collabRole && payload.email && !userId) {
+      let invitedError: string | null = null;
+      if (collabRole && payload.email) {
         try {
-          const { error: inviteErr } = await service.auth.admin.inviteUserByEmail(
-            payload.email,
-            {
+          const { createClient } = await import('@supabase/supabase-js');
+          const publicClient = createClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+            { auth: { persistSession: false } }
+          );
+          const { error: otpErr } = await publicClient.auth.signInWithOtp({
+            email: payload.email,
+            options: {
+              shouldCreateUser: true,
+              emailRedirectTo: siteUrl + (onboardingPath || ''),
               data: {
                 full_name: payload.name || '',
                 invited_by_firm: a.search.firm_id,
                 invited_to_deal: a.search.id,
                 role: collabRole,
               },
-              redirectTo: siteUrl + (onboardingPath || ''),
-            }
-          );
-          if (!inviteErr) {
+            },
+          });
+          if (!otpErr) {
             invitedViaSupabase = true;
-          } else if (/already/i.test(inviteErr.message)) {
-            // They already have an auth account. Fall through to magic link.
           } else {
+            invitedError = otpErr.message;
             console.error(
-              '[addParticipantAction] inviteUserByEmail failed',
-              inviteErr.message
+              '[addParticipantAction] signInWithOtp failed',
+              otpErr.message
             );
           }
         } catch (e: any) {
+          invitedError = e?.message || 'otp_failed';
           console.error(
-            '[addParticipantAction] inviteUserByEmail threw',
+            '[addParticipantAction] signInWithOtp threw',
             e?.message || e
           );
         }
@@ -866,6 +888,7 @@ export async function addParticipantAction(
           });
           magicLinkUrl =
             (linkData as any)?.properties?.action_link || null;
+          outerMagicLinkUrl = magicLinkUrl;
         } catch (e: any) {
           console.error(
             '[addParticipantAction] generateLink failed',
@@ -957,6 +980,11 @@ export async function addParticipantAction(
     ok: true as const,
     participant: inserted as any,
     notify: notifyResult,
+    // Surfaced for the realtor so they can copy/share the magic link
+    // when email + SMS don't reach the recipient (e.g. Twilio still in
+    // verification, Supabase free-tier SMTP throttled). The link is
+    // safe to share — Supabase auth single-uses it on click.
+    invite_url: outerMagicLinkUrl,
   };
 }
 
