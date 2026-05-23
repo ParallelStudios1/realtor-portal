@@ -100,6 +100,7 @@ export default async function DealDetailPage({
     { data: activity },
     { data: teammates },
     { data: messages },
+    { data: showings },
   ] = await Promise.all([
     supabase
       .from('client_searches')
@@ -156,6 +157,16 @@ export default async function DealDetailPage({
       .eq('search_id', params.id)
       .order('created_at', { ascending: false })
       .limit(5),
+    // Upcoming showings (>= now), oldest first so the soonest is on top.
+    supabase
+      .from('showings')
+      .select(
+        'id, scheduled_at, duration_minutes, location, attendees, status, notes, house_id, house:houses ( id, address )'
+      )
+      .eq('search_id', params.id)
+      .gte('scheduled_at', new Date().toISOString())
+      .order('scheduled_at', { ascending: true })
+      .limit(20),
   ]);
 
   const phaseIdx = PHASES.findIndex((p) => p.id === (deal as any).phase);
@@ -189,6 +200,7 @@ export default async function DealDetailPage({
       activity={(activity || []) as any}
       teammates={(teammates || []) as any}
       recentMessages={(messages || []) as any}
+      showings={(showings || []) as any}
     />
   );
 }

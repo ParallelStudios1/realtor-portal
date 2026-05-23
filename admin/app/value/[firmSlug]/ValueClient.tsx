@@ -284,6 +284,18 @@ export function ValueClient({
                   {estimate.city ? ` in ${estimate.city}` : ''}.
                 </span>
               </div>
+              {/* Required disclosure: this is an algorithmic neighborhood
+                  estimate, NOT a real appraisal. A real CMA from the
+                  realtor will look at the actual home's condition, recent
+                  updates, comps within a half-mile, and current market
+                  velocity. Without this line, we're misleading sellers. */}
+              <p className="mt-3 text-[11px] leading-relaxed text-ink-500">
+                This is an automated neighborhood estimate &mdash; not an
+                appraisal. The realtor will pull a full Comparative Market
+                Analysis (CMA) using your home&apos;s actual condition,
+                upgrades, and the most recent comparable sales when you
+                request the full report.
+              </p>
             </div>
 
             {/* Lead capture — sits below the range. Blurred preview of the

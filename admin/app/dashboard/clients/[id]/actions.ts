@@ -1543,3 +1543,352 @@ export async function quickMessageAction(clientId: string, body: string) {
   revalidatePath('/dashboard/deals');
   return { ok: true as const };
 }
+
+/**
+ * Schedule a concrete showing on the deal. Replaces the buyer-driven
+ * tour_request flow with an event the realtor owns: fixed datetime,
+ * duration, location, and an attendees list. Mirrors the calendar shape
+ * everyone expects so the row also drops into important_dates and pushes
+ * out an email + SMS to everyone on the deal.
+ */
+export type ShowingAttendee = {
+  name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+};
+
+export async function scheduleShowingAction(
+  clientId: string,
+  payload: {
+    house_id?: string | null;
+    scheduled_at: string; // ISO timestamp
+    duration_minutes?: number;
+    location?: string | null;
+    attendees?: ShowingAttendee[];
+    notes?: string | null;
+  }
+) {
+  const a = await authorize(clientId);
+  if ('error' in a) return { ok: false as const, error: a.error };
+  if (!payload.scheduled_at)
+    return { ok: false as const, error: 'A date and time is required.' };
+  const when = new Date(payload.scheduled_at);
+  if (Number.isNaN(when.getTime()))
+    return { ok: false as const, error: 'That date/time is not valid.' };
+  const duration = Math.max(
+    5,
+    Math.min(480, payload.duration_minutes || 30)
+  );
+  const service = getSupabaseServiceRoleClient();
+
+  // Resolve the house (for the address used in the title + important_dates).
+  let address = '';
+  if (payload.house_id) {
+    const { data: house } = await service
+      .from('houses')
+      .select('id, address, firm_id, search_id')
+      .eq('id', payload.house_id)
+      .maybeSingle();
+    if (!house || (house as any).search_id !== a.search.id)
+      return { ok: false as const, error: 'House not on this deal.' };
+    address = (house as any).address || '';
+  }
+
+  const attendees = Array.isArray(payload.attendees)
+    ? payload.attendees
+        .map((p) => ({
+          name: p?.name?.trim() || null,
+          email: p?.email?.trim() || null,
+          phone: p?.phone?.trim() || null,
+        }))
+        .filter((p) => p.name || p.email || p.phone)
+    : [];
+
+  const { data: row, error } = await service
+    .from('showings')
+    .insert({
+      search_id: a.search.id,
+      firm_id: a.search.firm_id,
+      house_id: payload.house_id || null,
+      scheduled_at: when.toISOString(),
+      duration_minutes: duration,
+      location: payload.location?.trim() || address || null,
+      attendees,
+      status: 'scheduled',
+      notes: payload.notes?.trim() || null,
+      created_by: a.me.user_id,
+    })
+    .select('id')
+    .single();
+  if (error) return { ok: false as const, error: error.message };
+
+  const label = address ? 'Showing: ' + address : 'Showing';
+
+  // Mirror into important_dates so the calendar export / dates card picks
+  // it up alongside everything else.
+  //
+  // event_time is stored as a Postgres `time` column, so we send the
+  // wall-clock time as HH:MM:SS.
+  const datePart = when.toISOString().slice(0, 10);
+  const timePart = when.toISOString().slice(11, 19);
+  try {
+    await service.from('important_dates').insert({
+      firm_id: a.search.firm_id,
+      search_id: a.search.id,
+      label,
+      date: datePart,
+      event_time: timePart,
+      location: payload.location?.trim() || address || null,
+      notes: 'showing',
+      created_by: a.me.user_id,
+    });
+  } catch (e: any) {
+    // Non-fatal: the showing row is the source of truth, the dates row is a
+    // convenience mirror.
+    console.error('[scheduleShowingAction] important_dates mirror failed', e?.message || e);
+  }
+
+  await activity(
+    a.search.id,
+    a.search.firm_id,
+    a.me.user_id,
+    'showing_scheduled',
+    address || when.toLocaleString(),
+    {
+      showing_id: (row as any)?.id,
+      scheduled_at: when.toISOString(),
+      duration_minutes: duration,
+    }
+  );
+
+  // Email + SMS everyone on the deal.
+  try {
+    const siteUrl =
+      process.env.SITE_URL || 'https://realtor-portal-ten.vercel.app';
+    const dealUrl = siteUrl + '/deal/' + a.search.id;
+    const pretty =
+      when.toLocaleDateString(undefined, {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+      }) +
+      ' @ ' +
+      when.toLocaleTimeString(undefined, {
+        hour: 'numeric',
+        minute: '2-digit',
+      });
+    const where = payload.location?.trim() || address;
+    const subject = address
+      ? `Showing scheduled: ${address} on ${pretty}`
+      : `Showing scheduled on ${pretty}`;
+    await notifyDealParticipants({
+      searchId: a.search.id,
+      subject,
+      text:
+        'A showing has been scheduled:\n\n' +
+        (address ? address + '\n' : '') +
+        pretty +
+        ' (' +
+        duration +
+        ' min)' +
+        (where ? '\nLocation: ' + where : '') +
+        (payload.notes ? '\nNotes: ' + payload.notes : '') +
+        '\n\nOpen the deal: ' +
+        dealUrl,
+      html:
+        `<p><strong>A showing has been scheduled:</strong></p>` +
+        (address ? `<p>${escapeHtml(address)}</p>` : '') +
+        `<p>${escapeHtml(pretty)} (${duration} min)</p>` +
+        (where ? `<p><strong>Location:</strong> ${escapeHtml(where)}</p>` : '') +
+        (payload.notes
+          ? `<p><strong>Notes:</strong> ${escapeHtml(payload.notes)}</p>`
+          : '') +
+        `<p><a href="${dealUrl}">Open the deal &rarr;</a></p>`,
+      sms_text:
+        'Showing scheduled' +
+        (address ? ': ' + address : '') +
+        ' — ' +
+        pretty +
+        ' — ' +
+        dealUrl,
+      excludeUserId: a.me.user_id,
+    });
+  } catch (e: any) {
+    console.error('[scheduleShowingAction] notify failed', e?.message || e);
+  }
+
+  revalidatePath(`/dashboard/clients/${clientId}`);
+  revalidatePath('/dashboard/deals/' + a.search.id);
+  revalidatePath('/dashboard/deals');
+  return { ok: true as const, showingId: (row as any)?.id };
+}
+
+/**
+ * Reschedule an existing showing — same set of fields the caller can change
+ * with a single new scheduled_at. Status flips back to 'scheduled' so the
+ * "confirmed" badge gets cleared until everyone reconfirms.
+ */
+export async function rescheduleShowingAction(
+  clientId: string,
+  payload: {
+    showing_id: string;
+    scheduled_at: string;
+    duration_minutes?: number;
+    location?: string | null;
+    notes?: string | null;
+  }
+) {
+  const a = await authorize(clientId);
+  if ('error' in a) return { ok: false as const, error: a.error };
+  if (!payload.showing_id || !payload.scheduled_at)
+    return {
+      ok: false as const,
+      error: 'Showing and new time are required.',
+    };
+  const when = new Date(payload.scheduled_at);
+  if (Number.isNaN(when.getTime()))
+    return { ok: false as const, error: 'That date/time is not valid.' };
+  const service = getSupabaseServiceRoleClient();
+  const { data: existing } = await service
+    .from('showings')
+    .select('id, firm_id, search_id, house_id, location, notes')
+    .eq('id', payload.showing_id)
+    .maybeSingle();
+  if (!existing || (existing as any).search_id !== a.search.id)
+    return { ok: false as const, error: 'Showing not on this deal.' };
+
+  const updates: Record<string, any> = {
+    scheduled_at: when.toISOString(),
+    status: 'scheduled',
+  };
+  if (typeof payload.duration_minutes === 'number')
+    updates.duration_minutes = Math.max(
+      5,
+      Math.min(480, payload.duration_minutes)
+    );
+  if (payload.location !== undefined)
+    updates.location = payload.location?.trim() || null;
+  if (payload.notes !== undefined)
+    updates.notes = payload.notes?.trim() || null;
+
+  const { error } = await service
+    .from('showings')
+    .update(updates)
+    .eq('id', payload.showing_id);
+  if (error) return { ok: false as const, error: error.message };
+
+  // Resolve address for the activity / notify text.
+  let address = '';
+  if ((existing as any).house_id) {
+    const { data: house } = await service
+      .from('houses')
+      .select('address')
+      .eq('id', (existing as any).house_id)
+      .maybeSingle();
+    address = (house as any)?.address || '';
+  }
+
+  await activity(
+    a.search.id,
+    a.search.firm_id,
+    a.me.user_id,
+    'showing_rescheduled',
+    address || when.toLocaleString(),
+    { showing_id: payload.showing_id, scheduled_at: when.toISOString() }
+  );
+
+  try {
+    const siteUrl =
+      process.env.SITE_URL || 'https://realtor-portal-ten.vercel.app';
+    const dealUrl = siteUrl + '/deal/' + a.search.id;
+    const pretty =
+      when.toLocaleDateString(undefined, {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+      }) +
+      ' @ ' +
+      when.toLocaleTimeString(undefined, {
+        hour: 'numeric',
+        minute: '2-digit',
+      });
+    await notifyDealParticipants({
+      searchId: a.search.id,
+      subject: address
+        ? `Showing rescheduled: ${address} on ${pretty}`
+        : `Showing rescheduled on ${pretty}`,
+      text:
+        'The showing has been moved to:\n\n' +
+        (address ? address + '\n' : '') +
+        pretty +
+        '\n\nOpen the deal: ' +
+        dealUrl,
+      html:
+        `<p><strong>The showing has been moved to:</strong></p>` +
+        (address ? `<p>${escapeHtml(address)}</p>` : '') +
+        `<p>${escapeHtml(pretty)}</p>` +
+        `<p><a href="${dealUrl}">Open the deal &rarr;</a></p>`,
+      sms_text:
+        'Showing moved' +
+        (address ? ': ' + address : '') +
+        ' — ' +
+        pretty +
+        ' — ' +
+        dealUrl,
+      excludeUserId: a.me.user_id,
+    });
+  } catch (e: any) {
+    console.error('[rescheduleShowingAction] notify failed', e?.message || e);
+  }
+
+  revalidatePath(`/dashboard/clients/${clientId}`);
+  revalidatePath('/dashboard/deals/' + a.search.id);
+  return { ok: true as const };
+}
+
+/**
+ * Mark a showing complete or canceled. Status-only update — the row stays
+ * around for activity / history.
+ */
+export async function updateShowingStatusAction(
+  clientId: string,
+  payload: {
+    showing_id: string;
+    status: 'scheduled' | 'confirmed' | 'completed' | 'canceled';
+  }
+) {
+  const a = await authorize(clientId);
+  if ('error' in a) return { ok: false as const, error: a.error };
+  if (!payload.showing_id)
+    return { ok: false as const, error: 'Showing is required.' };
+  if (
+    !['scheduled', 'confirmed', 'completed', 'canceled'].includes(payload.status)
+  )
+    return { ok: false as const, error: 'Bad status.' };
+  const service = getSupabaseServiceRoleClient();
+  const { data: existing } = await service
+    .from('showings')
+    .select('id, search_id, house_id')
+    .eq('id', payload.showing_id)
+    .maybeSingle();
+  if (!existing || (existing as any).search_id !== a.search.id)
+    return { ok: false as const, error: 'Showing not on this deal.' };
+
+  const { error } = await service
+    .from('showings')
+    .update({ status: payload.status })
+    .eq('id', payload.showing_id);
+  if (error) return { ok: false as const, error: error.message };
+
+  await activity(
+    a.search.id,
+    a.search.firm_id,
+    a.me.user_id,
+    'showing_' + payload.status,
+    payload.showing_id
+  );
+
+  revalidatePath(`/dashboard/clients/${clientId}`);
+  revalidatePath('/dashboard/deals/' + a.search.id);
+  return { ok: true as const };
+}

@@ -10,6 +10,12 @@ import {
 } from '../../clients/[id]/ClientDetailActions';
 import { DocumentRow } from '../../clients/[id]/DocumentRow';
 import { assignDealRealtorAction } from '../../firm/actions';
+import {
+  scheduleShowingAction,
+  rescheduleShowingAction,
+  updateShowingStatusAction,
+  type ShowingAttendee,
+} from '../../clients/[id]/actions';
 
 /**
  * The canonical interactive deal workspace. Compared to the old per-client
@@ -50,6 +56,7 @@ export function DealWorkspace(props: {
     role?: string;
   }>;
   recentMessages: any[];
+  showings?: any[];
 }) {
   const {
     clientId,
@@ -67,13 +74,22 @@ export function DealWorkspace(props: {
     activity,
     teammates,
     recentMessages,
+    showings,
   } = props;
 
   const [docFolder, setDocFolder] = useState<string>('all');
   const [assigning, setAssigning] = useState(false);
   const [savingAssignment, startAssignment] = useTransition();
+  const [showingModal, setShowingModal] = useState<
+    | { mode: 'new' }
+    | { mode: 'edit'; showing: any }
+    | null
+  >(null);
+  const [, startShowingMutation] = useTransition();
   const router = useRouter();
   const toast = useToast();
+
+  const upcomingShowings = (showings || []) as any[];
 
   const folders = Array.from(
     new Set((documents || []).map((d: any) => d.folder || 'General'))
@@ -362,6 +378,17 @@ export function DealWorkspace(props: {
           {/* Houses */}
           <Card
             title={`Houses (${houses.length})`}
+            right={
+              houses.length > 0 ? (
+                <button
+                  type="button"
+                  onClick={() => setShowingModal({ mode: 'new' })}
+                  className="rounded-lg bg-blue-600 px-2.5 py-1 text-[11px] font-semibold text-white shadow-soft-xs transition hover:bg-blue-700"
+                >
+                  + Schedule showing
+                </button>
+              ) : null
+            }
             empty={houses.length === 0 ? 'No houses yet — use Add house above.' : null}
           >
             <ul className="divide-y divide-slate-100">
@@ -405,6 +432,130 @@ export function DealWorkspace(props: {
                   )}
                 </li>
               ))}
+            </ul>
+          </Card>
+
+          {/* Showings — upcoming, scheduled-ascending. */}
+          <Card
+            title={`Showings (${upcomingShowings.length})`}
+            right={
+              <button
+                type="button"
+                onClick={() => setShowingModal({ mode: 'new' })}
+                disabled={houses.length === 0}
+                className="rounded-lg bg-blue-600 px-2.5 py-1 text-[11px] font-semibold text-white shadow-soft-xs transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                title={
+                  houses.length === 0
+                    ? 'Add a house first so you can schedule a showing for it.'
+                    : 'Schedule a showing'
+                }
+              >
+                + Schedule showing
+              </button>
+            }
+            empty={
+              upcomingShowings.length === 0
+                ? 'No upcoming showings — use Schedule showing above.'
+                : null
+            }
+          >
+            <ul className="divide-y divide-slate-100">
+              {upcomingShowings.map((s: any) => {
+                const when = new Date(s.scheduled_at);
+                const address =
+                  s.house?.address || s.location || '(unspecified)';
+                const attendeeCount = Array.isArray(s.attendees)
+                  ? s.attendees.length
+                  : 0;
+                return (
+                  <li
+                    key={s.id}
+                    className="flex flex-wrap items-start gap-3 px-5 py-3"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-medium">
+                        {address}
+                      </div>
+                      <div className="mt-0.5 text-xs text-slate-500">
+                        {when.toLocaleDateString(undefined, {
+                          weekday: 'short',
+                          month: 'short',
+                          day: 'numeric',
+                        })}{' '}
+                        @{' '}
+                        {when.toLocaleTimeString(undefined, {
+                          hour: 'numeric',
+                          minute: '2-digit',
+                        })}{' '}
+                        · {s.duration_minutes || 30} min
+                        {attendeeCount > 0
+                          ? ' · ' +
+                            attendeeCount +
+                            ' attendee' +
+                            (attendeeCount === 1 ? '' : 's')
+                          : ''}
+                      </div>
+                      {s.location && s.location !== s.house?.address && (
+                        <div className="mt-0.5 truncate text-[11px] text-slate-400">
+                          📍 {s.location}
+                        </div>
+                      )}
+                    </div>
+                    <span
+                      className={
+                        'rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase ' +
+                        (s.status === 'confirmed'
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : s.status === 'completed'
+                          ? 'bg-slate-200 text-slate-700'
+                          : s.status === 'canceled'
+                          ? 'bg-rose-100 text-rose-800'
+                          : 'bg-amber-100 text-amber-800')
+                      }
+                    >
+                      {s.status}
+                    </span>
+                    <div className="ml-auto flex shrink-0 items-center gap-1.5 text-[11px] font-semibold">
+                      <button
+                        type="button"
+                        onClick={() => setShowingModal({ mode: 'edit', showing: s })}
+                        className="rounded-md border border-slate-200 bg-white px-2 py-1 text-slate-700 transition hover:bg-slate-50"
+                      >
+                        Reschedule
+                      </button>
+                      {s.status !== 'completed' && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            startShowingMutation(async () => {
+                              const r = await updateShowingStatusAction(
+                                clientId,
+                                {
+                                  showing_id: s.id,
+                                  status: 'completed',
+                                }
+                              );
+                              if (!r.ok) {
+                                toast.show(r.error || 'Failed', {
+                                  variant: 'error',
+                                });
+                                return;
+                              }
+                              toast.show('Marked complete.', {
+                                variant: 'success',
+                              });
+                              router.refresh();
+                            })
+                          }
+                          className="rounded-md bg-emerald-600 px-2 py-1 text-white transition hover:bg-emerald-700"
+                        >
+                          Mark complete
+                        </button>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           </Card>
 
@@ -653,6 +804,42 @@ export function DealWorkspace(props: {
           )}
         </aside>
       </div>
+
+      {showingModal && (
+        <ShowingModal
+          mode={showingModal.mode}
+          houses={houses as any}
+          initial={showingModal.mode === 'edit' ? showingModal.showing : null}
+          onClose={() => setShowingModal(null)}
+          onSubmit={async (payload) => {
+            if (showingModal.mode === 'edit') {
+              const r = await rescheduleShowingAction(clientId, {
+                showing_id: showingModal.showing.id,
+                scheduled_at: payload.scheduled_at,
+                duration_minutes: payload.duration_minutes,
+                location: payload.location,
+                notes: payload.notes,
+              });
+              if (!r.ok) {
+                toast.show(r.error || 'Failed', { variant: 'error' });
+                return;
+              }
+              toast.show('Showing rescheduled.', { variant: 'success' });
+            } else {
+              const r = await scheduleShowingAction(clientId, payload);
+              if (!r.ok) {
+                toast.show(r.error || 'Failed', { variant: 'error' });
+                return;
+              }
+              toast.show('Showing scheduled — everyone was notified.', {
+                variant: 'success',
+              });
+            }
+            setShowingModal(null);
+            router.refresh();
+          }}
+        />
+      )}
     </main>
   );
 }
@@ -798,4 +985,299 @@ function timeAgoShort(iso: string) {
   const d = Math.floor(h / 24);
   if (d < 7) return d + 'd';
   return new Date(iso).toLocaleDateString();
+}
+
+/**
+ * "Schedule a showing" modal. Picks a house from the deal's houses (defaults
+ * to the first one), datetime, duration (15/30/45/60), location (defaults to
+ * the house's address once a house is picked), notes. On submit, calls the
+ * server action via the parent's onSubmit.
+ *
+ * Also handles edit/reschedule — when initial is supplied, the form
+ * preloads the existing values and the house picker is locked (rescheduling
+ * a showing of a different house should be a new showing).
+ */
+function ShowingModal({
+  mode,
+  houses,
+  initial,
+  onClose,
+  onSubmit,
+}: {
+  mode: 'new' | 'edit';
+  houses: any[];
+  initial: any | null;
+  onClose: () => void;
+  onSubmit: (payload: {
+    house_id?: string | null;
+    scheduled_at: string;
+    duration_minutes: number;
+    location?: string | null;
+    notes?: string | null;
+    attendees?: { name?: string | null; email?: string | null; phone?: string | null }[];
+  }) => Promise<void>;
+}) {
+  const DURATIONS = [15, 30, 45, 60];
+
+  const initialHouseId: string | null =
+    initial?.house_id ?? (houses[0]?.id ?? null);
+  const initialDateTime = initial?.scheduled_at
+    ? toLocalInputValue(new Date(initial.scheduled_at))
+    : '';
+
+  const [houseId, setHouseId] = useState<string | null>(initialHouseId);
+  const [dateTime, setDateTime] = useState<string>(initialDateTime);
+  const [duration, setDuration] = useState<number>(
+    initial?.duration_minutes || 30
+  );
+  const initialHouse = houses.find((h) => h.id === initialHouseId);
+  const [location, setLocation] = useState<string>(
+    initial?.location ?? (initialHouse?.address || '')
+  );
+  const [notes, setNotes] = useState<string>(initial?.notes ?? '');
+  const initialAttendees: ShowingAttendee[] = Array.isArray(initial?.attendees)
+    ? (initial.attendees as ShowingAttendee[])
+    : [];
+  const [attendees, setAttendees] =
+    useState<ShowingAttendee[]>(initialAttendees);
+  const [pending, start] = useTransition();
+
+  function patchAttendee(i: number, key: keyof ShowingAttendee, v: string) {
+    setAttendees((prev) =>
+      prev.map((a, idx) => (idx === i ? { ...a, [key]: v } : a))
+    );
+  }
+
+  const submittable = Boolean(dateTime) && (mode === 'edit' || Boolean(houseId));
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-ink-900/40 p-0 backdrop-blur-sm sm:items-center sm:p-4"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-md rounded-t-2xl bg-white shadow-soft-xl sm:rounded-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b border-ink-100 px-5 py-3.5">
+          <h3 className="text-base font-bold tracking-tight text-ink-900">
+            {mode === 'edit' ? 'Reschedule showing' : 'Schedule a showing'}
+          </h3>
+          <button
+            onClick={onClose}
+            className="-mr-1.5 rounded-lg p-1.5 text-ink-400 transition hover:bg-ink-100 hover:text-ink-700"
+            aria-label="Close"
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M18 6 6 18M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div className="space-y-3 p-5">
+          {mode === 'new' && (
+            <ModalField label="House">
+              <select
+                className={modalInputCls}
+                value={houseId || ''}
+                onChange={(e) => {
+                  const v = e.target.value || null;
+                  setHouseId(v);
+                  // Auto-fill location with the picked house's address if the
+                  // user hasn't typed something custom yet.
+                  const h = houses.find((x) => x.id === v);
+                  if (h && (!location || houses.some((x) => x.address === location))) {
+                    setLocation(h.address || '');
+                  }
+                }}
+              >
+                {houses.length === 0 && (
+                  <option value="">(no houses on this deal yet)</option>
+                )}
+                {houses.map((h) => (
+                  <option key={h.id} value={h.id}>
+                    {h.address}
+                  </option>
+                ))}
+              </select>
+            </ModalField>
+          )}
+          <div className="grid grid-cols-2 gap-3">
+            <ModalField label="When">
+              <input
+                type="datetime-local"
+                className={modalInputCls}
+                value={dateTime}
+                onChange={(e) => setDateTime(e.target.value)}
+              />
+            </ModalField>
+            <ModalField label="Duration">
+              <div className="flex gap-1">
+                {DURATIONS.map((d) => (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => setDuration(d)}
+                    className={
+                      'flex-1 rounded-md border px-2 py-2 text-xs font-semibold transition ' +
+                      (duration === d
+                        ? 'border-blue-600 bg-blue-50 text-blue-900'
+                        : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50')
+                    }
+                  >
+                    {d}m
+                  </button>
+                ))}
+              </div>
+            </ModalField>
+          </div>
+          <ModalField
+            label="Location"
+            hint="Defaults to the house address. Override for lockbox info, meeting points, etc."
+          >
+            <input
+              className={modalInputCls}
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              placeholder="123 Main St, Unit 4 — meet at the lockbox"
+            />
+          </ModalField>
+          <ModalField label="Notes (optional)">
+            <textarea
+              className={modalInputCls}
+              rows={2}
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Bring photo ID, allow 10 min for parking…"
+            />
+          </ModalField>
+
+          {mode === 'new' && (
+            <ModalField
+              label="Extra attendees (optional)"
+              hint="Co-buyers, family, inspectors — anyone not already on the deal."
+            >
+              <div className="space-y-2">
+                {attendees.map((a, i) => (
+                  <div key={i} className="grid grid-cols-3 gap-1.5">
+                    <input
+                      className={modalInputCls + ' text-xs'}
+                      placeholder="Name"
+                      value={a.name || ''}
+                      onChange={(e) => patchAttendee(i, 'name', e.target.value)}
+                    />
+                    <input
+                      className={modalInputCls + ' text-xs'}
+                      placeholder="Email"
+                      value={a.email || ''}
+                      onChange={(e) => patchAttendee(i, 'email', e.target.value)}
+                    />
+                    <input
+                      className={modalInputCls + ' text-xs'}
+                      placeholder="Phone"
+                      value={a.phone || ''}
+                      onChange={(e) => patchAttendee(i, 'phone', e.target.value)}
+                    />
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() =>
+                    setAttendees((prev) => [
+                      ...prev,
+                      { name: '', email: '', phone: '' },
+                    ])
+                  }
+                  className="text-xs font-semibold text-blue-600 hover:underline"
+                >
+                  + Add another attendee
+                </button>
+              </div>
+            </ModalField>
+          )}
+        </div>
+        <div className="border-t border-ink-100 p-5">
+          <button
+            type="button"
+            disabled={pending || !submittable}
+            onClick={() =>
+              start(async () => {
+                const payload = {
+                  house_id: mode === 'edit' ? undefined : houseId,
+                  scheduled_at: new Date(dateTime).toISOString(),
+                  duration_minutes: duration,
+                  location: location.trim() || null,
+                  notes: notes.trim() || null,
+                  attendees:
+                    mode === 'edit'
+                      ? undefined
+                      : attendees.filter(
+                          (a) => a.name || a.email || a.phone
+                        ),
+                };
+                await onSubmit(payload);
+              })
+            }
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-ink-900 px-4 py-2.5 text-sm font-semibold text-white shadow-soft-sm transition hover:bg-ink-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {pending
+              ? 'Working…'
+              : mode === 'edit'
+              ? 'Save new time'
+              : 'Schedule showing'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ModalField({
+  label,
+  hint,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="block text-sm">
+      <span className="block text-xs font-semibold uppercase tracking-wide text-slate-500">
+        {label}
+      </span>
+      <div className="mt-1.5">{children}</div>
+      {hint && <p className="mt-1 text-[11px] text-slate-400">{hint}</p>}
+    </label>
+  );
+}
+
+const modalInputCls =
+  'w-full rounded-lg border border-ink-300 bg-white px-3 py-2 text-sm shadow-soft-xs transition placeholder:text-ink-400 focus:border-ink-900 focus:outline-none focus:ring-2 focus:ring-ink-900/10';
+
+/**
+ * Convert a Date to the value expected by <input type="datetime-local">.
+ * That input wants "YYYY-MM-DDTHH:MM" in the user's LOCAL time, not ISO UTC.
+ */
+function toLocalInputValue(d: Date): string {
+  const pad = (n: number) => (n < 10 ? '0' : '') + n;
+  return (
+    d.getFullYear() +
+    '-' +
+    pad(d.getMonth() + 1) +
+    '-' +
+    pad(d.getDate()) +
+    'T' +
+    pad(d.getHours()) +
+    ':' +
+    pad(d.getMinutes())
+  );
 }

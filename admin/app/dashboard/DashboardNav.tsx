@@ -118,8 +118,16 @@ export function DashboardNav({
               className={
                 'relative flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition ' +
                 (active
-                  ? 'bg-ink-900 text-white shadow-soft-sm'
+                  ? 'text-white shadow-soft-sm'
                   : 'text-ink-600 hover:bg-ink-100 hover:text-ink-900')
+              }
+              // Active pill picks up the firm's brand color so the
+              // realtor's dashboard feels like THEIR brand, not generic
+              // black. Falls back to ink-900 when no firm brand is set.
+              style={
+                active
+                  ? { backgroundColor: firmBrandColor || '#0F172A' }
+                  : undefined
               }
             >
               <Icon className="h-4 w-4" />
