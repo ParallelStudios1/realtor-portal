@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { getMe } from '@/lib/supabaseSsr';
 import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
 import { sendEmail, escapeHtml } from '@/lib/email';
+import { PLANS, seatCapForTier, type PlanTier } from '@/lib/plans';
 
 /**
  * Firm Control actions. Only callable by users whose role is
@@ -67,6 +68,52 @@ export async function inviteFirmMemberAction(payload: {
   // would be blocked above when min='admin'; safe.
 
   const service = getSupabaseServiceRoleClient();
+
+  // ---- Seat-cap enforcement ----
+  // A firm's seat cap comes from its Stripe plan tier. Trial / unsubbed
+  // firms get the Solo cap (1) so they can't grow their team unbounded
+  // before paying. We count both real users and pending (unaccepted)
+  // invites — otherwise an admin could spam invites past the cap.
+  const { data: firmRow } = await service
+    .from('firms')
+    .select('plan_tier, stripe_subscription_id')
+    .eq('id', a.me.firm_id!)
+    .maybeSingle();
+
+  const planTier = (firmRow?.plan_tier as PlanTier | null) ?? null;
+  const hasSubscription = Boolean(firmRow?.stripe_subscription_id);
+  // No tier AND no subscription → still on trial; treat as Solo cap.
+  const effectiveTier: PlanTier | null =
+    planTier ?? (hasSubscription ? null : 'solo');
+  const seatCap = seatCapForTier(effectiveTier);
+
+  const { count: memberCount } = await service
+    .from('users')
+    .select('id', { count: 'exact', head: true })
+    .eq('firm_id', a.me.firm_id!)
+    .in('role', ['firm_admin', 'manager', 'realtor', 'member']);
+
+  const { count: pendingInviteCount } = await service
+    .from('firm_invites')
+    .select('id', { count: 'exact', head: true })
+    .eq('firm_id', a.me.firm_id!)
+    .is('accepted_at', null);
+
+  const usedSeats = (memberCount || 0) + (pendingInviteCount || 0);
+  if (usedSeats >= seatCap) {
+    const planName = effectiveTier ? PLANS[effectiveTier].name : 'Solo';
+    return {
+      ok: false as const,
+      error:
+        'Your ' +
+        planName +
+        ' plan includes ' +
+        seatCap +
+        ' seat' +
+        (seatCap === 1 ? '' : 's') +
+        '. Upgrade to add more team members.',
+    };
+  }
 
   // Send the magic-link invite.
   const baseUrl =

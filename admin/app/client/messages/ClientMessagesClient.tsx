@@ -36,6 +36,7 @@ export function ClientMessagesClient({
 
   // Realtime: any new INSERT for this search → append
   useEffect(() => {
+    let cancelled = false;
     const channel = supabase
       .channel(`client-messages:${searchId}`)
       .on(
@@ -54,8 +55,33 @@ export function ClientMessagesClient({
           });
         }
       )
-      .subscribe();
+      .subscribe(async (status) => {
+        // Catch-up fetch: close the race window between SSR snapshot and
+        // realtime subscription. Any messages inserted between T0 (server
+        // fetch) and now would otherwise be silently missed until refresh.
+        if (status !== 'SUBSCRIBED' || cancelled) return;
+        const { data, error: fetchErr } = await supabase
+          .from('messages')
+          .select('id, search_id, sender_id, body, created_at')
+          .eq('search_id', searchId)
+          .order('created_at', { ascending: true });
+        if (cancelled || fetchErr || !data) return;
+        setMessages((prev) => {
+          const seen = new Set(prev.map((m) => m.id));
+          const merged = [...prev];
+          for (const m of data as Message[]) {
+            if (!seen.has(m.id)) {
+              merged.push(m);
+              seen.add(m.id);
+            }
+          }
+          // Keep chronological order in case realtime races inserted out-of-order
+          merged.sort((a, b) => a.created_at.localeCompare(b.created_at));
+          return merged;
+        });
+      });
     return () => {
+      cancelled = true;
       supabase.removeChannel(channel);
     };
   }, [searchId, supabase]);

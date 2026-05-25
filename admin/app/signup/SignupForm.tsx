@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useFormStatus } from 'react-dom';
 
 type Role = 'realtor' | 'buyer' | 'seller' | null;
 
@@ -80,15 +81,41 @@ export function SignupForm({
             />
           )}
 
-          <button
-            type="submit"
-            className="mt-2 w-full rounded-md bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-700"
-          >
-            {role === 'realtor' ? 'Create my firm' : 'Create account'} →
-          </button>
+          <SignupSubmit role={role} />
         </>
       )}
     </form>
+  );
+}
+
+function SignupSubmit({ role }: { role: Role }) {
+  const { pending } = useFormStatus();
+  const idleLabel =
+    role === 'realtor' ? 'Create my firm' : 'Create account';
+  const pendingLabel =
+    role === 'realtor' ? 'Creating your firm…' : 'Creating your account…';
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      aria-busy={pending}
+      data-loading={pending ? 'true' : undefined}
+      className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-md bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
+    >
+      {pending && (
+        <svg
+          className="h-4 w-4 animate-spin"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          aria-hidden
+        >
+          <path d="M22 12a10 10 0 1 1-10-10" strokeLinecap="round" />
+        </svg>
+      )}
+      <span>{pending ? pendingLabel : `${idleLabel} →`}</span>
+    </button>
   );
 }
 

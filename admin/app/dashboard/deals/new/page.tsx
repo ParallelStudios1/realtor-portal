@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { createBlankDealAction } from './actions';
+import { SubmitStartDeal } from './SubmitStartDeal';
 
 export const metadata = { title: 'New deal · Realtor Portal' };
 
@@ -100,9 +101,7 @@ export default function NewDealPage({
           </div>
         </div>
 
-        <button type="submit" className="btn-primary w-full" data-loading="true">
-          Start deal
-        </button>
+        <SubmitStartDeal />
 
         <p className="text-[11px] text-ink-500">
           You won&apos;t invite anyone until you choose to. Going to{' '}

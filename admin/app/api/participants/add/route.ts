@@ -196,8 +196,64 @@ export async function POST(req: Request) {
       target: body.name || body.email || '',
     });
 
-    // Resolve context + magic-link + SMS body, then fire notify
+    // FIRST-CLASS INVITE TOKEN.
+    // Mirrors addParticipantAction(): write a deal_invites row and use the
+    // returned token to build a /invite/<token> landing URL. That URL is
+    // unauthenticated, branded, and role-aware — it replaces the fragile
+    // Supabase magic-link flow that used to dump recipients on /welcome
+    // (and on /login when the hash never made it server-side).
+    let invitePath: string | null = null;
+    if (body.email || body.phone) {
+      try {
+        const { data: inviteRow, error: inviteErr } = await service
+          .from('deal_invites')
+          .insert({
+            search_id: (search as any).id,
+            firm_id: (search as any).firm_id,
+            participant_id: (inserted as any).id,
+            role: body.role,
+            name: body.name || null,
+            email: body.email ? body.email.toLowerCase() : null,
+            phone: body.phone || null,
+            created_by: me.user_id,
+          })
+          .select('token')
+          .single();
+        if (inviteErr) {
+          console.error(
+            '[/api/participants/add] deal_invites insert error',
+            {
+              code: (inviteErr as any).code,
+              message: inviteErr.message,
+              details: (inviteErr as any).details,
+              hint: (inviteErr as any).hint,
+            }
+          );
+        } else if (inviteRow) {
+          invitePath = '/invite/' + (inviteRow as any).token;
+          console.log(
+            '[/api/participants/add] deal_invites inserted ok',
+            { token: (inviteRow as any).token, role: body.role }
+          );
+        }
+      } catch (e: any) {
+        console.error(
+          '[/api/participants/add] deal_invites insert threw',
+          e?.message || e,
+          e?.stack
+        );
+      }
+    }
+
+    // Resolve context + SMS body, then fire notify. The primary URL is
+    // always the /invite/<token> landing when we have one; magic-link +
+    // signup are only used as a fallback if the deal_invites insert
+    // failed (so the recipient still gets *something* clickable).
     let notifyResult: any = null;
+    let inviteUrl: string | null = invitePath
+      ? (process.env.SITE_URL || 'https://realtor-portal-ten.vercel.app') +
+        invitePath
+      : null;
     if (body.email || body.phone || userPhone) {
       try {
         const { data: ctx } = await service
@@ -214,7 +270,6 @@ export async function POST(req: Request) {
           'Your realtor';
         const siteUrl =
           process.env.SITE_URL || 'https://realtor-portal-ten.vercel.app';
-        const dealUrl = siteUrl + '/deal/' + (search as any).id;
         const isRealtorRole =
           body.role === 'realtor' || body.role === 'co_realtor';
         const signupUrl =
@@ -254,7 +309,16 @@ export async function POST(req: Request) {
           }
         }
 
-        const primaryUrl = magicLinkUrl || signupUrl;
+        // The /invite/<token> landing is ALWAYS the primary URL when we
+        // have one. Magic link + signup URL are only fallbacks for the
+        // rare case where the deal_invites insert failed.
+        const primaryUrl = invitePath
+          ? siteUrl + invitePath
+          : magicLinkUrl || signupUrl;
+        // Keep the outer inviteUrl in sync (it was set from invitePath
+        // above, but on the magicLink/signup fallback paths we want the
+        // mobile app to receive *something* it can copy to clipboard).
+        inviteUrl = primaryUrl;
         const rolePretty = body.role.replace(/_/g, ' ');
         const safeRealtor = escapeHtml(realtorName);
         const safeFirm = escapeHtml(firmName);
@@ -270,22 +334,27 @@ export async function POST(req: Request) {
             <p style="margin:24px 0">
               <a href="${primaryUrl}" style="display:inline-block;background:#0F172A;color:#fff;padding:10px 18px;border-radius:8px;font-weight:600;text-decoration:none">Open the deal &rarr;</a>
             </p>
+            <p style="color:#94A3B8;font-size:12px">If the button above doesn't work, paste this link into your browser: ${primaryUrl}</p>
           </div>`;
         const partyBody = `
           <div style="font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial;font-size:15px;color:#0F172A;max-width:560px;padding:24px">
             <h2 style="font-size:20px;margin:0 0 12px">You've been added to a deal</h2>
             <p>${safeRealtor} at <strong>${safeFirm}</strong> added you to a deal as <strong>${safeRole}</strong>.</p>
             <p style="margin:24px 0">
-              <a href="${dealUrl}" style="display:inline-block;background:#0F172A;color:#fff;padding:10px 18px;border-radius:8px;font-weight:600;text-decoration:none">Open the deal &rarr;</a>
+              <a href="${primaryUrl}" style="display:inline-block;background:#0F172A;color:#fff;padding:10px 18px;border-radius:8px;font-weight:600;text-decoration:none">Accept invite &amp; open the deal &rarr;</a>
             </p>
+            <p style="color:#94A3B8;font-size:12px">If the button above doesn't work, paste this link into your browser: ${primaryUrl}</p>
           </div>`;
         const realtorText =
           `${realtorName} (${firmName}) invited you to co-broker a deal as ${rolePretty}.\n\nTap to open: ${primaryUrl}`;
         const partyText =
-          `${realtorName} (${firmName}) added you to a real-estate deal as ${rolePretty}.\n\nOpen: ${dealUrl}`;
+          `${realtorName} (${firmName}) added you to a real-estate deal as ${rolePretty}.\n\nTap to accept: ${primaryUrl}`;
+        // Compact SMS body — ALWAYS uses primaryUrl (the /invite/<token>
+        // landing). The deal URL requires auth and dumps un-authenticated
+        // visitors on /login.
         const smsBody = isRealtorRole
           ? `${realtorName} (${firmName}) invited you to co-broker a deal on Realtor Portal. Tap to open: ${primaryUrl}`
-          : `${realtorName} (${firmName}) added you to a real-estate deal as ${rolePretty}. Open: ${dealUrl}`;
+          : `${realtorName} (${firmName}) added you to a real-estate deal as ${rolePretty}. Tap to accept: ${primaryUrl}`;
 
         notifyResult = await notify({
           email: body.email || null,
@@ -307,6 +376,11 @@ export async function POST(req: Request) {
       ok: true,
       participant: inserted,
       notify: notifyResult,
+      // Surfaced for the mobile app's copy-to-clipboard fallback when
+      // email/SMS don't reach the recipient (Twilio still in verification,
+      // Supabase SMTP throttled, etc.). Mirrors `invite_url` returned by
+      // the addParticipantAction server action.
+      invite_url: inviteUrl,
     });
   } catch (err: any) {
     console.error('[/api/participants/add]', err);

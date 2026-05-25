@@ -1,13 +1,16 @@
 import { Resend } from 'resend';
 
 /**
- * Thin wrapper around the Resend SDK. Reads RESEND_API_KEY and RESEND_FROM
- * from the environment. If RESEND_API_KEY is unset we log a single warning
- * the first time anyone calls sendEmail() and then return a soft no-op
- * result on every call after — never throws.
+ * Email transport with three providers, tried in order:
+ *   1. Resend (RESEND_API_KEY) — fastest path, recommended
+ *   2. Generic SMTP via nodemailer (SMTP_HOST + SMTP_USER + SMTP_PASS) — for
+ *      free providers like Brevo (smtp-relay.brevo.com:587, 300/day free),
+ *      SendGrid (smtp.sendgrid.net:587, 100/day free), Mailgun, or Gmail SMTP.
+ *   3. No-op + log warning — local dev or unconfigured deploys.
  *
- * This lets every caller be fire-and-forget: the route handler doesn't need
- * to special-case "we haven't wired up Resend yet" in dev / preview.
+ * Each provider is tried and the first success wins. If both API_KEY and
+ * SMTP_* are set, Resend is preferred. Never throws — callers can treat
+ * sendEmail as fire-and-forget.
  */
 
 const DEFAULT_FROM =
@@ -59,15 +62,56 @@ function getClient(): Resend | null {
   return cachedClient;
 }
 
+async function sendViaSmtp(
+  input: SendEmailInput,
+  from: string
+): Promise<SendEmailResult | null> {
+  const host = process.env.SMTP_HOST;
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+  if (!host || !user || !pass) return null;
+  try {
+    // Dynamic import so nodemailer is only loaded when actually used.
+    const nodemailer = await import('nodemailer');
+    const port = parseInt(process.env.SMTP_PORT || '587', 10);
+    const secure =
+      process.env.SMTP_SECURE === 'true' || port === 465;
+    const transporter = (nodemailer as any).createTransport({
+      host,
+      port,
+      secure,
+      auth: { user, pass },
+    });
+    const info = await transporter.sendMail({
+      from,
+      to: input.to,
+      subject: input.subject,
+      html: input.html,
+      text: input.text,
+      replyTo: input.replyTo,
+      attachments: input.attachments?.map((a) => ({
+        filename: a.filename,
+        content: a.content,
+        contentType: a.contentType,
+      })),
+    });
+    return { ok: true, id: info?.messageId ?? null };
+  } catch (err: any) {
+    // eslint-disable-next-line no-console
+    console.error('[email] SMTP send failed', err?.message || err);
+    return { ok: false, error: err?.message || 'SMTP send failed' };
+  }
+}
+
 /**
  * Send a transactional email. Returns a result object — never throws.
+ *
+ * Provider priority:
+ *   1. Resend (if RESEND_API_KEY set)
+ *   2. SMTP fallback (if SMTP_HOST + SMTP_USER + SMTP_PASS set)
+ *   3. No-op with warning log
  */
 export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult> {
-  const client = getClient();
-  if (!client) {
-    return { ok: false, skipped: true, reason: 'no_api_key' };
-  }
-
   const from = input.from || process.env.RESEND_FROM || DEFAULT_FROM;
 
   // Resend requires either html or text. If both are empty, surface an
@@ -76,31 +120,46 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
     return { ok: false, error: 'sendEmail: html or text is required' };
   }
 
-  try {
-    const { data, error } = await client.emails.send({
-      from,
-      to: input.to,
-      subject: input.subject,
-      html: input.html,
-      text: input.text,
-      attachments: input.attachments?.map((a) => ({
-        filename: a.filename,
-        content:
-          typeof a.content === 'string'
-            ? a.content
-            : a.content.toString('base64'),
-        contentType: a.contentType,
-      })),
-      replyTo: input.replyTo,
-    } as any);
+  const client = getClient();
+  if (client) {
+    try {
+      const { data, error } = await client.emails.send({
+        from,
+        to: input.to,
+        subject: input.subject,
+        html: input.html,
+        text: input.text,
+        attachments: input.attachments?.map((a) => ({
+          filename: a.filename,
+          content:
+            typeof a.content === 'string'
+              ? a.content
+              : a.content.toString('base64'),
+          contentType: a.contentType,
+        })),
+        replyTo: input.replyTo,
+      } as any);
 
-    if (error) {
-      return { ok: false, error: error.message || String(error) };
+      if (error) {
+        // Resend rejected (likely domain-not-verified). Fall through to SMTP
+        // if it's configured.
+        // eslint-disable-next-line no-console
+        console.error('[email] Resend rejected', error.message || error);
+      } else {
+        return { ok: true, id: data?.id ?? null };
+      }
+    } catch (err: any) {
+      // eslint-disable-next-line no-console
+      console.error('[email] Resend threw', err?.message || err);
     }
-    return { ok: true, id: data?.id ?? null };
-  } catch (err: any) {
-    return { ok: false, error: err?.message || 'Unknown Resend error' };
   }
+
+  // Try SMTP fallback. Returns null only if SMTP vars aren't set.
+  const smtpResult = await sendViaSmtp(input, from);
+  if (smtpResult) return smtpResult;
+
+  // No provider configured at all.
+  return { ok: false, skipped: true, reason: 'no_api_key' };
 }
 
 export function escapeHtml(s: string): string {

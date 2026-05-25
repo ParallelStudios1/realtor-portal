@@ -65,6 +65,7 @@ export function MessagesClient({
   // Realtime: subscribe to inserts on messages for any of the firm's threads.
   // Filter is firm_id-scoped so we get every thread in one channel.
   useEffect(() => {
+    let cancelled = false;
     const channel = supabase
       .channel(`firm-messages:${firmId}`)
       .on(
@@ -100,8 +101,79 @@ export function MessagesClient({
           });
         }
       )
-      .subscribe();
+      .subscribe(async (status) => {
+        // Catch-up fetch: close the race window between SSR thread snapshot
+        // and realtime subscription. Pull any messages that arrived between
+        // the latest preview we know about and now, then merge by id.
+        if (status !== 'SUBSCRIBED' || cancelled) return;
+        const { data, error: fetchErr } = await supabase
+          .from('messages')
+          .select('id, search_id, sender_id, body, created_at')
+          .eq('firm_id', firmId)
+          .order('created_at', { ascending: true });
+        if (cancelled || fetchErr || !data) return;
+        const rows = data as Message[];
+
+        // Group rows by search_id
+        const bySearch = new Map<string, Message[]>();
+        for (const m of rows) {
+          const arr = bySearch.get(m.search_id) || [];
+          arr.push(m);
+          bySearch.set(m.search_id, arr);
+        }
+
+        // Merge into per-thread message cache without dupes (only for threads
+        // we've already opened — closed threads will load fresh on click).
+        setMessages((prev) => {
+          const next = { ...prev };
+          for (const [sid, incoming] of bySearch.entries()) {
+            const existing = next[sid];
+            if (!existing) continue; // not yet opened
+            const seen = new Set(existing.map((m) => m.id));
+            const merged = [...existing];
+            for (const m of incoming) {
+              if (!seen.has(m.id)) {
+                merged.push(m);
+                seen.add(m.id);
+              }
+            }
+            merged.sort((a, b) => a.created_at.localeCompare(b.created_at));
+            next[sid] = merged;
+          }
+          return next;
+        });
+
+        // Refresh thread previews + re-sort if any thread got a newer message
+        setThreads((prev) => {
+          let changed = false;
+          const updated = prev.map((t) => {
+            const incoming = bySearch.get(t.searchId);
+            if (!incoming || incoming.length === 0) return t;
+            const newest = incoming[incoming.length - 1];
+            if (t.latest && newest.created_at <= t.latest.created_at) return t;
+            changed = true;
+            return {
+              ...t,
+              latest: {
+                id: newest.id,
+                body: newest.body,
+                sender_id: newest.sender_id,
+                created_at: newest.created_at,
+              },
+            };
+          });
+          if (!changed) return prev;
+          // Re-sort threads by latest activity, newest first
+          updated.sort((a, b) => {
+            const at = a.latest?.created_at || '';
+            const bt = b.latest?.created_at || '';
+            return bt.localeCompare(at);
+          });
+          return updated;
+        });
+      });
     return () => {
+      cancelled = true;
       supabase.removeChannel(channel);
     };
   }, [firmId, supabase]);

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
+import { tierFromPriceId } from '@/lib/plans';
 
 export const runtime = 'nodejs';
 // Stripe sends raw body — Next App Router needs this to skip body parsing.
@@ -53,13 +54,31 @@ export async function POST(req: Request) {
         const subscriptionId = session.subscription as string | null;
         const customerId = session.customer as string | null;
         if (subscriptionId && customerId) {
+          // Re-fetch the session with line_items expanded so we can read
+          // which Stripe price (and therefore which plan tier) was bought.
+          // The webhook payload doesn't include line_items by default.
+          let planTier: string | null = null;
+          try {
+            const full = await stripe.checkout.sessions.retrieve(session.id, {
+              expand: ['line_items.data.price'],
+            });
+            const priceId =
+              (full.line_items?.data?.[0]?.price?.id as string | undefined) ?? null;
+            planTier = tierFromPriceId(priceId);
+          } catch (err) {
+            console.error('Failed to expand checkout line_items:', err);
+          }
+
+          const update: Record<string, any> = {
+            status: 'active',
+            stripe_subscription_id: subscriptionId,
+            stripe_customer_id: customerId,
+          };
+          if (planTier) update.plan_tier = planTier;
+
           await service
             .from('firms')
-            .update({
-              status: 'active',
-              stripe_subscription_id: subscriptionId,
-              stripe_customer_id: customerId,
-            })
+            .update(update)
             .eq('stripe_customer_id', customerId);
         }
         break;
@@ -75,9 +94,22 @@ export async function POST(req: Request) {
               : sub.status === 'canceled'
                 ? 'cancelled'
                 : 'active';
+
+        // Pull the active price id off the subscription so plan changes
+        // (upgrades / downgrades) are reflected in firms.plan_tier.
+        const priceId =
+          (sub.items?.data?.[0]?.price?.id as string | undefined) ?? null;
+        const planTier = tierFromPriceId(priceId);
+
+        const update: Record<string, any> = {
+          status,
+          stripe_subscription_id: sub.id,
+        };
+        if (planTier) update.plan_tier = planTier;
+
         await service
           .from('firms')
-          .update({ status, stripe_subscription_id: sub.id })
+          .update(update)
           .eq('stripe_customer_id', sub.customer as string);
         break;
       }
