@@ -11,7 +11,11 @@ export const metadata = { title: 'Tours' };
  * the tour appears on both the realtor and client home screens.
  */
 export default async function ToursPage() {
-  const me = (await getMe())!;
+  const me = await getMe();
+  if (!me) {
+    const { redirect } = await import('next/navigation');
+    redirect('/login');
+  }
   const supabase = getSupabaseServerClient();
 
   // Pull pending + recent (last 30 days) confirmed/declined for context.

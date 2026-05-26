@@ -33,7 +33,11 @@ export default async function ClientProfilePage({
   params: { id: string };
   searchParams?: { welcome?: string };
 }) {
-  const me = (await getMe())!;
+  const me = await getMe();
+  if (!me) {
+    const { redirect } = await import('next/navigation');
+    redirect('/login');
+  }
   const supabase = getSupabaseServerClient();
 
   const { data: client } = await supabase

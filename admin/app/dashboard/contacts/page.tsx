@@ -34,7 +34,11 @@ export default async function ContactsPage({
 }: {
   searchParams?: { q?: string; role?: string };
 }) {
-  const me = (await getMe())!;
+  const me = await getMe();
+  if (!me) {
+    const { redirect } = await import('next/navigation');
+    redirect('/login');
+  }
   const supabase = getSupabaseServerClient();
   const q = (searchParams?.q || '').trim().toLowerCase();
   const roleFilter = (searchParams?.role || '').trim().toLowerCase();

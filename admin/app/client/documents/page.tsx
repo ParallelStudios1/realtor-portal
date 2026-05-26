@@ -5,7 +5,11 @@ export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Documents' };
 
 export default async function ClientDocumentsPage() {
-  const me = (await getMe())!;
+  const me = await getMe();
+  if (!me) {
+    const { redirect } = await import('next/navigation');
+    redirect('/login');
+  }
   const supabase = getSupabaseServerClient();
 
   const { data: searches } = await supabase

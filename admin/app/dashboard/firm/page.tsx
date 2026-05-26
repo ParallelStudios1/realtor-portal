@@ -13,7 +13,8 @@ export const metadata = { title: 'Firm control' };
  * people. Also shows pending firm_invites so it's clear who hasn't accepted.
  */
 export default async function FirmControlPage() {
-  const me = (await getMe())!;
+  const me = await getMe();
+  if (!me) redirect('/login');
   const isAdmin =
     me.role === 'owner' ||
     me.role === 'firm_admin' ||

@@ -25,7 +25,8 @@ export default async function DealDetailPage({
 }: {
   params: { id: string };
 }) {
-  const me = (await getMe())!;
+  const me = await getMe();
+  if (!me) redirect('/login');
   if (!me.firm_id) redirect('/login');
 
   const supabase = getSupabaseServerClient();

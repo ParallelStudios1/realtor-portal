@@ -15,7 +15,11 @@ const PHASES = [
 ];
 
 export default async function ClientHomePage() {
-  const me = (await getMe())!;
+  const me = await getMe();
+  if (!me) {
+    const { redirect } = await import('next/navigation');
+    redirect('/login');
+  }
   const supabase = getSupabaseServerClient();
 
   // Most recent search for this client

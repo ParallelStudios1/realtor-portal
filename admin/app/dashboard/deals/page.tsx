@@ -15,7 +15,11 @@ export default async function DealsListPage({
 }: {
   searchParams?: { phase?: string; q?: string; view?: string };
 }) {
-  const me = (await getMe())!;
+  const me = await getMe();
+  if (!me) {
+    const { redirect } = await import('next/navigation');
+    redirect('/login');
+  }
   const supabase = getSupabaseServerClient();
 
   const phaseFilter = (searchParams?.phase || '').trim();

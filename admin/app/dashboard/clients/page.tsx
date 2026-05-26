@@ -9,7 +9,11 @@ export const dynamic = 'force-dynamic';
  * deal workspace (or empty state if they have none yet).
  */
 export default async function ClientsListPage() {
-  const me = (await getMe())!;
+  const me = await getMe();
+  if (!me) {
+    const { redirect } = await import('next/navigation');
+    redirect('/login');
+  }
   const supabase = getSupabaseServerClient();
 
   // Pull clients + each client's most recent deal id + deal count.

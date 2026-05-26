@@ -76,6 +76,11 @@ export async function signupAction(formData: FormData) {
   });
   if (signInError) back('Account created but sign-in failed: ' + signInError.message);
 
+  // Give the auth cookie a beat to land before we redirect — otherwise the
+  // next SSR render can race the cookie write, getMe() returns null, and
+  // pages 404 on first hit after firm signup.
+  await new Promise((r) => setTimeout(r, 300));
+
   // If they came in via a cross-firm invite link, drop them straight onto
   // the deal. Otherwise fall back to the role's default landing.
   redirect(next ?? (role === 'realtor' ? '/onboarding' : '/client'));

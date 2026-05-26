@@ -10,7 +10,11 @@ export const metadata = { title: 'Inbox' };
  * being away from the dashboard.
  */
 export default async function InboxPage() {
-  const me = (await getMe())!;
+  const me = await getMe();
+  if (!me) {
+    const { redirect } = await import('next/navigation');
+    redirect('/login');
+  }
   const supabase = getSupabaseServerClient();
 
   const since = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();

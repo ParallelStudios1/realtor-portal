@@ -10,7 +10,11 @@ export const metadata = { title: 'Messages' };
  * to view + reply inline, with realtime updates via Supabase Realtime.
  */
 export default async function MessagesPage() {
-  const me = (await getMe())!;
+  const me = await getMe();
+  if (!me) {
+    const { redirect } = await import('next/navigation');
+    redirect('/login');
+  }
   const supabase = getSupabaseServerClient();
 
   // Pull every search for this firm with the client's display info and the

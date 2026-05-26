@@ -13,7 +13,11 @@ export default async function UploadDocPage({
   params: { id: string };
   searchParams?: { searchId?: string };
 }) {
-  const me = (await getMe())!;
+  const me = await getMe();
+  if (!me) {
+    const { redirect } = await import('next/navigation');
+    redirect('/login');
+  }
   const supabase = getSupabaseServerClient();
 
   const { data: client } = await supabase

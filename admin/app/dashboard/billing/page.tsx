@@ -39,7 +39,11 @@ export default async function BillingPage({
 }: {
   searchParams: { success?: string; canceled?: string };
 }) {
-  const me = (await getMe())!;
+  const me = await getMe();
+  if (!me) {
+    const { redirect } = await import('next/navigation');
+    redirect('/login');
+  }
   // Compose a live-feeling countdown: "X days, Y hours" so it visibly ticks
   // throughout the day instead of sitting on a whole-day integer.
   const trialMsLeft = me.trial_ends_at

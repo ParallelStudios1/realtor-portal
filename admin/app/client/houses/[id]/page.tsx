@@ -54,7 +54,11 @@ export default async function HouseDetailPage({
 }: {
   params: { id: string };
 }) {
-  const me = (await getMe())!;
+  const me = await getMe();
+  if (!me) {
+    const { redirect } = await import('next/navigation');
+    redirect('/login');
+  }
   const supabase = getSupabaseServerClient();
 
   const { data: house } = await supabase

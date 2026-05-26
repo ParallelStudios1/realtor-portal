@@ -9,7 +9,11 @@ export const metadata = { title: 'Messages' };
  * Web counterpart of the mobile (client)/messages tab.
  */
 export default async function ClientMessagesPage() {
-  const me = (await getMe())!;
+  const me = await getMe();
+  if (!me) {
+    const { redirect } = await import('next/navigation');
+    redirect('/login');
+  }
   const supabase = getSupabaseServerClient();
 
   // Find the client's most recent search (one thread for now; multi-thread is v1.1)

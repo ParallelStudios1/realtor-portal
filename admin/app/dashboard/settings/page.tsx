@@ -7,7 +7,11 @@ export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Settings · Realtor Portal' };
 
 export default async function SettingsPage() {
-  const me = (await getMe())!;
+  const me = await getMe();
+  if (!me) {
+    const { redirect } = await import('next/navigation');
+    redirect('/login');
+  }
   const supabase = getSupabaseServerClient();
 
   const isFirmAdmin = me.role === 'firm_admin' || me.role === 'super_admin';
