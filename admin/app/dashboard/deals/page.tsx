@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { getMe, getSupabaseServerClient } from '@/lib/supabaseSsr';
 import { DealsBoard } from './DealsBoard';
 
@@ -17,7 +18,6 @@ export default async function DealsListPage({
 }) {
   const me = await getMe();
   if (!me) {
-    const { redirect } = await import('next/navigation');
     redirect('/login');
   }
   const supabase = getSupabaseServerClient();

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { getMe, getSupabaseServerClient } from '@/lib/supabaseSsr';
 import { SettingsForm } from './SettingsForm';
 import { TestSmsButton } from '@/components/TestSmsButton';
@@ -9,7 +10,6 @@ export const metadata = { title: 'Settings · Realtor Portal' };
 export default async function SettingsPage() {
   const me = await getMe();
   if (!me) {
-    const { redirect } = await import('next/navigation');
     redirect('/login');
   }
   const supabase = getSupabaseServerClient();

@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation';
 import { getMe, getSupabaseServerClient } from '@/lib/supabaseSsr';
 import { MessagesClient } from './MessagesClient';
 
@@ -12,7 +13,6 @@ export const metadata = { title: 'Messages' };
 export default async function MessagesPage() {
   const me = await getMe();
   if (!me) {
-    const { redirect } = await import('next/navigation');
     redirect('/login');
   }
   const supabase = getSupabaseServerClient();

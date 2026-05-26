@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation';
 import { getMe, getSupabaseServerClient } from '@/lib/supabaseSsr';
 import { ClientDocumentsList } from './ClientDocumentsList';
 
@@ -7,7 +8,6 @@ export const metadata = { title: 'Documents' };
 export default async function ClientDocumentsPage() {
   const me = await getMe();
   if (!me) {
-    const { redirect } = await import('next/navigation');
     redirect('/login');
   }
   const supabase = getSupabaseServerClient();

@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation';
 import { getMe } from '@/lib/supabaseSsr';
 import { ClientProfileForm } from './ClientProfileForm';
 
@@ -7,7 +8,6 @@ export const metadata = { title: 'Profile' };
 export default async function ClientProfilePage() {
   const me = await getMe();
   if (!me) {
-    const { redirect } = await import('next/navigation');
     redirect('/login');
   }
 

@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation';
 import { getMe } from '@/lib/supabaseSsr';
 import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
 import { BillingClient } from './BillingClient';
@@ -41,7 +42,6 @@ export default async function BillingPage({
 }) {
   const me = await getMe();
   if (!me) {
-    const { redirect } = await import('next/navigation');
     redirect('/login');
   }
   // Compose a live-feeling countdown: "X days, Y hours" so it visibly ticks
