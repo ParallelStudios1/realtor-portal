@@ -65,6 +65,20 @@ export async function signupAction(formData: FormData) {
   });
   const json = await r.json().catch(() => ({}));
   if (!r.ok || !json?.ok) {
+    // If the email already has a firm/account on file, send them to /login
+    // with a helpful pre-filled prompt — NOT back to /signup where every
+    // resubmit was orphaning their data into a brand new firm.
+    if ((json as any)?.existing) {
+      redirect(
+        '/login?email=' +
+          encodeURIComponent(email!) +
+          (next ? '&next=' + encodeURIComponent(next) : '') +
+          '&notice=' +
+          encodeURIComponent(
+            'You already have an account — sign in to reach your firm.'
+          )
+      );
+    }
     back(json?.error || `Signup failed (HTTP ${r.status}).`);
   }
 

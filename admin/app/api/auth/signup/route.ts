@@ -128,6 +128,27 @@ export async function POST(req: Request) {
       );
     }
 
+    // CRITICAL: detect "this email already has a firm" BEFORE we create a
+    // new one. Without this, every Create Firm attempt by an existing user
+    // spawns a duplicate firm and silently moves them off their old one —
+    // stranding all their deals, contacts, and participants in an orphaned
+    // firm. This was the root cause of repeated "404 after Create Firm" reports.
+    const { data: existingPublicUser } = await service
+      .from('users')
+      .select('id, firm_id, role')
+      .eq('id', userId)
+      .maybeSingle();
+    if (existingPublicUser?.firm_id) {
+      return NextResponse.json(
+        {
+          error:
+            'You already have an account on Realtor Portal. Sign in instead — your firm and deals are waiting for you.',
+          existing: true,
+        },
+        { status: 409 }
+      );
+    }
+
     // 2) Run the right follow-up using a service-role client that impersonates
     //    the new user. Easiest: call our existing RPCs but pass the user id
     //    directly via raw SQL since RPCs use auth.uid().
