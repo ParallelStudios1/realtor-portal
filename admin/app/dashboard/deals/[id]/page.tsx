@@ -3,6 +3,7 @@ import { notFound, redirect } from 'next/navigation';
 import { getMe, getSupabaseServerClient } from '@/lib/supabaseSsr';
 import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
 import { DealWorkspace } from './DealWorkspace';
+import { buildCalendarFeedUrl } from '@/lib/ics';
 
 export const dynamic = 'force-dynamic';
 
@@ -202,6 +203,7 @@ export default async function DealDetailPage({
       teammates={(teammates || []) as any}
       recentMessages={(messages || []) as any}
       showings={(showings || []) as any}
+      calendarUrl={buildCalendarFeedUrl(deal.id)}
     />
   );
 }

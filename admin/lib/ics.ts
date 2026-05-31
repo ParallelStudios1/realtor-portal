@@ -192,3 +192,33 @@ export function buildCalendarFeed(
   lines.push('END:VCALENDAR');
   return lines.map(foldLine).join('\r\n');
 }
+
+/**
+ * Compute the stateless HMAC token that guards a deal's calendar feed.
+ *
+ * token = base64url(HMAC_SHA256(searchId, CALENDAR_FEED_SECRET))
+ *
+ * Calendar apps fetch the feed with no cookies, so the URL itself has to be
+ * the credential. We derive an unguessable token from the searchId rather
+ * than storing one — no extra table, and revocation is as simple as rotating
+ * the secret.
+ */
+export function computeCalendarFeedToken(searchId: string, secret: string): string {
+  // Lazy require so this module stays usable in any runtime that doesn't
+  // touch the token path (the email/attachment helpers don't need crypto).
+  const { createHmac } = require('crypto') as typeof import('crypto');
+  return createHmac('sha256', secret).update(searchId).digest('base64url');
+}
+
+/**
+ * Build the full subscribe URL for a deal's calendar feed, including the
+ * HMAC token query param. Returns null if CALENDAR_FEED_SECRET is unset so
+ * callers can hide the "Subscribe to calendar" affordance gracefully.
+ */
+export function buildCalendarFeedUrl(searchId: string): string | null {
+  const secret = process.env.CALENDAR_FEED_SECRET;
+  if (!secret) return null;
+  const base = process.env.NEXT_PUBLIC_SITE_URL || 'https://realtor-portal-ten.vercel.app';
+  const token = computeCalendarFeedToken(searchId, secret);
+  return `${base.replace(/\/$/, '')}/api/calendar/${searchId}?t=${token}`;
+}

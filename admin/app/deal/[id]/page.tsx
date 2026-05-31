@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { getMe } from '@/lib/supabaseSsr';
 import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
+import { buildCalendarFeedUrl } from '@/lib/ics';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Deal' };
@@ -385,13 +386,18 @@ export default async function DealPage({
                     ))}
                   </ul>
                 )}
-                <a
-                  href={`/api/calendar/${params.id}.ics`}
-                  className="mt-3 inline-block text-xs font-semibold"
-                  style={{ color: accent }}
-                >
-                  Subscribe in calendar ↗
-                </a>
+                {buildCalendarFeedUrl(params.id) && (
+                  <a
+                    href={buildCalendarFeedUrl(params.id)!.replace(
+                      /^https:\/\//,
+                      'webcal://'
+                    )}
+                    className="mt-3 inline-block text-xs font-semibold"
+                    style={{ color: accent }}
+                  >
+                    Subscribe in calendar ↗
+                  </a>
+                )}
               </Section>
             )}
 

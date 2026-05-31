@@ -57,6 +57,7 @@ export function DealWorkspace(props: {
   }>;
   recentMessages: any[];
   showings?: any[];
+  calendarUrl?: string | null;
 }) {
   const {
     clientId,
@@ -737,14 +738,16 @@ export function DealWorkspace(props: {
                 ))}
               </ul>
             )}
-            <div className="border-t border-ink-100 px-5 py-2 text-right">
-              <a
-                href={`/api/calendar/${deal.id}.ics`}
-                className="text-xs font-semibold text-blue-600 hover:underline"
-              >
-                Subscribe to all ↗
-              </a>
-            </div>
+            {props.calendarUrl && (
+              <div className="border-t border-ink-100 px-5 py-2 text-right">
+                <a
+                  href={props.calendarUrl.replace(/^https:\/\//, 'webcal://')}
+                  className="text-xs font-semibold text-blue-600 hover:underline"
+                >
+                  Subscribe to all ↗
+                </a>
+              </div>
+            )}
           </Card>
 
           {/* People on the deal */}

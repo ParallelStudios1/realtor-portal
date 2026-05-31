@@ -1,19 +1,11 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getMe, getSupabaseServerClient } from '@/lib/supabaseSsr';
+import { DealProgressTimeline } from '@/components/DealProgressTimeline';
+import { buildCalendarFeedUrl } from '@/lib/ics';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Home' };
-
-// Must match the public.deal_phase enum in Postgres exactly.
-// User-facing labels can be friendlier than the enum values.
-const PHASES = [
-  { id: 'searching', label: 'Searching' },
-  { id: 'offer_made', label: 'Offer made' },
-  { id: 'under_contract', label: 'Under contract' },
-  { id: 'closing', label: 'Closing' },
-  { id: 'closed', label: 'Closed' },
-];
 
 export default async function ClientHomePage() {
   const me = await getMe();
@@ -64,7 +56,33 @@ export default async function ClientHomePage() {
         .maybeSingle()
     : { data: null };
 
-  const phaseIdx = active ? PHASES.findIndex((p) => p.id === active.phase) : -1;
+  // Firm branding + custom phase labels/messages for the progress timeline.
+  const { data: firm } = me.firm_id
+    ? await supabase
+        .from('firms')
+        .select('brand_color, phase_labels, phase_messages')
+        .eq('id', me.firm_id)
+        .maybeSingle()
+    : { data: null };
+
+  const phaseLabels =
+    ((firm as any)?.phase_labels as Record<string, string> | null) || {};
+  const phaseMessages =
+    ((firm as any)?.phase_messages as Record<string, string> | null) || {};
+  const brandColor =
+    ((firm as any)?.brand_color as string | null) ||
+    me.firm_brand_color ||
+    null;
+
+  // Surface only the next few upcoming dates on the timeline.
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const upcomingDates = ((dates as any[]) || [])
+    .filter((d) => {
+      const t = new Date(d.date).getTime();
+      return !Number.isNaN(t) && t >= todayStart.getTime();
+    })
+    .slice(0, 3);
 
   return (
     <main className="mx-auto max-w-4xl px-4 py-6 sm:px-6 sm:py-8">
@@ -82,47 +100,16 @@ export default async function ClientHomePage() {
         </div>
       ) : (
         <>
-          {/* Phase stepper */}
-          <section className="mt-6 rounded-xl border border-slate-200 bg-white p-5">
-            <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Deal progress
-            </div>
-            <div className="mt-3 flex items-center gap-2 overflow-x-auto pb-1">
-              {PHASES.map((p, i) => {
-                const done = phaseIdx >= 0 && i <= phaseIdx;
-                return (
-                  <div key={p.id} className="flex items-center gap-2">
-                    <div
-                      className={
-                        'flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ' +
-                        (done
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-slate-100 text-slate-400')
-                      }
-                    >
-                      {i + 1}
-                    </div>
-                    <div
-                      className={
-                        'whitespace-nowrap text-xs ' +
-                        (done ? 'font-semibold text-slate-900' : 'text-slate-500')
-                      }
-                    >
-                      {p.label}
-                    </div>
-                    {i < PHASES.length - 1 && (
-                      <div
-                        className={
-                          'h-0.5 w-6 ' +
-                          (done && i < phaseIdx ? 'bg-blue-600' : 'bg-slate-200')
-                        }
-                      />
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </section>
+          {/* Client-facing progress timeline — where the deal is + what's next */}
+          <div className="mt-6">
+            <DealProgressTimeline
+              phase={active.phase}
+              brandColor={brandColor}
+              phaseLabels={phaseLabels}
+              phaseMessages={phaseMessages}
+              upcomingDates={upcomingDates}
+            />
+          </div>
 
           {/* Realtor card */}
           {realtor && (
@@ -149,12 +136,17 @@ export default async function ClientHomePage() {
                 <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                   Important dates
                 </div>
-                <a
-                  href={`webcal://realtor-portal-ten.vercel.app/api/calendar/${active.id}.ics`}
-                  className="text-xs font-semibold text-blue-600 hover:underline"
-                >
-                  Subscribe in Calendar ↗
-                </a>
+                {buildCalendarFeedUrl(active.id) && (
+                  <a
+                    href={buildCalendarFeedUrl(active.id)!.replace(
+                      /^https:\/\//,
+                      'webcal://'
+                    )}
+                    className="text-xs font-semibold text-blue-600 hover:underline"
+                  >
+                    Subscribe in Calendar ↗
+                  </a>
+                )}
               </div>
               <ul className="mt-3 divide-y divide-slate-100">
                 {dates.map((d: any) => (

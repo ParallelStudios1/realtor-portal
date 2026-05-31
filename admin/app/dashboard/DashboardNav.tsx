@@ -24,6 +24,7 @@ const ITEMS = [
 ];
 
 const SECONDARY_BASE = [
+  { href: '/dashboard/tools/net-sheet', label: 'Net sheet' },
   { href: '/dashboard/tours', label: 'Tour requests' },
   { href: '/dashboard/branding', label: 'Branding' },
   { href: '/dashboard/billing', label: 'Billing' },
