@@ -834,12 +834,13 @@ export async function addParticipantAction(
       const isRealtorRole =
         payload.role === 'realtor' || payload.role === 'co_realtor';
       const isAttorneyRole = payload.role === 'attorney';
-      // For external collaborators (realtor / co_realtor / attorney) we
-      // use Supabase's inviteUserByEmail. That ships an actual email
-      // through Supabase's own SMTP — no Resend dependency. The redirect
-      // sends them to /welcome/<role> which sets up their account + lands
-      // them on the deal. For everyone else we still fall back to a
-      // password-based /signup link, which is safe in the SMS body.
+      // External collaborators (realtor / co_realtor / attorney) and all
+      // other parties are invited through OUR branded /invite/<token>
+      // landing — never through a Supabase auth email. The token landing
+      // is unauthenticated, branded, role-aware, and sets up the account
+      // (password or sign-in) itself. We keep a /signup fallback only for
+      // the rare case where the deal_invites insert failed and we have no
+      // token to link to.
       const signupUrl =
         siteUrl +
         '/signup?role=realtor' +
@@ -847,110 +848,6 @@ export async function addParticipantAction(
         '&next=' +
         encodeURIComponent('/deal/' + a.search.id);
 
-      const collabRole = isRealtorRole
-        ? 'realtor'
-        : isAttorneyRole
-          ? 'attorney'
-          : null;
-      // CRITICAL: Supabase magic links arrive at the redirectTo URL with
-      // a URL fragment (#access_token=...). Server components can't see
-      // hashes — only client JS can. So we ALWAYS redirect through
-      // /welcome (which has the hash-handling client) and let it forward
-      // by role to /welcome/realtor or /welcome/attorney AFTER setSession
-      // succeeds. Anything else and the user lands on a server route
-      // that thinks they're unauthenticated → middleware bounces to /login.
-      const nextPath =
-        collabRole === 'attorney'
-          ? '/attorney/deals/' + a.search.id
-          : '/deal/' + a.search.id;
-      const onboardingPath = collabRole
-        ? '/welcome?role=' +
-          encodeURIComponent(collabRole) +
-          '&next=' +
-          encodeURIComponent(nextPath) +
-          '&host_firm=' +
-          encodeURIComponent(a.search.firm_id)
-        : null;
-
-      // We previously used `auth.admin.inviteUserByEmail`, which silently
-      // no-ops when the recipient already exists in auth.users (so a
-      // re-invite to the same email never fires). Switch to a public
-      // anon-key client + `signInWithOtp` which:
-      //   1. Works for NEW users (creates them with shouldCreateUser:true)
-      //   2. Works for EXISTING users (sends them a fresh magic link)
-      //   3. Triggers Supabase's email send in both cases via the same
-      //      SMTP that powers the working `/api/clients/invite` flow.
-      // Both paths surface the same magic-link target (/welcome?role=...)
-      // so the recipient ends up on the right onboarding screen.
-      let invitedViaSupabase = false;
-      let invitedError: string | null = null;
-      if (collabRole && payload.email) {
-        try {
-          const { createClient } = await import('@supabase/supabase-js');
-          const publicClient = createClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-            { auth: { persistSession: false } }
-          );
-          const { error: otpErr } = await publicClient.auth.signInWithOtp({
-            email: payload.email,
-            options: {
-              shouldCreateUser: true,
-              emailRedirectTo: siteUrl + (onboardingPath || ''),
-              data: {
-                full_name: payload.name || '',
-                invited_by_firm: a.search.firm_id,
-                invited_to_deal: a.search.id,
-                role: collabRole,
-              },
-            },
-          });
-          if (!otpErr) {
-            invitedViaSupabase = true;
-          } else {
-            invitedError = otpErr.message;
-            console.error(
-              '[addParticipantAction] signInWithOtp failed',
-              otpErr.message
-            );
-          }
-        } catch (e: any) {
-          invitedError = e?.message || 'otp_failed';
-          console.error(
-            '[addParticipantAction] signInWithOtp threw',
-            e?.message || e
-          );
-        }
-      }
-
-      // Magic link as the SMS-friendly link AND as a fallback for
-      // already-existing accounts where invite-by-email is a no-op.
-      let magicLinkUrl: string | null = null;
-      if (collabRole && payload.email && onboardingPath) {
-        try {
-          const { data: linkData } = await service.auth.admin.generateLink({
-            type: 'magiclink',
-            email: payload.email,
-            options: {
-              redirectTo: siteUrl + onboardingPath,
-              data: {
-                full_name: payload.name || '',
-                invited_by_firm: a.search.firm_id,
-                invited_to_deal: a.search.id,
-                role: collabRole,
-              },
-            },
-          });
-          magicLinkUrl =
-            (linkData as any)?.properties?.action_link || null;
-          outerMagicLinkUrl = magicLinkUrl;
-        } catch (e: any) {
-          console.error(
-            '[addParticipantAction] generateLink failed',
-            e?.message || e
-          );
-        }
-      }
       const rolePretty = payload.role.replace(/_/g, ' ');
       const displayName = payload.name || payload.email || 'there';
       const safeName = escapeHtml(displayName);
@@ -960,13 +857,11 @@ export async function addParticipantAction(
       const subject = isRealtorRole
         ? `${realtorName} invited you to co-broker a deal at ${firmName}`
         : `${realtorName} added you to a real-estate deal at ${firmName}`;
-      // The /invite/<token> landing is now ALWAYS the primary URL — it
-      // works without auth, is fully branded, and routes the recipient
-      // by role automatically. Magic link + signup URL are kept as
-      // fallbacks but never preferred.
-      const primaryUrl = invitePath
-        ? siteUrl + invitePath
-        : magicLinkUrl || signupUrl;
+      // The /invite/<token> landing is ALWAYS the primary URL — it works
+      // without auth, is fully branded, and routes the recipient by role
+      // automatically. The /signup URL is only a fallback for the rare
+      // case where the deal_invites insert failed.
+      const primaryUrl = invitePath ? siteUrl + invitePath : signupUrl;
       // Track the URL on the hoisted var so the action's return value
       // surfaces it for the realtor's copy/share fallback.
       outerMagicLinkUrl = primaryUrl;
@@ -976,7 +871,7 @@ export async function addParticipantAction(
             <p>${safeRealtor} at <strong>${safeFirm}</strong> added you as <strong>${safeRole}</strong> on a real-estate deal in Realtor Portal.</p>
             <p>Tap below to set up your free account and open the deal. You can add <em>your own client</em> as a buyer or seller from your own firm, and use Realtor Portal's deal tools on this deal even if your firm doesn't have a paid plan.</p>
             <p style="margin:24px 0">
-              <a href="${primaryUrl}" style="display:inline-block;background:#0F172A;color:#fff;padding:10px 18px;border-radius:8px;font-weight:600;text-decoration:none">${magicLinkUrl ? 'Open the deal &rarr;' : 'Set up free account &amp; open the deal &rarr;'}</a>
+              <a href="${primaryUrl}" style="display:inline-block;background:#0F172A;color:#fff;padding:10px 18px;border-radius:8px;font-weight:600;text-decoration:none">Set up free account &amp; open the deal &rarr;</a>
             </p>
             <p style="color:#64748B;font-size:13px">Already on Realtor Portal? <a href="${dealUrl}" style="color:#0F172A">Open the deal directly</a>.</p>
             <p style="color:#64748B;font-size:13px">Hi ${safeName} &mdash; on this deal you can share documents, line up tours, message your client and ${safeRealtor}, and track closing milestones.</p>
@@ -995,7 +890,7 @@ export async function addParticipantAction(
         `;
       const realtorText =
         `${realtorName} at ${firmName} invited you to co-broker a deal as ${rolePretty}.\n\n` +
-        `Tap to ${magicLinkUrl ? 'open the deal' : 'set up your free account'}:\n${primaryUrl}\n\n` +
+        `Tap to set up your free account:\n${primaryUrl}\n\n` +
         `Already have an account? Open the deal directly:\n${dealUrl}\n\n` +
         `You can add your own client (buyer or seller) from your own firm, and use Realtor Portal's deal tools on this deal even if your firm doesn't have a paid plan.`;
       const partyText =
@@ -1010,25 +905,16 @@ export async function addParticipantAction(
         ? `${realtorName} (${firmName}) invited you to co-broker a deal on Realtor Portal. Tap to open: ${primaryUrl}`
         : `${realtorName} (${firmName}) added you to a real-estate deal as ${rolePretty}. Tap to accept: ${primaryUrl}`;
 
-      // If Supabase already sent the invite email via inviteUserByEmail,
-      // don't double-send via Resend. notify() will skip email when we
-      // pass null and we synthesize the email-sent half of the result.
-      const skipEmail = invitedViaSupabase;
+      // Always send OUR branded invite email via Resend (sendEmail) — never
+      // a Supabase auth/magic-link email. The CTA points at /invite/<token>.
       notifyResult = await notify({
-        email: skipEmail ? null : payload.email || null,
+        email: payload.email || null,
         phone: payload.phone || userPhone,
         subject,
         text: isRealtorRole || isAttorneyRole ? realtorText : partyText,
         html: isRealtorRole || isAttorneyRole ? realtorBody : partyBody,
         sms_text: smsBody,
       });
-      if (skipEmail) {
-        // Tell the UI an invite email DID go out, just via Supabase SMTP.
-        notifyResult = {
-          ...notifyResult,
-          email: { ok: true, via: 'supabase' as const },
-        };
-      }
     } catch (e: any) {
       console.error('[addParticipantAction] notify failed', e?.message || e);
     }

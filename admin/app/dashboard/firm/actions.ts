@@ -115,31 +115,53 @@ export async function inviteFirmMemberAction(payload: {
     };
   }
 
-  // Send the magic-link invite.
   const baseUrl =
     process.env.NEXT_PUBLIC_SITE_URL ?? 'https://realtor-portal-ten.vercel.app';
-  const redirectTo =
-    baseUrl + '/welcome?firm_id=' + (a.me.firm_id || '') + '&staff=1';
 
-  const { data, error } = await service.auth.admin.inviteUserByEmail(email, {
-    data: {
-      full_name,
-      firm_id: a.me.firm_id,
-      role: payload.role,
-    },
-    redirectTo,
-  });
-  if (error && !/already/i.test(error.message)) {
-    return { ok: false as const, error: error.message };
+  // Provision the staff account WITHOUT a Supabase magic-link email.
+  // Firm staff (owner/admin/manager/realtor/member) join the EXISTING host
+  // firm and sign in at /login with a password. There is no /invite/<token>
+  // landing for host-firm staff roles (deal_invites only covers external
+  // collaborators + clients), so we create the account with a temporary
+  // password and send it in OUR branded email. New users only — for an
+  // existing account we never reset their password.
+  let userId: string | undefined;
+  let isNewAccount = false;
+  let tempPassword: string | null = null;
+  const genTemp = () =>
+    'Rp-' +
+    Math.random().toString(36).slice(2, 8) +
+    Math.random().toString(36).slice(2, 6).toUpperCase();
+  const newPassword = genTemp();
+  const { data: created, error: createErr } =
+    await service.auth.admin.createUser({
+      email,
+      email_confirm: true,
+      password: newPassword,
+      user_metadata: {
+        full_name,
+        firm_id: a.me.firm_id,
+        role: payload.role,
+      },
+    });
+  if (createErr && !/already|registered|exists/i.test(createErr.message)) {
+    return { ok: false as const, error: createErr.message };
   }
-  let userId = data?.user?.id;
-  if (!userId) {
+  if (created?.user?.id) {
+    userId = created.user.id;
+    isNewAccount = true;
+    tempPassword = newPassword;
+  } else {
     const { data: existing } = await service
       .from('users')
       .select('id')
       .eq('email', email)
       .maybeSingle();
     userId = existing?.id;
+    if (!userId) {
+      const { data: list } = await service.auth.admin.listUsers();
+      userId = list?.users?.find((u) => u.email?.toLowerCase() === email)?.id;
+    }
   }
 
   if (userId) {
@@ -166,23 +188,42 @@ export async function inviteFirmMemberAction(payload: {
     { onConflict: 'firm_id,email' }
   );
 
-  // Fire-and-forget welcome email (separate from the Supabase magic link).
+  // Fire-and-forget branded welcome email via Resend (NOT a Supabase auth
+  // email). For a brand-new account we include a temporary password they use
+  // to sign in at /login (and should change afterward). For an existing
+  // account we just point them at /login with their current password.
   try {
     const safe = escapeHtml(full_name);
+    const safeRole = escapeHtml(payload.role);
+    const loginUrl = baseUrl + '/login';
+    const credBlockHtml =
+      isNewAccount && tempPassword
+        ? `<p style="margin:0 0 16px;">Sign in with this temporary password and change it once you're in:</p>
+  <p style="margin:0 0 16px;font-family:ui-monospace,Menlo,monospace;font-size:15px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;padding:10px 14px;display:inline-block;">${escapeHtml(
+            tempPassword
+          )}</p>`
+        : `<p style="margin:0 0 16px;">Sign in with your existing Realtor Portal password.</p>`;
+    const html = `
+<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#0f172a;">
+  <p style="margin:0 0 16px;">Hi ${safe},</p>
+  <p style="margin:0 0 16px;">You've been added as <strong>${safeRole}</strong> to your firm on Realtor Portal.</p>
+  ${credBlockHtml}
+  <p style="margin:24px 0;">
+    <a href="${loginUrl}" style="display:inline-block;background:#0f172a;color:#fff;padding:10px 18px;border-radius:8px;font-weight:600;text-decoration:none;">Sign in &rarr;</a>
+  </p>
+  <p style="margin:16px 0 0;color:#94a3b8;font-size:12px;">If the button above doesn't work, paste this link into your browser: ${loginUrl}</p>
+</div>`.trim();
+    const text =
+      isNewAccount && tempPassword
+        ? `${full_name} — you've been added as ${payload.role} to your firm on Realtor Portal.\n\n` +
+          `Sign in here: ${loginUrl}\nTemporary password: ${tempPassword}\n\nPlease change your password after signing in.`
+        : `${full_name} — you've been added as ${payload.role} to your firm on Realtor Portal.\n\n` +
+          `Sign in with your existing password: ${loginUrl}`;
     await sendEmail({
       to: email,
-      subject: 'You\'ve been added to a Realtor Portal firm',
-      text:
-        full_name +
-        ' — you have been added as a ' +
-        payload.role +
-        ' to your firm on Realtor Portal. Check your inbox for the sign-in link.',
-      html:
-        '<p>Hi ' +
-        safe +
-        ',</p><p>You\'ve been added as a <strong>' +
-        payload.role +
-        '</strong> at your firm on Realtor Portal. Look for the magic-link email from <em>noreply@parallelstudios.co</em> to sign in.</p>',
+      subject: "You've been added to a Realtor Portal firm",
+      text,
+      html,
     });
   } catch {}
 

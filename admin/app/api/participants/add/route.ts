@@ -279,42 +279,12 @@ export async function POST(req: Request) {
           '&next=' +
           encodeURIComponent('/deal/' + (search as any).id);
 
-        let magicLinkUrl: string | null = null;
-        if (isRealtorRole && body.email && !userId) {
-          try {
-            const onboardingPath =
-              '/welcome/realtor?next=' +
-              encodeURIComponent('/deal/' + (search as any).id) +
-              '&host_firm=' +
-              encodeURIComponent((search as any).firm_id);
-            const { data: linkData } = await service.auth.admin.generateLink({
-              type: 'magiclink',
-              email: body.email,
-              options: {
-                redirectTo: siteUrl + onboardingPath,
-                data: {
-                  full_name: body.name || '',
-                  invited_by_firm: (search as any).firm_id,
-                  invited_to_deal: (search as any).id,
-                },
-              },
-            });
-            magicLinkUrl =
-              (linkData as any)?.properties?.action_link || null;
-          } catch (e: any) {
-            console.error(
-              '[/api/participants/add] generateLink failed',
-              e?.message || e
-            );
-          }
-        }
-
         // The /invite/<token> landing is ALWAYS the primary URL when we
-        // have one. Magic link + signup URL are only fallbacks for the
-        // rare case where the deal_invites insert failed.
-        const primaryUrl = invitePath
-          ? siteUrl + invitePath
-          : magicLinkUrl || signupUrl;
+        // have one. We never generate a Supabase magic link here — that
+        // would send Supabase's own auth email instead of our branded one.
+        // The /signup URL is only a fallback for the rare case where the
+        // deal_invites insert failed.
+        const primaryUrl = invitePath ? siteUrl + invitePath : signupUrl;
         // Keep the outer inviteUrl in sync (it was set from invitePath
         // above, but on the magicLink/signup fallback paths we want the
         // mobile app to receive *something* it can copy to clipboard).
