@@ -2,6 +2,8 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { getMe } from '@/lib/supabaseSsr';
 import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
 import { createDocusignEnvelope } from '@/lib/docusign';
+import { logAudit } from '@/lib/audit';
+import { notifyDealParticipants } from '@/lib/notify';
 
 /**
  * Realtor kicks off a DocuSign envelope for a specific deal. We gather the
@@ -98,10 +100,55 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Persist the envelope as a tracked row (status 'sent'). The webhook
+  // (DocuSign Connect) and/or the on-demand poll will advance its status.
+  // UNIQUE(provider, envelope_id) makes this idempotent if the same envelope
+  // ever round-trips here twice.
+  await service.from('esign_envelopes').upsert(
+    {
+      firm_id: me.firm_id,
+      search_id: body.searchId,
+      document_id: body.documentId ?? null,
+      provider: 'docusign',
+      envelope_id: result.envelopeId,
+      envelope_url: result.envelopeUrl,
+      status: 'sent',
+      recipients: recipients,
+      created_by: me.user_id,
+    },
+    { onConflict: 'provider,envelope_id' }
+  );
+
   await service
     .from('client_searches')
     .update({ docusign_envelope_url: result.envelopeUrl })
     .eq('id', body.searchId);
+
+  await logAudit({
+    firmId: me.firm_id,
+    searchId: body.searchId,
+    actor: { userId: me.user_id, email: me.email, role: me.role },
+    action: 'esign.sent',
+    entityType: 'esign_envelope',
+    entityId: result.envelopeId,
+    summary:
+      'Sent ' + (body.documentName || 'document') + ' for e-signature via DocuSign',
+    metadata: {
+      provider: 'docusign',
+      envelope_id: result.envelopeId,
+      recipient_count: recipients.length,
+    },
+  });
+
+  await notifyDealParticipants({
+    searchId: body.searchId,
+    subject: 'Document sent for signature',
+    text:
+      'A document (' +
+      (body.documentName || 'real-estate document') +
+      ') has been sent for signature via DocuSign. Please check your email for the signing request.',
+    excludeUserId: me.user_id,
+  });
 
   return NextResponse.json({
     ok: true,

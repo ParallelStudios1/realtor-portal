@@ -34,7 +34,11 @@ const SECONDARY_BASE = [
 // "Firm control" appears in the More menu only for owners / firm_admins.
 function buildSecondary(isFirmAdmin?: boolean) {
   if (!isFirmAdmin) return SECONDARY_BASE;
-  return [{ href: '/dashboard/firm', label: 'Firm control' }, ...SECONDARY_BASE];
+  return [
+    { href: '/dashboard/firm', label: 'Firm control' },
+    { href: '/dashboard/oversight', label: 'Oversight' },
+    ...SECONDARY_BASE,
+  ];
 }
 
 export function DashboardNav({

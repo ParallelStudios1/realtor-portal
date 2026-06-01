@@ -173,3 +173,80 @@ export async function createDocusignEnvelope(
     envelopeId;
   return { ok: true, envelopeId, envelopeUrl };
 }
+
+/** Map a raw DocuSign envelope status to our local enum. */
+function normalizeStatus(raw: string | undefined | null): string {
+  const s = (raw || '').toLowerCase();
+  switch (s) {
+    case 'created':
+    case 'sent':
+    case 'delivered':
+    case 'completed':
+    case 'declined':
+    case 'voided':
+      return s;
+    case 'signed':
+      // DocuSign sometimes reports recipient-level "signed" — treat the
+      // envelope as completed once it reaches us at envelope level.
+      return 'completed';
+    default:
+      return s || 'sent';
+  }
+}
+
+export type EnvelopeStatusResult =
+  | {
+      ok: true;
+      status: string;
+      completedAt: string | null;
+      recipients: any;
+    }
+  | { ok: false; skipped: true; reason: 'no_config' }
+  | { ok: false; error: string };
+
+/**
+ * Poll a single envelope's current status directly from the DocuSign API.
+ * This is the fallback path when DocuSign Connect (the push webhook) is not
+ * configured — the UI can call this to refresh status on demand.
+ *
+ * Soft-skips (no_config) when DOCUSIGN_* env vars are unset, exactly like
+ * createDocusignEnvelope, so callers degrade gracefully.
+ */
+export async function getEnvelopeStatus(
+  envelopeId: string
+): Promise<EnvelopeStatusResult> {
+  const env = readEnv();
+  if (!env) return { ok: false, skipped: true, reason: 'no_config' };
+
+  const token = await getAccessToken(env);
+  if (!token) return { ok: false, error: 'Could not authenticate with DocuSign.' };
+
+  const base =
+    env.DOCUSIGN_BASE_URL +
+    '/v2.1/accounts/' +
+    env.DOCUSIGN_ACCOUNT_ID +
+    '/envelopes/' +
+    encodeURIComponent(envelopeId);
+
+  const res = await fetch(base + '?include=recipients', {
+    method: 'GET',
+    headers: { Authorization: 'Bearer ' + token, accept: 'application/json' },
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    return { ok: false, error: 'DocuSign API ' + res.status + ': ' + text.slice(0, 200) };
+  }
+  const json = (await res.json()) as {
+    status?: string;
+    completedDateTime?: string;
+    recipients?: any;
+  };
+  return {
+    ok: true,
+    status: normalizeStatus(json.status),
+    completedAt: json.completedDateTime || null,
+    recipients: json.recipients ?? null,
+  };
+}
+
+export { normalizeStatus as normalizeDocusignStatus };

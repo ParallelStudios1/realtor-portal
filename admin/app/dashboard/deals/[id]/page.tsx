@@ -103,6 +103,7 @@ export default async function DealDetailPage({
     { data: teammates },
     { data: messages },
     { data: showings },
+    { data: envelopes },
   ] = await Promise.all([
     supabase
       .from('client_searches')
@@ -125,7 +126,9 @@ export default async function DealDetailPage({
       .limit(6),
     supabase
       .from('important_dates')
-      .select('id, label, date, notes, event_time, location, things_to_bring')
+      .select(
+        'id, label, date, notes, event_time, location, things_to_bring, completed_at, acknowledged_at, escalated_at, owner_user_id, reminders:date_reminders!date_reminders_date_id_fkey ( id, offset_days, channels, audience, escalate )'
+      )
       .eq('search_id', params.id)
       .order('date', { ascending: true }),
     supabase
@@ -163,12 +166,19 @@ export default async function DealDetailPage({
     supabase
       .from('showings')
       .select(
-        'id, scheduled_at, duration_minutes, location, attendees, status, notes, house_id, house:houses ( id, address )'
+        'id, scheduled_at, duration_minutes, location, attendees, status, notes, house_id, feedback_requested_at, house:houses ( id, address )'
       )
       .eq('search_id', params.id)
       .gte('scheduled_at', new Date().toISOString())
       .order('scheduled_at', { ascending: true })
       .limit(20),
+    supabase
+      .from('esign_envelopes')
+      .select(
+        'id, envelope_id, envelope_url, status, recipients, completed_at, created_at, document_id'
+      )
+      .eq('search_id', params.id)
+      .order('created_at', { ascending: false }),
   ]);
 
   const phaseIdx = PHASES.findIndex((p) => p.id === (deal as any).phase);
@@ -203,6 +213,7 @@ export default async function DealDetailPage({
       teammates={(teammates || []) as any}
       recentMessages={(messages || []) as any}
       showings={(showings || []) as any}
+      envelopes={(envelopes || []) as any}
       calendarUrl={buildCalendarFeedUrl(deal.id)}
     />
   );

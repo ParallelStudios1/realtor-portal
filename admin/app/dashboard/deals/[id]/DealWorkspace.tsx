@@ -16,6 +16,10 @@ import {
   updateShowingStatusAction,
   type ShowingAttendee,
 } from '../../clients/[id]/actions';
+import { DeadlineReminderEditor } from '@/components/DeadlineReminderEditor';
+import { ShowingFeedbackPanel } from './ShowingFeedbackPanel';
+import { EsignPanel } from './EsignPanel';
+import { ExtractReview, type StagedExtraction } from './ExtractReview';
 
 /**
  * The canonical interactive deal workspace. Compared to the old per-client
@@ -57,6 +61,7 @@ export function DealWorkspace(props: {
   }>;
   recentMessages: any[];
   showings?: any[];
+  envelopes?: any[];
   calendarUrl?: string | null;
 }) {
   const {
@@ -87,8 +92,31 @@ export function DealWorkspace(props: {
     | null
   >(null);
   const [, startShowingMutation] = useTransition();
+  const [review, setReview] = useState<{ ex: StagedExtraction; name: string } | null>(null);
+  const [extractingId, setExtractingId] = useState<string | null>(null);
   const router = useRouter();
   const toast = useToast();
+
+  async function extractDates(doc: any) {
+    setExtractingId(doc.id);
+    try {
+      const r = await fetch('/api/ai/contract-extract', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ searchId: deal.id, documentId: doc.id }),
+      });
+      const json = await r.json();
+      if (!r.ok) {
+        toast.show(json?.error || 'Could not extract dates.', { variant: 'error' });
+        return;
+      }
+      setReview({ ex: json.extraction as StagedExtraction, name: doc.name });
+    } catch (err: any) {
+      toast.show(err?.message || 'Could not extract dates.', { variant: 'error' });
+    } finally {
+      setExtractingId(null);
+    }
+  }
 
   const upcomingShowings = (showings || []) as any[];
 
@@ -554,6 +582,14 @@ export function DealWorkspace(props: {
                         </button>
                       )}
                     </div>
+                    <div className="w-full">
+                      <ShowingFeedbackPanel
+                        clientId={clientId}
+                        showingId={s.id}
+                        feedbackRequestedAt={s.feedback_requested_at ?? null}
+                        address={address}
+                      />
+                    </div>
                   </li>
                 );
               })}
@@ -625,7 +661,21 @@ export function DealWorkspace(props: {
           >
             <ul className="divide-y divide-slate-100 px-3 py-2">
               {visibleDocs.map((d: any) => (
-                <DocumentRow key={d.id} clientId={clientId} doc={d as any} />
+                <div key={d.id}>
+                  <DocumentRow clientId={clientId} doc={d as any} />
+                  <div className="px-2 pb-2 text-right">
+                    <button
+                      type="button"
+                      onClick={() => extractDates(d)}
+                      disabled={extractingId === d.id}
+                      className="text-[10px] font-semibold uppercase tracking-wide text-blue-600 transition hover:underline disabled:opacity-50"
+                    >
+                      {extractingId === d.id
+                        ? 'Extracting…'
+                        : 'Extract dates from contract'}
+                    </button>
+                  </div>
+                </div>
               ))}
             </ul>
             <div className="border-t border-slate-100 px-5 py-2 text-right">
@@ -637,6 +687,17 @@ export function DealWorkspace(props: {
               </Link>
             </div>
           </Card>
+
+          {/* E-signature (DocuSign) */}
+          <EsignPanel
+            searchId={deal.id}
+            documents={documents.map((d: any) => ({
+              id: d.id,
+              name: d.name,
+              storage_path: d.storage_path,
+            }))}
+            envelopes={props.envelopes || []}
+          />
 
           {/* Activity timeline */}
           <Card title="Activity">
@@ -734,6 +795,7 @@ export function DealWorkspace(props: {
                         Add to calendar ↗
                       </a>
                     </div>
+                    <DeadlineReminderEditor date={d} teammates={teammates} />
                   </li>
                 ))}
               </ul>
@@ -841,6 +903,14 @@ export function DealWorkspace(props: {
             setShowingModal(null);
             router.refresh();
           }}
+        />
+      )}
+
+      {review && (
+        <ExtractReview
+          extraction={review.ex}
+          documentName={review.name}
+          onClose={() => setReview(null)}
         />
       )}
     </main>
