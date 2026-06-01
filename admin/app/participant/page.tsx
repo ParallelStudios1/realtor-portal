@@ -48,7 +48,7 @@ export default async function ParticipantHome() {
     return (
       <main className="mx-auto max-w-3xl px-6 py-12">
         <h1 className="text-2xl font-bold">Sign in to see your deals</h1>
-        <Link href="/login" className="mt-4 inline-block rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white">
+        <Link href="/login" className="mt-4 inline-block rounded-md bg-ink-900 px-4 py-2 text-sm font-semibold text-white">
           Sign in →
         </Link>
       </main>
@@ -88,20 +88,32 @@ export default async function ParticipantHome() {
       <header className="mb-6 flex items-end justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Your deals</h1>
-          <p className="mt-1 text-sm text-slate-600">
+          <p className="mt-1 text-sm text-ink-600">
             Every real-estate deal you've been added to. Tap any to see what
             the realtor shared with you.
           </p>
         </div>
-        <span className="hidden rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700 sm:inline">
+        <span className="hidden rounded-full bg-ink-100 px-3 py-1.5 text-xs font-semibold text-ink-700 sm:inline">
           {items.length} {items.length === 1 ? 'deal' : 'deals'}
         </span>
       </header>
 
       {items.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-ink-300 bg-white p-12 text-center shadow-soft-sm">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-ink-100 text-2xl">
-            ✉️
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-ink-100">
+            <svg
+              aria-hidden
+              viewBox="0 0 24 24"
+              className="h-6 w-6 text-ink-500"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <rect x="3" y="5" width="18" height="14" rx="2" />
+              <path d="m3 7 9 6 9-6" />
+            </svg>
           </div>
           <h2 className="mt-4 text-lg font-semibold">No deals yet</h2>
           <p className="mx-auto mt-1 max-w-md text-sm text-ink-600">
@@ -115,7 +127,7 @@ export default async function ParticipantHome() {
         <div className="space-y-8">
           {Array.from(grouped.entries()).map(([role, list]) => (
             <section key={role}>
-              <h2 className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500">
+              <h2 className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-ink-500">
                 <span
                   className="h-2 w-2 rounded-full"
                   style={{ backgroundColor: ROLE_COLOR[role] || '#64748B' }}
@@ -130,7 +142,7 @@ export default async function ParticipantHome() {
                     <Link
                       key={p.id}
                       href={`/deal/${s.id}`}
-                      className="group block rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-slate-300 hover:shadow-md"
+                      className="group block rounded-xl border border-ink-200 bg-white p-4 shadow-sm transition hover:border-ink-300 hover:shadow-md"
                     >
                       <div className="flex items-start gap-3">
                         {s.firm?.logo_url ? (
@@ -138,7 +150,7 @@ export default async function ParticipantHome() {
                           <img
                             src={s.firm.logo_url}
                             alt=""
-                            className="h-10 w-10 shrink-0 rounded-md object-contain ring-1 ring-slate-200"
+                            className="h-10 w-10 shrink-0 rounded-md object-contain ring-1 ring-ink-200"
                           />
                         ) : (
                           <div
@@ -149,13 +161,13 @@ export default async function ParticipantHome() {
                           </div>
                         )}
                         <div className="min-w-0 flex-1">
-                          <div className="truncate text-xs font-semibold uppercase tracking-wide text-slate-500">
+                          <div className="truncate text-xs font-semibold uppercase tracking-wide text-ink-500">
                             {s.firm?.name}
                           </div>
-                          <div className="truncate text-base font-semibold text-slate-900">
+                          <div className="truncate text-base font-semibold text-ink-900">
                             {s.client?.full_name || s.client?.email || 'Client'}
                           </div>
-                          <div className="mt-1 flex flex-wrap items-baseline gap-2 text-xs text-slate-500">
+                          <div className="mt-1 flex flex-wrap items-baseline gap-2 text-xs text-ink-500">
                             <span
                               className="rounded-full px-2 py-0.5 font-semibold uppercase"
                               style={{
@@ -167,7 +179,7 @@ export default async function ParticipantHome() {
                             </span>
                             {s.kind && <span>· {s.kind}</span>}
                             {p.can_view_financials && s.agreed_price && (
-                              <span className="font-semibold text-slate-900">
+                              <span className="font-semibold text-ink-900">
                                 · ${Number(s.agreed_price).toLocaleString()}
                               </span>
                             )}

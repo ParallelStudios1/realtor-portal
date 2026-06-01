@@ -204,7 +204,7 @@ export default async function AttorneyDashboardPage() {
                       {d.realtor?.full_name || d.realtor?.email}
                     </div>
                   </div>
-                  <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold uppercase text-blue-700">
+                  <span className="rounded-full bg-ink-100 px-2 py-0.5 text-[10px] font-bold uppercase text-ink-900">
                     {String(d.phase).replace(/_/g, ' ')}
                   </span>
                   {d.agreed_price ? (

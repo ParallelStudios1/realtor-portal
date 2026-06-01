@@ -204,8 +204,8 @@ export function WelcomeClient({ firm, hasSession, email, fullName }: Props) {
         <div className="rounded-2xl bg-white p-7 shadow-2xl">
           {step === 'redeeming' && (
             <div className="flex flex-col items-center py-10">
-              <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-slate-900" />
-              <p className="mt-4 text-sm text-slate-600">Signing you in…</p>
+              <div className="h-10 w-10 animate-spin rounded-full border-4 border-ink-200 border-t-ink-900" />
+              <p className="mt-4 text-sm text-ink-600">Signing you in…</p>
             </div>
           )}
 
@@ -214,7 +214,7 @@ export function WelcomeClient({ firm, hasSession, email, fullName }: Props) {
               <h1 className="text-2xl font-bold tracking-tight">
                 Welcome{fullName ? `, ${fullName.split(' ')[0]}` : ''}.
               </h1>
-              <p className="mt-1 text-sm text-slate-600">
+              <p className="mt-1 text-sm text-ink-600">
                 Set a password so you can sign in to {firm?.name || 'the portal'}{' '}
                 anytime.
               </p>
@@ -235,7 +235,7 @@ export function WelcomeClient({ firm, hasSession, email, fullName }: Props) {
                     type="email"
                     value={email || ''}
                     disabled
-                    className="mt-1 w-full rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500"
+                    className="mt-1 w-full rounded-md border border-ink-200 bg-ink-50 px-3 py-2 text-sm text-ink-500"
                   />
                 </div>
                 <div>
@@ -250,7 +250,7 @@ export function WelcomeClient({ firm, hasSession, email, fullName }: Props) {
                     onChange={(e) => setPassword(e.target.value)}
                     minLength={8}
                     required
-                    className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2"
+                    className="mt-1 w-full rounded-md border border-ink-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2"
                     style={{ outlineColor: accentColor }}
                   />
                 </div>
@@ -267,7 +267,7 @@ export function WelcomeClient({ firm, hasSession, email, fullName }: Props) {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
-                    className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2"
+                    className="mt-1 w-full rounded-md border border-ink-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2"
                   />
                 </div>
                 <button
@@ -287,7 +287,7 @@ export function WelcomeClient({ firm, hasSession, email, fullName }: Props) {
               <h1 className="text-2xl font-bold tracking-tight">
                 {sessionReady ? "You're all set." : "You're invited."}
               </h1>
-              <p className="mt-1 text-sm text-slate-600">
+              <p className="mt-1 text-sm text-ink-600">
                 Open {firm?.name || 'the portal'} in the app to track your deal,
                 view documents, and message your agent.
               </p>
@@ -307,26 +307,26 @@ export function WelcomeClient({ firm, hasSession, email, fullName }: Props) {
                 >
                   Or continue in your browser →
                 </a>
-                <div className="my-2 flex items-center gap-3 text-xs text-slate-400">
-                  <div className="h-px flex-1 bg-slate-200" />
+                <div className="my-2 flex items-center gap-3 text-xs text-ink-400">
+                  <div className="h-px flex-1 bg-ink-200" />
                   <span>Don't have the app yet?</span>
-                  <div className="h-px flex-1 bg-slate-200" />
+                  <div className="h-px flex-1 bg-ink-200" />
                 </div>
                 <a
                   href="https://apps.apple.com/"
-                  className="block rounded-md border border-slate-300 bg-white px-6 py-2.5 text-center text-sm font-semibold text-slate-700 hover:border-slate-400"
+                  className="block rounded-md border border-ink-300 bg-white px-6 py-2.5 text-center text-sm font-semibold text-ink-700 hover:border-ink-400"
                 >
                   Get on the App Store
                 </a>
                 <a
                   href="https://play.google.com/"
-                  className="block rounded-md border border-slate-300 bg-white px-6 py-2.5 text-center text-sm font-semibold text-slate-700 hover:border-slate-400"
+                  className="block rounded-md border border-ink-300 bg-white px-6 py-2.5 text-center text-sm font-semibold text-ink-700 hover:border-ink-400"
                 >
                   Get on Google Play
                 </a>
               </div>
 
-              <p className="mt-6 text-center text-xs text-slate-500">
+              <p className="mt-6 text-center text-xs text-ink-500">
                 Already have the app? It should open automatically when you tap
                 "Open the app".
               </p>
@@ -334,15 +334,15 @@ export function WelcomeClient({ firm, hasSession, email, fullName }: Props) {
           )}
 
           {step === 'openApp' && !sessionReady && (
-            <p className="mt-4 text-center text-xs text-slate-500">
+            <p className="mt-4 text-center text-xs text-ink-500">
               Need help signing in? Email your realtor at{' '}
               {firm?.name || 'the firm'}.
             </p>
           )}
         </div>
 
-        <p className="mt-6 text-center text-xs text-white/60">
-          Powered by Realtor Portal
+        <p className="mt-6 text-center text-xs font-medium text-white/60">
+          Realtor Portal
         </p>
       </div>
     </main>

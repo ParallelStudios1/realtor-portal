@@ -43,8 +43,12 @@ const VARIANT_CLASSES: Record<ToastVariant, string> = {
   info: 'bg-blue-600 border-blue-700',
 };
 
-const VARIANT_ICON: Record<ToastVariant, string> = {
-  success: '✓',
+const VARIANT_ICON: Record<ToastVariant, React.ReactNode> = {
+  success: (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="m5 13 4 4L19 7" />
+    </svg>
+  ),
   error: '!',
   info: 'i',
 };

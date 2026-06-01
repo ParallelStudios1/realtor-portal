@@ -248,9 +248,9 @@ export function MessagesClient({
   const activeMessages = activeId ? messages[activeId] || [] : [];
 
   return (
-    <div className="grid h-[calc(100vh-12rem)] grid-cols-12 gap-0 overflow-hidden rounded-xl border border-slate-200 bg-white">
+    <div className="grid h-[calc(100vh-12rem)] grid-cols-12 gap-0 overflow-hidden rounded-xl border border-ink-200 bg-white">
       {/* Left: thread list */}
-      <aside className="col-span-12 max-h-72 overflow-y-auto border-b border-slate-200 md:col-span-4 md:max-h-none md:border-b-0 md:border-r">
+      <aside className="col-span-12 max-h-72 overflow-y-auto border-b border-ink-200 md:col-span-4 md:max-h-none md:border-b-0 md:border-r">
         {threads.map((t) => {
           const isActive = t.searchId === activeId;
           return (
@@ -258,8 +258,8 @@ export function MessagesClient({
               key={t.searchId}
               onClick={() => setActiveId(t.searchId)}
               className={
-                'block w-full border-b border-slate-100 px-4 py-3 text-left transition hover:bg-slate-50 ' +
-                (isActive ? 'bg-slate-100' : '')
+                'block w-full border-b border-ink-100 px-4 py-3 text-left transition hover:bg-ink-50 ' +
+                (isActive ? 'bg-ink-100' : '')
               }
             >
               <div className="flex items-baseline justify-between gap-2">
@@ -267,18 +267,18 @@ export function MessagesClient({
                   {t.clientName}
                 </span>
                 {t.latest && (
-                  <span className="shrink-0 text-xs text-slate-400">
+                  <span className="shrink-0 text-xs text-ink-400">
                     {timeAgo(t.latest.created_at)}
                   </span>
                 )}
               </div>
               {t.latest ? (
-                <div className="mt-0.5 line-clamp-2 text-xs text-slate-600">
+                <div className="mt-0.5 line-clamp-2 text-xs text-ink-600">
                   {t.latest.sender_id === currentUserId ? 'You: ' : ''}
                   {t.latest.body}
                 </div>
               ) : (
-                <div className="mt-0.5 text-xs italic text-slate-400">
+                <div className="mt-0.5 text-xs italic text-ink-400">
                   No messages yet
                 </div>
               )}
@@ -290,15 +290,15 @@ export function MessagesClient({
       {/* Right: active conversation */}
       <section className="col-span-12 flex flex-col md:col-span-8">
         {!active ? (
-          <div className="flex flex-1 items-center justify-center text-sm text-slate-500">
+          <div className="flex flex-1 items-center justify-center text-sm text-ink-500">
             Select a conversation
           </div>
         ) : (
           <>
-            <header className="border-b border-slate-200 bg-white px-5 py-3">
+            <header className="border-b border-ink-200 bg-white px-5 py-3">
               <div className="font-semibold">{active.clientName}</div>
               {active.clientEmail && (
-                <div className="text-xs text-slate-500">
+                <div className="text-xs text-ink-500">
                   {active.clientEmail}
                 </div>
               )}
@@ -306,10 +306,10 @@ export function MessagesClient({
 
             <div
               ref={scrollRef}
-              className="flex-1 space-y-2 overflow-y-auto bg-slate-50 px-5 py-4"
+              className="flex-1 space-y-2 overflow-y-auto bg-ink-50 px-5 py-4"
             >
               {activeMessages.length === 0 ? (
-                <div className="py-8 text-center text-sm text-slate-400">
+                <div className="py-8 text-center text-sm text-ink-400">
                   No messages yet. Send the first one below.
                 </div>
               ) : (
@@ -325,14 +325,14 @@ export function MessagesClient({
                           'max-w-[75%] rounded-2xl px-4 py-2 text-sm ' +
                           (own
                             ? 'rounded-br-sm bg-blue-600 text-white'
-                            : 'rounded-bl-sm bg-white text-slate-900 shadow-sm')
+                            : 'rounded-bl-sm bg-white text-ink-900 shadow-sm')
                         }
                       >
                         <div className="whitespace-pre-wrap">{m.body}</div>
                         <div
                           className={
                             'mt-1 text-[10px] ' +
-                            (own ? 'text-blue-100' : 'text-slate-400')
+                            (own ? 'text-blue-100' : 'text-ink-400')
                           }
                         >
                           {new Date(m.created_at).toLocaleTimeString([], {
@@ -358,7 +358,7 @@ export function MessagesClient({
                 e.preventDefault();
                 send();
               }}
-              className="flex gap-2 border-t border-slate-200 bg-white px-4 py-3"
+              className="flex gap-2 border-t border-ink-200 bg-white px-4 py-3"
             >
               <input
                 type="text"
@@ -366,7 +366,7 @@ export function MessagesClient({
                 onChange={(e) => setDraft(e.target.value)}
                 placeholder="Type a message…"
                 disabled={sending}
-                className="flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
+                className="flex-1 rounded-md border border-ink-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
               />
               <button
                 type="submit"

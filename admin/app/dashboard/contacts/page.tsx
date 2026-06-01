@@ -288,7 +288,7 @@ export default async function ContactsPage({
           {filtered.map((c) => (
             <li
               key={c.key}
-              className="rounded-2xl border border-ink-200 bg-white p-4 shadow-soft transition hover:-translate-y-0.5 hover:shadow-soft-md"
+              className="rounded-2xl border border-ink-200 bg-white p-4 shadow-soft transition hover:-tranink-y-0.5 hover:shadow-soft-md"
             >
               <div className="flex items-start gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ink-100 text-sm font-bold text-ink-700">

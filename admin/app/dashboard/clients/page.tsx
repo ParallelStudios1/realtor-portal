@@ -52,7 +52,7 @@ export default async function ClientsListPage() {
       <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Clients</h1>
-          <p className="mt-1 text-sm text-slate-600">
+          <p className="mt-1 text-sm text-ink-600">
             {clients?.length || 0} {clients?.length === 1 ? 'client' : 'clients'} in your portal.
             <Link
               href="/dashboard/deals"
@@ -64,22 +64,22 @@ export default async function ClientsListPage() {
         </div>
         <Link
           href="/dashboard/clients/new"
-          className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-700"
+          className="rounded-lg bg-ink-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-ink-700"
         >
           + Invite client
         </Link>
       </header>
 
       {!clients || clients.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-slate-300 bg-white p-12 text-center">
+        <div className="rounded-xl border border-dashed border-ink-300 bg-white p-12 text-center">
           <h3 className="font-semibold">No clients yet</h3>
-          <p className="mt-1 text-sm text-slate-600">
+          <p className="mt-1 text-sm text-ink-600">
             Invite buyers and sellers — they'll get a one-tap link to your
             branded app.
           </p>
           <Link
             href="/dashboard/clients/new"
-            className="mt-4 inline-block rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700"
+            className="mt-4 inline-block rounded-lg bg-ink-900 px-4 py-2 text-sm font-semibold text-white hover:bg-ink-700"
           >
             + Invite your first client
           </Link>
@@ -96,17 +96,17 @@ export default async function ClientsListPage() {
               <li key={c.id}>
                 <Link
                   href={href}
-                  className="block rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
+                  className="block rounded-xl border border-ink-200 bg-white p-4 shadow-sm transition hover:-tranink-y-0.5 hover:border-ink-300 hover:shadow-md"
                 >
                   <div className="flex items-start gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-sm font-bold text-slate-700">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ink-100 text-sm font-bold text-ink-700">
                       {initials(c.full_name || c.email)}
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="truncate font-semibold">
                         {c.full_name || '—'}
                       </div>
-                      <div className="truncate text-xs text-slate-500">
+                      <div className="truncate text-xs text-ink-500">
                         {c.email}
                       </div>
                     </div>
@@ -115,12 +115,12 @@ export default async function ClientsListPage() {
                         {String(latest.phase).replace(/_/g, ' ')}
                       </span>
                     ) : (
-                      <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-500">
+                      <span className="shrink-0 rounded-full bg-ink-100 px-2 py-0.5 text-[10px] font-bold uppercase text-ink-500">
                         No deal
                       </span>
                     )}
                   </div>
-                  <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-2 text-[11px] text-slate-500">
+                  <div className="mt-3 flex items-center justify-between border-t border-ink-100 pt-2 text-[11px] text-ink-500">
                     <span>
                       {dealCount === 0
                         ? 'No deals yet'

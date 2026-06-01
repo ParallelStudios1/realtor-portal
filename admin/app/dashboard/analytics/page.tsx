@@ -577,15 +577,15 @@ function Kpi({
 }) {
   const bar =
     accent === 'blue'
-      ? 'from-blue-500 to-blue-600'
+      ? 'bg-blue-600'
       : accent === 'emerald'
-      ? 'from-emerald-500 to-emerald-600'
+      ? 'bg-emerald-600'
       : accent === 'violet'
-      ? 'from-violet-500 to-violet-600'
-      : 'from-amber-500 to-amber-600';
+      ? 'bg-ink-700'
+      : 'bg-amber-500';
   return (
     <div className="relative overflow-hidden rounded-2xl border border-ink-200 bg-white p-5 shadow-soft">
-      <div className={'absolute inset-x-0 top-0 h-1 bg-gradient-to-r ' + bar} />
+      <div className={'absolute inset-x-0 top-0 h-1 ' + bar} />
       <div className="text-[11px] font-bold uppercase tracking-wider text-ink-500">
         {label}
       </div>
@@ -611,13 +611,13 @@ function formatMoney(n: number): string {
 function phaseBar(phase: string): string {
   switch (phase) {
     case 'searching':
-      return 'bg-slate-400';
+      return 'bg-ink-400';
     case 'offer_made':
       return 'bg-blue-500';
     case 'counter_offer':
-      return 'bg-indigo-500';
+      return 'bg-blue-700';
     case 'under_contract':
-      return 'bg-violet-500';
+      return 'bg-ink-700';
     case 'closing':
       return 'bg-amber-500';
     case 'closed':

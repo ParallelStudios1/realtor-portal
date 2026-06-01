@@ -118,7 +118,7 @@ export function InviteClient({
       <Shell brand={brand} firm={firm}>
         <h1 className="text-3xl font-bold tracking-tight">Invite expired</h1>
         <p className="mt-2 text-sm text-ink-600">
-          This invite link is no longer valid. Ask {realtorName} to send you a
+          This invite link has expired. Ask {realtorName} to send you a
           new one.
         </p>
       </Shell>
@@ -334,8 +334,8 @@ function Shell({
           </div>
           <div className="p-7">{children}</div>
         </div>
-        <p className="mt-4 text-center text-[11px] text-ink-400">
-          Powered by Realtor Portal
+        <p className="mt-4 text-center text-[11px] font-medium text-ink-400">
+          Realtor Portal
         </p>
       </div>
     </main>
@@ -472,7 +472,7 @@ function Field({
         value={onChange ? value : undefined}
         onChange={onChange ? (e) => onChange(e.target.value) : undefined}
         disabled={disabled}
-        className="mt-1.5 w-full rounded-md border border-ink-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-ink-50 disabled:text-ink-500"
+        className="mt-1.5 w-full rounded-md border border-ink-300 px-3 py-2 text-sm shadow-sm focus:border-ink-500 focus:outline-none focus:ring-1 focus:ring-ink-200 disabled:bg-ink-50 disabled:text-ink-500"
       />
       {hint && <p className="mt-1 text-xs text-ink-500">{hint}</p>}
     </div>

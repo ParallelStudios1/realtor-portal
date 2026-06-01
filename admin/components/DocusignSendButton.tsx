@@ -47,18 +47,31 @@ export function DocusignSendButton({
         rel="noopener noreferrer"
         className="inline-flex items-center gap-1.5 rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-900 hover:bg-amber-100"
       >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="M3 17c4 1 9-5 13-1 2 2 5 0 5 0" />
           <path d="M3 21h18" />
         </svg>
-        Send via DocuSign ↗
+        Send via DocuSign
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M7 17 17 7" />
+          <path d="M8 7h9v9" />
+        </svg>
       </a>
       <button
         type="button"
         onClick={copyDocUrl}
         className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
       >
-        {copied ? '✓ Copied' : 'Copy file URL'}
+        {copied ? (
+          <>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="m5 13 4 4L19 7" />
+            </svg>
+            Copied
+          </>
+        ) : (
+          'Copy file URL'
+        )}
       </button>
     </div>
   );

@@ -53,8 +53,11 @@ export function ClientProfileActions({
               <button
                 onClick={() => setOpen(false)}
                 className="-mr-1.5 rounded-lg p-1.5 text-ink-400 transition hover:bg-ink-100 hover:text-ink-700"
+                aria-label="Close"
               >
-                ✕
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-4 w-4" aria-hidden>
+                  <path d="M18 6 6 18M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
               </button>
             </div>
             <div className="space-y-3 p-5">
@@ -73,7 +76,7 @@ export function ClientProfileActions({
                           : 'border-ink-300 bg-white text-ink-700 hover:bg-ink-50')
                       }
                     >
-                      {k === 'buyer' ? '🔍 Buyer search' : '🏠 Listing'}
+                      {k === 'buyer' ? 'Buyer search' : 'Listing'}
                     </button>
                   ))}
                 </div>

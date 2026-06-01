@@ -110,7 +110,7 @@ export default async function BillingPage({
   return (
     <main className="mx-auto max-w-5xl px-6 py-8">
       <h1 className="text-3xl font-bold tracking-tight">Billing</h1>
-      <p className="mt-1 text-sm text-slate-600">
+      <p className="mt-1 text-sm text-ink-600">
         {me.firm_status === 'trial' ? (
           <>
             You're on a free trial — <strong>{trialDisplay}</strong>.
@@ -147,16 +147,16 @@ export default async function BillingPage({
               ? 'border-red-300 ring-1 ring-red-200'
               : nearCap
                 ? 'border-amber-300 ring-1 ring-amber-200'
-                : 'border-slate-200')
+                : 'border-ink-200')
           }
         >
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <div className="text-xs uppercase tracking-wide text-slate-500">
+              <div className="text-xs uppercase tracking-wide text-ink-500">
                 Current plan
               </div>
               <div className="mt-1 text-xl font-semibold">{planName}</div>
-              <div className="mt-1 text-sm text-slate-600">
+              <div className="mt-1 text-sm text-ink-600">
                 <strong>{usedSeats}</strong> of <strong>{seatCap}</strong>{' '}
                 seat{seatCap === 1 ? '' : 's'} used
               </div>
@@ -171,7 +171,7 @@ export default async function BillingPage({
             )}
           </div>
 
-          <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-slate-100">
+          <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-ink-100">
             <div
               className={
                 'h-full transition-all ' +
@@ -203,8 +203,8 @@ export default async function BillingPage({
         <BillingClient plans={PLAN_CARDS} currentStatus={me.firm_status} />
       </div>
 
-      <div className="mt-8 rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-600">
-        <strong className="block text-slate-900">Need an Enterprise plan?</strong>
+      <div className="mt-8 rounded-xl border border-ink-200 bg-white p-6 text-sm text-ink-600">
+        <strong className="block text-ink-900">Need an Enterprise plan?</strong>
         For 50+ agents, custom domain, app store white-label, or SSO,{' '}
         <a
           href="mailto:turnerlogan@parallelstudios.co"

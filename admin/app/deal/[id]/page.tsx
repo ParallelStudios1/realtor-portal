@@ -38,7 +38,7 @@ export default async function DealPage({
         <h1 className="text-2xl font-bold">Sign in to view this deal</h1>
         <Link
           href={`/login?next=${encodeURIComponent('/deal/' + params.id)}`}
-          className="mt-4 inline-block rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
+          className="mt-4 inline-block rounded-md bg-ink-900 px-4 py-2 text-sm font-semibold text-white"
         >
           Sign in →
         </Link>
@@ -223,11 +223,11 @@ export default async function DealPage({
         {/* Your-role banner */}
         {myRoleLabel && (
           <div
-            className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm shadow-sm"
+            className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-ink-200 bg-white px-4 py-2.5 text-sm shadow-sm"
             style={{ borderColor: brand + '33' }}
           >
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-ink-500">
                 Your role
               </span>
               <span
@@ -237,7 +237,7 @@ export default async function DealPage({
                 {myRoleLabel}
               </span>
             </div>
-            <span className="text-xs text-slate-500">
+            <span className="text-xs text-ink-500">
               {isStaffSameFirm
                 ? "You can edit everything."
                 : isPrincipalClient
@@ -255,7 +255,7 @@ export default async function DealPage({
               {!houses || houses.length === 0 ? (
                 <Empty msg="No houses yet." />
               ) : (
-                <ul className="divide-y divide-slate-100">
+                <ul className="divide-y divide-ink-100">
                   {houses.map((h: any) => (
                     <li key={h.id} className="flex items-center gap-3 py-2.5">
                       {h.photo_url ? (
@@ -267,14 +267,14 @@ export default async function DealPage({
                           loading="lazy"
                         />
                       ) : (
-                        <div className="h-12 w-16 rounded-md bg-slate-100" />
+                        <div className="h-12 w-16 rounded-md bg-ink-100" />
                       )}
                       <div className="min-w-0 flex-1">
                         <div className="truncate text-sm font-semibold">
                           {h.address}
                         </div>
                         {h.list_price && (
-                          <div className="text-xs text-slate-500">
+                          <div className="text-xs text-ink-500">
                             ${Number(h.list_price).toLocaleString()}
                           </div>
                         )}
@@ -328,7 +328,7 @@ export default async function DealPage({
                 {!dates || dates.length === 0 ? (
                   <Empty msg="None yet." />
                 ) : (
-                  <ul className="divide-y divide-slate-100">
+                  <ul className="divide-y divide-ink-100">
                     {dates.map((dd: any) => (
                       <li
                         key={dd.id}
@@ -336,7 +336,7 @@ export default async function DealPage({
                       >
                         <div className="flex items-baseline justify-between gap-2">
                           <div className="font-medium">{dd.label}</div>
-                          <span className="text-xs text-slate-600 font-semibold">
+                          <span className="text-xs text-ink-600 font-semibold">
                             {new Date(dd.date).toLocaleDateString()}
                             {dd.event_time
                               ? ' · ' +
@@ -358,15 +358,15 @@ export default async function DealPage({
                           </span>
                         </div>
                         {(dd.location || dd.things_to_bring || dd.notes) && (
-                          <div className="mt-1 space-y-0.5 text-[11px] text-slate-500">
+                          <div className="mt-1 space-y-0.5 text-[11px] text-ink-500">
                             {dd.location && (
-                              <div>📍 {dd.location}</div>
+                              <div>{dd.location}</div>
                             )}
                             {dd.things_to_bring && (
-                              <div>📋 Bring: {dd.things_to_bring}</div>
+                              <div>Bring: {dd.things_to_bring}</div>
                             )}
                             {dd.notes && (
-                              <div className="text-slate-400">{dd.notes}</div>
+                              <div className="text-ink-400">{dd.notes}</div>
                             )}
                           </div>
                         )}
@@ -407,16 +407,28 @@ export default async function DealPage({
                 {!documents || documents.length === 0 ? (
                   <Empty msg="No documents shared yet." />
                 ) : (
-                  <ul className="divide-y divide-slate-100">
+                  <ul className="divide-y divide-ink-100">
                     {documents.map((doc: any) => (
                       <li
                         key={doc.id}
                         className="flex items-center gap-2 py-2 text-sm"
                       >
-                        <span>📄</span>
+                        <svg
+                          aria-hidden
+                          viewBox="0 0 24 24"
+                          className="h-4 w-4 shrink-0 text-ink-400"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M14 3v4a1 1 0 0 0 1 1h4" />
+                          <path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2Z" />
+                        </svg>
                         <div className="flex-1">
                           <div className="font-medium">{doc.name}</div>
-                          <div className="text-xs text-slate-500">
+                          <div className="text-xs text-ink-500">
                             {new Date(doc.created_at).toLocaleDateString()}
                           </div>
                         </div>
@@ -470,7 +482,7 @@ export default async function DealPage({
               <Section title="Realtor controls">
                 <Link
                   href={`/dashboard/clients/${d.client?.id}`}
-                  className="block rounded-lg border border-slate-200 px-3 py-2 text-center text-sm font-semibold transition hover:bg-slate-50"
+                  className="block rounded-lg border border-ink-200 px-3 py-2 text-center text-sm font-semibold transition hover:bg-ink-50"
                 >
                   Open full dashboard →
                 </Link>
@@ -491,8 +503,8 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-      <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+    <section className="rounded-xl border border-ink-200 bg-white p-5 shadow-sm">
+      <h2 className="text-xs font-semibold uppercase tracking-wide text-ink-500">
         {title}
       </h2>
       <div className="mt-3">{children}</div>
@@ -501,14 +513,14 @@ function Section({
 }
 
 function Empty({ msg }: { msg: string }) {
-  return <p className="text-sm italic text-slate-500">{msg}</p>;
+  return <p className="text-sm italic text-ink-500">{msg}</p>;
 }
 
 function Row({ label, value, raw }: { label: string; value: any; raw?: boolean }) {
   if (value == null || value === '') return null;
   return (
     <>
-      <dt className="text-slate-500">{label}</dt>
+      <dt className="text-ink-500">{label}</dt>
       <dd className="text-right font-semibold">
         {raw ? value : '$' + Number(value).toLocaleString()}
       </dd>
@@ -534,14 +546,14 @@ function Party({
   return (
     <li className="flex items-start justify-between gap-2">
       <div className="min-w-0">
-        <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+        <div className="text-[10px] font-semibold uppercase tracking-wide text-ink-400">
           {label}
         </div>
         <div className="truncate font-medium">{name || '—'}</div>
         {email && (
           <a
             href={`mailto:${email}`}
-            className="block truncate text-xs text-blue-600 hover:underline"
+            className="block truncate text-xs text-ink-900 hover:underline"
           >
             {email}
           </a>
@@ -549,7 +561,7 @@ function Party({
         {phone && (
           <a
             href={`tel:${phone}`}
-            className="block text-xs text-blue-600 hover:underline"
+            className="block text-xs text-ink-900 hover:underline"
           >
             {phone}
           </a>

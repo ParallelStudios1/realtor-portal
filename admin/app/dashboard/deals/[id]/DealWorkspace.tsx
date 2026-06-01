@@ -160,21 +160,21 @@ export function DealWorkspace(props: {
 
       {/* Breadcrumb + deal switcher */}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3 text-xs">
-        <nav className="flex items-center gap-2 text-slate-500">
+        <nav className="flex items-center gap-2 text-ink-500">
           <Link
             href="/dashboard/deals"
-            className="font-semibold hover:text-slate-900"
+            className="font-semibold hover:text-ink-900"
           >
             Deals
           </Link>
           <span>/</span>
-          <span className="font-semibold text-slate-900">
+          <span className="font-semibold text-ink-900">
             {principal?.full_name || principal?.email}
           </span>
         </nav>
         {allDeals.length > 1 && (
           <div className="flex flex-wrap items-center gap-1">
-            <span className="mr-1 text-slate-400">Other deals:</span>
+            <span className="mr-1 text-ink-400">Other deals:</span>
             {allDeals
               .filter((d) => d.id !== deal.id)
               .slice(0, 4)
@@ -182,9 +182,11 @@ export function DealWorkspace(props: {
                 <Link
                   key={d.id}
                   href={`/dashboard/deals/${d.id}`}
-                  className="rounded-full border border-slate-200 bg-white px-2.5 py-1 font-semibold text-slate-700 hover:bg-slate-50"
+                  className="rounded-full border border-ink-200 bg-white px-2.5 py-1 font-semibold text-ink-700 hover:bg-ink-50"
                 >
-                  {d.kind === 'seller' ? '🏠' : '🔍'}{' '}
+                  <span className="mr-1 text-[10px] font-bold uppercase tracking-wide text-ink-400">
+                    {d.kind === 'seller' ? 'Sell' : 'Buy'}
+                  </span>
                   {(d.name || d.kind || 'deal').slice(0, 20)}
                 </Link>
               ))}
@@ -194,8 +196,8 @@ export function DealWorkspace(props: {
 
       {/* Hero card */}
       <section className="relative overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-soft-md">
-        {/* decorative gradient header strip */}
-        <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-br from-ink-900 via-ink-800 to-blue-900" />
+        {/* solid header strip */}
+        <div className="absolute inset-x-0 top-0 h-24 bg-ink-900" />
         <div className="relative px-6 pb-6 pt-6">
           <div className="flex flex-wrap items-start gap-4">
             <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border-4 border-white bg-ink-900 text-xl font-bold text-white shadow-soft-md">
@@ -288,7 +290,13 @@ export function DealWorkspace(props: {
                         : 'bg-ink-200 text-ink-500')
                     }
                   >
-                    {done ? '✓' : i + 1}
+                    {done ? (
+                      <svg viewBox="0 0 16 16" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden>
+                        <path d="M3 8.5l3.5 3.5L13 5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    ) : (
+                      i + 1
+                    )}
                   </span>
                   <span className="truncate">{p.label}</span>
                   {isCurrent && (
@@ -308,7 +316,7 @@ export function DealWorkspace(props: {
       {me.canAssignRealtor && (
         <section className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-ink-200 bg-white p-4 shadow-soft-sm">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-violet-100 text-violet-700">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ink-100 text-ink-700">
               <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" strokeLinecap="round" strokeLinejoin="round" />
                 <circle cx="9" cy="7" r="4" />
@@ -420,7 +428,7 @@ export function DealWorkspace(props: {
             }
             empty={houses.length === 0 ? 'No houses yet — use Add house above.' : null}
           >
-            <ul className="divide-y divide-slate-100">
+            <ul className="divide-y divide-ink-100">
               {houses.map((h: any) => (
                 <li
                   key={h.id}
@@ -434,13 +442,15 @@ export function DealWorkspace(props: {
                       className="h-14 w-20 rounded-md object-cover"
                     />
                   ) : (
-                    <div className="flex h-14 w-20 items-center justify-center rounded-md bg-slate-100 text-slate-400">
-                      🏠
+                    <div className="flex h-14 w-20 items-center justify-center rounded-md bg-ink-100 text-ink-400">
+                      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M3 11l9-7 9 7M5 10v10h14V10" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
                     </div>
                   )}
                   <div className="min-w-0 flex-1">
                     <div className="truncate font-medium">{h.address}</div>
-                    <div className="text-xs text-slate-500">
+                    <div className="text-xs text-ink-500">
                       {h.list_price
                         ? '$' + Number(h.list_price).toLocaleString()
                         : 'No price'}
@@ -488,7 +498,7 @@ export function DealWorkspace(props: {
                 : null
             }
           >
-            <ul className="divide-y divide-slate-100">
+            <ul className="divide-y divide-ink-100">
               {upcomingShowings.map((s: any) => {
                 const when = new Date(s.scheduled_at);
                 const address =
@@ -505,7 +515,7 @@ export function DealWorkspace(props: {
                       <div className="truncate text-sm font-medium">
                         {address}
                       </div>
-                      <div className="mt-0.5 text-xs text-slate-500">
+                      <div className="mt-0.5 text-xs text-ink-500">
                         {when.toLocaleDateString(undefined, {
                           weekday: 'short',
                           month: 'short',
@@ -525,8 +535,8 @@ export function DealWorkspace(props: {
                           : ''}
                       </div>
                       {s.location && s.location !== s.house?.address && (
-                        <div className="mt-0.5 truncate text-[11px] text-slate-400">
-                          📍 {s.location}
+                        <div className="mt-0.5 truncate text-[11px] text-ink-400">
+                          {s.location}
                         </div>
                       )}
                     </div>
@@ -536,7 +546,7 @@ export function DealWorkspace(props: {
                         (s.status === 'confirmed'
                           ? 'bg-emerald-100 text-emerald-800'
                           : s.status === 'completed'
-                          ? 'bg-slate-200 text-slate-700'
+                          ? 'bg-ink-200 text-ink-700'
                           : s.status === 'canceled'
                           ? 'bg-rose-100 text-rose-800'
                           : 'bg-amber-100 text-amber-800')
@@ -548,7 +558,7 @@ export function DealWorkspace(props: {
                       <button
                         type="button"
                         onClick={() => setShowingModal({ mode: 'edit', showing: s })}
-                        className="rounded-md border border-slate-200 bg-white px-2 py-1 text-slate-700 transition hover:bg-slate-50"
+                        className="rounded-md border border-ink-200 bg-white px-2 py-1 text-ink-700 transition hover:bg-ink-50"
                       >
                         Reschedule
                       </button>
@@ -599,7 +609,7 @@ export function DealWorkspace(props: {
           {/* Tour requests — only show if any */}
           {tours.length > 0 && (
             <Card title={`Tour requests (${tours.length})`}>
-              <ul className="divide-y divide-slate-100">
+              <ul className="divide-y divide-ink-100">
                 {tours.map((t: any) => (
                   <li
                     key={t.id}
@@ -609,7 +619,7 @@ export function DealWorkspace(props: {
                       <div className="truncate text-sm font-medium">
                         {t.house?.address || '(house gone)'}
                       </div>
-                      <div className="text-xs text-slate-500">
+                      <div className="text-xs text-ink-500">
                         {t.preferred_when
                           ? 'Asked for ' + t.preferred_when + ' · '
                           : ''}
@@ -642,7 +652,7 @@ export function DealWorkspace(props: {
                 <select
                   value={docFolder}
                   onChange={(e) => setDocFolder(e.target.value)}
-                  className="rounded-md border border-slate-300 bg-white px-2 py-1 text-xs"
+                  className="rounded-md border border-ink-300 bg-white px-2 py-1 text-xs"
                 >
                   <option value="all">All folders</option>
                   {folders.map((f) => (
@@ -659,7 +669,7 @@ export function DealWorkspace(props: {
                 : null
             }
           >
-            <ul className="divide-y divide-slate-100 px-3 py-2">
+            <ul className="divide-y divide-ink-100 px-3 py-2">
               {visibleDocs.map((d: any) => (
                 <div key={d.id}>
                   <DocumentRow clientId={clientId} doc={d as any} />
@@ -678,7 +688,7 @@ export function DealWorkspace(props: {
                 </div>
               ))}
             </ul>
-            <div className="border-t border-slate-100 px-5 py-2 text-right">
+            <div className="border-t border-ink-100 px-5 py-2 text-right">
               <Link
                 href={`/dashboard/clients/${clientId}/upload?searchId=${deal.id}`}
                 className="text-xs font-semibold text-blue-600 hover:underline"
@@ -702,11 +712,11 @@ export function DealWorkspace(props: {
           {/* Activity timeline */}
           <Card title="Activity">
             {activity.length === 0 ? (
-              <div className="px-5 py-6 text-center text-sm text-slate-500">
+              <div className="px-5 py-6 text-center text-sm text-ink-500">
                 Nothing yet — actions you take here show up in this timeline.
               </div>
             ) : (
-              <ol className="divide-y divide-slate-100">
+              <ol className="divide-y divide-ink-100">
                 {activity.map((a: any) => (
                   <li
                     key={a.id}
@@ -716,8 +726,8 @@ export function DealWorkspace(props: {
                     <span className="font-medium capitalize">
                       {String(a.action).replace(/_/g, ' ')}
                     </span>
-                    <span className="truncate text-slate-600">{a.target}</span>
-                    <span className="ml-auto shrink-0 text-xs text-slate-400">
+                    <span className="truncate text-ink-600">{a.target}</span>
+                    <span className="ml-auto shrink-0 text-xs text-ink-400">
                       {timeAgoShort(a.created_at)}
                     </span>
                   </li>
@@ -746,7 +756,7 @@ export function DealWorkspace(props: {
               !deal.closing_amount &&
               !deal.earnest_money &&
               deal.commission_pct == null && (
-                <p className="px-5 pb-4 text-xs italic text-slate-500">
+                <p className="px-5 pb-4 text-xs italic text-ink-500">
                   Use Financials above to fill these in.
                 </p>
               )}
@@ -772,14 +782,20 @@ export function DealWorkspace(props: {
                     {(d.location || d.things_to_bring) && (
                       <div className="mt-1 space-y-0.5 text-[11px] text-ink-500">
                         {d.location && (
-                          <div className="flex items-start gap-1">
-                            <span aria-hidden>📍</span>
+                          <div className="flex items-start gap-1.5">
+                            <svg aria-hidden viewBox="0 0 24 24" className="mt-0.5 h-3 w-3 shrink-0" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M12 21s7-6.6 7-11a7 7 0 10-14 0c0 4.4 7 11 7 11z" strokeLinecap="round" strokeLinejoin="round" />
+                              <circle cx="12" cy="10" r="2.5" />
+                            </svg>
                             <span className="break-words">{d.location}</span>
                           </div>
                         )}
                         {d.things_to_bring && (
-                          <div className="flex items-start gap-1">
-                            <span aria-hidden>📋</span>
+                          <div className="flex items-start gap-1.5">
+                            <svg aria-hidden viewBox="0 0 24 24" className="mt-0.5 h-3 w-3 shrink-0" fill="none" stroke="currentColor" strokeWidth="2">
+                              <rect x="6" y="4" width="12" height="16" rx="2" />
+                              <path d="M9 4V3h6v1M9 9h6M9 13h6" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
                             <span className="break-words">
                               Bring: {d.things_to_bring}
                             </span>
@@ -841,23 +857,23 @@ export function DealWorkspace(props: {
           {/* Recent messages */}
           {recentMessages.length > 0 && (
             <Card title="Recent messages">
-              <ul className="divide-y divide-slate-100">
+              <ul className="divide-y divide-ink-100">
                 {recentMessages.map((m: any) => {
                   const mine = m.sender_id === me.userId;
                   return (
                     <li key={m.id} className="px-5 py-2.5 text-sm">
-                      <div className="text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                      <div className="text-[10px] font-bold uppercase tracking-wide text-ink-400">
                         {mine ? 'You' : 'Client'} ·{' '}
                         {timeAgoShort(m.created_at)}
                       </div>
-                      <div className="mt-0.5 line-clamp-2 text-slate-700">
+                      <div className="mt-0.5 line-clamp-2 text-ink-700">
                         {m.body}
                       </div>
                     </li>
                   );
                 })}
               </ul>
-              <div className="border-t border-slate-100 px-5 py-2 text-right">
+              <div className="border-t border-ink-100 px-5 py-2 text-right">
                 <Link
                   href={`/dashboard/messages?search=${deal.id}`}
                   className="text-xs font-semibold text-blue-600 hover:underline"
@@ -959,15 +975,15 @@ function FRow({
   if (value == null || value === '') {
     return (
       <>
-        <dt className="text-slate-500">{label}</dt>
-        <dd className="text-right text-slate-300">—</dd>
+        <dt className="text-ink-500">{label}</dt>
+        <dd className="text-right text-ink-300">—</dd>
       </>
     );
   }
   return (
     <>
-      <dt className="text-slate-500">{label}</dt>
-      <dd className="text-right font-semibold text-slate-900">
+      <dt className="text-ink-500">{label}</dt>
+      <dd className="text-right font-semibold text-ink-900">
         {money ? '$' + Number(value).toLocaleString() : value}
       </dd>
     </>
@@ -989,8 +1005,8 @@ function PersonRow({
 }) {
   const colors =
     tone === 'purple'
-      ? 'bg-purple-50 text-purple-800'
-      : 'bg-slate-100 text-slate-700';
+      ? 'bg-blue-50 text-blue-800'
+      : 'bg-ink-100 text-ink-700';
   return (
     <div className="flex items-start gap-3">
       <span
@@ -1002,7 +1018,7 @@ function PersonRow({
         {initials(name)}
       </span>
       <div className="min-w-0 flex-1">
-        <div className="text-[10px] font-bold uppercase tracking-wide text-slate-400">
+        <div className="text-[10px] font-bold uppercase tracking-wide text-ink-400">
           {label}
         </div>
         <div className="truncate text-sm font-medium">{name || '—'}</div>
@@ -1203,7 +1219,7 @@ function ShowingModal({
                       'flex-1 rounded-md border px-2 py-2 text-xs font-semibold transition ' +
                       (duration === d
                         ? 'border-blue-600 bg-blue-50 text-blue-900'
-                        : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50')
+                        : 'border-ink-200 bg-white text-ink-600 hover:bg-ink-50')
                     }
                   >
                     {d}m
@@ -1324,11 +1340,11 @@ function ModalField({
 }) {
   return (
     <label className="block text-sm">
-      <span className="block text-xs font-semibold uppercase tracking-wide text-slate-500">
+      <span className="block text-xs font-semibold uppercase tracking-wide text-ink-500">
         {label}
       </span>
       <div className="mt-1.5">{children}</div>
-      {hint && <p className="mt-1 text-[11px] text-slate-400">{hint}</p>}
+      {hint && <p className="mt-1 text-[11px] text-ink-400">{hint}</p>}
     </label>
   );
 }

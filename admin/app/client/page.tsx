@@ -91,9 +91,9 @@ export default async function ClientHomePage() {
       </h1>
 
       {!active ? (
-        <div className="mt-8 rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center">
+        <div className="mt-8 rounded-xl border border-dashed border-ink-300 bg-white p-10 text-center">
           <h3 className="text-base font-semibold">No active search yet</h3>
-          <p className="mt-1 text-sm text-slate-600">
+          <p className="mt-1 text-sm text-ink-600">
             Your realtor will get you set up — you'll see your deal here once
             they do.
           </p>
@@ -113,8 +113,8 @@ export default async function ClientHomePage() {
 
           {/* Realtor card */}
           {realtor && (
-            <section className="mt-4 rounded-xl border border-slate-200 bg-white p-5">
-              <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <section className="mt-4 rounded-xl border border-ink-200 bg-white p-5">
+              <div className="text-xs font-semibold uppercase tracking-wide text-ink-500">
                 Your realtor
               </div>
               <div className="mt-1 text-sm font-semibold">
@@ -122,7 +122,7 @@ export default async function ClientHomePage() {
               </div>
               <Link
                 href="/client/messages"
-                className="mt-3 inline-block rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700"
+                className="mt-3 inline-block rounded-md bg-ink-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-ink-700"
               >
                 Message
               </Link>
@@ -131,9 +131,9 @@ export default async function ClientHomePage() {
 
           {/* Important dates */}
           {dates && dates.length > 0 && (
-            <section className="mt-4 rounded-xl border border-slate-200 bg-white p-5">
+            <section className="mt-4 rounded-xl border border-ink-200 bg-white p-5">
               <div className="flex items-baseline justify-between">
-                <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <div className="text-xs font-semibold uppercase tracking-wide text-ink-500">
                   Important dates
                 </div>
                 {buildCalendarFeedUrl(active.id) && (
@@ -142,20 +142,20 @@ export default async function ClientHomePage() {
                       /^https:\/\//,
                       'webcal://'
                     )}
-                    className="text-xs font-semibold text-blue-600 hover:underline"
+                    className="text-xs font-semibold text-ink-900 hover:underline"
                   >
                     Subscribe in Calendar ↗
                   </a>
                 )}
               </div>
-              <ul className="mt-3 divide-y divide-slate-100">
+              <ul className="mt-3 divide-y divide-ink-100">
                 {dates.map((d: any) => (
                   <li
                     key={d.id}
                     className="flex items-center justify-between py-2 text-sm"
                   >
                     <span>{d.label}</span>
-                    <span className="text-slate-500">
+                    <span className="text-ink-500">
                       {new Date(d.date).toLocaleDateString()}
                     </span>
                   </li>
@@ -166,8 +166,8 @@ export default async function ClientHomePage() {
 
           {/* Activity feed — what's been happening */}
           {feed && feed.length > 0 && (
-            <section className="mt-4 rounded-xl border border-slate-200 bg-white p-5">
-              <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <section className="mt-4 rounded-xl border border-ink-200 bg-white p-5">
+              <div className="text-xs font-semibold uppercase tracking-wide text-ink-500">
                 Recent updates
               </div>
               <ol className="mt-3 space-y-2.5">
@@ -181,11 +181,11 @@ export default async function ClientHomePage() {
                       className="flex items-baseline gap-2 text-sm"
                     >
                       <span className="font-semibold">{actor}</span>
-                      <span className="text-slate-600">{verb}</span>
+                      <span className="text-ink-600">{verb}</span>
                       {f.target && (
                         <span className="font-medium">{prettyTarget(f.action, f.target)}</span>
                       )}
-                      <span className="ml-auto shrink-0 text-xs text-slate-400">
+                      <span className="ml-auto shrink-0 text-xs text-ink-400">
                         {timeAgo(f.created_at)}
                       </span>
                     </li>
@@ -198,24 +198,24 @@ export default async function ClientHomePage() {
           <div className="mt-6 grid gap-3 sm:grid-cols-3" id="quicklinks">
             <Link
               href="/client/houses"
-              className="rounded-xl border border-slate-200 bg-white p-4 text-sm hover:border-slate-300"
+              className="rounded-xl border border-ink-200 bg-white p-4 text-sm hover:border-ink-300"
             >
               <div className="font-semibold">Houses</div>
-              <div className="text-slate-500">See properties from your agent</div>
+              <div className="text-ink-500">See properties from your agent</div>
             </Link>
             <Link
               href="/client/messages"
-              className="rounded-xl border border-slate-200 bg-white p-4 text-sm hover:border-slate-300"
+              className="rounded-xl border border-ink-200 bg-white p-4 text-sm hover:border-ink-300"
             >
               <div className="font-semibold">Messages</div>
-              <div className="text-slate-500">Chat with your agent</div>
+              <div className="text-ink-500">Chat with your agent</div>
             </Link>
             <Link
               href="/client/documents"
-              className="rounded-xl border border-slate-200 bg-white p-4 text-sm hover:border-slate-300"
+              className="rounded-xl border border-ink-200 bg-white p-4 text-sm hover:border-ink-300"
             >
               <div className="font-semibold">Documents</div>
-              <div className="text-slate-500">Disclosures & contracts</div>
+              <div className="text-ink-500">Disclosures & contracts</div>
             </Link>
           </div>
         </>

@@ -4,7 +4,7 @@
  * Per-showing feedback control in the deal workspace.
  *   - "Request feedback" button stamps feedback_requested_at and emails
  *     attendees + the principal client a link to the public feedback form.
- *     Once requested, shows "Requested ✓".
+ *     Once requested, shows a "Requested" confirmation.
  *   - An expandable section lazy-loads existing feedback for the showing and
  *     lists each response (stars, interest, price opinion, liked, concerns,
  *     author).
@@ -113,7 +113,10 @@ export function ShowingFeedbackPanel({
       <div className="flex flex-wrap items-center gap-1.5">
         {requested ? (
           <span className="inline-flex items-center gap-1 rounded-md bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-emerald-800">
-            Requested ✓
+            <svg viewBox="0 0 16 16" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden>
+              <path d="M3 8.5l3.5 3.5L13 5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            Requested
           </span>
         ) : (
           <button

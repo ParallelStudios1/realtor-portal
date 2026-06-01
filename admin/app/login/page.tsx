@@ -31,7 +31,7 @@ export default function LoginPage({
           </p>
 
           {searchParams.notice && (
-            <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">
+            <div className="mt-4 rounded-lg border border-ink-200 bg-ink-100 p-3 text-sm text-ink-900">
               {searchParams.notice}
             </div>
           )}
@@ -90,7 +90,7 @@ export default function LoginPage({
                     encodeURIComponent(searchParams.next)
                   : '/signup'
               }
-              className="font-semibold text-blue-600 hover:text-blue-700"
+              className="font-semibold text-ink-900 hover:text-ink-900"
             >
               Start a free trial →
             </Link>

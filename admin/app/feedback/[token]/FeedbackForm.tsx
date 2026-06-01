@@ -18,7 +18,7 @@ const INK_700 = '#334155';
 const INK_500 = '#64748b';
 const INK_300 = '#cbd5e1';
 const INK_200 = '#e2e8f0';
-const ACCENT = '#1f6feb';
+const ACCENT = INK_900;
 
 const INTEREST_OPTIONS = [
   { value: 'not_interested', label: 'Not for me' },

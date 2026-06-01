@@ -89,7 +89,7 @@ export default async function InboxPage() {
         <>
           <strong>{(a as any).actor?.full_name || 'Someone'}</strong>{' '}
           {humanizeAction(a.action)}{' '}
-          <span className="text-slate-700">
+          <span className="text-ink-700">
             {prettyTarget(a.action, a.target)}
           </span>
         </>
@@ -125,9 +125,9 @@ export default async function InboxPage() {
       title: (
         <>
           <strong>{clientName}</strong> {' requested a tour of '}
-          <span className="text-slate-700">{houseAddr}</span>
+          <span className="text-ink-700">{houseAddr}</span>
           {t.status !== 'pending' && (
-            <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] uppercase tracking-wide text-slate-700">
+            <span className="ml-2 rounded-full bg-ink-100 px-2 py-0.5 text-[10px] uppercase tracking-wide text-ink-700">
               {t.status}
             </span>
           )}
@@ -148,7 +148,7 @@ export default async function InboxPage() {
       title: (
         <>
           <strong>{(d as any).uploader?.full_name || 'Someone'}</strong>{' '}
-          uploaded <span className="text-slate-700">{d.name}</span>
+          uploaded <span className="text-ink-700">{d.name}</span>
         </>
       ),
       href: '/dashboard/deals/' + d.search_id,
@@ -162,15 +162,15 @@ export default async function InboxPage() {
     <main className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-8">
       <header className="mb-6">
         <h1 className="text-3xl font-bold tracking-tight">Inbox</h1>
-        <p className="mt-1 text-sm text-slate-600">
+        <p className="mt-1 text-sm text-ink-600">
           Everything new across your firm in the last 14 days.
         </p>
       </header>
 
       {items.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center">
+        <div className="rounded-xl border border-dashed border-ink-300 bg-white p-10 text-center">
           <h2 className="font-semibold">Nothing new</h2>
-          <p className="mt-1 text-sm text-slate-600">
+          <p className="mt-1 text-sm text-ink-600">
             Tour requests, messages, document uploads, and phase updates show
             up here.
           </p>
@@ -181,7 +181,7 @@ export default async function InboxPage() {
             <li key={it.key}>
               <Link
                 href={it.href}
-                className="block rounded-xl border border-slate-200 bg-white p-4 transition hover:border-slate-300 hover:bg-slate-50"
+                className="block rounded-xl border border-ink-200 bg-white p-4 transition hover:border-ink-300 hover:bg-ink-50"
               >
                 <div className="flex items-start gap-3">
                   <span
@@ -189,14 +189,14 @@ export default async function InboxPage() {
                     style={{ backgroundColor: it.accent }}
                   />
                   <div className="min-w-0 flex-1">
-                    <div className="text-sm text-slate-900">{it.title}</div>
+                    <div className="text-sm text-ink-900">{it.title}</div>
                     {it.body && (
-                      <div className="mt-1 line-clamp-2 text-xs text-slate-600">
+                      <div className="mt-1 line-clamp-2 text-xs text-ink-600">
                         {it.body}
                       </div>
                     )}
                   </div>
-                  <time className="shrink-0 text-xs text-slate-400">
+                  <time className="shrink-0 text-xs text-ink-400">
                     {timeAgo(it.at)}
                   </time>
                 </div>

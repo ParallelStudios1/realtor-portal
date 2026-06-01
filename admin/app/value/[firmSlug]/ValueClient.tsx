@@ -16,7 +16,7 @@ import { useMemo, useState } from 'react';
  *   - No gradients, no orbs, no glow. Flat color.
  *   - Inter (loaded globally).
  *   - One accent color = firm's brand_color.
- *   - "Powered by Realtor Portal" footer.
+ *   - Subtle Realtor Portal wordmark in the footer.
  */
 
 type Props = {
@@ -435,7 +435,6 @@ export function ValueClient({
             © {new Date().getFullYear()} {firmName}
           </span>
           <span>
-            Powered by{' '}
             <a
               href="/"
               className="font-medium text-ink-700 hover:text-ink-900"

@@ -30,8 +30,8 @@ export default async function ClientMessagesPage() {
     return (
       <main className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-8">
         <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Messages</h1>
-        <div className="mt-6 rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center">
-          <p className="text-sm text-slate-600">
+        <div className="mt-6 rounded-xl border border-dashed border-ink-300 bg-white p-10 text-center">
+          <p className="text-sm text-ink-600">
             No active conversations. Once your realtor sets up your search,
             you'll be able to message them here.
           </p>

@@ -47,14 +47,14 @@ export function ClientDocumentsList({ documents }: { documents: Doc[] }) {
           {error}
         </div>
       ) : null}
-      <ul className="mt-6 divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white">
+      <ul className="mt-6 divide-y divide-ink-100 overflow-hidden rounded-xl border border-ink-200 bg-white">
         {documents.map((d) => {
           const isOpening = openingId === d.id;
           return (
             <li key={d.id} className="flex items-center justify-between px-4 py-3">
               <div>
                 <div className="text-sm font-semibold">{d.name}</div>
-                <div className="text-xs text-slate-500">
+                <div className="text-xs text-ink-500">
                   {new Date(d.created_at).toLocaleDateString()}
                 </div>
               </div>
@@ -62,7 +62,7 @@ export function ClientDocumentsList({ documents }: { documents: Doc[] }) {
                 type="button"
                 onClick={() => open(d)}
                 disabled={isOpening}
-                className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-60"
+                className="rounded-md border border-ink-200 bg-white px-3 py-1.5 text-xs font-semibold text-ink-700 transition hover:bg-ink-50 disabled:opacity-60"
               >
                 {isOpening ? 'Opening…' : 'Open'}
               </button>

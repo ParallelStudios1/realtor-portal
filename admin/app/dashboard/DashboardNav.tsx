@@ -229,7 +229,15 @@ export function DashboardNav({
         onClick={() => setOpen((v) => !v)}
         className="rounded-lg border border-ink-300 px-3 py-2 text-ink-700 transition hover:bg-ink-50 md:hidden"
       >
-        {open ? '✕' : '☰'}
+        {open ? (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5" aria-hidden>
+            <path d="M18 6 6 18M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        ) : (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5" aria-hidden>
+            <path d="M4 7h16M4 12h16M4 17h16" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        )}
       </button>
 
       {/* Mobile drawer */}

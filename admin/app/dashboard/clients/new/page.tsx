@@ -6,11 +6,11 @@ export const metadata = { title: 'Invite client · Realtor Portal' };
 export default function NewClientPage({ searchParams }: { searchParams: { error?: string; ok?: string } }) {
   return (
     <main className="mx-auto max-w-2xl px-6 py-8">
-      <Link href="/dashboard/clients" className="text-sm text-slate-500 hover:text-slate-700">
+      <Link href="/dashboard/clients" className="text-sm text-ink-500 hover:text-ink-700">
         ← Back to clients
       </Link>
       <h1 className="mt-4 text-3xl font-bold tracking-tight">Invite a client</h1>
-      <p className="mt-1 text-sm text-slate-600">
+      <p className="mt-1 text-sm text-ink-600">
         We'll email them a one-tap link to download the app and join your portal.
       </p>
 
@@ -25,7 +25,7 @@ export default function NewClientPage({ searchParams }: { searchParams: { error?
         </div>
       )}
 
-      <form action={inviteClientAction} className="mt-8 space-y-4 rounded-xl border border-slate-200 bg-white p-6">
+      <form action={inviteClientAction} className="mt-8 space-y-4 rounded-xl border border-ink-200 bg-white p-6">
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label htmlFor="full_name" className="block text-sm font-medium">Full name</label>
@@ -34,7 +34,7 @@ export default function NewClientPage({ searchParams }: { searchParams: { error?
               name="full_name"
               type="text"
               required
-              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="mt-1 w-full rounded-md border border-ink-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
           <div>
@@ -44,7 +44,7 @@ export default function NewClientPage({ searchParams }: { searchParams: { error?
               name="email"
               type="email"
               required
-              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="mt-1 w-full rounded-md border border-ink-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
         </div>
@@ -55,7 +55,7 @@ export default function NewClientPage({ searchParams }: { searchParams: { error?
             name="address"
             type="text"
             placeholder="123 Main St, Boston MA 02116"
-            className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="mt-1 w-full rounded-md border border-ink-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
         </div>
         <div>
@@ -63,7 +63,7 @@ export default function NewClientPage({ searchParams }: { searchParams: { error?
           <select
             id="role_in_deal"
             name="role_in_deal"
-            className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="mt-1 w-full rounded-md border border-ink-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           >
             <option value="buyer">Buyer</option>
             <option value="seller">Seller</option>
@@ -75,16 +75,16 @@ export default function NewClientPage({ searchParams }: { searchParams: { error?
             invited. A client can have many deals over time. Toggle this on
             when you're inviting them because a specific transaction is
             starting today. */}
-        <label className="flex items-start gap-2 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm">
+        <label className="flex items-start gap-2 rounded-lg border border-ink-200 bg-ink-50 p-3 text-sm">
           <input
             type="checkbox"
             name="start_deal"
             value="1"
-            className="mt-0.5 h-4 w-4 accent-slate-900"
+            className="mt-0.5 h-4 w-4 accent-ink-900"
           />
           <span>
             <span className="font-medium">Start a deal now too</span>
-            <span className="block text-xs text-slate-500">
+            <span className="block text-xs text-ink-500">
               On = land directly on a fresh deal workspace. Off = just create
               the client; start the deal later when one materializes.
             </span>
@@ -92,7 +92,7 @@ export default function NewClientPage({ searchParams }: { searchParams: { error?
         </label>
         <button
           type="submit"
-          className="w-full rounded-md bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-700"
+          className="w-full rounded-md bg-ink-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-ink-700"
         >
           Send invitation
         </button>

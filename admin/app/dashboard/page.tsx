@@ -58,13 +58,13 @@ export default async function DashboardOverviewPage() {
           <h1 className="text-3xl font-bold tracking-tight">
             Welcome back, {me.full_name?.split(' ')[0] || 'there'}
           </h1>
-          <p className="mt-1 text-sm text-slate-600">
+          <p className="mt-1 text-sm text-ink-600">
             Here's what's happening at {me.firm_name}.
           </p>
         </div>
         <Link
           href="/dashboard/clients/new"
-          className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-700"
+          className="rounded-lg bg-ink-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-ink-700"
         >
           + Invite client
         </Link>
@@ -110,9 +110,9 @@ export default async function DashboardOverviewPage() {
               View all →
             </Link>
           </div>
-          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+          <div className="overflow-hidden rounded-xl border border-ink-200 bg-white">
             {!recentDeals || recentDeals.length === 0 ? (
-              <div className="p-8 text-center text-sm text-slate-500">
+              <div className="p-8 text-center text-sm text-ink-500">
                 No deals yet.{' '}
                 <Link
                   href="/dashboard/clients/new"
@@ -122,21 +122,21 @@ export default async function DashboardOverviewPage() {
                 </Link>
               </div>
             ) : (
-              <ul className="divide-y divide-slate-100">
+              <ul className="divide-y divide-ink-100">
                 {recentDeals.map((d: any) => (
                   <li key={d.id}>
                     <Link
                       href={`/dashboard/deals/${d.id}`}
-                      className="flex items-center gap-3 px-4 py-3 transition hover:bg-slate-50"
+                      className="flex items-center gap-3 px-4 py-3 transition hover:bg-ink-50"
                     >
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-700">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ink-100 text-xs font-bold text-ink-700">
                         {initials(d.client?.full_name || d.client?.email)}
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="truncate font-medium">
                           {d.client?.full_name || d.client?.email || '—'}
                         </div>
-                        <div className="truncate text-xs text-slate-500">
+                        <div className="truncate text-xs text-ink-500">
                           {d.name ||
                             (d.kind === 'seller' ? 'Listing' : 'Buyer deal')}
                         </div>
@@ -144,7 +144,7 @@ export default async function DashboardOverviewPage() {
                       <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold uppercase text-blue-700">
                         {String(d.phase || 'pending').replace(/_/g, ' ')}
                       </span>
-                      <span className="ml-2 hidden text-xs text-slate-400 sm:inline">
+                      <span className="ml-2 hidden text-xs text-ink-400 sm:inline">
                         {new Date(d.updated_at).toLocaleDateString()}
                       </span>
                     </Link>
@@ -160,26 +160,26 @@ export default async function DashboardOverviewPage() {
           <div className="mb-3 flex items-baseline justify-between">
             <h2 className="text-lg font-semibold">Upcoming dates</h2>
           </div>
-          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+          <div className="overflow-hidden rounded-xl border border-ink-200 bg-white">
             {!upcoming || upcoming.length === 0 ? (
-              <div className="p-6 text-center text-sm text-slate-500">
+              <div className="p-6 text-center text-sm text-ink-500">
                 Nothing on the calendar.
               </div>
             ) : (
-              <ul className="divide-y divide-slate-100">
+              <ul className="divide-y divide-ink-100">
                 {upcoming.map((u: any) => (
                   <li key={u.id}>
                     <Link
                       href={`/dashboard/deals/${u.search_id}`}
-                      className="flex items-center gap-3 px-4 py-3 transition hover:bg-slate-50"
+                      className="flex items-center gap-3 px-4 py-3 transition hover:bg-ink-50"
                     >
-                      <div className="flex w-12 shrink-0 flex-col items-center rounded-md bg-slate-50 py-1">
-                        <span className="text-[10px] font-bold uppercase text-slate-500">
+                      <div className="flex w-12 shrink-0 flex-col items-center rounded-md bg-ink-50 py-1">
+                        <span className="text-[10px] font-bold uppercase text-ink-500">
                           {new Date(u.date).toLocaleString('en-US', {
                             month: 'short',
                           })}
                         </span>
-                        <span className="text-lg font-bold leading-none text-slate-900">
+                        <span className="text-lg font-bold leading-none text-ink-900">
                           {new Date(u.date).getDate()}
                         </span>
                       </div>
@@ -222,23 +222,23 @@ function Card({
 }) {
   const bar =
     accent === 'blue'
-      ? 'from-blue-500 to-blue-600'
+      ? 'bg-blue-600'
       : accent === 'emerald'
-      ? 'from-emerald-500 to-emerald-600'
+      ? 'bg-emerald-600'
       : accent === 'amber'
-      ? 'from-amber-500 to-amber-600'
-      : 'from-slate-500 to-slate-700';
+      ? 'bg-amber-500'
+      : 'bg-ink-700';
   return (
     <Link
       href={href}
-      className="group relative overflow-hidden rounded-xl border border-slate-200 bg-white p-5 transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
+      className="group relative overflow-hidden rounded-xl border border-ink-200 bg-white p-5 transition hover:-tranink-y-0.5 hover:border-ink-300 hover:shadow-soft-md"
     >
       <div
         className={
-          'absolute inset-x-0 top-0 h-1 bg-gradient-to-r ' + bar
+          'absolute inset-x-0 top-0 h-1 ' + bar
         }
       />
-      <div className="text-xs uppercase tracking-wide text-slate-500">{label}</div>
+      <div className="text-xs uppercase tracking-wide text-ink-500">{label}</div>
       <div className="mt-1 text-3xl font-bold tracking-tight">{value}</div>
     </Link>
   );

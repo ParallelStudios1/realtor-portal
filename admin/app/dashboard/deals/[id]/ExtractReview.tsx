@@ -128,7 +128,7 @@ export function ExtractReview({
   }
 
   function discard() {
-    if (!confirmWindow('Discard these AI suggestions? No dates will be saved.')) return;
+    if (!confirmWindow('Discard these suggestions? No dates will be saved.')) return;
     start(async () => {
       const r = await discardExtractionAction({ extractionId: extraction.id });
       if (!r.ok) {
@@ -191,7 +191,7 @@ export function ExtractReview({
               !
             </span>
             <p className="text-amber-900">
-              <strong>AI suggestions &mdash; review against the contract before saving.</strong>{' '}
+              <strong>Review these against the contract before saving.</strong>{' '}
               Nothing is added to the deal until you confirm. Untick anything wrong,
               fix labels and dates, then save only what you trust.
             </p>
@@ -199,8 +199,8 @@ export function ExtractReview({
 
           {isFallback && (
             <div className="mb-4 rounded-xl border border-ink-200 bg-ink-50 px-4 py-3 text-sm text-ink-700">
-              AI extraction isn&rsquo;t available right now. Add the contract
-              dates by hand below.
+              Automatic extraction isn&rsquo;t available right now. Add the
+              contract dates by hand below.
             </div>
           )}
 
@@ -285,7 +285,7 @@ export function ExtractReview({
                                 'rounded-full px-2 py-0.5 font-semibold ' +
                                 confidenceTone(r.confidence)
                               }
-                              title="AI confidence"
+                              title="Extraction confidence"
                             >
                               {Math.round(r.confidence * 100)}% confident
                             </span>

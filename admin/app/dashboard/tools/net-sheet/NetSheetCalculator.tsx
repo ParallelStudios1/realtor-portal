@@ -563,13 +563,15 @@ export function NetSheetCalculator({ prefill }: { prefill: Prefill | null }) {
                             onClick={() => removeOffer(o.id)}
                             aria-label={'Remove ' + o.label}
                             className={
-                              'shrink-0 rounded px-1 text-xs leading-none transition ' +
+                              'inline-flex shrink-0 items-center justify-center rounded px-1 transition ' +
                               (isBest
                                 ? 'text-white/60 hover:text-white'
                                 : 'text-ink-300 hover:text-ink-600')
                             }
                           >
-                            ✕
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-3 w-3" aria-hidden>
+                              <path d="M18 6 6 18M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
                           </button>
                         )}
                       </div>

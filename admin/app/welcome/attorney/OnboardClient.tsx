@@ -72,11 +72,11 @@ export function AttorneyOnboardClient({
                 required
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                className="mt-1.5 w-full rounded-md border border-ink-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="mt-1.5 w-full rounded-md border border-ink-300 px-3 py-2 text-sm shadow-sm focus:border-ink-500 focus:outline-none focus:ring-1 focus:ring-ink-200"
                 placeholder="Jane Smith, Esq."
               />
             </div>
-            <div className="rounded-lg border border-blue-200 bg-blue-50/60 p-3 text-xs text-blue-900">
+            <div className="rounded-lg border border-ink-200 bg-ink-100/60 p-3 text-xs text-ink-900">
               <p className="font-semibold">Your attorney dashboard</p>
               <p className="mt-1">
                 You&rsquo;ll see every deal you&rsquo;re assigned to as the

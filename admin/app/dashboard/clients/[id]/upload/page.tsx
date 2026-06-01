@@ -56,14 +56,14 @@ export default async function UploadDocPage({
     <main className="mx-auto max-w-2xl px-4 py-6 sm:px-6 sm:py-8">
       <Link
         href={`/dashboard/deals/${search.id}`}
-        className="text-xs font-semibold text-slate-500 hover:text-slate-700"
+        className="text-xs font-semibold text-ink-500 hover:text-ink-700"
       >
         ← Back to deal
       </Link>
       <h1 className="mt-1 text-2xl font-bold tracking-tight">
         Upload a document for {client.full_name || client.email}
       </h1>
-      <p className="mt-1 text-sm text-slate-600">
+      <p className="mt-1 text-sm text-ink-600">
         Files are stored in your firm's private bucket. Everyone on the deal
         with document visibility can see them.
       </p>

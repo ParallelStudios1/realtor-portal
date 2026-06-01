@@ -59,15 +59,15 @@ export default async function MessagesPage() {
     <main className="mx-auto max-w-6xl px-6 py-8">
       <header className="mb-6">
         <h1 className="text-3xl font-bold tracking-tight">Messages</h1>
-        <p className="mt-1 text-sm text-slate-600">
+        <p className="mt-1 text-sm text-ink-600">
           {threads.length} client {threads.length === 1 ? 'thread' : 'threads'}.
         </p>
       </header>
 
       {threads.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-slate-300 bg-white p-12 text-center">
+        <div className="rounded-xl border border-dashed border-ink-300 bg-white p-12 text-center">
           <h3 className="font-semibold">No conversations yet</h3>
-          <p className="mt-1 text-sm text-slate-600">
+          <p className="mt-1 text-sm text-ink-600">
             Once you invite clients and they start a search, you'll see threads
             here. New messages appear in real time.
           </p>

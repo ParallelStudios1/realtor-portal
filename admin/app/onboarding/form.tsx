@@ -73,7 +73,7 @@ export function OnboardingForm({ firmId, initial }: { firmId: string; initial: I
         <label className="block text-sm font-medium">Firm logo</label>
         <div className="mt-2 flex items-center gap-4">
           <div
-            className="flex h-20 w-20 items-center justify-center rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 text-xs text-slate-400"
+            className="flex h-20 w-20 items-center justify-center rounded-lg border-2 border-dashed border-ink-300 bg-ink-50 text-xs text-ink-400"
             style={logoPreview ? { backgroundColor: brandColor, borderStyle: 'solid' } : undefined}
           >
             {logoPreview ? (
@@ -83,12 +83,12 @@ export function OnboardingForm({ firmId, initial }: { firmId: string; initial: I
               'No logo'
             )}
           </div>
-          <label className="cursor-pointer rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium hover:border-slate-400">
+          <label className="cursor-pointer rounded-md border border-ink-300 bg-white px-4 py-2 text-sm font-medium hover:border-ink-400">
             {logoPreview ? 'Replace' : 'Upload'} logo
             <input type="file" accept="image/*" className="hidden" onChange={onLogoChange} />
           </label>
         </div>
-        <p className="mt-1 text-xs text-slate-500">PNG or SVG, square, under 2MB.</p>
+        <p className="mt-1 text-xs text-ink-500">PNG or SVG, square, under 2MB.</p>
       </div>
 
       {/* Firm name */}
@@ -99,7 +99,7 @@ export function OnboardingForm({ firmId, initial }: { firmId: string; initial: I
           value={name}
           onChange={(e) => setName(e.target.value)}
           required
-          className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="mt-1 w-full rounded-md border border-ink-300 px-3 py-2 text-sm shadow-sm focus:border-ink-500 focus:outline-none focus:ring-1 focus:ring-ink-200"
         />
       </div>
 
@@ -111,7 +111,7 @@ export function OnboardingForm({ firmId, initial }: { firmId: string; initial: I
           value={tagline}
           onChange={(e) => setTagline(e.target.value)}
           placeholder="e.g. Boston's premier waterfront brokerage"
-          className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="mt-1 w-full rounded-md border border-ink-300 px-3 py-2 text-sm shadow-sm focus:border-ink-500 focus:outline-none focus:ring-1 focus:ring-ink-200"
         />
       </div>
 
@@ -125,13 +125,13 @@ export function OnboardingForm({ firmId, initial }: { firmId: string; initial: I
               type="color"
               value={brandColor}
               onChange={(e) => setBrandColor(e.target.value)}
-              className="h-10 w-14 cursor-pointer rounded border border-slate-300"
+              className="h-10 w-14 cursor-pointer rounded border border-ink-300"
             />
             <input
               type="text"
               value={brandColor}
               onChange={(e) => setBrandColor(e.target.value)}
-              className="flex-1 rounded-md border border-slate-300 px-3 py-2 font-mono text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="flex-1 rounded-md border border-ink-300 px-3 py-2 font-mono text-sm shadow-sm focus:border-ink-500 focus:outline-none focus:ring-1 focus:ring-ink-200"
             />
           </div>
         </div>
@@ -143,13 +143,13 @@ export function OnboardingForm({ firmId, initial }: { firmId: string; initial: I
               type="color"
               value={accentColor}
               onChange={(e) => setAccentColor(e.target.value)}
-              className="h-10 w-14 cursor-pointer rounded border border-slate-300"
+              className="h-10 w-14 cursor-pointer rounded border border-ink-300"
             />
             <input
               type="text"
               value={accentColor}
               onChange={(e) => setAccentColor(e.target.value)}
-              className="flex-1 rounded-md border border-slate-300 px-3 py-2 font-mono text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="flex-1 rounded-md border border-ink-300 px-3 py-2 font-mono text-sm shadow-sm focus:border-ink-500 focus:outline-none focus:ring-1 focus:ring-ink-200"
             />
           </div>
         </div>
@@ -164,7 +164,7 @@ export function OnboardingForm({ firmId, initial }: { firmId: string; initial: I
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="mt-1 w-full rounded-md border border-ink-300 px-3 py-2 text-sm shadow-sm focus:border-ink-500 focus:outline-none focus:ring-1 focus:ring-ink-200"
           />
         </div>
         <div>
@@ -175,7 +175,7 @@ export function OnboardingForm({ firmId, initial }: { firmId: string; initial: I
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             placeholder="(555) 123-4567"
-            className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="mt-1 w-full rounded-md border border-ink-300 px-3 py-2 text-sm shadow-sm focus:border-ink-500 focus:outline-none focus:ring-1 focus:ring-ink-200"
           />
         </div>
       </div>
@@ -188,14 +188,14 @@ export function OnboardingForm({ firmId, initial }: { firmId: string; initial: I
           value={website}
           onChange={(e) => setWebsite(e.target.value)}
           placeholder="https://..."
-          className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="mt-1 w-full rounded-md border border-ink-300 px-3 py-2 text-sm shadow-sm focus:border-ink-500 focus:outline-none focus:ring-1 focus:ring-ink-200"
         />
       </div>
 
       {/* Live preview */}
       <div>
         <label className="block text-sm font-medium">Live preview</label>
-        <div className="mt-2 rounded-lg border border-slate-200 p-4" style={{ backgroundColor: brandColor }}>
+        <div className="mt-2 rounded-lg border border-ink-200 p-4" style={{ backgroundColor: brandColor }}>
           <div className="flex items-center gap-3">
             {logoPreview ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -222,12 +222,12 @@ export function OnboardingForm({ firmId, initial }: { firmId: string; initial: I
         <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">{error}</div>
       )}
 
-      <div className="flex items-center justify-between border-t border-slate-200 pt-6">
-        <a href="/dashboard" className="text-sm text-slate-500 hover:text-slate-700">Skip for now</a>
+      <div className="flex items-center justify-between border-t border-ink-200 pt-6">
+        <a href="/dashboard" className="text-sm text-ink-500 hover:text-ink-700">Skip for now</a>
         <button
           type="submit"
           disabled={pending}
-          className="rounded-md bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white hover:bg-slate-700 disabled:opacity-50"
+          className="rounded-md bg-ink-900 px-6 py-2.5 text-sm font-semibold text-white hover:bg-ink-700 disabled:opacity-50"
         >
           {pending ? 'Saving…' : 'Save & continue →'}
         </button>

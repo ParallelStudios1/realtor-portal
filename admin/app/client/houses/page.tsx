@@ -49,15 +49,15 @@ export default async function ClientHousesPage() {
     <main className="mx-auto max-w-4xl px-4 py-6 sm:px-6 sm:py-8">
       <header className="mb-5">
         <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Houses</h1>
-        <p className="mt-1 text-sm text-slate-600">
+        <p className="mt-1 text-sm text-ink-600">
           {(houses?.length || 0)} {houses?.length === 1 ? 'property' : 'properties'} from your agent.
         </p>
       </header>
 
       {!houses || houses.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center">
+        <div className="rounded-xl border border-dashed border-ink-300 bg-white p-10 text-center">
           <h3 className="text-base font-semibold">No houses yet</h3>
-          <p className="mt-1 text-sm text-slate-600">
+          <p className="mt-1 text-sm text-ink-600">
             Your realtor hasn't added any properties to your search yet.
           </p>
         </div>
@@ -69,19 +69,19 @@ export default async function ClientHousesPage() {
             <Link
               key={h.id}
               href={`/client/houses/${h.id}`}
-              className="group relative overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md"
+              className="group relative overflow-hidden rounded-xl border border-ink-200 bg-white shadow-sm transition hover:shadow-md"
             >
               {badge === 'closed-home' && (
                 <div className="absolute left-3 top-3 z-10 flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow-md">
-                  <span aria-hidden>🏡</span> Your home
+                  Your home
                 </div>
               )}
               {badge === 'pending-home' && (
                 <div className="absolute left-3 top-3 z-10 flex items-center gap-1 rounded-full bg-amber-500 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow-md">
-                  <span aria-hidden>📝</span> Your offer
+                  Your offer
                 </div>
               )}
-              <div className="aspect-video w-full bg-slate-100">
+              <div className="aspect-video w-full bg-ink-100">
                 {h.photo_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -90,7 +90,7 @@ export default async function ClientHousesPage() {
                     className="h-full w-full object-cover transition group-hover:scale-[1.02]"
                   />
                 ) : (
-                  <div className="flex h-full items-center justify-center text-sm text-slate-400">
+                  <div className="flex h-full items-center justify-center text-sm text-ink-400">
                     No photo
                   </div>
                 )}
@@ -99,9 +99,9 @@ export default async function ClientHousesPage() {
                 <div className="text-base font-semibold leading-tight">
                   {h.address}
                 </div>
-                <div className="mt-2 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-sm text-slate-600">
+                <div className="mt-2 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-sm text-ink-600">
                   {h.list_price && (
-                    <span className="font-semibold text-slate-900">
+                    <span className="font-semibold text-ink-900">
                       ${Number(h.list_price).toLocaleString()}
                     </span>
                   )}
@@ -112,7 +112,7 @@ export default async function ClientHousesPage() {
                   )}
                 </div>
                 {h.status && (
-                  <div className="mt-3 inline-block rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-600">
+                  <div className="mt-3 inline-block rounded-full bg-ink-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-ink-600">
                     {h.status.replace(/_/g, ' ')}
                   </div>
                 )}

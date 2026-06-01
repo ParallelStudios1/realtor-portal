@@ -60,7 +60,7 @@ export default async function ToursPage() {
     <main className="mx-auto max-w-6xl px-6 py-8">
       <header className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight">Tours</h1>
-        <p className="mt-1 text-sm text-slate-600">
+        <p className="mt-1 text-sm text-ink-600">
           {pending.length} pending {pending.length === 1 ? 'request' : 'requests'}
           {recent.length > 0 ? ` · ${recent.length} recent` : ''}.
         </p>
@@ -73,9 +73,9 @@ export default async function ToursPage() {
       )}
 
       {tours.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-slate-300 bg-white p-12 text-center">
+        <div className="rounded-xl border border-dashed border-ink-300 bg-white p-12 text-center">
           <h3 className="font-semibold">No tour requests yet</h3>
-          <p className="mt-1 text-sm text-slate-600">
+          <p className="mt-1 text-sm text-ink-600">
             When clients request a tour from the mobile app, you'll see them
             here and can confirm or decline with one tap.
           </p>

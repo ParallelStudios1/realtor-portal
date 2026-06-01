@@ -7,14 +7,14 @@ import { humanError } from '@/lib/humanError';
 
 type Existing = { id: string; stars: number; notes: string | null } | null;
 
-// Map a 1-5 stars schema onto a more buyer-friendly 4-face UI.
+// Map a 1-5 stars schema onto a buyer-friendly 4-option UI.
 // 1 → Pass, 2/3 → Maybe, 4/5 → Love. We store the 5-pt value so we keep
 // signal for power users and don't lose data.
 const FACES = [
-  { v: 1, label: '👎', text: 'Pass' },
-  { v: 2, label: '😐', text: 'Meh' },
-  { v: 4, label: '🙂', text: 'Maybe' },
-  { v: 5, label: '😍', text: 'Love it' },
+  { v: 1, text: 'Pass' },
+  { v: 2, text: 'Meh' },
+  { v: 4, text: 'Maybe' },
+  { v: 5, text: 'Love it' },
 ];
 
 export function HouseRatingClient({
@@ -80,11 +80,10 @@ export function HouseRatingClient({
               className={
                 'rounded-md border px-3 py-2 text-xs font-semibold transition ' +
                 (on
-                  ? 'border-blue-500 bg-blue-50 text-blue-700'
-                  : 'border-slate-200 hover:border-slate-300')
+                  ? 'border-ink-900 bg-ink-100 text-ink-900'
+                  : 'border-ink-200 hover:border-ink-300')
               }
             >
-              <span className="mr-1 text-base">{f.label}</span>
               {f.text}
             </button>
           );
@@ -97,13 +96,13 @@ export function HouseRatingClient({
         onBlur={() => save(stars, notes)}
         placeholder="Anything you'd want your agent to know? (optional)"
         rows={3}
-        className="mt-3 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        className="mt-3 w-full rounded-md border border-ink-300 px-3 py-2 text-sm focus:border-ink-500 focus:outline-none focus:ring-1 focus:ring-ink-200"
       />
 
-      <div className="mt-2 text-xs text-slate-500">
+      <div className="mt-2 text-xs text-ink-500">
         {error && <span className="text-red-600">{error}</span>}
         {!error && saving && 'Saving…'}
-        {!error && !saving && savedAt && 'Saved ✓'}
+        {!error && !saving && savedAt && 'Saved'}
       </div>
     </div>
   );

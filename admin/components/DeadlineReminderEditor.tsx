@@ -93,7 +93,7 @@ export function DeadlineReminderEditor({
     });
 
   return (
-    <div className="mt-1.5 border-t border-ink-100 pt-1.5">
+    <div className="mt-2 border-t border-ink-100 pt-2">
       <div className="flex flex-wrap items-center gap-1.5">
         <StatusPill completed={completed} acked={acked} overdue={overdue} dueSoon={dueSoon} dUntil={dUntil} />
 
@@ -102,7 +102,7 @@ export function DeadlineReminderEditor({
             type="button"
             disabled={pending}
             onClick={() => run(() => completeImportantDateAction({ dateId: date.id }), 'Marked done.')}
-            className="rounded-md border border-ink-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-ink-700 transition hover:bg-ink-50 disabled:opacity-50"
+            className="btn-xs"
           >
             {pending ? 'Working…' : 'Mark done'}
           </button>
@@ -112,7 +112,7 @@ export function DeadlineReminderEditor({
             type="button"
             disabled={pending}
             onClick={() => run(() => acknowledgeImportantDateAction({ dateId: date.id }), 'Acknowledged.')}
-            className="rounded-md border border-ink-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-ink-700 transition hover:bg-ink-50 disabled:opacity-50"
+            className="btn-xs"
           >
             Acknowledge
           </button>
@@ -120,14 +120,15 @@ export function DeadlineReminderEditor({
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          className="rounded-md border border-ink-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-ink-700 transition hover:bg-ink-50"
+          className="btn-xs"
+          aria-expanded={open}
         >
           Reminders{reminders.length > 0 ? ` (${reminders.length})` : ''}
         </button>
       </div>
 
       {/* Owner selector */}
-      <div className="mt-1.5 flex items-center gap-1.5 text-[10px] text-ink-500">
+      <div className="mt-2 flex items-center gap-1.5 text-[10px] text-ink-500">
         <span className="font-semibold uppercase tracking-wide">Owner</span>
         <select
           value={date.owner_user_id || ''}
@@ -138,7 +139,7 @@ export function DeadlineReminderEditor({
               'Owner updated.'
             )
           }
-          className="rounded-md border border-ink-200 bg-white px-1.5 py-0.5 text-[10px] text-ink-800"
+          className="rounded-md border border-ink-200 bg-white px-1.5 py-0.5 text-[10px] text-ink-800 transition focus:border-ink-500 focus:outline-none focus:ring-2 focus:ring-ink-200 disabled:opacity-50"
         >
           <option value="">Unassigned</option>
           {teammates.map((t) => (
@@ -192,11 +193,7 @@ function StatusPill({
     cls = 'bg-amber-100 text-amber-800';
     text = dUntil === 0 ? 'Due today' : `Due in ${dUntil}d`;
   }
-  return (
-    <span className={'rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ' + cls}>
-      {text}
-    </span>
-  );
+  return <span className={'chip-xs ' + cls}>{text}</span>;
 }
 
 function RemindersPanel({
@@ -225,11 +222,14 @@ function RemindersPanel({
     setChannels((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]));
 
   return (
-    <div className="mt-2 rounded-lg border border-ink-200 bg-ink-50 p-2.5 text-[11px]">
+    <div className="mt-2 rounded-lg border border-ink-200 bg-ink-50 p-3 text-[11px]">
       {(reminders || []).length > 0 && (
-        <ul className="mb-2 space-y-1">
+        <ul className="mb-2.5 space-y-1.5">
           {(reminders || []).map((r) => (
-            <li key={r.id} className="flex items-center justify-between gap-2 rounded-md bg-white px-2 py-1">
+            <li
+              key={r.id}
+              className="flex items-center justify-between gap-2 rounded-md border border-ink-200 bg-white px-2.5 py-1.5"
+            >
               <span className="text-ink-700">
                 {r.offset_days}d before · {(r.channels || []).join(', ')} · {r.audience}
                 {r.escalate ? ' · escalates' : ''}
@@ -238,7 +238,7 @@ function RemindersPanel({
                 type="button"
                 disabled={pending}
                 onClick={() => onRemove(r.id)}
-                className="text-ink-400 transition hover:text-rose-600 disabled:opacity-50"
+                className="shrink-0 font-semibold text-ink-400 transition hover:text-rose-600 disabled:opacity-50"
                 aria-label="Remove reminder"
               >
                 Remove
@@ -249,15 +249,15 @@ function RemindersPanel({
       )}
 
       <div className="flex flex-wrap items-center gap-2">
-        <label className="flex items-center gap-1">
-          <span className="text-ink-500">Days before</span>
+        <label className="flex items-center gap-1.5">
+          <span className="font-semibold uppercase tracking-wide text-ink-500">Days before</span>
           <input
             type="number"
             min={0}
             max={60}
             value={offset}
             onChange={(e) => setOffset(Number(e.target.value))}
-            className="w-14 rounded-md border border-ink-200 bg-white px-1.5 py-0.5 text-ink-800"
+            className="w-14 rounded-md border border-ink-200 bg-white px-1.5 py-0.5 text-ink-800 transition focus:border-ink-500 focus:outline-none focus:ring-2 focus:ring-ink-200"
           />
         </label>
         <div className="flex items-center gap-1">
@@ -266,8 +266,9 @@ function RemindersPanel({
               key={c.value}
               type="button"
               onClick={() => toggleChannel(c.value)}
+              aria-pressed={channels.includes(c.value)}
               className={
-                'rounded-md border px-1.5 py-0.5 font-semibold transition ' +
+                'rounded-md border px-2 py-0.5 font-semibold transition active:scale-[0.98] ' +
                 (channels.includes(c.value)
                   ? 'border-ink-900 bg-ink-900 text-white'
                   : 'border-ink-200 bg-white text-ink-600 hover:bg-ink-50')
@@ -280,7 +281,7 @@ function RemindersPanel({
         <select
           value={audience}
           onChange={(e) => setAudience(e.target.value as Audience)}
-          className="rounded-md border border-ink-200 bg-white px-1.5 py-0.5 text-ink-800"
+          className="rounded-md border border-ink-200 bg-white px-1.5 py-0.5 text-ink-800 transition focus:border-ink-500 focus:outline-none focus:ring-2 focus:ring-ink-200"
         >
           {AUDIENCES.map((a) => (
             <option key={a.value} value={a.value}>
@@ -288,11 +289,12 @@ function RemindersPanel({
             </option>
           ))}
         </select>
-        <label className="flex items-center gap-1 text-ink-600">
+        <label className="flex items-center gap-1.5 font-medium text-ink-600">
           <input
             type="checkbox"
             checked={escalate}
             onChange={(e) => setEscalate(e.target.checked)}
+            className="accent-ink-900"
           />
           Escalate
         </label>
@@ -300,7 +302,7 @@ function RemindersPanel({
           type="button"
           disabled={pending || channels.length === 0}
           onClick={() => onAdd({ offsetDays: offset, channels, audience, escalate })}
-          className="rounded-md bg-ink-900 px-2.5 py-1 font-semibold text-white transition hover:bg-ink-700 disabled:opacity-50"
+          className="btn-xs-solid ml-auto"
         >
           {pending ? 'Working…' : 'Add reminder'}
         </button>

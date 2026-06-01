@@ -53,7 +53,7 @@ export function DocumentRow({
   }
 
   return (
-    <li className="rounded-lg border border-slate-200 bg-white p-3 text-sm">
+    <li className="rounded-lg border border-ink-200 bg-white p-3 text-sm">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <button
@@ -64,12 +64,15 @@ export function DocumentRow({
               if (url) window.open(url, '_blank', 'noopener,noreferrer');
             }}
           >
-            <span className="mt-0.5">📄</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="mt-0.5 h-4 w-4 shrink-0 text-ink-400" aria-hidden>
+              <path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8l-5-5z" strokeLinejoin="round" />
+              <path d="M14 3v5h5" strokeLinejoin="round" />
+            </svg>
             <div className="min-w-0">
-              <div className="truncate font-medium text-slate-900 hover:underline">
+              <div className="truncate font-medium text-ink-900 hover:underline">
                 {doc.name}
               </div>
-              <div className="text-xs text-slate-500">
+              <div className="text-xs text-ink-500">
                 {new Date(doc.created_at).toLocaleDateString()}
               </div>
             </div>
@@ -79,7 +82,7 @@ export function DocumentRow({
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
-            className="rounded-md px-2 py-1 text-xs font-semibold text-slate-500 hover:bg-slate-100"
+            className="rounded-md px-2 py-1 text-xs font-semibold text-ink-500 hover:bg-ink-100"
             aria-label="Document options"
           >
             ⋯
@@ -88,13 +91,13 @@ export function DocumentRow({
       </div>
 
       {open && (
-        <div className="mt-3 space-y-2 border-t border-slate-100 pt-3">
+        <div className="mt-3 space-y-2 border-t border-ink-100 pt-3">
           <label className="block text-xs">
-            <span className="block text-[10px] font-bold uppercase tracking-wide text-slate-500">
+            <span className="block text-[10px] font-bold uppercase tracking-wide text-ink-500">
               Folder
             </span>
             <select
-              className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1 text-xs"
+              className="mt-1 w-full rounded-md border border-ink-300 px-2 py-1 text-xs"
               value={doc.folder || 'General'}
               disabled={pending}
               onChange={(e) =>

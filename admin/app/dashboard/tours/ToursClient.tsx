@@ -144,11 +144,11 @@ export function ToursClient({
       )}
 
       <section>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-ink-500">
           Pending ({pending.length})
         </h2>
         {pending.length === 0 ? (
-          <div className="rounded-xl border border-slate-200 bg-white px-5 py-6 text-sm text-slate-500">
+          <div className="rounded-xl border border-ink-200 bg-white px-5 py-6 text-sm text-ink-500">
             Nothing waiting on you. Nice.
           </div>
         ) : (
@@ -156,20 +156,20 @@ export function ToursClient({
             {pending.map((t) => (
               <article
                 key={t.id}
-                className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 sm:flex-row sm:items-start sm:justify-between"
+                className="flex flex-col gap-3 rounded-xl border border-ink-200 bg-white p-4 sm:flex-row sm:items-start sm:justify-between"
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex items-baseline gap-2">
-                    <h3 className="truncate text-base font-semibold text-slate-900">
+                    <h3 className="truncate text-base font-semibold text-ink-900">
                       {t.house_address || 'House'}
                     </h3>
                     {t.house_list_price ? (
-                      <span className="text-xs text-slate-500">
+                      <span className="text-xs text-ink-500">
                         ${Number(t.house_list_price).toLocaleString()}
                       </span>
                     ) : null}
                   </div>
-                  <div className="mt-1 text-sm text-slate-600">
+                  <div className="mt-1 text-sm text-ink-600">
                     {t.client_name}
                     {t.preferred_when ? (
                       <span className="ml-2 inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-800">
@@ -178,11 +178,11 @@ export function ToursClient({
                     ) : null}
                   </div>
                   {t.notes ? (
-                    <p className="mt-2 text-sm italic text-slate-500">
+                    <p className="mt-2 text-sm italic text-ink-500">
                       "{t.notes}"
                     </p>
                   ) : null}
-                  <div className="mt-1 text-xs text-slate-400">
+                  <div className="mt-1 text-xs text-ink-400">
                     Requested {new Date(t.created_at).toLocaleString()}
                   </div>
                 </div>
@@ -191,7 +191,7 @@ export function ToursClient({
                   <button
                     onClick={() => act(t, 'declined')}
                     disabled={busy === t.id}
-                    className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                    className="rounded-md border border-ink-300 px-3 py-1.5 text-sm font-medium text-ink-700 hover:bg-ink-50 disabled:opacity-50"
                   >
                     Decline
                   </button>
@@ -211,12 +211,12 @@ export function ToursClient({
 
       {recent.length > 0 && (
         <section>
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
+          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-ink-500">
             Recent
           </h2>
-          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+          <div className="overflow-hidden rounded-xl border border-ink-200 bg-white">
             <table className="w-full text-sm">
-              <thead className="border-b border-slate-200 bg-slate-50 text-left text-xs uppercase text-slate-500">
+              <thead className="border-b border-ink-200 bg-ink-50 text-left text-xs uppercase text-ink-500">
                 <tr>
                   <th className="px-4 py-3">House</th>
                   <th className="px-4 py-3">Client</th>
@@ -227,18 +227,18 @@ export function ToursClient({
               </thead>
               <tbody>
                 {recent.map((t) => (
-                  <tr key={t.id} className="border-b border-slate-100 last:border-0">
-                    <td className="px-4 py-3 font-medium text-slate-900">
+                  <tr key={t.id} className="border-b border-ink-100 last:border-0">
+                    <td className="px-4 py-3 font-medium text-ink-900">
                       {t.house_address || '—'}
                     </td>
-                    <td className="px-4 py-3 text-slate-600">{t.client_name}</td>
-                    <td className="px-4 py-3 text-slate-600">
+                    <td className="px-4 py-3 text-ink-600">{t.client_name}</td>
+                    <td className="px-4 py-3 text-ink-600">
                       {t.preferred_when || '—'}
                     </td>
                     <td className="px-4 py-3">
                       <StatusPill status={t.status} />
                     </td>
-                    <td className="px-4 py-3 text-xs text-slate-500">
+                    <td className="px-4 py-3 text-xs text-ink-500">
                       {new Date(t.handled_at || t.created_at).toLocaleDateString()}
                     </td>
                   </tr>
@@ -257,8 +257,8 @@ function StatusPill({ status }: { status: Tour['status'] }) {
   const styles: Record<Tour['status'], string> = {
     pending: 'bg-amber-50 text-amber-800',
     confirmed: 'bg-emerald-50 text-emerald-800',
-    declined: 'bg-slate-100 text-slate-600',
-    cancelled: 'bg-slate-100 text-slate-500 line-through',
+    declined: 'bg-ink-100 text-ink-600',
+    cancelled: 'bg-ink-100 text-ink-500 line-through',
   };
   return (
     <span

@@ -492,10 +492,10 @@ const TONE_STYLES: Record<
     iconBg: 'bg-blue-100',
   },
   indigo: {
-    bg: 'hover:bg-indigo-50',
-    ring: 'hover:ring-indigo-200',
-    icon: 'text-indigo-600',
-    iconBg: 'bg-indigo-100',
+    bg: 'hover:bg-ink-100',
+    ring: 'hover:ring-ink-300',
+    icon: 'text-ink-700',
+    iconBg: 'bg-ink-200',
   },
   emerald: {
     bg: 'hover:bg-emerald-50',
@@ -510,28 +510,28 @@ const TONE_STYLES: Record<
     iconBg: 'bg-amber-100',
   },
   violet: {
-    bg: 'hover:bg-violet-50',
-    ring: 'hover:ring-violet-200',
-    icon: 'text-violet-600',
-    iconBg: 'bg-violet-100',
+    bg: 'hover:bg-ink-100',
+    ring: 'hover:ring-ink-300',
+    icon: 'text-ink-700',
+    iconBg: 'bg-ink-200',
   },
   orange: {
-    bg: 'hover:bg-orange-50',
-    ring: 'hover:ring-orange-200',
-    icon: 'text-orange-600',
-    iconBg: 'bg-orange-100',
+    bg: 'hover:bg-amber-50',
+    ring: 'hover:ring-amber-200',
+    icon: 'text-amber-700',
+    iconBg: 'bg-amber-100',
   },
   slate: {
-    bg: 'hover:bg-slate-100',
-    ring: 'hover:ring-slate-300',
-    icon: 'text-slate-700',
-    iconBg: 'bg-slate-200',
+    bg: 'hover:bg-ink-100',
+    ring: 'hover:ring-ink-300',
+    icon: 'text-ink-700',
+    iconBg: 'bg-ink-200',
   },
   sky: {
-    bg: 'hover:bg-sky-50',
-    ring: 'hover:ring-sky-200',
-    icon: 'text-sky-600',
-    iconBg: 'bg-sky-100',
+    bg: 'hover:bg-blue-50',
+    ring: 'hover:ring-blue-200',
+    icon: 'text-blue-600',
+    iconBg: 'bg-blue-100',
   },
   rose: {
     bg: 'hover:bg-rose-50',
@@ -582,7 +582,7 @@ function ActionCard({
 }) {
   const t = TONE_STYLES[tone];
   const cls =
-    'group relative flex items-start gap-3 overflow-hidden rounded-xl border border-ink-200 bg-white p-3 text-left shadow-soft-xs transition hover:-translate-y-0.5 hover:shadow-soft-md hover:border-ink-300 active:scale-[0.98]';
+    'group relative flex items-start gap-3 overflow-hidden rounded-xl border border-ink-200 bg-white p-3 text-left shadow-soft-xs transition hover:-tranink-y-0.5 hover:shadow-soft-md hover:border-ink-300 active:scale-[0.98]';
   const inner = (
     <>
       <span
@@ -852,9 +852,9 @@ function Spinner({ className }: { className?: string }) {
 function Field({ label, children, hint }: { label: string; children: React.ReactNode; hint?: string }) {
   return (
     <label className="block text-sm">
-      <span className="block text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</span>
+      <span className="block text-xs font-semibold uppercase tracking-wide text-ink-500">{label}</span>
       <div className="mt-1.5">{children}</div>
-      {hint && <p className="mt-1 text-[11px] text-slate-400">{hint}</p>}
+      {hint && <p className="mt-1 text-[11px] text-ink-400">{hint}</p>}
     </label>
   );
 }
@@ -998,10 +998,10 @@ function PhaseModal({
         </div>
       )}
       {phase === 'closing' && phase !== currentPhase && (
-        <div className="mt-4 rounded-lg border border-indigo-200 bg-indigo-50/60 p-3">
+        <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50/60 p-3">
           <Field
             label="Closing date"
-            hint="Auto-added as an Important Date for the deal."
+            hint="Added as an Important Date for the deal."
           >
             <input
               type="date"
@@ -1207,7 +1207,7 @@ function HouseModal({
               type="button"
               onClick={importFromUrl}
               disabled={importing || !listingUrl}
-              className="rounded-lg bg-slate-900 px-3 text-xs font-semibold text-white shadow-sm disabled:opacity-50"
+              className="rounded-lg bg-ink-900 px-3 text-xs font-semibold text-white shadow-sm disabled:opacity-50"
             >
               {importing ? '…' : 'Import'}
             </button>
@@ -1220,14 +1220,14 @@ function HouseModal({
               <img
                 src={photoUrl}
                 alt="house"
-                className="h-16 w-20 rounded-lg object-cover ring-1 ring-slate-200"
+                className="h-16 w-20 rounded-lg object-cover ring-1 ring-ink-200"
               />
             ) : (
-              <div className="flex h-16 w-20 items-center justify-center rounded-lg border border-dashed border-slate-300 bg-slate-50 text-[10px] text-slate-400">
+              <div className="flex h-16 w-20 items-center justify-center rounded-lg border border-dashed border-ink-300 bg-ink-50 text-[10px] text-ink-400">
                 No photo
               </div>
             )}
-            <label className="cursor-pointer rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold shadow-sm transition hover:bg-slate-50">
+            <label className="cursor-pointer rounded-lg border border-ink-300 bg-white px-3 py-1.5 text-xs font-semibold shadow-sm transition hover:bg-ink-50">
               {uploadingPhoto ? 'Uploading…' : photoUrl ? 'Replace photo' : 'Upload photo'}
               <input
                 type="file"
@@ -1303,10 +1303,10 @@ function HouseModal({
               title={
                 !address.trim()
                   ? 'Add an address first'
-                  : 'AI: draft a description'
+                  : 'Draft a description'
               }
-              className="absolute right-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white shadow-soft-sm transition hover:scale-105 disabled:opacity-50 disabled:hover:scale-100"
-              aria-label="Generate AI description"
+              className="absolute right-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-lg bg-ink-900 text-white shadow-soft-sm transition hover:bg-ink-700 disabled:opacity-50"
+              aria-label="Draft a description"
             >
               {aiBusy ? (
                 <span className="block h-3 w-3 animate-spin rounded-full border-2 border-white/70 border-t-white" />
@@ -1867,7 +1867,7 @@ function ParticipantModal({
               </option>
             ))}
           </select>
-          <p className="mt-1 text-[11px] text-slate-400">
+          <p className="mt-1 text-[11px] text-ink-400">
             {PARTY_ROLES.find((r) => r.id === role)?.helper}
           </p>
         </Field>
@@ -1902,8 +1902,8 @@ function ParticipantModal({
           </Field>
         </div>
 
-        <fieldset className="rounded-lg border border-slate-200 p-3">
-          <legend className="px-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+        <fieldset className="rounded-lg border border-ink-200 p-3">
+          <legend className="px-2 text-xs font-semibold uppercase tracking-wide text-ink-500">
             What this party can see
           </legend>
           <div className="space-y-1.5">
@@ -1963,10 +1963,10 @@ function CheckRow({
   onChange: (v: boolean) => void;
 }) {
   return (
-    <label className="flex cursor-pointer items-center gap-2.5 rounded px-1 py-1 text-sm hover:bg-slate-50">
+    <label className="flex cursor-pointer items-center gap-2.5 rounded px-1 py-1 text-sm hover:bg-ink-50">
       <input
         type="checkbox"
-        className="h-4 w-4 accent-slate-900"
+        className="h-4 w-4 accent-ink-900"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
       />
@@ -2157,7 +2157,7 @@ export function ParticipantList({
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-700">
+                <span className="rounded-full bg-ink-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-ink-700">
                   {p.role.replace(/_/g, ' ')}
                 </span>
                 <span className="truncate text-sm font-semibold">
@@ -2180,7 +2180,7 @@ export function ParticipantList({
                   {p.external_phone}
                 </a>
               )}
-              <div className="mt-1 flex flex-wrap gap-1 text-[10px] text-slate-500">
+              <div className="mt-1 flex flex-wrap gap-1 text-[10px] text-ink-500">
                 {p.can_view_dates && <Chip>Dates</Chip>}
                 {p.can_view_documents && <Chip>Docs</Chip>}
                 {p.can_view_financials && <Chip>Financials</Chip>}
@@ -2191,7 +2191,7 @@ export function ParticipantList({
               <button
                 type="button"
                 onClick={() => setMessaging(p)}
-                className="rounded p-1 text-slate-400 transition hover:bg-slate-100 hover:text-blue-600"
+                className="rounded p-1 text-ink-400 transition hover:bg-ink-100 hover:text-blue-600"
                 aria-label="Send private message"
                 title="Send a private message just to this party"
               >
@@ -2200,7 +2200,7 @@ export function ParticipantList({
               <button
                 type="button"
                 onClick={() => setEditing(p)}
-                className="rounded p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-900"
+                className="rounded p-1 text-ink-400 transition hover:bg-ink-100 hover:text-ink-900"
                 aria-label="Edit participant"
                 title="Edit role and what they can see"
               >
@@ -2219,7 +2219,7 @@ export function ParticipantList({
                     router.refresh();
                   })
                 }
-                className="rounded p-1 text-slate-400 transition hover:bg-slate-100 hover:text-rose-600"
+                className="rounded p-1 text-ink-400 transition hover:bg-ink-100 hover:text-rose-600"
                 aria-label="Remove participant"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
@@ -2550,7 +2550,7 @@ function useMe(): { userId: string } | null {
 
 function Chip({ children }: { children: React.ReactNode }) {
   return (
-    <span className="rounded bg-slate-100 px-1.5 py-0.5 font-semibold uppercase tracking-wide">
+    <span className="rounded bg-ink-100 px-1.5 py-0.5 font-semibold uppercase tracking-wide">
       {children}
     </span>
   );
@@ -2568,7 +2568,7 @@ function NewDealModal({
   const [pending, start] = useTransition();
   return (
     <Modal title="Start another deal" onClose={onClose}>
-      <p className="mb-3 text-xs text-slate-500">
+      <p className="mb-3 text-xs text-ink-500">
         Use this when the same client has multiple deals — e.g. a buyer who's
         also selling, or a return client a year later.
       </p>
@@ -2582,8 +2582,8 @@ function NewDealModal({
               className={
                 'rounded-lg border px-3 py-2 text-sm font-semibold transition ' +
                 (kind === k
-                  ? 'border-slate-900 bg-slate-900 text-white'
-                  : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50')
+                  ? 'border-ink-900 bg-ink-900 text-white'
+                  : 'border-ink-200 bg-white text-ink-700 hover:bg-ink-50')
               }
             >
               {k === 'buyer' ? 'Buyer deal' : 'Listing'}
@@ -2633,7 +2633,7 @@ function UnderContractModal({
   const [pending, start] = useTransition();
   return (
     <Modal title="Going under contract" onClose={onClose}>
-      <p className="mb-3 text-xs text-slate-500">
+      <p className="mb-3 text-xs text-ink-500">
         We'll save these dates, store the contract, move the phase, and email
         every party on the deal automatically.
       </p>
@@ -2785,10 +2785,12 @@ function MassInviteModal({
               type="button"
               onClick={() => removeRow(r.id)}
               disabled={rows.length === 1}
-              className="col-span-1 rounded p-1 text-ink-400 transition hover:bg-ink-100 hover:text-rose-600 disabled:opacity-30"
+              className="col-span-1 inline-flex items-center justify-center rounded p-1 text-ink-400 transition hover:bg-ink-100 hover:text-rose-600 disabled:opacity-30"
               aria-label="Remove row"
             >
-              ✕
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-3.5 w-3.5" aria-hidden>
+                <path d="M18 6 6 18M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
             </button>
           </div>
         ))}

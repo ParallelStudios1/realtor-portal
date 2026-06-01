@@ -66,10 +66,10 @@ const ROLES: { id: FirmRole; label: string; description: string }[] = [
 
 const ROLE_COLORS: Record<FirmRole, string> = {
   owner: 'bg-amber-100 text-amber-900 ring-amber-200',
-  firm_admin: 'bg-violet-100 text-violet-900 ring-violet-200',
-  manager: 'bg-indigo-100 text-indigo-900 ring-indigo-200',
-  realtor: 'bg-blue-100 text-blue-900 ring-blue-200',
-  agent: 'bg-slate-100 text-slate-700 ring-slate-200',
+  firm_admin: 'bg-ink-900 text-white ring-ink-900',
+  manager: 'bg-blue-100 text-blue-900 ring-blue-200',
+  realtor: 'bg-ink-100 text-ink-700 ring-ink-200',
+  agent: 'bg-ink-50 text-ink-600 ring-ink-200',
 };
 
 export function FirmControl({
@@ -388,7 +388,9 @@ function InviteModal({
             className="-mr-1.5 rounded-lg p-1.5 text-ink-400 transition hover:bg-ink-100 hover:text-ink-700"
             aria-label="Close"
           >
-            ✕
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-4 w-4" aria-hidden>
+              <path d="M18 6 6 18M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           </button>
         </div>
         <div className="space-y-3 p-5">

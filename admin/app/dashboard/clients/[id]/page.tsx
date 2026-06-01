@@ -18,11 +18,11 @@ export const dynamic = 'force-dynamic';
  * person about" not "what's happening on a specific transaction."
  */
 const PHASE_TONE: Record<string, string> = {
-  searching: 'bg-slate-100 text-slate-700',
+  searching: 'bg-ink-100 text-ink-700',
   offer_made: 'bg-amber-100 text-amber-800',
   counter_offer: 'bg-amber-100 text-amber-800',
   under_contract: 'bg-blue-100 text-blue-800',
-  closing: 'bg-indigo-100 text-indigo-800',
+  closing: 'bg-blue-100 text-blue-800',
   closed: 'bg-emerald-100 text-emerald-800',
 };
 

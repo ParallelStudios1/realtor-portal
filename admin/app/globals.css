@@ -38,8 +38,7 @@ body {
   border-radius: 4px;
 }
 
-/* Reusable surface utility — call this on hero blocks where you want the
-   subtle gradient feel without writing it 10 times. */
+/* Reusable surface utilities — flat ink fills, no gradients. */
 @layer components {
   .surface {
     @apply rounded-2xl border border-ink-200 bg-white shadow-soft;
@@ -48,7 +47,7 @@ body {
     @apply rounded-2xl border border-ink-200 bg-white shadow-soft-md;
   }
   .surface-muted {
-    @apply rounded-2xl border border-ink-200 bg-gradient-to-br from-white to-ink-50/60;
+    @apply rounded-2xl border border-ink-200 bg-ink-50;
   }
   .chip {
     @apply inline-flex items-center gap-1 rounded-full bg-ink-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-ink-700;
@@ -73,6 +72,17 @@ body {
   }
   .btn-ghost {
     @apply inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold text-ink-700 transition hover:bg-ink-100 active:scale-[0.98] disabled:opacity-60 disabled:pointer-events-none;
+  }
+  /* Compact controls — for dense inline editors (e.g. per-date deadline
+     reminders). Flat ink, hairline borders, consistent with btn-secondary. */
+  .btn-xs {
+    @apply inline-flex items-center justify-center gap-1 rounded-md border border-ink-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-ink-700 transition hover:bg-ink-50 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none;
+  }
+  .btn-xs-solid {
+    @apply inline-flex items-center justify-center gap-1 rounded-md bg-ink-900 px-2.5 py-1 text-[10px] font-semibold text-white transition hover:bg-ink-700 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none;
+  }
+  .chip-xs {
+    @apply inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide;
   }
   .input {
     @apply w-full rounded-lg border border-ink-300 bg-white px-3 py-2 text-sm placeholder:text-ink-400 focus:border-ink-500 focus:outline-none focus:ring-2 focus:ring-ink-200;

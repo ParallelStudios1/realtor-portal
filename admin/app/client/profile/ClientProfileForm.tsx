@@ -86,9 +86,9 @@ export function ClientProfileForm({ fullName, email }: Props) {
 
   return (
     <div className="space-y-8">
-      <section className="rounded-xl border border-slate-200 bg-white p-6">
+      <section className="rounded-xl border border-ink-200 bg-white p-6">
         <h2 className="text-lg font-semibold">Profile</h2>
-        <p className="mt-1 text-sm text-slate-600">The name your realtor sees.</p>
+        <p className="mt-1 text-sm text-ink-600">The name your realtor sees.</p>
         <form onSubmit={submitProfile} className="mt-5 space-y-4">
           <div>
             <label htmlFor="full_name" className="block text-sm font-medium">Full name</label>
@@ -97,7 +97,7 @@ export function ClientProfileForm({ fullName, email }: Props) {
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
-              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="mt-1 w-full rounded-md border border-ink-300 px-3 py-2 text-sm shadow-sm focus:border-ink-500 focus:outline-none focus:ring-1 focus:ring-ink-200"
             />
           </div>
           {profileMsg && (
@@ -114,26 +114,26 @@ export function ClientProfileForm({ fullName, email }: Props) {
           <button
             type="submit"
             disabled={profilePending}
-            className="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700 disabled:opacity-50"
+            className="rounded-md bg-ink-900 px-4 py-2 text-sm font-semibold text-white hover:bg-ink-700 disabled:opacity-50"
           >
             {profilePending ? 'Saving…' : 'Save profile'}
           </button>
         </form>
       </section>
 
-      <section className="rounded-xl border border-slate-200 bg-white p-6">
+      <section className="rounded-xl border border-ink-200 bg-white p-6">
         <h2 className="text-lg font-semibold">Account</h2>
         <dl className="mt-4 space-y-3 text-sm">
-          <div className="flex justify-between border-b border-slate-100 pb-2">
-            <dt className="text-slate-500">Email</dt>
+          <div className="flex justify-between border-b border-ink-100 pb-2">
+            <dt className="text-ink-500">Email</dt>
             <dd className="font-medium">{email}</dd>
           </div>
         </dl>
-        <p className="mt-2 text-xs text-slate-500">
+        <p className="mt-2 text-xs text-ink-500">
           To change your email, contact your realtor.
         </p>
 
-        <form onSubmit={submitPassword} className="mt-6 space-y-4 border-t border-slate-100 pt-6">
+        <form onSubmit={submitPassword} className="mt-6 space-y-4 border-t border-ink-100 pt-6">
           <h3 className="text-sm font-semibold">Change password</h3>
           <div>
             <label htmlFor="current_password" className="block text-sm font-medium">Current password</label>
@@ -144,7 +144,7 @@ export function ClientProfileForm({ fullName, email }: Props) {
               onChange={(e) => setCurrentPw(e.target.value)}
               autoComplete="current-password"
               required
-              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="mt-1 w-full rounded-md border border-ink-300 px-3 py-2 text-sm shadow-sm focus:border-ink-500 focus:outline-none focus:ring-1 focus:ring-ink-200"
             />
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -158,7 +158,7 @@ export function ClientProfileForm({ fullName, email }: Props) {
                 autoComplete="new-password"
                 minLength={8}
                 required
-                className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="mt-1 w-full rounded-md border border-ink-300 px-3 py-2 text-sm shadow-sm focus:border-ink-500 focus:outline-none focus:ring-1 focus:ring-ink-200"
               />
             </div>
             <div>
@@ -171,7 +171,7 @@ export function ClientProfileForm({ fullName, email }: Props) {
                 autoComplete="new-password"
                 minLength={8}
                 required
-                className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="mt-1 w-full rounded-md border border-ink-300 px-3 py-2 text-sm shadow-sm focus:border-ink-500 focus:outline-none focus:ring-1 focus:ring-ink-200"
               />
             </div>
           </div>
@@ -189,7 +189,7 @@ export function ClientProfileForm({ fullName, email }: Props) {
           <button
             type="submit"
             disabled={pwPending}
-            className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:border-slate-400 disabled:opacity-50"
+            className="rounded-md border border-ink-300 bg-white px-4 py-2 text-sm font-semibold text-ink-700 hover:border-ink-400 disabled:opacity-50"
           >
             {pwPending ? 'Updating…' : 'Update password'}
           </button>

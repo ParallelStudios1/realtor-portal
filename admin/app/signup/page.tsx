@@ -79,7 +79,7 @@ export default function SignupPage({
             Already have an account?{' '}
             <Link
               href={loginHref}
-              className="font-semibold text-blue-600 hover:text-blue-700"
+              className="font-semibold text-ink-900 hover:text-ink-900"
             >
               Sign in →
             </Link>

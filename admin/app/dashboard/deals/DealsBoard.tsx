@@ -21,15 +21,14 @@ const PHASE_DEFS = [
   { id: 'offer_made', label: 'Offer made', tone: 'amber' },
   { id: 'counter_offer', label: 'Counter', tone: 'amber' },
   { id: 'under_contract', label: 'Under contract', tone: 'blue' },
-  { id: 'closing', label: 'Closing', tone: 'indigo' },
+  { id: 'closing', label: 'Closing', tone: 'blue' },
   { id: 'closed', label: 'Closed', tone: 'emerald' },
 ] as const;
 
 const PHASE_TONES: Record<string, { bg: string; text: string; ring: string }> = {
-  slate: { bg: 'bg-slate-100', text: 'text-slate-700', ring: 'ring-slate-200' },
+  slate: { bg: 'bg-ink-100', text: 'text-ink-700', ring: 'ring-ink-200' },
   amber: { bg: 'bg-amber-100', text: 'text-amber-800', ring: 'ring-amber-200' },
   blue: { bg: 'bg-blue-100', text: 'text-blue-800', ring: 'ring-blue-200' },
-  indigo: { bg: 'bg-indigo-100', text: 'text-indigo-800', ring: 'ring-indigo-200' },
   emerald: { bg: 'bg-emerald-100', text: 'text-emerald-800', ring: 'ring-emerald-200' },
 };
 
@@ -102,7 +101,7 @@ export function DealsBoard({
               type="search"
               defaultValue={query}
               placeholder="Search client, address, realtor…"
-              className="w-64 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200"
+              className="w-64 rounded-lg border border-ink-300 bg-white px-3 py-2 text-sm focus:border-ink-500 focus:outline-none focus:ring-2 focus:ring-ink-200"
               onChange={(e) => {
                 const v = e.target.value.trim();
                 if (searchTimer.current) clearTimeout(searchTimer.current);
@@ -113,7 +112,7 @@ export function DealsBoard({
               }}
             />
           </div>
-          <div className="flex overflow-hidden rounded-lg border border-slate-300 bg-white">
+          <div className="flex overflow-hidden rounded-lg border border-ink-300 bg-white">
             <ViewBtn
               active={view === 'list'}
               onClick={() => setParam('view', 'list')}
@@ -129,19 +128,22 @@ export function DealsBoard({
       </div>
 
       {pending && (
-        <div className="mb-2 text-xs text-slate-400">Loading…</div>
+        <div className="mb-2 text-xs text-ink-400">Loading…</div>
       )}
 
       {deals.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-slate-300 bg-white p-12 text-center">
-          <div className="text-3xl">📋</div>
+        <div className="rounded-xl border border-dashed border-ink-300 bg-white p-12 text-center">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mx-auto h-8 w-8 text-ink-300" aria-hidden>
+            <rect x="5" y="4" width="14" height="16" rx="2" />
+            <path d="M9 4V3h6v1M9 10h6M9 14h4" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
           <h3 className="mt-3 font-semibold">No deals match those filters</h3>
-          <p className="mt-1 text-sm text-slate-600">
+          <p className="mt-1 text-sm text-ink-600">
             Clear filters or invite a new client to get started.
           </p>
           <Link
             href="/dashboard/clients/new"
-            className="mt-4 inline-block rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700"
+            className="mt-4 inline-block rounded-lg bg-ink-900 px-4 py-2 text-sm font-semibold text-white hover:bg-ink-700"
           >
             + Invite client
           </Link>
@@ -157,7 +159,7 @@ export function DealsBoard({
           {PHASE_DEFS.map((p) => (
             <div
               key={p.id}
-              className="min-w-[280px] flex-1 rounded-xl border border-slate-200 bg-slate-50/60 p-3"
+              className="min-w-[280px] flex-1 rounded-xl border border-ink-200 bg-ink-50/60 p-3"
             >
               <div className="mb-2 flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -168,17 +170,17 @@ export function DealsBoard({
                     }
                     style={{ backgroundColor: dotColor(p.tone) }}
                   />
-                  <span className="text-xs font-semibold uppercase tracking-wide text-slate-600">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-ink-600">
                     {p.label}
                   </span>
                 </div>
-                <span className="rounded-full bg-white px-1.5 py-0.5 text-[10px] font-bold text-slate-500">
+                <span className="rounded-full bg-white px-1.5 py-0.5 text-[10px] font-bold text-ink-500">
                   {(grouped[p.id] || []).length}
                 </span>
               </div>
               <ul className="space-y-2">
                 {(grouped[p.id] || []).length === 0 ? (
-                  <li className="rounded-lg border border-dashed border-slate-200 bg-white/50 p-3 text-center text-xs text-slate-400">
+                  <li className="rounded-lg border border-dashed border-ink-200 bg-white/50 p-3 text-center text-xs text-ink-400">
                     No deals
                   </li>
                 ) : (
@@ -216,10 +218,10 @@ function FilterChip({
       className={
         'inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition ' +
         (active
-          ? 'bg-slate-900 text-white shadow-sm'
+          ? 'bg-ink-900 text-white shadow-sm'
           : (t
               ? t.bg + ' ' + t.text + ' hover:opacity-80'
-              : 'bg-slate-100 text-slate-700 hover:bg-slate-200'))
+              : 'bg-ink-100 text-ink-700 hover:bg-ink-200'))
       }
     >
       {label}
@@ -251,8 +253,8 @@ function ViewBtn({
       className={
         'px-3 py-2 text-xs font-semibold transition ' +
         (active
-          ? 'bg-slate-900 text-white'
-          : 'bg-white text-slate-600 hover:bg-slate-50')
+          ? 'bg-ink-900 text-white'
+          : 'bg-white text-ink-600 hover:bg-ink-50')
       }
     >
       {label}
@@ -273,19 +275,19 @@ function DealCard({ d, compact }: { d: Deal; compact?: boolean }) {
       <Link
         href={`/dashboard/deals/${d.id}`}
         className={
-          'block rounded-xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md ' +
+          'block rounded-xl border border-ink-200 bg-white shadow-sm transition hover:-tranink-y-0.5 hover:border-ink-300 hover:shadow-md ' +
           (compact ? 'p-3' : 'p-4')
         }
       >
         <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-sm font-bold text-slate-700">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ink-100 text-sm font-bold text-ink-700">
             {initials}
           </div>
           <div className="min-w-0 flex-1">
-            <div className="truncate font-semibold text-slate-900">
+            <div className="truncate font-semibold text-ink-900">
               {d.client?.full_name || d.client?.email || 'Deal'}
             </div>
-            <div className="truncate text-xs text-slate-500">
+            <div className="truncate text-xs text-ink-500">
               {d.name ||
                 (d.kind === 'seller' ? 'Listing deal' : 'Buyer deal')}
             </div>
@@ -304,7 +306,7 @@ function DealCard({ d, compact }: { d: Deal; compact?: boolean }) {
           </span>
         </div>
         {!compact && (
-          <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-2 text-[11px] text-slate-500">
+          <div className="mt-3 flex items-center justify-between border-t border-ink-100 pt-2 text-[11px] text-ink-500">
             <span>
               {d.agreed_price
                 ? '$' + Number(d.agreed_price).toLocaleString()

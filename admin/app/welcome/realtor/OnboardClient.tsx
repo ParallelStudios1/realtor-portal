@@ -75,7 +75,7 @@ export function OnboardClient({
                 required
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                className="mt-1.5 w-full rounded-md border border-ink-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="mt-1.5 w-full rounded-md border border-ink-300 px-3 py-2 text-sm shadow-sm focus:border-ink-500 focus:outline-none focus:ring-1 focus:ring-ink-200"
                 placeholder="Jane Smith"
               />
             </div>
@@ -89,7 +89,7 @@ export function OnboardClient({
                 required
                 value={firmName}
                 onChange={(e) => setFirmName(e.target.value)}
-                className="mt-1.5 w-full rounded-md border border-ink-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="mt-1.5 w-full rounded-md border border-ink-300 px-3 py-2 text-sm shadow-sm focus:border-ink-500 focus:outline-none focus:ring-1 focus:ring-ink-200"
                 placeholder="Acme Realty"
               />
               <p className="mt-1 text-xs text-ink-500">
@@ -101,7 +101,7 @@ export function OnboardClient({
             {/* The "guest pass" callout. Make the trade explicit so they
                 don't feel rug-pulled later when they try to use the product
                 for their own deals. */}
-            <div className="rounded-lg border border-blue-200 bg-blue-50/60 p-3 text-xs text-blue-900">
+            <div className="rounded-lg border border-ink-200 bg-ink-100/60 p-3 text-xs text-ink-900">
               <p className="font-semibold">How this works</p>
               <ul className="mt-1.5 space-y-1 list-disc pl-4">
                 <li>

@@ -128,19 +128,19 @@ export function ClientMessagesClient({
   }
 
   return (
-    <div className="flex h-[calc(100vh-12rem)] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white">
-      <header className="border-b border-slate-200 bg-white px-5 py-3">
+    <div className="flex h-[calc(100vh-12rem)] flex-col overflow-hidden rounded-xl border border-ink-200 bg-white">
+      <header className="border-b border-ink-200 bg-white px-5 py-3">
         <div className="text-sm font-semibold">{realtorName}</div>
-        <div className="text-xs text-slate-500">Your agent</div>
+        <div className="text-xs text-ink-500">Your agent</div>
       </header>
 
       <div
         ref={scrollRef}
-        className="flex-1 space-y-2 overflow-y-auto bg-slate-50 px-4 py-4 sm:px-5"
+        className="flex-1 space-y-2 overflow-y-auto bg-ink-50 px-4 py-4 sm:px-5"
       >
         {messages.length === 0 ? (
-          <div className="py-8 text-center text-sm text-slate-400">
-            No messages yet. Say hi 👋
+          <div className="py-8 text-center text-sm text-ink-400">
+            No messages yet. Say hello to your agent.
           </div>
         ) : (
           messages.map((m) => {
@@ -154,15 +154,15 @@ export function ClientMessagesClient({
                   className={
                     'max-w-[80%] rounded-2xl px-4 py-2 text-sm ' +
                     (own
-                      ? 'rounded-br-sm bg-blue-600 text-white'
-                      : 'rounded-bl-sm bg-white text-slate-900 shadow-sm')
+                      ? 'rounded-br-sm bg-ink-900 text-white'
+                      : 'rounded-bl-sm bg-white text-ink-900 shadow-sm')
                   }
                 >
                   <div className="whitespace-pre-wrap">{m.body}</div>
                   <div
                     className={
                       'mt-1 text-[10px] ' +
-                      (own ? 'text-blue-100' : 'text-slate-400')
+                      (own ? 'text-ink-100' : 'text-ink-400')
                     }
                   >
                     {new Date(m.created_at).toLocaleTimeString([], {
@@ -188,7 +188,7 @@ export function ClientMessagesClient({
           e.preventDefault();
           send();
         }}
-        className="flex gap-2 border-t border-slate-200 bg-white px-3 py-3 sm:px-4"
+        className="flex gap-2 border-t border-ink-200 bg-white px-3 py-3 sm:px-4"
       >
         <input
           type="text"
@@ -196,12 +196,12 @@ export function ClientMessagesClient({
           onChange={(e) => setDraft(e.target.value)}
           placeholder="Type a message…"
           disabled={sending}
-          className="flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
+          className="flex-1 rounded-md border border-ink-300 px-3 py-2 text-sm focus:border-ink-500 focus:outline-none focus:ring-1 focus:ring-ink-200 disabled:opacity-50"
         />
         <button
           type="submit"
           disabled={!draft.trim() || sending}
-          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+          className="rounded-md bg-ink-900 px-4 py-2 text-sm font-semibold text-white hover:bg-ink-700 disabled:opacity-50"
         >
           {sending ? 'Sending…' : 'Send'}
         </button>

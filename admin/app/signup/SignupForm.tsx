@@ -100,7 +100,7 @@ function SignupSubmit({ role }: { role: Role }) {
       disabled={pending}
       aria-busy={pending}
       data-loading={pending ? 'true' : undefined}
-      className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-md bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
+      className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-md bg-ink-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-ink-700 disabled:cursor-not-allowed disabled:opacity-60"
     >
       {pending && (
         <svg
@@ -137,12 +137,12 @@ function RoleButton({
       className={
         'rounded-lg border px-3 py-3 text-center transition ' +
         (active
-          ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-inner'
-          : 'border-slate-200 hover:border-slate-300')
+          ? 'border-ink-900 bg-ink-100 text-ink-900 shadow-inner'
+          : 'border-ink-200 hover:border-ink-300')
       }
     >
       <div className="text-sm font-semibold">{label}</div>
-      <div className="text-[11px] text-slate-500">{desc}</div>
+      <div className="text-[11px] text-ink-500">{desc}</div>
     </button>
   );
 }
@@ -177,9 +177,9 @@ function Field({
         minLength={minLength}
         placeholder={placeholder}
         defaultValue={defaultValue}
-        className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        className="mt-1 w-full rounded-md border border-ink-300 px-3 py-2 text-sm shadow-sm focus:border-ink-500 focus:outline-none focus:ring-1 focus:ring-ink-200"
       />
-      {hint && <p className="mt-1 text-xs text-slate-500">{hint}</p>}
+      {hint && <p className="mt-1 text-xs text-ink-500">{hint}</p>}
     </div>
   );
 }

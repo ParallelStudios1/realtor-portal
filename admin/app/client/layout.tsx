@@ -31,9 +31,9 @@ export default async function ClientLayout({ children }: { children: React.React
   const accent = firm?.accent_color || '#2563EB';
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-ink-50">
       <header
-        className="relative border-b border-slate-200"
+        className="relative border-b border-ink-200"
         style={{ backgroundColor: brand }}
       >
         <ClientNav

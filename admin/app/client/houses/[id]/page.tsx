@@ -113,13 +113,13 @@ export default async function HouseDetailPage({
     <main className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-8">
       <Link
         href="/client/houses"
-        className="text-sm text-slate-500 hover:text-slate-900"
+        className="text-sm text-ink-500 hover:text-ink-900"
       >
         ← Back to houses
       </Link>
 
-      <div className="mt-3 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-        <div className="aspect-video w-full bg-slate-100">
+      <div className="mt-3 overflow-hidden rounded-xl border border-ink-200 bg-white shadow-sm">
+        <div className="aspect-video w-full bg-ink-100">
           {house.photo_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -128,7 +128,7 @@ export default async function HouseDetailPage({
               className="h-full w-full object-cover"
             />
           ) : (
-            <div className="flex h-full items-center justify-center text-sm text-slate-400">
+            <div className="flex h-full items-center justify-center text-sm text-ink-400">
               No photo
             </div>
           )}
@@ -136,9 +136,9 @@ export default async function HouseDetailPage({
 
         <div className="p-5">
           <h1 className="text-2xl font-bold tracking-tight">{house.address}</h1>
-          <div className="mt-2 flex flex-wrap items-baseline gap-x-5 gap-y-1 text-sm text-slate-600">
+          <div className="mt-2 flex flex-wrap items-baseline gap-x-5 gap-y-1 text-sm text-ink-600">
             {house.list_price && (
-              <span className="text-base font-semibold text-slate-900">
+              <span className="text-base font-semibold text-ink-900">
                 ${Number(house.list_price).toLocaleString()}
               </span>
             )}
@@ -150,7 +150,7 @@ export default async function HouseDetailPage({
           </div>
 
           {house.notes && (
-            <div className="mt-4 whitespace-pre-wrap rounded-md bg-slate-50 p-4 text-sm text-slate-700">
+            <div className="mt-4 whitespace-pre-wrap rounded-md bg-ink-50 p-4 text-sm text-ink-700">
               {house.notes}
             </div>
           )}
@@ -160,7 +160,7 @@ export default async function HouseDetailPage({
               href={house.listing_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-4 inline-block text-sm font-semibold text-blue-600 hover:underline"
+              className="mt-4 inline-block text-sm font-semibold text-ink-900 hover:underline"
             >
               View original listing →
             </a>
@@ -179,15 +179,15 @@ export default async function HouseDetailPage({
           'mt-6 rounded-xl border bg-white p-5 ' +
           (showPostTourPrompt
             ? 'border-amber-300 ring-2 ring-amber-100'
-            : 'border-slate-200')
+            : 'border-ink-200')
         }
       >
-        <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+        <div className="text-xs font-semibold uppercase tracking-wide text-ink-500">
           {showPostTourPrompt
             ? 'How was the tour?'
             : 'What do you think?'}
         </div>
-        <p className="mt-1 text-sm text-slate-600">
+        <p className="mt-1 text-sm text-ink-600">
           {showPostTourPrompt
             ? 'You just toured this place. Rate it 1–5 and add a note — your agent reads this to find better matches.'
             : 'Your agent uses your feedback to filter what they show you next.'}

@@ -14,7 +14,7 @@ export default async function ClientProfilePage() {
   return (
     <main className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-8">
       <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Profile</h1>
-      <p className="mt-1 text-sm text-slate-600">
+      <p className="mt-1 text-sm text-ink-600">
         Update your name and password.
       </p>
 

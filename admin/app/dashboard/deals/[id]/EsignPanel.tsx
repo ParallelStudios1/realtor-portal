@@ -186,7 +186,7 @@ export function EsignPanel({ searchId, documents, envelopes }: EsignPanelProps) 
   };
 
   return (
-    <section className="rounded-xl border border-ink-200 bg-white">
+    <section className="overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-soft">
       <div className="flex items-baseline justify-between border-b border-ink-200 px-5 py-4">
         <h2 className="text-[11px] font-bold uppercase tracking-wider text-ink-500">
           E-signature
