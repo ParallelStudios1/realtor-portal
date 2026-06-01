@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { getMe, getSupabaseServerClient } from '@/lib/supabaseSsr';
 import { ClientProfileActions } from './ClientProfileActions';
+import { formatDateOnly } from '@/lib/dates';
+import { LocalDateTime } from '@/components/LocalDateTime';
 
 export const dynamic = 'force-dynamic';
 
@@ -110,7 +112,7 @@ export default async function ClientProfilePage({
               )}
               <span>·</span>
               <span>
-                joined {new Date(client.created_at).toLocaleDateString()}
+                joined <LocalDateTime value={client.created_at} dateOptions={{}} />
               </span>
             </div>
             <div className="mt-2 flex gap-2 text-[11px]">
@@ -157,10 +159,8 @@ export default async function ClientProfilePage({
                         (d.kind === 'seller' ? 'Listing deal' : 'Buyer deal')}
                     </div>
                     <div className="text-xs text-ink-500">
-                      Started {new Date(d.created_at).toLocaleDateString()}
-                      {d.closing_date &&
-                        ' · Closing ' +
-                          new Date(d.closing_date).toLocaleDateString()}
+                      Started <LocalDateTime value={d.created_at} dateOptions={{}} />
+                      {d.closing_date && ' · Closing ' + formatDateOnly(d.closing_date)}
                     </div>
                   </div>
                   <span

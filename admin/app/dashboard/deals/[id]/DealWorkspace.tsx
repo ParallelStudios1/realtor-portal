@@ -18,6 +18,8 @@ import {
 } from '../../clients/[id]/actions';
 import { DeadlineReminderEditor } from '@/components/DeadlineReminderEditor';
 import { ShowingFeedbackPanel } from './ShowingFeedbackPanel';
+import { formatDateOnly } from '@/lib/dates';
+import { LocalDateTime } from '@/components/LocalDateTime';
 import { EsignPanel } from './EsignPanel';
 import { ExtractReview, type StagedExtraction } from './ExtractReview';
 
@@ -224,7 +226,11 @@ export function DealWorkspace(props: {
                 )}
                 <span className="opacity-60">·</span>
                 <span>
-                  started {new Date(deal.created_at).toLocaleDateString()}
+                  started{' '}
+                  <LocalDateTime
+                    value={deal.created_at}
+                    dateOptions={{}}
+                  />
                 </span>
               </div>
             </div>
@@ -500,7 +506,6 @@ export function DealWorkspace(props: {
           >
             <ul className="divide-y divide-ink-100">
               {upcomingShowings.map((s: any) => {
-                const when = new Date(s.scheduled_at);
                 const address =
                   s.house?.address || s.location || '(unspecified)';
                 const attendeeCount = Array.isArray(s.attendees)
@@ -516,16 +521,18 @@ export function DealWorkspace(props: {
                         {address}
                       </div>
                       <div className="mt-0.5 text-xs text-ink-500">
-                        {when.toLocaleDateString(undefined, {
-                          weekday: 'short',
-                          month: 'short',
-                          day: 'numeric',
-                        })}{' '}
-                        @{' '}
-                        {when.toLocaleTimeString(undefined, {
-                          hour: 'numeric',
-                          minute: '2-digit',
-                        })}{' '}
+                        <LocalDateTime
+                          value={s.scheduled_at}
+                          dateOptions={{
+                            weekday: 'short',
+                            month: 'short',
+                            day: 'numeric',
+                          }}
+                          timeOptions={{
+                            hour: 'numeric',
+                            minute: '2-digit',
+                          }}
+                        />{' '}
                         · {s.duration_minutes || 30} min
                         {attendeeCount > 0
                           ? ' · ' +
@@ -623,7 +630,7 @@ export function DealWorkspace(props: {
                         {t.preferred_when
                           ? 'Asked for ' + t.preferred_when + ' · '
                           : ''}
-                        {new Date(t.created_at).toLocaleDateString()}
+                        <LocalDateTime value={t.created_at} dateOptions={{}} />
                       </div>
                     </div>
                     <span
@@ -775,7 +782,7 @@ export function DealWorkspace(props: {
                     <div className="flex items-baseline justify-between gap-2">
                       <span className="font-medium">{d.label}</span>
                       <span className="text-xs font-semibold text-ink-700">
-                        {new Date(d.date).toLocaleDateString()}
+                        {formatDateOnly(d.date)}
                         {d.event_time ? ' · ' + formatTime(d.event_time) : ''}
                       </span>
                     </div>

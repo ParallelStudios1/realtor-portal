@@ -3,6 +3,7 @@ import { notFound, redirect } from 'next/navigation';
 import { getMe } from '@/lib/supabaseSsr';
 import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
 import { buildCalendarFeedUrl } from '@/lib/ics';
+import { formatDateOnly } from '@/lib/dates';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Deal' };
@@ -337,7 +338,7 @@ export default async function DealPage({
                         <div className="flex items-baseline justify-between gap-2">
                           <div className="font-medium">{dd.label}</div>
                           <span className="text-xs text-ink-600 font-semibold">
-                            {new Date(dd.date).toLocaleDateString()}
+                            {formatDateOnly(dd.date)}
                             {dd.event_time
                               ? ' · ' +
                                 (() => {
@@ -380,7 +381,7 @@ export default async function DealPage({
                           </a>
                         </div>
                         <span className="hidden">
-                          {new Date(dd.date).toLocaleDateString()}
+                          {formatDateOnly(dd.date)}
                         </span>
                       </li>
                     ))}

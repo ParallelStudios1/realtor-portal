@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { getMe, getSupabaseServerClient } from '@/lib/supabaseSsr';
 import { DealProgressTimeline } from '@/components/DealProgressTimeline';
 import { buildCalendarFeedUrl } from '@/lib/ics';
+import { formatDateOnly } from '@/lib/dates';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Home' };
@@ -156,7 +157,7 @@ export default async function ClientHomePage() {
                   >
                     <span>{d.label}</span>
                     <span className="text-ink-500">
-                      {new Date(d.date).toLocaleDateString()}
+                      {formatDateOnly(d.date)}
                     </span>
                   </li>
                 ))}

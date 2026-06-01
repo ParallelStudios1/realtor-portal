@@ -13,6 +13,8 @@
  * client's own RLS context and passing them down. No data fetching here.
  */
 
+import { formatDateOnlyLong } from '@/lib/dates';
+
 export type TimelinePhase = {
   id: string;
   /** Resolved label (firm override or default). */
@@ -73,13 +75,10 @@ function resolveMessage(id: string, overrides?: Record<string, string>) {
 }
 
 function formatDate(iso: string) {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '';
-  return d.toLocaleDateString(undefined, {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-  });
+  // important_dates.date is a DATE-ONLY value — format from its literal
+  // calendar day so server and client agree (no timezone shift, no hydration
+  // mismatch, and no 6/5-vs-6/6 split with app/client/page.tsx).
+  return formatDateOnlyLong(iso);
 }
 
 function CheckIcon({ color }: { color: string }) {
