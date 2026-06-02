@@ -403,6 +403,7 @@ export function DealWorkspace(props: {
           firmId={me.firmId!}
           searchId={deal.id}
           currentPhase={deal.phase}
+          dealKind={deal.kind ?? null}
           financials={{
             agreed_price: deal.agreed_price ?? null,
             closing_amount: deal.closing_amount ?? null,

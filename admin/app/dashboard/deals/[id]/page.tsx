@@ -140,7 +140,7 @@ export default async function DealDetailPage({
     supabase
       .from('deal_participants')
       .select(
-        'id, role, external_name, external_email, external_phone, can_view_documents, can_view_financials, can_view_messages, can_view_dates'
+        'id, role, represents, external_name, external_email, external_phone, can_view_documents, can_view_financials, can_view_messages, can_view_dates'
       )
       .eq('search_id', params.id)
       .order('role'),

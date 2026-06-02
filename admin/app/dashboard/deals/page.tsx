@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getMe, getSupabaseServerClient } from '@/lib/supabaseSsr';
+import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
 import { DealsBoard } from './DealsBoard';
 
 export const dynamic = 'force-dynamic';
@@ -42,8 +43,64 @@ export default async function DealsListPage({
 
   const { data: rawDeals } = await qb;
 
+  // GUEST DEALS — cross-firm deals where I'm a participant but the deal is
+  // hosted by a DIFFERENT firm. The main query above only returns own-firm
+  // deals (firm_id = me.firm_id), so a realtor added to another firm's deal
+  // never sees it in their own Deals list without this. We run the lookup
+  // with the service-role client because RLS on client_searches wouldn't
+  // surface another firm's rows to a plain SSR query, and the participant
+  // membership check below is our authorization gate.
+  const guestDeals: any[] = [];
+  try {
+    const service = getSupabaseServiceRoleClient();
+    const orClauses = [
+      'user_id.eq.' + me.user_id,
+      me.email ? 'external_email.ilike.' + me.email : null,
+    ]
+      .filter(Boolean)
+      .join(',');
+    const { data: myParts } = await service
+      .from('deal_participants')
+      .select('search_id')
+      .or(orClauses);
+    const searchIds = Array.from(
+      new Set(((myParts || []) as any[]).map((p) => p.search_id).filter(Boolean))
+    );
+    if (searchIds.length > 0) {
+      let gqb = service
+        .from('client_searches')
+        .select(
+          `id, name, kind, phase, updated_at, created_at, agreed_price, firm_id,
+           client:users!client_searches_client_id_fkey ( id, full_name, email ),
+           realtor:users!client_searches_realtor_id_fkey ( id, full_name, email ),
+           host:firms!client_searches_firm_id_fkey ( name )`
+        )
+        .in('id', searchIds)
+        .neq('firm_id', me.firm_id!)
+        .order('updated_at', { ascending: false });
+      if (phaseFilter && phaseFilter !== 'all') {
+        gqb = gqb.eq('phase', phaseFilter);
+      }
+      const { data: rawGuests } = await gqb;
+      const ownIds = new Set(((rawDeals || []) as any[]).map((d) => d.id));
+      for (const g of (rawGuests || []) as any[]) {
+        if (ownIds.has(g.id)) continue; // dedupe — own-firm deals already covered
+        guestDeals.push({
+          ...g,
+          _guest: true,
+          _hostFirm: (g.host as any)?.name || 'Another firm',
+        });
+      }
+    }
+  } catch {
+    // Guest deals are additive — never block the main list on this lookup.
+  }
+
+  // Merge own-firm + guest deals (own first), deduped by id.
+  const mergedRaw = [...((rawDeals || []) as any[]), ...guestDeals];
+
   // In-memory text filter so the searchbar reacts instantly without a DB roundtrip.
-  const deals = (rawDeals || []).filter((d: any) => {
+  const deals = mergedRaw.filter((d: any) => {
     if (!query) return true;
     const hay = [
       d.name,
@@ -53,6 +110,7 @@ export default async function DealsListPage({
       d.realtor?.email,
       d.phase,
       d.kind,
+      d._hostFirm,
     ]
       .filter(Boolean)
       .join(' ')
@@ -68,8 +126,8 @@ export default async function DealsListPage({
     closing: 0,
     closed: 0,
   } as Record<string, number>;
-  for (const d of rawDeals || []) byPhase[d.phase as string] = (byPhase[d.phase as string] || 0) + 1;
-  const total = (rawDeals || []).length;
+  for (const d of mergedRaw) byPhase[d.phase as string] = (byPhase[d.phase as string] || 0) + 1;
+  const total = mergedRaw.length;
   const active = total - (byPhase.closed || 0);
 
   return (

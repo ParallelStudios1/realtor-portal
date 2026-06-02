@@ -681,6 +681,7 @@ export async function addParticipantAction(
     name?: string;
     email?: string;
     phone?: string;
+    represents?: 'buyer' | 'seller';
     can_view_documents?: boolean;
     can_view_financials?: boolean;
     can_view_messages?: boolean;
@@ -694,6 +695,13 @@ export async function addParticipantAction(
       ok: false as const,
       error: 'Give me a name, phone, or email so we can identify them.',
     };
+  // `represents` is only meaningful for co-realtors (buyer-side / seller-side).
+  // Ignore (NULL) it for any other role, and reject an out-of-range value.
+  const represents =
+    payload.role === 'co_realtor' &&
+    (payload.represents === 'buyer' || payload.represents === 'seller')
+      ? payload.represents
+      : null;
   const service = getSupabaseServiceRoleClient();
   // Match an existing user by email so logging in works automatically.
   let userId: string | null = null;
@@ -721,6 +729,7 @@ export async function addParticipantAction(
       external_name: payload.name || null,
       external_phone: payload.phone || null,
       role: payload.role,
+      represents,
       can_view_documents: payload.can_view_documents ?? true,
       can_view_financials: payload.can_view_financials ?? false,
       can_view_messages: payload.can_view_messages ?? false,
@@ -728,7 +737,7 @@ export async function addParticipantAction(
       created_by: a.me.user_id,
     })
     .select(
-      'id, role, external_name, external_email, external_phone, can_view_documents, can_view_financials, can_view_messages, can_view_dates'
+      'id, role, represents, external_name, external_email, external_phone, can_view_documents, can_view_financials, can_view_messages, can_view_dates'
     )
     .single();
   if (error) return { ok: false as const, error: error.message };

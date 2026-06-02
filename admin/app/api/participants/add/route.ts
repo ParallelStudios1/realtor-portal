@@ -61,6 +61,7 @@ export async function POST(req: Request) {
       name?: string;
       email?: string;
       phone?: string;
+      represents?: 'buyer' | 'seller';
       can_view_documents?: boolean;
       can_view_financials?: boolean;
       can_view_messages?: boolean;
@@ -160,6 +161,14 @@ export async function POST(req: Request) {
       userPhone = (u as any)?.phone ?? null;
     }
 
+    // `represents` (buyer-side / seller-side) only applies to co-realtors.
+    // NULL it for any other role and reject an out-of-range value.
+    const represents =
+      body.role === 'co_realtor' &&
+      (body.represents === 'buyer' || body.represents === 'seller')
+        ? body.represents
+        : null;
+
     const { data: inserted, error } = await service
       .from('deal_participants')
       .insert({
@@ -170,6 +179,7 @@ export async function POST(req: Request) {
         external_name: body.name || null,
         external_phone: body.phone || null,
         role: body.role,
+        represents,
         can_view_documents: body.can_view_documents ?? true,
         can_view_financials: body.can_view_financials ?? false,
         can_view_messages: body.can_view_messages ?? false,
@@ -177,7 +187,7 @@ export async function POST(req: Request) {
         created_by: me.user_id,
       })
       .select(
-        'id, role, external_name, external_email, external_phone, can_view_documents, can_view_financials, can_view_messages, can_view_dates'
+        'id, role, represents, external_name, external_email, external_phone, can_view_documents, can_view_financials, can_view_messages, can_view_dates'
       )
       .single();
     if (error) {

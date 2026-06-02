@@ -65,6 +65,7 @@ export function ClientDetailActions({
   clientId,
   firmId,
   currentPhase,
+  dealKind,
   financials,
   teammates,
 }: {
@@ -72,6 +73,9 @@ export function ClientDetailActions({
   firmId: string;
   searchId: string;
   currentPhase: string;
+  // The host deal's own side ('buyer' | 'seller' | 'both'). Used to default
+  // the co-realtor "Represents" selector to the OPPOSITE side.
+  dealKind?: string | null;
   financials: {
     agreed_price: number | null;
     closing_amount: number | null;
@@ -342,6 +346,7 @@ export function ClientDetailActions({
       {open === 'participant' && (
         <ParticipantModal
           clientId={clientId}
+          dealKind={dealKind}
           onClose={close}
           onSubmit={async (payload) => {
             const r = await addParticipantAction(clientId, payload);
@@ -1587,7 +1592,7 @@ function MessageModal({
 const PARTY_ROLES: { id: PartyRole; label: string; helper: string }[] = [
   { id: 'buyer', label: 'Buyer', helper: 'Second buyer (spouse, partner, co-purchaser)' },
   { id: 'seller', label: 'Seller', helper: 'For listing-side deals' },
-  { id: 'co_realtor', label: 'Co-realtor', helper: 'Another agent on your firm' },
+  { id: 'co_realtor', label: 'Co-realtor', helper: 'Another agent — your firm or a cross-firm co-op agent' },
   { id: 'attorney', label: 'Attorney', helper: 'Closing / real-estate counsel' },
   { id: 'inspector', label: 'Inspector', helper: 'Property inspector' },
   { id: 'lender', label: 'Lender', helper: 'Mortgage lender' },
@@ -1599,16 +1604,19 @@ const PARTY_ROLES: { id: PartyRole; label: string; helper: string }[] = [
 
 function ParticipantModal({
   clientId,
+  dealKind,
   onClose,
   onSubmit,
 }: {
   clientId: string;
+  dealKind?: string | null;
   onClose: () => void;
   onSubmit: (payload: {
     role: PartyRole;
     name?: string;
     email?: string;
     phone?: string;
+    represents?: 'buyer' | 'seller';
     can_view_documents?: boolean;
     can_view_financials?: boolean;
     can_view_messages?: boolean;
@@ -1617,6 +1625,15 @@ function ParticipantModal({
 }) {
   const [tab, setTab] = useState<'existing' | 'new'>('existing');
   const [role, setRole] = useState<PartyRole>('buyer');
+  // SMART DEFAULT for the co-realtor "Represents" side. A cross-firm co-op
+  // agent usually represents the OPPOSITE side from the host firm: if our
+  // deal is a buyer search, the added co-realtor is seller-side, and vice
+  // versa. For a 'both'/unknown deal we leave it unselected.
+  const defaultRepresents: '' | 'buyer' | 'seller' =
+    dealKind === 'buyer' ? 'seller' : dealKind === 'seller' ? 'buyer' : '';
+  const [represents, setRepresents] = useState<'' | 'buyer' | 'seller'>(
+    defaultRepresents
+  );
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -1715,6 +1732,24 @@ function ParticipantModal({
               ))}
             </select>
           </Field>
+          {role === 'co_realtor' && (
+            <Field
+              label="Represents"
+              hint="Which side of the deal this co-realtor is on. Cross-firm co-op agents usually represent the opposite side from you."
+            >
+              <select
+                className={inputCls}
+                value={represents}
+                onChange={(e) =>
+                  setRepresents(e.target.value as '' | 'buyer' | 'seller')
+                }
+              >
+                <option value="">Select a side…</option>
+                <option value="buyer">Buyer&apos;s side</option>
+                <option value="seller">Seller&apos;s side</option>
+              </select>
+            </Field>
+          )}
           <Field label="Search clients / staff / past parties">
             <input
               className={inputCls}
@@ -1747,6 +1782,10 @@ function ParticipantModal({
                           role,
                           name: u.full_name || undefined,
                           email: u.email,
+                          represents:
+                            role === 'co_realtor' && represents
+                              ? represents
+                              : undefined,
                           can_view_documents: docs,
                           can_view_financials: fin,
                           can_view_messages: msgs,
@@ -1786,6 +1825,10 @@ function ParticipantModal({
                           name: e.name || undefined,
                           email: e.email,
                           phone: e.phone || undefined,
+                          represents:
+                            role === 'co_realtor' && represents
+                              ? represents
+                              : undefined,
                           can_view_documents: docs,
                           can_view_financials: fin,
                           can_view_messages: msgs,
@@ -1827,6 +1870,10 @@ function ParticipantModal({
                           name: e.name || undefined,
                           email: e.email,
                           phone: e.phone || undefined,
+                          represents:
+                            role === 'co_realtor' && represents
+                              ? represents
+                              : undefined,
                           can_view_documents: docs,
                           can_view_financials: fin,
                           can_view_messages: msgs,
@@ -1871,6 +1918,24 @@ function ParticipantModal({
             {PARTY_ROLES.find((r) => r.id === role)?.helper}
           </p>
         </Field>
+        {role === 'co_realtor' && (
+          <Field
+            label="Represents"
+            hint="Which side of the deal this co-realtor is on. Cross-firm co-op agents usually represent the opposite side from you."
+          >
+            <select
+              className={inputCls}
+              value={represents}
+              onChange={(e) =>
+                setRepresents(e.target.value as '' | 'buyer' | 'seller')
+              }
+            >
+              <option value="">Select a side…</option>
+              <option value="buyer">Buyer&apos;s side</option>
+              <option value="seller">Seller&apos;s side</option>
+            </select>
+          </Field>
+        )}
         <Field label="Name">
           <input
             className={inputCls}
@@ -1923,6 +1988,8 @@ function ParticipantModal({
                 name: name.trim() || undefined,
                 email: email.trim() || undefined,
                 phone: phone.trim() || undefined,
+                represents:
+                  role === 'co_realtor' && represents ? represents : undefined,
                 can_view_documents: docs,
                 can_view_financials: fin,
                 can_view_messages: msgs,
@@ -1978,6 +2045,7 @@ function CheckRow({
 type ParticipantRow = {
   id: string;
   role: string;
+  represents?: 'buyer' | 'seller' | null;
   external_name: string | null;
   external_email: string | null;
   external_phone: string | null;
@@ -2039,7 +2107,7 @@ export function ParticipantList({
     const { data, error } = await sb
       .from('deal_participants')
       .select(
-        'id, role, external_name, external_email, external_phone, can_view_documents, can_view_financials, can_view_messages, can_view_dates'
+        'id, role, represents, external_name, external_email, external_phone, can_view_documents, can_view_financials, can_view_messages, can_view_dates'
       )
       .eq('search_id', searchId)
       .order('role');
@@ -2159,6 +2227,7 @@ export function ParticipantList({
               <div className="flex items-center gap-2">
                 <span className="rounded-full bg-ink-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-ink-700">
                   {p.role.replace(/_/g, ' ')}
+                  {p.represents ? ' · represents ' + p.represents : ''}
                 </span>
                 <span className="truncate text-sm font-semibold">
                   {p.external_name || p.external_email || '—'}

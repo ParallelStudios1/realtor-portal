@@ -14,6 +14,10 @@ type Deal = {
   agreed_price: number | null;
   client: { id: string; full_name: string | null; email: string } | null;
   realtor: { id: string; full_name: string | null; email: string } | null;
+  // Set on cross-firm "guest" deals: deals hosted by another firm where the
+  // current user is a participant. _hostFirm is the host firm's name.
+  _guest?: boolean;
+  _hostFirm?: string;
 };
 
 const PHASE_DEFS = [
@@ -291,6 +295,11 @@ function DealCard({ d, compact }: { d: Deal; compact?: boolean }) {
               {d.name ||
                 (d.kind === 'seller' ? 'Listing deal' : 'Buyer deal')}
             </div>
+            {d._guest && (
+              <span className="mt-1 inline-flex items-center gap-1 rounded-full border border-ink-300 bg-ink-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-ink-600">
+                Guest · {d._hostFirm || 'Another firm'}
+              </span>
+            )}
           </div>
           <span
             className={

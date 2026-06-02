@@ -462,7 +462,10 @@ export default async function DealPage({
                 {parts.map((p: any) => (
                   <Party
                     key={p.id}
-                    label={p.role.replace(/_/g, ' ')}
+                    label={
+                      p.role.replace(/_/g, ' ') +
+                      (p.represents ? ' · represents ' + p.represents : '')
+                    }
                     name={p.external_name || p.external_email}
                     email={p.external_email}
                     phone={p.external_phone}
