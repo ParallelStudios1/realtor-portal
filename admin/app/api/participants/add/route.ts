@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { getMe, getSupabaseServerClient } from '@/lib/supabaseSsr';
+import { createClient } from '@supabase/supabase-js';
+import { getMe } from '@/lib/supabaseSsr';
 import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
 import { notify } from '@/lib/notify';
 import { canUsePremiumForDeal } from '@/lib/planGate';
@@ -7,6 +8,54 @@ import { escapeHtml } from '@/lib/email';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+/**
+ * Resolve the caller from EITHER a web cookie session (getMe) OR a mobile
+ * `Authorization: Bearer <access_token>` header. Returns the same shape the
+ * route needs regardless of channel. This is why the mobile app's Add Party
+ * was failing with 401 — the route previously only read the cookie session.
+ */
+async function resolveCaller(req: Request): Promise<{
+  user_id: string;
+  firm_id: string | null;
+  email: string | null;
+  role: string | null;
+} | null> {
+  const me = await getMe();
+  if (me?.user_id) {
+    return {
+      user_id: me.user_id,
+      firm_id: me.firm_id ?? null,
+      email: me.email ?? null,
+      role: me.role ?? null,
+    };
+  }
+  const authz = req.headers.get('authorization') || '';
+  const m = authz.match(/^Bearer\s+(.+)$/i);
+  if (!m) return null;
+  const sb = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      global: { headers: { Authorization: `Bearer ${m[1]}` } },
+      auth: { persistSession: false },
+    }
+  );
+  const { data } = await sb.auth.getUser();
+  if (!data.user) return null;
+  const service = getSupabaseServiceRoleClient();
+  const { data: row } = await service
+    .from('users')
+    .select('firm_id, role')
+    .eq('id', data.user.id)
+    .maybeSingle();
+  return {
+    user_id: data.user.id,
+    firm_id: (row as any)?.firm_id ?? null,
+    email: data.user.email ?? null,
+    role: (row as any)?.role ?? null,
+  };
+}
 
 /**
  * POST /api/participants/add
@@ -35,7 +84,7 @@ export const dynamic = 'force-dynamic';
  */
 export async function POST(req: Request) {
   try {
-    const me = await getMe();
+    const me = await resolveCaller(req);
     if (!me?.firm_id) {
       return NextResponse.json(
         { ok: false, error: 'Not authenticated.' },
@@ -84,8 +133,8 @@ export async function POST(req: Request) {
       );
     }
 
-    const supabase = getSupabaseServerClient();
-    const { data: search } = await supabase
+    const service = getSupabaseServiceRoleClient();
+    const { data: search } = await service
       .from('client_searches')
       .select('id, firm_id, client_id, realtor_id, phase')
       .eq('id', body.search_id)
@@ -102,7 +151,6 @@ export async function POST(req: Request) {
     // (c) the deal's principal client. Otherwise reject — without this
     // check, a knowledgeable caller could POST any search_id they once
     // had visibility to and add participants there.
-    const service = getSupabaseServiceRoleClient();
     const callerIsInHostFirm = (search as any).firm_id === me.firm_id;
     let allowed = callerIsInHostFirm;
     if (!allowed) {
