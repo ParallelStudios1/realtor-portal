@@ -24,6 +24,33 @@ export type Tour = {
   search_name: string | null;
 };
 
+// Parse a stored preferred_when into the value a <input type="datetime-local">
+// expects ("YYYY-MM-DDTHH:mm") WITHOUT going through a Date (which would shift
+// the day by the timezone offset). Falls back to 9am for date-only strings.
+function toLocalInput(s: string | null): string {
+  if (!s) return '';
+  const m = s.match(/^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2})/);
+  if (m) return `${m[1]}T${m[2]}`;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return `${s}T09:00`;
+  return '';
+}
+
+// Human-friendly label for a stored preferred_when, timezone-stable (reads the
+// literal Y/M/D + H:m, never constructs a tz-shifting Date).
+function prettyWhen(s: string | null): string {
+  if (!s) return '';
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2}))?/);
+  if (!m) return s;
+  const [, y, mo, d, hh, mm] = m;
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const base = `${months[Number(mo) - 1]} ${Number(d)}, ${y}`;
+  if (hh == null) return base;
+  let h = Number(hh);
+  const ap = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  return `${base} at ${h}:${mm} ${ap}`;
+}
+
 export function ToursClient({
   firmId,
   pending,
@@ -38,21 +65,30 @@ export function ToursClient({
   const [, startTransition] = useTransition();
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Per-tour editable date/time so the realtor can reschedule before confirming.
+  const [whenEdits, setWhenEdits] = useState<Record<string, string>>({});
   const toast = useToast();
+
+  const whenFor = (t: Tour) => whenEdits[t.id] ?? toLocalInput(t.preferred_when);
 
   async function act(tour: Tour, status: 'confirmed' | 'declined') {
     if (busy) return;
     setBusy(tour.id);
     setError(null);
 
-    // Update the tour_request row. RLS on the table requires
-    // current_role()='realtor' AND firm match — both are true here.
+    // The realtor may have changed the time in the input. Use that as the
+    // agreed time; persist it back so the client sees the confirmed slot.
+    const chosen = status === 'confirmed' ? whenFor(tour).trim() : '';
+
+    const update: Record<string, any> = {
+      status,
+      handled_at: new Date().toISOString(),
+    };
+    if (status === 'confirmed' && chosen) update.preferred_when = chosen;
+
     const { error: updErr } = await supabase
       .from('tour_requests')
-      .update({
-        status,
-        handled_at: new Date().toISOString(),
-      })
+      .update(update)
       .eq('id', tour.id);
 
     if (updErr) {
@@ -64,12 +100,13 @@ export function ToursClient({
     }
 
     if (status === 'confirmed' && tour.search_id) {
-      // Best-effort date parse from the freeform preferred_when.
-      const tryDate = tour.preferred_when ? new Date(tour.preferred_when) : null;
-      const dateStr =
-        tryDate && !isNaN(tryDate.getTime())
-          ? tryDate.toISOString().slice(0, 10)
-          : new Date().toISOString().slice(0, 10);
+      // TIMEZONE-SAFE: read the literal date + time straight from the
+      // datetime-local string. Do NOT round-trip through Date()/toISOString()
+      // — that converts local -> UTC and rolls evening times to the next day.
+      const src = chosen || tour.preferred_when || '';
+      const m = src.match(/^(\d{4}-\d{2}-\d{2})(?:[T ](\d{2}:\d{2}))?/);
+      const dateStr = m ? m[1] : new Date().toLocaleDateString('en-CA'); // local YYYY-MM-DD
+      const timeStr = m && m[2] ? m[2] : null;
 
       const label = tour.house_address
         ? `Tour: ${tour.house_address}`
@@ -80,15 +117,13 @@ export function ToursClient({
         search_id: tour.search_id,
         label,
         date: dateStr,
-        notes: tour.preferred_when || tour.notes || null,
+        event_time: timeStr,
+        notes: tour.notes || null,
       });
       if (dateErr) {
-        // Don't roll back the status update — surface the warning but the
-        // realtor still got the tour out of the pending queue.
         console.warn('[tours] could not write important_dates', dateErr.message);
       }
 
-      // Fire-and-forget push to the client.
       fetch('/api/notifications/send-push', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -102,7 +137,6 @@ export function ToursClient({
         }),
       }).catch(() => {});
 
-      // Fire-and-forget email with .ics attachment.
       fetch('/api/notifications/send-email', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -115,7 +149,6 @@ export function ToursClient({
     }
 
     if (status === 'declined' && tour.search_id) {
-      // Fire-and-forget polite-decline email to the client.
       fetch('/api/notifications/send-email', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -128,35 +161,34 @@ export function ToursClient({
     }
 
     setBusy(null);
-    toast.show(
-      status === 'confirmed' ? 'Tour confirmed.' : 'Tour declined.',
-      { variant: 'success' }
-    );
+    toast.show(status === 'confirmed' ? 'Tour confirmed.' : 'Tour declined.', {
+      variant: 'success',
+    });
     startTransition(() => router.refresh());
   }
 
   return (
     <div className="space-y-8">
       {error && (
-        <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-md border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
           {error}
         </div>
       )}
 
       <section>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-ink-500">
+        <h2 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-400">
           Pending ({pending.length})
         </h2>
         {pending.length === 0 ? (
-          <div className="rounded-xl border border-ink-200 bg-white px-5 py-6 text-sm text-ink-500">
-            Nothing waiting on you. Nice.
+          <div className="surface px-5 py-6 text-sm text-ink-500">
+            Nothing waiting on you.
           </div>
         ) : (
           <div className="space-y-3">
             {pending.map((t) => (
               <article
                 key={t.id}
-                className="flex flex-col gap-3 rounded-xl border border-ink-200 bg-white p-4 sm:flex-row sm:items-start sm:justify-between"
+                className="surface flex flex-col gap-4 p-4 sm:flex-row sm:items-start sm:justify-between"
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex items-baseline gap-2">
@@ -172,17 +204,35 @@ export function ToursClient({
                   <div className="mt-1 text-sm text-ink-600">
                     {t.client_name}
                     {t.preferred_when ? (
-                      <span className="ml-2 inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-800">
-                        {t.preferred_when}
+                      <span className="ml-2 inline-flex items-center rounded-full bg-ink-100 px-2 py-0.5 text-xs font-medium text-ink-700">
+                        Requested: {prettyWhen(t.preferred_when)}
                       </span>
-                    ) : null}
+                    ) : (
+                      <span className="ml-2 text-xs text-ink-400">
+                        No time requested
+                      </span>
+                    )}
                   </div>
                   {t.notes ? (
-                    <p className="mt-2 text-sm italic text-ink-500">
-                      "{t.notes}"
-                    </p>
+                    <p className="mt-2 text-sm italic text-ink-500">"{t.notes}"</p>
                   ) : null}
-                  <div className="mt-1 text-xs text-ink-400">
+
+                  {/* Realtor can set / change the tour time before confirming. */}
+                  <label className="mt-3 block">
+                    <span className="block text-[11px] font-medium text-ink-500">
+                      Confirm for this date &amp; time
+                    </span>
+                    <input
+                      type="datetime-local"
+                      className="input mt-1 max-w-xs"
+                      value={whenFor(t)}
+                      onChange={(e) =>
+                        setWhenEdits((m) => ({ ...m, [t.id]: e.target.value }))
+                      }
+                    />
+                  </label>
+
+                  <div className="mt-1.5 text-xs text-ink-400">
                     Requested {new Date(t.created_at).toLocaleString()}
                   </div>
                 </div>
@@ -191,14 +241,14 @@ export function ToursClient({
                   <button
                     onClick={() => act(t, 'declined')}
                     disabled={busy === t.id}
-                    className="rounded-md border border-ink-300 px-3 py-1.5 text-sm font-medium text-ink-700 hover:bg-ink-50 disabled:opacity-50"
+                    className="btn-secondary"
                   >
                     Decline
                   </button>
                   <button
                     onClick={() => act(t, 'confirmed')}
                     disabled={busy === t.id}
-                    className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+                    className="btn-primary"
                   >
                     {busy === t.id ? 'Saving…' : 'Confirm'}
                   </button>
@@ -211,12 +261,12 @@ export function ToursClient({
 
       {recent.length > 0 && (
         <section>
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-ink-500">
+          <h2 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-400">
             Recent
           </h2>
-          <div className="overflow-hidden rounded-xl border border-ink-200 bg-white">
+          <div className="surface overflow-hidden p-0">
             <table className="w-full text-sm">
-              <thead className="border-b border-ink-200 bg-ink-50 text-left text-xs uppercase text-ink-500">
+              <thead className="border-b border-ink-200 bg-ink-50 text-left text-xs uppercase tracking-wide text-ink-500">
                 <tr>
                   <th className="px-4 py-3">House</th>
                   <th className="px-4 py-3">Client</th>
@@ -233,7 +283,7 @@ export function ToursClient({
                     </td>
                     <td className="px-4 py-3 text-ink-600">{t.client_name}</td>
                     <td className="px-4 py-3 text-ink-600">
-                      {t.preferred_when || '—'}
+                      {prettyWhen(t.preferred_when) || '—'}
                     </td>
                     <td className="px-4 py-3">
                       <StatusPill status={t.status} />
@@ -248,7 +298,6 @@ export function ToursClient({
           </div>
         </section>
       )}
-
     </div>
   );
 }

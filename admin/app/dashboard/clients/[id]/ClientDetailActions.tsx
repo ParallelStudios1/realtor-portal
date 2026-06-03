@@ -1090,7 +1090,6 @@ function HouseModal({
   const [sqft, setSqft] = useState('');
   const [pending, start] = useTransition();
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
-  const [importing, setImporting] = useState(false);
   const [aiBusy, setAiBusy] = useState(false);
   const toast = useToast();
   const supabase = getSupabaseBrowserClient();
@@ -1131,58 +1130,6 @@ function HouseModal({
     }
   }
 
-  async function importFromUrl() {
-    if (!listingUrl) return;
-    setImporting(true);
-    try {
-      const r = await fetch('/api/url/preview', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ url: listingUrl }),
-      });
-      const j = await r.json().catch(() => ({}));
-      if (!r.ok) {
-        // Bot-block pages now return a friendlier message + blocked: true.
-        toast.show(
-          j?.error ||
-            'Could not read that listing — try pasting the address and a photo URL manually.',
-          { variant: 'error' }
-        );
-        return;
-      }
-      const got: string[] = [];
-      if (j.image && !photoUrl) {
-        setPhotoUrl(j.image);
-        got.push('photo');
-      }
-      if (j.title && !address) {
-        setAddress(j.address || j.title);
-        got.push('address');
-      } else if (j.address && !address) {
-        setAddress(j.address);
-        got.push('address');
-      }
-      if (j.description && !notes) {
-        setNotes(j.description);
-        got.push('description');
-      }
-      if (got.length === 0) {
-        toast.show(
-          "Couldn't find listing details on that page. Fill the fields manually.",
-          { variant: 'error' }
-        );
-      } else {
-        toast.show('Imported ' + got.join(', ') + '.', { variant: 'success' });
-      }
-    } catch (e: any) {
-      toast.show('Import failed: ' + (e?.message || 'unknown error'), {
-        variant: 'error',
-      });
-    } finally {
-      setImporting(false);
-    }
-  }
-
   async function uploadPhotoFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -1214,23 +1161,13 @@ function HouseModal({
             placeholder="123 Main St, Atlanta GA"
           />
         </Field>
-        <Field label="Listing URL" hint="Zillow, Redfin, Realtor.com — we'll auto-pull title, photo, and description">
-          <div className="flex gap-2">
-            <input
-              className={inputCls + ' flex-1'}
-              value={listingUrl}
-              onChange={(e) => setListingUrl(e.target.value)}
-              placeholder="https://www.zillow.com/homedetails/…"
-            />
-            <button
-              type="button"
-              onClick={importFromUrl}
-              disabled={importing || !listingUrl}
-              className="rounded-lg bg-ink-900 px-3 text-xs font-semibold text-white shadow-sm disabled:opacity-50"
-            >
-              {importing ? '…' : 'Import'}
-            </button>
-          </div>
+        <Field label="Listing URL" hint="Optional — paste the Zillow, Redfin, or Realtor.com link for this property">
+          <input
+            className={inputCls}
+            value={listingUrl}
+            onChange={(e) => setListingUrl(e.target.value)}
+            placeholder="https://www.zillow.com/homedetails/…"
+          />
         </Field>
         <Field label="Photo">
           <div className="flex items-center gap-3">
