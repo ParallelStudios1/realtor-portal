@@ -267,6 +267,9 @@ export function ClientDetailActions({
       {open === 'phase' && (
         <PhaseModal
           currentPhase={currentPhase}
+          houses={houses}
+          currentClosingAmount={financials.closing_amount}
+          onUnderContract={() => setOpen('under_contract')}
           onClose={close}
           onSubmit={async (phase, extras) => {
             const r = await updatePhaseAction(clientId, phase as any, extras as any);
@@ -885,47 +888,78 @@ const inputCls =
 
 function PhaseModal({
   currentPhase,
+  houses,
+  currentClosingAmount,
+  onUnderContract,
   onClose,
   onSubmit,
 }: {
   currentPhase: string;
+  houses?: Array<{ id: string; address: string }>;
+  currentClosingAmount?: number | null;
+  onUnderContract: () => void;
   onClose: () => void;
   onSubmit: (
     phase: string,
     extras?: {
       offer_amount?: number | null;
       counter_offer_amount?: number | null;
+      closing_amount?: number | null;
       closing_date?: string | null;
       closed_message?: string | null;
-      docusign_envelope_url?: string | null;
+      offer_house_id?: string | null;
     }
   ) => Promise<void>;
 }) {
+  const houseList = houses || [];
   const [phase, setPhase] = useState(currentPhase);
   // Phase-specific extras. We only read out the field(s) relevant to the
   // chosen phase when we submit — keeping them all in state lets the user
   // freely toggle between phases without losing typed values.
   const [offer, setOffer] = useState('');
+  const [offerHouseId, setOfferHouseId] = useState<string>(
+    houseList.length === 1 ? houseList[0].id : ''
+  );
   const [counter, setCounter] = useState('');
   const [closingDate, setClosingDate] = useState('');
+  const [closingAmount, setClosingAmount] = useState('');
   const [closedMsg, setClosedMsg] = useState('');
-  const [docusignUrl, setDocusignUrl] = useState('');
   const [pending, start] = useTransition();
+
+  const changed = phase !== currentPhase;
+  const isUnderContract = phase === 'under_contract';
 
   function buildExtras() {
     if (phase === 'offer_made')
-      return { offer_amount: offer ? Number(offer) : null };
+      return {
+        offer_amount: offer ? Number(offer) : null,
+        offer_house_id: offerHouseId || null,
+      };
     if (phase === 'counter_offer')
       return { counter_offer_amount: counter ? Number(counter) : null };
-    if (phase === 'under_contract')
-      return {
-        docusign_envelope_url: docusignUrl.trim() || null,
-      };
     if (phase === 'closing')
-      return { closing_date: closingDate || null };
+      return {
+        closing_date: closingDate || null,
+        closing_amount: closingAmount ? Number(closingAmount) : null,
+      };
     if (phase === 'closed')
-      return { closed_message: closedMsg.trim() || null };
+      return {
+        closing_amount: closingAmount ? Number(closingAmount) : null,
+        closed_message: closedMsg.trim() || null,
+      };
     return undefined;
+  }
+
+  // Mirror the server-side required-info rules so we disable the button (and
+  // show inline guidance) before the round-trip. `searching` needs nothing.
+  let blocked = false;
+  if (changed) {
+    if (phase === 'offer_made') blocked = !offer || !offerHouseId;
+    else if (phase === 'counter_offer') blocked = !counter;
+    else if (phase === 'closing') blocked = !closingDate || !closingAmount;
+    else if (phase === 'closed')
+      blocked =
+        !closingAmount && (currentClosingAmount == null || currentClosingAmount <= 0);
   }
 
   return (
@@ -962,14 +996,13 @@ function PhaseModal({
         })}
       </div>
 
-      {/* Phase-specific fields. These collect the info you would have asked
-          the client about anyway and stash it on client_searches so it shows
-          up in the deal workspace immediately. */}
-      {phase === 'offer_made' && phase !== currentPhase && (
-        <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50/60 p-3">
+      {/* Phase-specific REQUIRED fields. Each target phase surfaces exactly the
+          info that phase needs; the server re-validates before writing. */}
+      {phase === 'offer_made' && changed && (
+        <div className="mt-4 space-y-3 rounded-lg border border-amber-200 bg-amber-50/60 p-3">
           <Field
-            label="Offer amount (USD)"
-            hint="Goes on the deal record and into the celebration message."
+            label="Offer amount (USD) — required"
+            hint="Goes on the deal record and into the update everyone receives."
           >
             <input
               type="number"
@@ -980,11 +1013,32 @@ function PhaseModal({
               autoFocus
             />
           </Field>
+          <Field
+            label="Which house is the offer on? — required"
+            hint={
+              houseList.length === 0
+                ? 'Add a house to this deal first, then move to Offer made.'
+                : 'This becomes the deal’s agreed home.'
+            }
+          >
+            <select
+              className={inputCls}
+              value={offerHouseId}
+              onChange={(e) => setOfferHouseId(e.target.value)}
+            >
+              <option value="">Select a house…</option>
+              {houseList.map((h) => (
+                <option key={h.id} value={h.id}>
+                  {h.address}
+                </option>
+              ))}
+            </select>
+          </Field>
         </div>
       )}
-      {phase === 'counter_offer' && phase !== currentPhase && (
+      {phase === 'counter_offer' && changed && (
         <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50/60 p-3">
-          <Field label="Counter offer amount (USD)">
+          <Field label="Counter offer amount (USD) — required">
             <input
               type="number"
               className={inputCls}
@@ -996,30 +1050,27 @@ function PhaseModal({
           </Field>
         </div>
       )}
-      {phase === 'under_contract' && phase !== currentPhase && (
+      {isUnderContract && changed && (
         <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50/60 p-3 text-xs">
-          <Field
-            label="DocuSign envelope URL (optional)"
-            hint="Paste the link to the signed contract — it appears as a tappable card to every party."
-          >
-            <input
-              className={inputCls}
-              value={docusignUrl}
-              onChange={(e) => setDocusignUrl(e.target.value)}
-              placeholder="https://app.docusign.com/…"
-            />
-          </Field>
-          <p className="mt-2 text-[11px] text-blue-900">
-            Want the full form (binding date, earnest money, due diligence,
-            closing day, contract upload, email-everyone)? Cancel here and use
-            <strong> Go under contract </strong> on the action grid instead.
+          <p className="text-[11px] text-blue-900">
+            Under contract is handled by the full{' '}
+            <strong>Go under contract</strong> flow — it captures the house, key
+            dates (binding, earnest, due diligence, closing), the contract, and
+            the seller side, then emails everyone.
           </p>
+          <button
+            type="button"
+            onClick={onUnderContract}
+            className="mt-3 inline-flex w-full items-center justify-center rounded-lg bg-ink-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-ink-700"
+          >
+            Open “Go under contract”
+          </button>
         </div>
       )}
-      {phase === 'closing' && phase !== currentPhase && (
-        <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50/60 p-3">
+      {phase === 'closing' && changed && (
+        <div className="mt-4 grid grid-cols-2 gap-3 rounded-lg border border-blue-200 bg-blue-50/60 p-3">
           <Field
-            label="Closing date"
+            label="Closing date — required"
             hint="Added as an Important Date for the deal."
           >
             <input
@@ -1030,10 +1081,39 @@ function PhaseModal({
               autoFocus
             />
           </Field>
+          <Field label="Closing amount (USD) — required">
+            <input
+              type="number"
+              className={inputCls}
+              value={closingAmount}
+              onChange={(e) => setClosingAmount(e.target.value)}
+              placeholder="485000"
+            />
+          </Field>
         </div>
       )}
-      {phase === 'closed' && phase !== currentPhase && (
-        <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50/60 p-3">
+      {phase === 'closed' && changed && (
+        <div className="mt-4 space-y-3 rounded-lg border border-emerald-200 bg-emerald-50/60 p-3">
+          <Field
+            label="Final closing amount (USD) — required"
+            hint={
+              currentClosingAmount != null && currentClosingAmount > 0
+                ? 'Leave blank to keep the amount already on the deal.'
+                : 'The final sale price the deal closed at.'
+            }
+          >
+            <input
+              type="number"
+              className={inputCls}
+              value={closingAmount}
+              onChange={(e) => setClosingAmount(e.target.value)}
+              placeholder={
+                currentClosingAmount != null && currentClosingAmount > 0
+                  ? String(currentClosingAmount)
+                  : '485000'
+              }
+            />
+          </Field>
           <Field
             label="Closing wrap-up message (optional)"
             hint="Sent to everyone on the deal — client, co-realtor, attorney, lender, etc."
@@ -1044,20 +1124,20 @@ function PhaseModal({
               value={closedMsg}
               onChange={(e) => setClosedMsg(e.target.value)}
               placeholder="Congrats again on closing 123 Main St! It's been a pleasure…"
-              autoFocus
             />
           </Field>
         </div>
       )}
 
-      <PrimaryButton
-        pending={pending}
-        onClick={() =>
-          start(() => onSubmit(phase, buildExtras() as any))
-        }
-      >
-        {phase === currentPhase ? 'Already on this phase' : 'Save phase'}
-      </PrimaryButton>
+      {!isUnderContract && (
+        <PrimaryButton
+          pending={pending}
+          disabled={blocked}
+          onClick={() => start(() => onSubmit(phase, buildExtras() as any))}
+        >
+          {phase === currentPhase ? 'Already on this phase' : 'Save phase'}
+        </PrimaryButton>
+      )}
     </Modal>
   );
 }

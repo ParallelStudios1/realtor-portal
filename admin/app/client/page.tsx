@@ -18,12 +18,25 @@ export default async function ClientHomePage() {
   // Most recent search for this client
   const { data: searches } = await supabase
     .from('client_searches')
-    .select('id, phase, created_at, realtor_id')
+    .select(
+      'id, phase, created_at, realtor_id, offer_house_id, house_agreed_at'
+    )
     .eq('client_id', me.user_id)
     .order('created_at', { ascending: false })
     .limit(5);
 
   const active = searches?.[0];
+
+  // CLIENT ↔ REALTOR HOUSE AGREEMENT — the agreed home, shown prominently on
+  // the client's home when either side has set it.
+  const { data: agreedHouse } =
+    active && (active as any).house_agreed_at && (active as any).offer_house_id
+      ? await supabase
+          .from('houses')
+          .select('id, address, photo_url, list_price')
+          .eq('id', (active as any).offer_house_id)
+          .maybeSingle()
+      : { data: null };
 
   // Important dates for the active search
   const { data: dates } = active
@@ -131,6 +144,54 @@ export default async function ClientHomePage() {
               upcomingDates={upcomingDates}
             />
           </div>
+
+          {/* Agreed home — the property you and your agent settled on */}
+          {agreedHouse && (
+            <Link
+              href={`/client/houses/${(agreedHouse as any).id}`}
+              className="mt-4 block overflow-hidden rounded-2xl border bg-white shadow-soft transition hover:shadow-soft-md"
+              style={{ borderColor: brandColor || '#0F172A' }}
+            >
+              <div className="flex items-stretch gap-0">
+                <div className="w-28 shrink-0 bg-ink-100 sm:w-40">
+                  {(agreedHouse as any).photo_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={(agreedHouse as any).photo_url}
+                      alt={(agreedHouse as any).address}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-ink-400">
+                      <svg aria-hidden viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                        <path d="M9 22V12h6v10" />
+                      </svg>
+                    </div>
+                  )}
+                </div>
+                <div className="flex min-w-0 flex-1 flex-col justify-center p-4">
+                  <div
+                    className="inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white"
+                    style={{ backgroundColor: brandColor || '#0F172A' }}
+                  >
+                    <svg aria-hidden viewBox="0 0 16 16" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M3 8.5l3.5 3.5L13 5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    The home you want
+                  </div>
+                  <div className="mt-2 truncate text-base font-semibold text-ink-900">
+                    {(agreedHouse as any).address}
+                  </div>
+                  {(agreedHouse as any).list_price && (
+                    <div className="mt-0.5 text-sm font-semibold text-ink-700">
+                      ${Number((agreedHouse as any).list_price).toLocaleString()}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </Link>
+          )}
 
           {/* Realtor card */}
           {realtor && (

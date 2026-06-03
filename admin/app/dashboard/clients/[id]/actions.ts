@@ -44,7 +44,7 @@ async function authorize(idOrSearchId: string) {
   // cross-firm action.
   let { data: search } = await supabase
     .from('client_searches')
-    .select('id, firm_id, client_id, realtor_id, phase')
+    .select('id, firm_id, client_id, realtor_id, phase, closing_amount')
     .eq('client_id', idOrSearchId)
     .order('created_at', { ascending: false })
     .limit(1)
@@ -52,7 +52,7 @@ async function authorize(idOrSearchId: string) {
   if (!search) {
     const fallback = await supabase
       .from('client_searches')
-      .select('id, firm_id, client_id, realtor_id, phase')
+      .select('id, firm_id, client_id, realtor_id, phase, closing_amount')
       .eq('id', idOrSearchId)
       .maybeSingle();
     search = fallback.data;
@@ -120,6 +120,7 @@ export async function updatePhaseAction(
   extras?: {
     offer_amount?: number | null;
     counter_offer_amount?: number | null;
+    closing_amount?: number | null;
     closing_date?: string | null;
     closed_message?: string | null;
     contract_url?: string | null;
@@ -131,9 +132,74 @@ export async function updatePhaseAction(
   if ('error' in a) return { ok: false as const, error: a.error };
   const service = getSupabaseServiceRoleClient();
   const previousPhase = a.search.phase;
+
+  // -- PHASE-CHANGE REQUIRED INFO --------------------------------------------
+  // Certain target phases require the relevant deal fields to be supplied (or
+  // already present on the deal). We validate server-side so the deal can never
+  // land in a phase that's missing the data that phase implies. `searching`
+  // has no requirements; `under_contract` is handled by goUnderContractAction
+  // (house + dates + seller) and we redirect callers there.
+  if (phase !== previousPhase) {
+    if (phase === 'offer_made') {
+      if (extras?.offer_amount == null || !(Number(extras.offer_amount) > 0))
+        return {
+          ok: false as const,
+          error: 'An offer amount is required to move to Offer made.',
+        };
+      if (!extras?.offer_house_id)
+        return {
+          ok: false as const,
+          error: 'Pick which house the offer is on to move to Offer made.',
+        };
+    }
+    if (phase === 'counter_offer') {
+      if (
+        extras?.counter_offer_amount == null ||
+        !(Number(extras.counter_offer_amount) > 0)
+      )
+        return {
+          ok: false as const,
+          error: 'A counter-offer amount is required to move to Counter offer.',
+        };
+    }
+    if (phase === 'under_contract') {
+      // Under contract is captured by the dedicated goUnderContractAction so the
+      // house + key dates + seller-side parties are all set together.
+      return {
+        ok: false as const,
+        error:
+          'Use "Go under contract" to move into Under contract — it captures the house, dates, and seller.',
+      };
+    }
+    if (phase === 'closing') {
+      if (!extras?.closing_date)
+        return {
+          ok: false as const,
+          error: 'A closing date is required to move to Closing.',
+        };
+      if (extras?.closing_amount == null || !(Number(extras.closing_amount) > 0))
+        return {
+          ok: false as const,
+          error: 'A closing amount is required to move to Closing.',
+        };
+    }
+    if (phase === 'closed') {
+      // Final closing amount required; fall back to any amount already on the
+      // deal so a realtor who set it during Closing isn't forced to re-enter it.
+      const finalAmount =
+        extras?.closing_amount ?? (a.search as any).closing_amount ?? null;
+      if (finalAmount == null || !(Number(finalAmount) > 0))
+        return {
+          ok: false as const,
+          error: 'A final closing amount is required to mark the deal Closed.',
+        };
+    }
+  }
+
   // Build update payload — include any phase-specific extras the modal collected.
   const updates: Record<string, any> = { phase };
   if (extras?.offer_amount != null) updates.offer_amount = extras.offer_amount;
+  if (extras?.closing_amount != null) updates.closing_amount = extras.closing_amount;
   if (extras?.counter_offer_amount != null)
     updates.counter_offer_amount = extras.counter_offer_amount;
   if (extras?.closing_date) updates.closing_date = extras.closing_date;
@@ -928,6 +994,104 @@ export async function goUnderContractAction(
       message: payload.message,
       contractUrl: payload.contract_url || null,
       importantDates: dates,
+    });
+  } catch {}
+
+  revalidatePath(`/dashboard/clients/${clientId}`);
+  revalidatePath('/dashboard/deals/' + a.search.id);
+  revalidatePath('/dashboard/deals');
+  return { ok: true as const };
+}
+
+/**
+ * CLIENT ↔ REALTOR HOUSE AGREEMENT — realtor side.
+ *
+ * The realtor sets (or changes) the house the deal is about. Writes
+ * client_searches.offer_house_id + house_agreed_at + house_agreed_by (= the
+ * realtor), logs an activity row, and best-effort notifies the client so the
+ * agreement surfaces on their home. Mirrors the client-side
+ * markAgreedHouseAction so either party can establish the agreed home and the
+ * other side sees it.
+ */
+export async function setAgreedHouseAction(
+  clientId: string,
+  houseId: string
+) {
+  const a = await authorize(clientId);
+  if ('error' in a) return { ok: false as const, error: a.error };
+  if (!houseId) return { ok: false as const, error: 'Pick a house.' };
+  const service = getSupabaseServiceRoleClient();
+
+  // Confirm the house is on THIS deal before agreeing to it.
+  const { data: house } = await service
+    .from('houses')
+    .select('id, address, search_id')
+    .eq('id', houseId)
+    .eq('search_id', a.search.id)
+    .maybeSingle();
+  if (!house)
+    return { ok: false as const, error: 'That house is not on this deal.' };
+
+  const { error } = await service
+    .from('client_searches')
+    .update({
+      offer_house_id: houseId,
+      house_agreed_at: new Date().toISOString(),
+      house_agreed_by: a.me.user_id,
+    })
+    .eq('id', a.search.id);
+  if (error) return { ok: false as const, error: error.message };
+
+  await activity(
+    a.search.id,
+    a.search.firm_id,
+    a.me.user_id,
+    'house_agreed',
+    (house as any).address || houseId,
+    { house_id: houseId, by: 'realtor' }
+  );
+
+  // Best-effort: notify the client that the agreed home is set.
+  try {
+    const { data: ctx } = await service
+      .from('client_searches')
+      .select(
+        `client:users!client_searches_client_id_fkey ( email, phone, full_name )`
+      )
+      .eq('id', a.search.id)
+      .maybeSingle();
+    const client = (ctx as any)?.client;
+    const siteUrl =
+      process.env.SITE_URL || 'https://realtor-portal-ten.vercel.app';
+    const homeUrl = siteUrl + '/client/houses/' + houseId;
+    const addr = (house as any).address || 'your home';
+    if (client?.email || client?.phone) {
+      await notify({
+        email: client?.email || null,
+        phone: client?.phone || null,
+        subject: 'Your agent confirmed the home: ' + addr,
+        text:
+          'Your agent confirmed the home for your deal:\n\n' +
+          addr +
+          '\n\nView it: ' +
+          homeUrl,
+        html: `<p>Your agent confirmed the home for your deal:</p><p><strong>${escapeHtml(
+          addr
+        )}</strong></p><p><a href="${homeUrl}">View it &rarr;</a></p>`,
+        sms_text: 'Your agent confirmed the home: ' + addr + ' — ' + homeUrl,
+      });
+    }
+  } catch (e: any) {
+    console.error('[setAgreedHouseAction] notify failed', e?.message || e);
+  }
+
+  // Push to the client side (best effort).
+  try {
+    const base = process.env.SITE_URL || 'https://realtor-portal-ten.vercel.app';
+    await fetch(base + '/api/notifications/send-push', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ searchId: a.search.id, kind: 'house_agreed' }),
     });
   } catch {}
 

@@ -47,7 +47,8 @@ export default async function DealDetailPage({
        attorney_phone, docusign_envelope_url, co_realtor_id, realtor_id,
        agreed_price, closing_amount, earnest_money, commission_pct,
        contract_url, notes, offer_amount, counter_offer_amount,
-       closing_date, closed_message, created_at, updated_at,
+       closing_date, closed_message, offer_house_id, house_agreed_at,
+       house_agreed_by, created_at, updated_at,
        client:users!client_searches_client_id_fkey ( id, full_name, email, created_at ),
        realtor:users!client_searches_realtor_id_fkey ( id, full_name, email )`
     )
@@ -115,6 +116,7 @@ export default async function DealDetailPage({
       .from('houses')
       .select(
         'id, address, list_price, listing_url, photo_url, status, created_at, ' +
+          'bedrooms, bathrooms, square_feet, ' +
           'is_under_contract, seller_name, seller_email, seller_realtor_name, ' +
           'seller_realtor_email, seller_realtor_firm'
       )
@@ -228,6 +230,50 @@ export default async function DealDetailPage({
     };
   }
 
+  // CLIENT ↔ REALTOR HOUSE AGREEMENT — resolve the agreed home (address) and
+  // who agreed (client or realtor) for the prominent workspace banner.
+  let agreedHome: {
+    id: string;
+    address: string | null;
+    photo_url: string | null;
+    agreedAt: string | null;
+    agreedByName: string | null;
+    agreedByRole: 'client' | 'realtor' | 'other' | null;
+  } | null = null;
+  if ((deal as any).house_agreed_at && (deal as any).offer_house_id) {
+    const agreedHouse = (houses || []).find(
+      (h: any) => h.id === (deal as any).offer_house_id
+    );
+    let agreedByName: string | null = null;
+    let agreedByRole: 'client' | 'realtor' | 'other' | null = null;
+    const agreedById = (deal as any).house_agreed_by as string | null;
+    if (agreedById) {
+      if (agreedById === (deal as any).client?.id) {
+        agreedByName = (deal as any).client?.full_name || (deal as any).client?.email;
+        agreedByRole = 'client';
+      } else if (agreedById === (deal as any).realtor?.id) {
+        agreedByName = (deal as any).realtor?.full_name || (deal as any).realtor?.email;
+        agreedByRole = 'realtor';
+      } else {
+        const { data: who } = await service
+          .from('users')
+          .select('full_name, email')
+          .eq('id', agreedById)
+          .maybeSingle();
+        agreedByName = (who as any)?.full_name || (who as any)?.email || null;
+        agreedByRole = 'other';
+      }
+    }
+    agreedHome = {
+      id: (deal as any).offer_house_id,
+      address: (agreedHouse as any)?.address ?? null,
+      photo_url: (agreedHouse as any)?.photo_url ?? null,
+      agreedAt: (deal as any).house_agreed_at,
+      agreedByName,
+      agreedByRole,
+    };
+  }
+
   const phaseIdx = PHASES.findIndex((p) => p.id === (deal as any).phase);
 
   const canAssignRealtor =
@@ -262,6 +308,7 @@ export default async function DealDetailPage({
       showings={(showings || []) as any}
       envelopes={(envelopes || []) as any}
       buyerInterest={buyerInterest}
+      agreedHome={agreedHome}
       calendarUrl={buildCalendarFeedUrl(deal.id)}
     />
   );

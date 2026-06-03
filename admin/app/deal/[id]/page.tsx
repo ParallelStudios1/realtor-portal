@@ -4,6 +4,7 @@ import { getMe } from '@/lib/supabaseSsr';
 import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
 import { buildCalendarFeedUrl } from '@/lib/ics';
 import { formatDateOnly } from '@/lib/dates';
+import { AgreedHomeCard } from '@/components/AgreedHomeCard';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Deal' };
@@ -76,6 +77,7 @@ export default async function DealPage({
     .select(
       `id, name, phase, kind, agreed_price, closing_amount, earnest_money,
        commission_pct, contract_url, attorney_email, attorney_name, notes, created_at,
+       closing_date, offer_house_id, house_agreed_at,
        firm:firms ( id, name, logo_url, brand_color, accent_color ),
        client:users!client_searches_client_id_fkey ( id, full_name, email ),
        realtor:users!client_searches_realtor_id_fkey ( id, full_name, email )`
@@ -155,7 +157,7 @@ export default async function DealPage({
 
   const housesQuery = service
     .from('houses')
-    .select('id, address, list_price, status, photo_url')
+    .select('id, address, list_price, status, photo_url, is_under_contract')
     .eq('search_id', params.id);
   if (scopedHouseId) housesQuery.eq('id', scopedHouseId);
 
@@ -177,6 +179,17 @@ export default async function DealPage({
         : Promise.resolve({ data: [] as any[] }),
       housesQuery.order('created_at', { ascending: false }),
     ]);
+
+  // AGREED HOME — surface the chosen house once client + realtor have agreed.
+  // Privacy: we only resolve it from the `houses` array the viewer is already
+  // allowed to see. For a house-scoped party that array contains at most their
+  // one scoped house, so the card only appears if THAT house is the agreed one.
+  // For staff / principal client (unscoped) the array contains every house, so
+  // the agreed house is always resolvable. We never query outside `houses`.
+  const agreedHouse =
+    d.house_agreed_at && d.offer_house_id
+      ? (houses || []).find((h: any) => h.id === d.offer_house_id) || null
+      : null;
 
   return (
     <main className="min-h-screen" style={{ backgroundColor: brand + '0A' }}>
@@ -308,6 +321,57 @@ export default async function DealPage({
           </div>
         )}
 
+        {/* Agreed home — the house this deal is about. Respects scoping: only
+            shown when the viewer is allowed to see the agreed house. */}
+        {agreedHouse && (
+          <div className="mt-6">
+            <AgreedHomeCard
+              address={agreedHouse.address}
+              photoUrl={agreedHouse.photo_url}
+              listPrice={agreedHouse.list_price}
+              agreedPrice={canSeeFinancials ? d.agreed_price : null}
+              agreedAt={d.house_agreed_at}
+              brand={brand}
+              accent={accent}
+            />
+          </div>
+        )}
+
+        {/* Closing date highlight */}
+        {canSeeDates && d.closing_date && (
+          <div
+            className="mt-6 flex items-center gap-3 rounded-2xl border bg-white px-5 py-4 shadow-soft"
+            style={{ borderColor: brand + '33' }}
+          >
+            <div
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
+              style={{ backgroundColor: accent + '15', color: accent }}
+            >
+              <svg
+                aria-hidden
+                viewBox="0 0 24 24"
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.75"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <rect x="3" y="4" width="18" height="18" rx="2" />
+                <path d="M16 2v4M8 2v4M3 10h18" />
+              </svg>
+            </div>
+            <div className="min-w-0">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-ink-400">
+                Closing date
+              </div>
+              <div className="text-base font-semibold text-ink-900">
+                {formatDateOnly(d.closing_date)}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Body grid */}
         <div className="mt-6 grid gap-6 md:grid-cols-3">
           <div className="space-y-6 md:col-span-2">
@@ -317,37 +381,53 @@ export default async function DealPage({
                 <Empty msg="No houses yet." />
               ) : (
                 <ul className="divide-y divide-ink-100">
-                  {houses.map((h: any) => (
-                    <li key={h.id} className="flex items-center gap-3 py-2.5">
-                      {h.photo_url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={h.photo_url}
-                          alt=""
-                          className="h-12 w-16 rounded-md object-cover"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div className="h-12 w-16 rounded-md bg-ink-100" />
-                      )}
-                      <div className="min-w-0 flex-1">
-                        <div className="truncate text-sm font-semibold">
-                          {h.address}
-                        </div>
-                        {h.list_price && (
-                          <div className="text-xs text-ink-500">
-                            ${Number(h.list_price).toLocaleString()}
-                          </div>
+                  {houses.map((h: any) => {
+                    const isAgreed = agreedHouse && h.id === agreedHouse.id;
+                    return (
+                      <li key={h.id} className="flex items-center gap-3 py-2.5">
+                        {h.photo_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={h.photo_url}
+                            alt=""
+                            className="h-12 w-16 rounded-md object-cover"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div className="h-12 w-16 rounded-md bg-ink-100" />
                         )}
-                      </div>
-                      <span
-                        className="rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase"
-                        style={{ color: brand, backgroundColor: brand + '15' }}
-                      >
-                        {String(h.status).replace(/_/g, ' ')}
-                      </span>
-                    </li>
-                  ))}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5">
+                            <span className="truncate text-sm font-semibold">
+                              {h.address}
+                            </span>
+                            {isAgreed && (
+                              <span
+                                className="shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide"
+                                style={{
+                                  color: brand,
+                                  backgroundColor: brand + '15',
+                                }}
+                              >
+                                Agreed
+                              </span>
+                            )}
+                          </div>
+                          {h.list_price && (
+                            <div className="text-xs text-ink-500">
+                              ${Number(h.list_price).toLocaleString()}
+                            </div>
+                          )}
+                        </div>
+                        <span
+                          className="rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase"
+                          style={{ color: brand, backgroundColor: brand + '15' }}
+                        >
+                          {String(h.status).replace(/_/g, ' ')}
+                        </span>
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
             </Section>

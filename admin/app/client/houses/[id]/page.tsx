@@ -4,6 +4,7 @@ import { notFound, redirect } from 'next/navigation';
 import { getMe, getSupabaseServerClient } from '@/lib/supabaseSsr';
 import { HouseRatingClient } from './HouseRatingClient';
 import { ScheduleVisitClient } from './ScheduleVisitClient';
+import { AgreedHouseClient } from './AgreedHouseClient';
 
 export const dynamic = 'force-dynamic';
 
@@ -66,6 +67,47 @@ export default async function HouseDetailPage({
     .eq('id', params.id)
     .maybeSingle();
   if (!house) notFound();
+
+  // CLIENT ↔ REALTOR HOUSE AGREEMENT — resolve this client's deal for this
+  // house so we can render the "This is the house I want" control + reflect
+  // whichever home is currently agreed (set by either side).
+  const { data: agreementSearch } = await supabase
+    .from('client_searches')
+    .select('id, client_id, offer_house_id, house_agreed_at')
+    .eq('id', house.search_id)
+    .maybeSingle();
+  const isPrincipalClient =
+    (agreementSearch as any)?.client_id === me.user_id;
+  const agreedHouseId = (agreementSearch as any)?.offer_house_id as
+    | string
+    | null;
+  const houseIsAgreed = (agreementSearch as any)?.house_agreed_at != null;
+  let agreementState: 'agreedHere' | 'agreedElsewhere' | 'none' = 'none';
+  let agreedAddress: string | null = null;
+  if (houseIsAgreed && agreedHouseId === house.id) {
+    agreementState = 'agreedHere';
+  } else if (houseIsAgreed && agreedHouseId) {
+    agreementState = 'agreedElsewhere';
+    const { data: other } = await supabase
+      .from('houses')
+      .select('address')
+      .eq('id', agreedHouseId)
+      .maybeSingle();
+    agreedAddress = (other as any)?.address ?? null;
+  }
+
+  // Brand color for the agreement control accent.
+  const { data: agFirm } = me.firm_id
+    ? await supabase
+        .from('firms')
+        .select('brand_color')
+        .eq('id', me.firm_id)
+        .maybeSingle()
+    : { data: null };
+  const agBrandColor =
+    ((agFirm as any)?.brand_color as string | null) ||
+    me.firm_brand_color ||
+    null;
 
   // Existing rating from this client (if any).
   // Schema uses `stars` (1-5) and `notes` (text).
@@ -199,6 +241,15 @@ export default async function HouseDetailPage({
             houseId={house.id}
             pendingTour={pendingTour || null}
           />
+
+          {isPrincipalClient && (
+            <AgreedHouseClient
+              houseId={house.id}
+              brandColor={agBrandColor}
+              state={agreementState}
+              agreedAddress={agreedAddress}
+            />
+          )}
         </div>
       </div>
 

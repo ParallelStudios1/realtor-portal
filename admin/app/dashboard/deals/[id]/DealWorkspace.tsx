@@ -14,6 +14,7 @@ import {
   scheduleShowingAction,
   rescheduleShowingAction,
   updateShowingStatusAction,
+  setAgreedHouseAction,
   type ShowingAttendee,
 } from '../../clients/[id]/actions';
 import { DeadlineReminderEditor } from '@/components/DeadlineReminderEditor';
@@ -70,6 +71,14 @@ export function DealWorkspace(props: {
     linkedBuyerCount: number;
     underContractBuyerCount: number;
   } | null;
+  agreedHome?: {
+    id: string;
+    address: string | null;
+    photo_url: string | null;
+    agreedAt: string | null;
+    agreedByName: string | null;
+    agreedByRole: 'client' | 'realtor' | 'other' | null;
+  } | null;
   calendarUrl?: string | null;
 }) {
   const {
@@ -90,6 +99,7 @@ export function DealWorkspace(props: {
     recentMessages,
     showings,
     buyerInterest,
+    agreedHome,
   } = props;
 
   const [docFolder, setDocFolder] = useState<string>('all');
@@ -103,8 +113,25 @@ export function DealWorkspace(props: {
   const [, startShowingMutation] = useTransition();
   const [review, setReview] = useState<{ ex: StagedExtraction; name: string } | null>(null);
   const [extractingId, setExtractingId] = useState<string | null>(null);
+  const [agreeingHome, setAgreeingHome] = useState(false);
+  const [savingAgreedHome, startAgreedHome] = useTransition();
   const router = useRouter();
   const toast = useToast();
+
+  function setAgreedHouse(houseId: string) {
+    startAgreedHome(async () => {
+      const r = await setAgreedHouseAction(clientId, houseId);
+      if (!r.ok) {
+        toast.show(r.error || 'Failed', { variant: 'error' });
+        return;
+      }
+      toast.show('Agreed home set — the client was notified.', {
+        variant: 'success',
+      });
+      setAgreeingHome(false);
+      router.refresh();
+    });
+  }
 
   async function extractDates(doc: any) {
     setExtractingId(doc.id);
@@ -267,7 +294,7 @@ export function DealWorkspace(props: {
         {/* Phase progress */}
         <div className="border-t border-ink-200 bg-white px-6 py-5">
           <div className="mb-3 flex items-baseline justify-between">
-            <h2 className="text-[11px] font-bold uppercase tracking-wider text-ink-500">
+            <h2 className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink-500">
               Deal phase
             </h2>
             <span className="text-xs text-ink-500">
@@ -325,6 +352,132 @@ export function DealWorkspace(props: {
         </div>
       </section>
 
+      {/* AGREED HOME — prominent, first-class. Shows the property the client
+          and realtor settled on (set by either side), or a prompt to set it.
+          Flat ink, brand accent via the ink-900 border. */}
+      <section className="mt-6 overflow-hidden rounded-2xl border-2 border-ink-900 bg-white shadow-soft-md">
+        <div className="flex items-center justify-between gap-3 border-b border-ink-100 bg-ink-900 px-5 py-2.5">
+          <h2 className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-white">
+            <svg aria-hidden viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z" />
+            </svg>
+            Agreed home
+          </h2>
+          {agreedHome && houses.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setAgreeingHome((v) => !v)}
+              className="rounded-md border border-white/30 bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-white transition hover:bg-white/20"
+            >
+              {agreeingHome ? 'Cancel' : 'Change home'}
+            </button>
+          )}
+        </div>
+
+        {agreedHome ? (
+          <div className="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center">
+            <div className="h-24 w-full shrink-0 overflow-hidden rounded-xl bg-ink-100 sm:h-20 sm:w-32">
+              {agreedHome.photo_url ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={agreedHome.photo_url}
+                  alt={agreedHome.address || 'Agreed home'}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="flex h-full items-center justify-center text-ink-400">
+                  <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M3 11l9-7 9 7M5 10v10h14V10" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-lg font-bold tracking-tight text-ink-900">
+                {agreedHome.address || 'Agreed home'}
+              </div>
+              <p className="mt-1 text-xs text-ink-500">
+                Agreed
+                {agreedHome.agreedByName ? (
+                  <>
+                    {' '}by{' '}
+                    <span className="font-semibold text-ink-700">
+                      {agreedHome.agreedByName}
+                    </span>
+                    {agreedHome.agreedByRole &&
+                    agreedHome.agreedByRole !== 'other'
+                      ? ` (the ${agreedHome.agreedByRole})`
+                      : ''}
+                  </>
+                ) : null}
+                {agreedHome.agreedAt ? (
+                  <>
+                    {' · '}
+                    <LocalDateTime value={agreedHome.agreedAt} dateOptions={{}} />
+                  </>
+                ) : null}
+              </p>
+              <Link
+                href={`/dashboard/deals/${deal.id}#houses`}
+                className="mt-2 inline-block text-xs font-semibold text-ink-900 underline-offset-2 hover:underline"
+              >
+                View in houses below ↓
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <div className="px-5 py-5">
+            <p className="text-sm text-ink-600">
+              No agreed home yet. Pick the property this deal is about — the
+              client will see it on their home, and they can also pick it
+              themselves.
+            </p>
+            {houses.length === 0 && (
+              <p className="mt-1 text-xs text-ink-400">
+                Add a house to this deal first.
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Inline house picker — shown when setting/changing the agreed home. */}
+        {(agreeingHome || !agreedHome) && houses.length > 0 && (
+          <div className="border-t border-ink-100 bg-ink-50/60 px-5 py-4">
+            <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink-500">
+              {agreedHome ? 'Change to' : 'Set the agreed home'}
+            </div>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {houses.map((h: any) => {
+                const isCurrent = agreedHome?.id === h.id;
+                return (
+                  <button
+                    key={h.id}
+                    type="button"
+                    disabled={savingAgreedHome || isCurrent}
+                    onClick={() => setAgreedHouse(h.id)}
+                    className={
+                      'rounded-lg border px-3 py-2 text-left text-xs font-semibold transition disabled:opacity-60 ' +
+                      (isCurrent
+                        ? 'border-ink-900 bg-ink-900 text-white'
+                        : 'border-ink-200 bg-white text-ink-700 hover:border-ink-900 hover:bg-white')
+                    }
+                  >
+                    <span className="block max-w-[14rem] truncate">
+                      {h.address}
+                    </span>
+                    {isCurrent && (
+                      <span className="text-[10px] font-bold uppercase tracking-wide text-white/70">
+                        Current
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </section>
+
       {/* Realtor assignment — owners / firm_admins / managers only. */}
       {me.canAssignRealtor && (
         <section className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-ink-200 bg-white p-4 shadow-soft-sm">
@@ -337,7 +490,7 @@ export function DealWorkspace(props: {
               </svg>
             </div>
             <div>
-              <div className="text-[11px] font-bold uppercase tracking-wider text-ink-500">
+              <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink-500">
                 Assigned realtor
               </div>
               <div className="text-sm font-semibold text-ink-900">
@@ -449,6 +602,7 @@ export function DealWorkspace(props: {
               : `Houses (${houses.length})`;
             return (
               <Card
+                anchorId="houses"
                 title={housesTitle}
                 right={
                   houses.length > 0 ? (
@@ -492,10 +646,15 @@ export function DealWorkspace(props: {
                   )
                 ) : (
                   <ul className="divide-y divide-ink-100">
-                    {houses.map((h: any) => (
+                    {houses.map((h: any) => {
+                      const isAgreed = agreedHome?.id === h.id;
+                      return (
                       <li
                         key={h.id}
-                        className="flex items-center gap-4 px-5 py-3"
+                        className={
+                          'flex items-center gap-4 px-5 py-3 transition ' +
+                          (isAgreed ? 'bg-ink-50/70' : 'hover:bg-ink-50/40')
+                        }
                       >
                         {h.photo_url ? (
                           /* eslint-disable-next-line @next/next/no-img-element */
@@ -512,12 +671,18 @@ export function DealWorkspace(props: {
                           </div>
                         )}
                         <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
                             <span className="truncate font-medium">
                               {h.address}
                             </span>
+                            {isAgreed && (
+                              <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-ink-900 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white">
+                                <svg viewBox="0 0 16 16" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M3 8.5l3.5 3.5L13 5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                                Agreed home
+                              </span>
+                            )}
                             {h.is_under_contract && (
-                              <span className="shrink-0 rounded-full bg-ink-900 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white">
+                              <span className="shrink-0 rounded-full border border-ink-300 bg-white px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-ink-700">
                                 Under contract
                               </span>
                             )}
@@ -556,18 +721,31 @@ export function DealWorkspace(props: {
                               </div>
                             )}
                         </div>
-                        {h.listing_url && (
-                          <a
-                            href={h.listing_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs font-semibold text-blue-700 hover:underline"
-                          >
-                            Listing ↗
-                          </a>
-                        )}
+                        <div className="flex shrink-0 flex-col items-end gap-1.5">
+                          {h.listing_url && (
+                            <a
+                              href={h.listing_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs font-semibold text-blue-700 hover:underline"
+                            >
+                              Listing ↗
+                            </a>
+                          )}
+                          {!isSeller && !isAgreed && (
+                            <button
+                              type="button"
+                              disabled={savingAgreedHome}
+                              onClick={() => setAgreedHouse(h.id)}
+                              className="rounded-md border border-ink-200 bg-white px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-ink-700 transition hover:border-ink-900 hover:text-ink-900 disabled:opacity-60"
+                            >
+                              Set as agreed
+                            </button>
+                          )}
+                        </div>
                       </li>
-                    ))}
+                      );
+                    })}
                   </ul>
                 )}
               </Card>
@@ -1038,23 +1216,28 @@ function Card({
   title,
   right,
   empty,
+  anchorId,
   children,
 }: {
   title: string;
   right?: React.ReactNode;
   empty?: string | null;
+  anchorId?: string;
   children: React.ReactNode;
 }) {
   return (
-    <section className="overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-soft transition hover:shadow-soft-md">
+    <section
+      id={anchorId}
+      className="surface overflow-hidden transition hover:shadow-soft-md scroll-mt-24"
+    >
       <div className="flex items-center justify-between gap-3 border-b border-ink-100 px-5 py-3.5">
-        <h2 className="text-[11px] font-bold uppercase tracking-wider text-ink-500">
+        <h2 className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink-500">
           {title}
         </h2>
         {right}
       </div>
       {empty ? (
-        <div className="bg-dotted px-5 py-10 text-center text-sm text-ink-500">
+        <div className="bg-dotted px-5 py-12 text-center text-sm text-ink-500">
           {empty}
         </div>
       ) : (
