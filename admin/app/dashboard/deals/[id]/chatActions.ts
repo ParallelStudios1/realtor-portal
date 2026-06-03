@@ -154,11 +154,13 @@ export async function getDealChat(searchId: string): Promise<
   const { me } = auth;
 
   const service = getSupabaseServiceRoleClient();
+  // Group thread = messages on the deal with NO private recipient. 1:1 DMs set
+  // recipient_user_id; group/deal-chat messages leave it null.
   const { data, error } = await service
     .from('messages')
-    .select('id, sender_id, body, created_at, private')
+    .select('id, sender_id, body, created_at')
     .eq('search_id', searchId)
-    .or('private.is.null,private.eq.false')
+    .is('recipient_user_id', null)
     .order('created_at', { ascending: true });
   if (error) return { ok: false as const, error: error.message };
 
@@ -198,8 +200,9 @@ export async function postDealChatMessage(
       firm_id: deal.firm_id,
       search_id: searchId,
       sender_id: me.user_id,
+      // Group/deal-chat message: no private recipient (recipient_user_id null).
+      recipient_user_id: null,
       body: text,
-      private: false,
     })
     .select('id, sender_id, body, created_at')
     .single();
