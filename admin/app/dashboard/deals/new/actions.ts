@@ -68,6 +68,9 @@ export async function createBlankDealAction(payload: {
       firm_id: me!.firm_id,
       client_id: null, // explicitly blank — populated when a party is added
       realtor_id: me!.user_id,
+      // The deal admin is the creator — the person with full control over the
+      // deal. For a blank deal that's whoever started it.
+      created_by: me!.user_id,
       name,
       phase: 'searching',
       kind,

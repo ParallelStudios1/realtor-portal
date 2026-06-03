@@ -169,6 +169,8 @@ export async function POST(req: Request) {
           firm_id: me.firm_id,
           client_id: clientId,
           realtor_id: me.id,
+          // Deal admin = the staffer inviting this client.
+          created_by: me.id,
           name:
             fullName + (roleInDeal === 'seller' ? "'s Listing" : "'s Search"),
           phase: 'searching',

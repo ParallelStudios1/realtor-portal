@@ -23,6 +23,8 @@ import { formatDateOnly } from '@/lib/dates';
 import { LocalDateTime } from '@/components/LocalDateTime';
 import { EsignPanel } from './EsignPanel';
 import { ExtractReview, type StagedExtraction } from './ExtractReview';
+import { DealChat } from '@/components/DealChat';
+import type { DealChatMessage } from './chatActions';
 
 /**
  * The canonical interactive deal workspace. Compared to the old per-client
@@ -63,6 +65,7 @@ export function DealWorkspace(props: {
     role?: string;
   }>;
   recentMessages: any[];
+  dealChatMessages?: DealChatMessage[];
   showings?: any[];
   envelopes?: any[];
   buyerInterest?: {
@@ -79,6 +82,9 @@ export function DealWorkspace(props: {
     agreedByName: string | null;
     agreedByRole: 'client' | 'realtor' | 'other' | null;
   } | null;
+  // The deal admin — the creator of the deal (client_searches.created_by),
+  // the person with full control. Null on legacy rows with no creator stamped.
+  dealAdmin?: { id: string; name: string | null } | null;
   calendarUrl?: string | null;
 }) {
   const {
@@ -97,9 +103,11 @@ export function DealWorkspace(props: {
     activity,
     teammates,
     recentMessages,
+    dealChatMessages,
     showings,
     buyerInterest,
     agreedHome,
+    dealAdmin,
   } = props;
 
   const [docFolder, setDocFolder] = useState<string>('all');
@@ -478,8 +486,11 @@ export function DealWorkspace(props: {
         )}
       </section>
 
-      {/* Realtor assignment — owners / firm_admins / managers only. */}
-      {me.canAssignRealtor && (
+      {/* Realtor assignment — owners / firm_admins / managers only, and only
+          on the HOST firm's own deals. A cross-firm guest who happens to be a
+          firm_admin in their own firm must never be able to reassign the
+          realtor on someone else's deal, so we also require !isGuestFirm. */}
+      {me.canAssignRealtor && !isGuestFirm && (
         <section className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-ink-200 bg-white p-4 shadow-soft-sm">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ink-100 text-ink-700">
@@ -498,6 +509,11 @@ export function DealWorkspace(props: {
                   <span className="text-amber-700">Unassigned</span>
                 )}
               </div>
+              {dealAdmin?.name && (
+                <div className="mt-0.5 text-xs text-ink-500">
+                  Deal admin · {dealAdmin.name}
+                </div>
+              )}
             </div>
           </div>
           {assigning ? (
@@ -553,6 +569,18 @@ export function DealWorkspace(props: {
               {deal.realtor_id ? 'Reassign' : 'Assign realtor'}
             </button>
           )}
+        </section>
+      )}
+
+      {/* Deal admin line — shown standalone when the realtor-assignment section
+          above (which already surfaces it) is hidden for this viewer. The deal
+          admin is the creator, the person with full control over the deal. */}
+      {(!me.canAssignRealtor || isGuestFirm) && dealAdmin?.name && (
+        <section className="mt-6 flex items-center gap-2 rounded-2xl border border-ink-200 bg-white px-4 py-3 text-xs shadow-soft-sm">
+          <span className="font-bold uppercase tracking-[0.14em] text-ink-500">
+            Deal admin
+          </span>
+          <span className="font-semibold text-ink-900">·&nbsp;{dealAdmin.name}</span>
         </section>
       )}
 
@@ -1014,6 +1042,16 @@ export function DealWorkspace(props: {
               </ol>
             )}
           </Card>
+
+          {/* Deal chat — the shared group thread for the whole deal. Every
+              party with message access reads & posts here. Distinct from the
+              1:1 client↔realtor DM shown in "Recent messages". Staff can post. */}
+          <DealChat
+            searchId={deal.id}
+            me={{ userId: me.userId, name: me.fullName }}
+            initialMessages={dealChatMessages || []}
+            canPost={true}
+          />
         </div>
 
         {/* Right rail */}
@@ -1090,7 +1128,11 @@ export function DealWorkspace(props: {
                         Add to calendar ↗
                       </a>
                     </div>
-                    <DeadlineReminderEditor date={d} teammates={teammates} />
+                    <DeadlineReminderEditor
+                      date={d}
+                      teammates={teammates}
+                      me={{ id: me.userId, fullName: me.fullName }}
+                    />
                   </li>
                 ))}
               </ul>

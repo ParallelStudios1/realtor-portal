@@ -5,6 +5,11 @@ import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
 import { buildCalendarFeedUrl } from '@/lib/ics';
 import { formatDateOnly } from '@/lib/dates';
 import { AgreedHomeCard } from '@/components/AgreedHomeCard';
+import { DealChat } from '@/components/DealChat';
+import {
+  getDealChat,
+  type DealChatMessage,
+} from '@/app/dashboard/deals/[id]/chatActions';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Deal' };
@@ -179,6 +184,17 @@ export default async function DealPage({
         : Promise.resolve({ data: [] as any[] }),
       housesQuery.order('created_at', { ascending: false }),
     ]);
+
+  // DEAL GROUP CHAT — the shared thread for the whole deal. Only loaded for
+  // parties who can see messages (staff, principal client, or a participant
+  // with can_view_messages). getDealChat re-runs the same authorization on the
+  // server before returning anything. canPost mirrors canSeeMessages — if you
+  // can read the group thread, you can post to it.
+  let dealChatMessages: DealChatMessage[] = [];
+  if (canSeeMessages) {
+    const chat = await getDealChat(params.id);
+    if (chat.ok) dealChatMessages = chat.messages;
+  }
 
   // AGREED HOME — surface the chosen house once client + realtor have agreed.
   // Privacy: we only resolve it from the `houses` array the viewer is already
@@ -578,6 +594,18 @@ export default async function DealPage({
                   </ul>
                 )}
               </Section>
+            )}
+
+            {/* Deal group chat — the shared thread for the whole deal. Shown to
+                any party who can see messages; they can also post (canPost =
+                canSeeMessages). The server action re-authorizes every post. */}
+            {canSeeMessages && (
+              <DealChat
+                searchId={params.id}
+                me={{ userId: me.user_id, name: me.full_name }}
+                initialMessages={dealChatMessages}
+                canPost={canSeeMessages}
+              />
             )}
           </div>
 

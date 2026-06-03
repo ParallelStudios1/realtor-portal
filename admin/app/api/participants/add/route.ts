@@ -5,6 +5,7 @@ import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
 import { notify } from '@/lib/notify';
 import { canUsePremiumForDeal } from '@/lib/planGate';
 import { escapeHtml } from '@/lib/email';
+import { defaultPartyPermissions } from '@/lib/partyPermissions';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -369,6 +370,9 @@ export async function POST(req: Request) {
       }
     }
 
+    // When a visibility flag is omitted by the caller, fall back to the
+    // role-based defaults (single source of truth in lib/partyPermissions).
+    const perms = defaultPartyPermissions(body.role);
     const { data: inserted, error } = await service
       .from('deal_participants')
       .insert({
@@ -381,10 +385,10 @@ export async function POST(req: Request) {
         external_phone: body.phone || null,
         role: body.role,
         represents,
-        can_view_documents: body.can_view_documents ?? true,
-        can_view_financials: body.can_view_financials ?? false,
-        can_view_messages: body.can_view_messages ?? false,
-        can_view_dates: body.can_view_dates ?? true,
+        can_view_documents: body.can_view_documents ?? perms.can_view_documents,
+        can_view_financials: body.can_view_financials ?? perms.can_view_financials,
+        can_view_messages: body.can_view_messages ?? perms.can_view_messages,
+        can_view_dates: body.can_view_dates ?? perms.can_view_dates,
         created_by: me.user_id,
       })
       .select(

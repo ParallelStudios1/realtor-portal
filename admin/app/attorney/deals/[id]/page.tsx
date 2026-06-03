@@ -2,8 +2,10 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getMe } from '@/lib/supabaseSsr';
 import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
-import { formatDateOnly } from '@/lib/dates';
+import { formatDateOnly, formatDateOnlyLong } from '@/lib/dates';
 import { AgreedHomeCard } from '@/components/AgreedHomeCard';
+import { AttorneyDocList, type AttorneyDoc } from '@/components/AttorneyDocList';
+import { LocalDateTime } from '@/components/LocalDateTime';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Deal' };
@@ -16,14 +18,44 @@ const PHASES = [
   'closed',
 ] as const;
 
+// Open e-sign states (not yet finished) — these are what an attorney must chase.
+const OPEN_SIG = new Set(['created', 'sent', 'delivered']);
+
+// Labels that signal a legally significant deadline. Used to highlight the
+// rows an attorney actually tracks (closing, due diligence, contingencies,
+// earnest money). Matched case-insensitively against important_dates.label.
+const LEGAL_DATE_HINTS = [
+  'closing',
+  'close',
+  'due diligence',
+  'diligence',
+  'contingency',
+  'contingencies',
+  'earnest',
+  'inspection',
+  'financing',
+  'appraisal',
+  'title',
+  'possession',
+];
+
+function isLegalDate(label: string): boolean {
+  const l = (label || '').toLowerCase();
+  return LEGAL_DATE_HINTS.some((h) => l.includes(h));
+}
+
 /**
- * Read-only attorney deal view. Tailored for closing counsel: agreed home,
- * phase, key dates, contract/documents, financials, and the roster of parties.
+ * Read-only attorney deal view. Tailored for closing counsel and organized
+ * around what an attorney does on a deal: triage what needs attention, review
+ * deadlines, verify the closing figures, open the contract & documents, track
+ * e-signatures, and reach every party.
  *
- * Access mirrors /deal/[id]: the caller must be attached to this deal as the
- * attorney — either via the legacy `attorney_email` column OR a
- * deal_participants row with role='attorney'. Visibility flags from the
- * participant row are honored exactly. Nothing here mutates state.
+ * Access mirrors /deal/[id] and is UNCHANGED: the caller must be attached to
+ * this deal as the attorney — either via the legacy `attorney_email` column OR
+ * a deal_participants row with role='attorney'. Per-participant visibility
+ * flags (financials / documents / dates) and house scoping are honored exactly.
+ * Nothing here mutates state — every action is a link or a read-only signed-URL
+ * fetch.
  */
 export default async function AttorneyDealPage({
   params,
@@ -114,7 +146,7 @@ export default async function AttorneyDealPage({
     .eq('search_id', params.id);
   if (scopedHouseId) housesQuery.eq('id', scopedHouseId);
 
-  const [{ data: dates }, { data: documents }, { data: houses }] =
+  const [{ data: dates }, { data: documents }, { data: houses }, { data: envelopes }] =
     await Promise.all([
       canSeeDates
         ? service
@@ -126,11 +158,20 @@ export default async function AttorneyDealPage({
       canSeeDocuments
         ? service
             .from('documents')
-            .select('id, name, mime_type, created_at')
+            .select('id, name, mime_type, created_at, storage_path')
             .eq('search_id', params.id)
             .order('created_at', { ascending: false })
         : Promise.resolve({ data: [] as any[] }),
       housesQuery.order('created_at', { ascending: false }),
+      // E-signature is legal status the attorney always needs to see (it's not
+      // gated by the financials/documents flags — it's the state of execution).
+      service
+        .from('esign_envelopes')
+        .select(
+          'id, envelope_id, envelope_url, status, recipients, completed_at, created_at'
+        )
+        .eq('search_id', params.id)
+        .order('created_at', { ascending: false }),
     ]);
 
   // AGREED HOME — resolved only from houses the viewer is allowed to see.
@@ -145,6 +186,40 @@ export default async function AttorneyDealPage({
 
   // Other parties (excluding this attorney) for the roster.
   const otherParts = parts.filter((p) => p.id !== myAttorneyRow?.id);
+
+  // ---- NEEDS YOUR ATTENTION -------------------------------------------------
+  const openEnvelopes = (envelopes as any[] | null || []).filter((e) =>
+    OPEN_SIG.has(String(e.status))
+  );
+
+  // Upcoming legal deadlines within ~14 days (closing + important_dates).
+  const now = new Date();
+  const horizon = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+  const todayStr = now.toISOString().slice(0, 10);
+  const horizonStr = horizon.toISOString().slice(0, 10);
+
+  type Deadline = { label: string; date: string; time?: string | null; legal: boolean };
+  const upcomingDeadlines: Deadline[] = [];
+  if (
+    d.closing_date &&
+    d.closing_date >= todayStr &&
+    d.closing_date <= horizonStr
+  ) {
+    upcomingDeadlines.push({ label: 'Closing', date: d.closing_date, legal: true });
+  }
+  for (const dd of (dates as any[] | null) || []) {
+    if (dd.date >= todayStr && dd.date <= horizonStr) {
+      upcomingDeadlines.push({
+        label: dd.label,
+        date: dd.date,
+        time: dd.event_time,
+        legal: isLegalDate(dd.label),
+      });
+    }
+  }
+  upcomingDeadlines.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+
+  const hasAttention = openEnvelopes.length > 0 || upcomingDeadlines.length > 0;
 
   return (
     <main className="min-h-screen" style={{ backgroundColor: brand + '0A' }}>
@@ -270,11 +345,12 @@ export default async function AttorneyDealPage({
               style={{ backgroundColor: brand + '15', color: brand }}
             >
               Attorney
+              {myAttorneyRow?.represents
+                ? ` · ${myAttorneyRow.represents}`
+                : ''}
             </span>
           </div>
-          <span className="text-xs text-ink-500">
-            Read-only closing view.
-          </span>
+          <span className="text-xs text-ink-500">Read-only closing view.</span>
         </div>
 
         {/* Agreed home */}
@@ -292,55 +368,225 @@ export default async function AttorneyDealPage({
           </div>
         )}
 
-        {/* Closing date highlight */}
-        {d.closing_date && (
-          <div
-            className="mt-6 flex items-center gap-3 rounded-2xl border bg-white px-5 py-4 shadow-soft"
-            style={{ borderColor: brand + '33' }}
-          >
-            <div
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
-              style={{ backgroundColor: accent + '15', color: accent }}
-            >
-              <svg
-                aria-hidden
-                viewBox="0 0 24 24"
-                className="h-5 w-5"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.75"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <rect x="3" y="4" width="18" height="18" rx="2" />
-                <path d="M16 2v4M8 2v4M3 10h18" />
-              </svg>
-            </div>
-            <div className="min-w-0">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-ink-400">
-                Closing date
-              </div>
-              <div className="text-base font-semibold text-ink-900">
-                {formatDateOnly(d.closing_date)}
-              </div>
-            </div>
-          </div>
-        )}
-
         <div className="mt-6 space-y-6">
-          {/* Contract + financials */}
+          {/* ============== NEEDS YOUR ATTENTION ============== */}
+          {hasAttention && (
+            <section
+              className="overflow-hidden rounded-2xl border bg-white shadow-soft"
+              style={{ borderColor: accent + '40' }}
+            >
+              <div
+                className="flex items-center gap-2 px-5 py-3"
+                style={{ backgroundColor: accent + '12' }}
+              >
+                <svg
+                  aria-hidden
+                  viewBox="0 0 24 24"
+                  className="h-4 w-4"
+                  style={{ color: accent }}
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.75"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M12 9v4M12 17h.01" />
+                  <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" />
+                </svg>
+                <h2
+                  className="text-[11px] font-bold uppercase tracking-[0.14em]"
+                  style={{ color: accent }}
+                >
+                  Needs your attention
+                </h2>
+              </div>
+              <div className="space-y-4 px-5 py-4">
+                {/* Pending signatures */}
+                {openEnvelopes.length > 0 && (
+                  <div>
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-ink-400">
+                      Awaiting signature
+                    </div>
+                    <ul className="mt-2 space-y-2">
+                      {openEnvelopes.map((env) => {
+                        const recips = recipientsOf(env.recipients);
+                        return (
+                          <li
+                            key={env.id}
+                            className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-ink-100 bg-ink-50 px-3.5 py-2.5"
+                          >
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2">
+                                <EsignStatusBadge status={env.status} />
+                                <span className="truncate text-sm font-semibold text-ink-900">
+                                  Envelope {String(env.envelope_id).slice(0, 8)}…
+                                </span>
+                              </div>
+                              <div className="mt-0.5 text-[11px] text-ink-500">
+                                {recips.length > 0
+                                  ? `${recips.length} recipient${
+                                      recips.length === 1 ? '' : 's'
+                                    }`
+                                  : 'Out for signature'}
+                              </div>
+                            </div>
+                            {env.envelope_url && (
+                              <a
+                                href={env.envelope_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="btn-secondary shrink-0 px-3 py-1.5 text-xs"
+                              >
+                                Open in DocuSign ↗
+                              </a>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Upcoming legal deadlines (≤14 days) */}
+                {upcomingDeadlines.length > 0 && (
+                  <div>
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-ink-400">
+                      Deadlines within 14 days
+                    </div>
+                    <ul className="mt-2 space-y-1.5">
+                      {upcomingDeadlines.map((dl, i) => (
+                        <li
+                          key={`${dl.label}-${dl.date}-${i}`}
+                          className="flex items-center justify-between gap-3 rounded-xl border border-ink-100 bg-ink-50 px-3.5 py-2.5"
+                        >
+                          <div className="flex min-w-0 items-center gap-2">
+                            <CountdownChip date={dl.date} accent={accent} />
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-1.5">
+                                <span className="truncate text-sm font-semibold text-ink-900">
+                                  {dl.label}
+                                </span>
+                                {dl.legal && (
+                                  <span
+                                    className="shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide"
+                                    style={{
+                                      color: accent,
+                                      backgroundColor: accent + '14',
+                                    }}
+                                  >
+                                    Legal
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-[11px] text-ink-500">
+                                {formatDateOnlyLong(dl.date)}
+                                {dl.time ? ` · ${dl.time}` : ''}
+                              </div>
+                            </div>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
+
+          {/* ============== KEY DATES / DEADLINES ============== */}
+          {canSeeDates && (
+            <Section title={`Key dates & deadlines (${dates?.length || 0})`}>
+              {!dates || dates.length === 0 ? (
+                <Empty msg="No dates on this deal yet." />
+              ) : (
+                <ul className="divide-y divide-ink-100">
+                  {dates.map((dd: any) => {
+                    const legal = isLegalDate(dd.label);
+                    return (
+                      <li key={dd.id} className="py-2.5 text-sm">
+                        <div className="flex items-baseline justify-between gap-2">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-medium text-ink-900">
+                              {dd.label}
+                            </span>
+                            {legal && (
+                              <span
+                                className="rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide"
+                                style={{
+                                  color: accent,
+                                  backgroundColor: accent + '14',
+                                }}
+                              >
+                                Legal
+                              </span>
+                            )}
+                          </div>
+                          <span className="shrink-0 text-xs font-semibold text-ink-700">
+                            {formatDateOnlyLong(dd.date)}
+                            {dd.event_time ? ` · ${dd.event_time}` : ''}
+                          </span>
+                        </div>
+                        {(dd.location || dd.notes) && (
+                          <div className="mt-1 space-y-0.5 text-[11px] text-ink-500">
+                            {dd.location && <div>{dd.location}</div>}
+                            {dd.notes && (
+                              <div className="text-ink-400">{dd.notes}</div>
+                            )}
+                          </div>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </Section>
+          )}
+
+          {/* ============== CLOSING & FINANCIALS ============== */}
           {canSeeFinancials && (
-            <Section title="Financials & contract">
-              <dl className="grid grid-cols-2 gap-3 text-sm">
-                <Row label="Agreed price" value={d.agreed_price} />
-                <Row label="Closing amount" value={d.closing_amount} />
-                <Row label="Earnest money" value={d.earnest_money} />
-                <Row
+            <Section title="Closing & financials">
+              {d.closing_date && (
+                <div
+                  className="mb-4 flex items-center gap-3 rounded-xl border px-4 py-3"
+                  style={{ borderColor: accent + '33', backgroundColor: accent + '0A' }}
+                >
+                  <div
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
+                    style={{ backgroundColor: accent + '18', color: accent }}
+                  >
+                    <svg
+                      aria-hidden
+                      viewBox="0 0 24 24"
+                      className="h-5 w-5"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.75"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <rect x="3" y="4" width="18" height="18" rx="2" />
+                      <path d="M16 2v4M8 2v4M3 10h18" />
+                    </svg>
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-ink-400">
+                      Closing date
+                    </div>
+                    <div className="text-base font-semibold text-ink-900">
+                      {formatDateOnlyLong(d.closing_date)}
+                    </div>
+                  </div>
+                </div>
+              )}
+              <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+                <Money label="Agreed price" value={d.agreed_price} />
+                <Money label="Earnest money" value={d.earnest_money} />
+                <Money label="Closing amount" value={d.closing_amount} />
+                <Field
                   label="Commission"
                   value={
                     d.commission_pct != null ? d.commission_pct + '%' : null
                   }
-                  raw
                 />
               </dl>
               <div className="mt-4 flex flex-wrap gap-2">
@@ -368,124 +614,134 @@ export default async function AttorneyDealPage({
             </Section>
           )}
 
-          {/* Key dates */}
-          {canSeeDates && (
-            <Section title={`Key dates (${dates?.length || 0})`}>
-              {!dates || dates.length === 0 ? (
-                <Empty msg="No dates yet." />
-              ) : (
-                <ul className="divide-y divide-ink-100">
-                  {dates.map((dd: any) => (
-                    <li key={dd.id} className="py-2 text-sm">
-                      <div className="flex items-baseline justify-between gap-2">
-                        <div className="font-medium">{dd.label}</div>
-                        <span className="text-xs font-semibold text-ink-600">
-                          {formatDateOnly(dd.date)}
-                        </span>
-                      </div>
-                      {(dd.location || dd.notes) && (
-                        <div className="mt-1 space-y-0.5 text-[11px] text-ink-500">
-                          {dd.location && <div>{dd.location}</div>}
-                          {dd.notes && (
-                            <div className="text-ink-400">{dd.notes}</div>
-                          )}
-                        </div>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </Section>
-          )}
-
-          {/* Documents */}
-          {canSeeDocuments && (
-            <Section title={`Documents (${documents?.length || 0})`}>
-              {!documents || documents.length === 0 ? (
-                <Empty msg="No documents shared yet." />
-              ) : (
-                <ul className="divide-y divide-ink-100">
-                  {documents.map((doc: any) => (
-                    <li
-                      key={doc.id}
-                      className="flex items-center gap-2 py-2 text-sm"
+          {/* ============== CONTRACT & DOCUMENTS ============== */}
+          <Section title="Contract & documents">
+            {/* Contract links — always shown if present (the executed/working
+                contract is core to the attorney's review). */}
+            {(d.contract_url || d.docusign_envelope_url) && (
+              <div className="mb-3 flex flex-wrap gap-2 border-b border-ink-100 pb-3">
+                {d.contract_url && (
+                  <a
+                    href={d.contract_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 rounded-xl border border-ink-200 bg-white px-3 py-2 text-xs font-semibold text-ink-900 shadow-soft-sm transition hover:bg-ink-50"
+                  >
+                    <svg
+                      aria-hidden
+                      viewBox="0 0 24 24"
+                      className="h-4 w-4 text-ink-400"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
                     >
-                      <svg
-                        aria-hidden
-                        viewBox="0 0 24 24"
-                        className="h-4 w-4 shrink-0 text-ink-400"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M14 3v4a1 1 0 0 0 1 1h4" />
-                        <path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2Z" />
-                      </svg>
-                      <div className="flex-1">
-                        <div className="font-medium">{doc.name}</div>
-                        <div className="text-xs text-ink-500">
-                          {new Date(doc.created_at).toLocaleDateString()}
-                        </div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </Section>
-          )}
+                      <path d="M14 3v4a1 1 0 0 0 1 1h4" />
+                      <path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2Z" />
+                    </svg>
+                    Purchase contract ↗
+                  </a>
+                )}
+                {d.docusign_envelope_url && (
+                  <a
+                    href={d.docusign_envelope_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 rounded-xl border border-ink-200 bg-white px-3 py-2 text-xs font-semibold text-ink-900 shadow-soft-sm transition hover:bg-ink-50"
+                  >
+                    DocuSign envelope ↗
+                  </a>
+                )}
+              </div>
+            )}
 
-          {/* Houses */}
-          <Section title={`Houses (${houses?.length || 0})`}>
-            {!houses || houses.length === 0 ? (
-              <Empty msg="No houses yet." />
+            {!canSeeDocuments ? (
+              <Empty msg="Document access hasn't been shared with you on this deal." />
+            ) : !documents || documents.length === 0 ? (
+              <Empty msg="No documents shared yet." />
+            ) : (
+              <AttorneyDocList documents={documents as AttorneyDoc[]} />
+            )}
+          </Section>
+
+          {/* ============== E-SIGNATURE STATUS ============== */}
+          <Section title={`E-signature status (${envelopes?.length || 0})`}>
+            {!envelopes || envelopes.length === 0 ? (
+              <Empty msg="No envelopes have been sent for signature yet." />
             ) : (
               <ul className="divide-y divide-ink-100">
-                {houses.map((h: any) => {
-                  const isAgreed = agreedHouse && h.id === agreedHouse.id;
+                {(envelopes as any[]).map((env) => {
+                  const recips = recipientsOf(env.recipients);
+                  const signed = recips.filter((r) =>
+                    ['completed', 'signed'].includes(
+                      String(r.status || '').toLowerCase()
+                    )
+                  ).length;
                   return (
-                    <li key={h.id} className="flex items-center gap-3 py-2.5">
-                      {h.photo_url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={h.photo_url}
-                          alt=""
-                          className="h-12 w-16 rounded-md object-cover"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div className="h-12 w-16 rounded-md bg-ink-100" />
-                      )}
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5">
-                          <span className="truncate text-sm font-semibold">
-                            {h.address}
+                    <li key={env.id} className="py-3">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <EsignStatusBadge status={env.status} />
+                          <span className="text-sm font-semibold text-ink-900">
+                            Envelope {String(env.envelope_id).slice(0, 8)}…
                           </span>
-                          {isAgreed && (
-                            <span
-                              className="shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide"
-                              style={{
-                                color: brand,
-                                backgroundColor: brand + '15',
-                              }}
-                            >
-                              Agreed
-                            </span>
-                          )}
                         </div>
-                        {h.list_price && (
-                          <div className="text-xs text-ink-500">
-                            ${Number(h.list_price).toLocaleString()}
-                          </div>
+                        {env.envelope_url && (
+                          <a
+                            href={env.envelope_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn-secondary px-2.5 py-1 text-[11px]"
+                          >
+                            Open ↗
+                          </a>
                         )}
                       </div>
-                      <span
-                        className="rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase"
-                        style={{ color: brand, backgroundColor: brand + '15' }}
-                      >
-                        {String(h.status).replace(/_/g, ' ')}
-                      </span>
+                      <div className="mt-1 text-[11px] text-ink-500">
+                        Sent{' '}
+                        <LocalDateTime
+                          value={env.created_at}
+                          dateOptions={{
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric',
+                          }}
+                          placeholder="—"
+                        />
+                        {recips.length > 0 && (
+                          <> · {signed}/{recips.length} signed</>
+                        )}
+                        {env.completed_at && (
+                          <>
+                            {' · '}Completed{' '}
+                            <LocalDateTime
+                              value={env.completed_at}
+                              dateOptions={{
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                              }}
+                              placeholder="—"
+                            />
+                          </>
+                        )}
+                      </div>
+                      {recips.length > 0 && (
+                        <ul className="mt-2 space-y-1">
+                          {recips.map((r, i) => (
+                            <li
+                              key={i}
+                              className="flex items-center justify-between gap-2 text-[11px]"
+                            >
+                              <span className="truncate text-ink-700">
+                                {r.name || r.email || `Recipient ${i + 1}`}
+                              </span>
+                              <RecipientStatus status={r.status} />
+                            </li>
+                          ))}
+                        </ul>
+                      )}
                     </li>
                   );
                 })}
@@ -493,8 +749,8 @@ export default async function AttorneyDealPage({
             )}
           </Section>
 
-          {/* Parties */}
-          <Section title="Parties on this deal">
+          {/* ============== PARTIES & CONTACTS ============== */}
+          <Section title="Parties & contacts">
             <ul className="space-y-3 text-sm">
               <Party
                 label="Client"
@@ -530,6 +786,14 @@ export default async function AttorneyDealPage({
       </div>
     </main>
   );
+}
+
+/** Normalize the esign_envelopes.recipients JSON to a flat array. */
+function recipientsOf(recipients: any): any[] {
+  if (Array.isArray(recipients)) return recipients;
+  if (recipients?.signers && Array.isArray(recipients.signers))
+    return recipients.signers;
+  return [];
 }
 
 function Section({
@@ -570,15 +834,100 @@ function Empty({ msg }: { msg: string }) {
   );
 }
 
-function Row({ label, value, raw }: { label: string; value: any; raw?: boolean }) {
-  if (value == null || value === '') return null;
+function Money({ label, value }: { label: string; value: any }) {
   return (
-    <>
-      <dt className="text-ink-500">{label}</dt>
-      <dd className="text-right font-semibold">
-        {raw ? value : '$' + Number(value).toLocaleString()}
+    <div>
+      <dt className="text-[10px] font-bold uppercase tracking-wide text-ink-400">
+        {label}
+      </dt>
+      <dd className="mt-0.5 text-lg font-bold tracking-tight text-ink-900">
+        {value == null || value === ''
+          ? '—'
+          : '$' + Number(value).toLocaleString()}
       </dd>
-    </>
+    </div>
+  );
+}
+
+function Field({ label, value }: { label: string; value: any }) {
+  return (
+    <div>
+      <dt className="text-[10px] font-bold uppercase tracking-wide text-ink-400">
+        {label}
+      </dt>
+      <dd className="mt-0.5 text-lg font-bold tracking-tight text-ink-900">
+        {value == null || value === '' ? '—' : value}
+      </dd>
+    </div>
+  );
+}
+
+const ESIGN_STATUS_STYLE: Record<string, string> = {
+  created: 'bg-ink-100 text-ink-700',
+  sent: 'bg-amber-100 text-amber-800',
+  delivered: 'bg-amber-100 text-amber-800',
+  completed: 'bg-emerald-100 text-emerald-800',
+  declined: 'bg-rose-100 text-rose-800',
+  voided: 'bg-ink-200 text-ink-600',
+};
+
+function EsignStatusBadge({ status }: { status: string }) {
+  const cls = ESIGN_STATUS_STYLE[status] || 'bg-ink-100 text-ink-700';
+  return (
+    <span
+      className={
+        'inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ' +
+        cls
+      }
+    >
+      {String(status).replace(/_/g, ' ')}
+    </span>
+  );
+}
+
+function RecipientStatus({ status }: { status: any }) {
+  const s = String(status || 'pending').toLowerCase();
+  const done = ['completed', 'signed'].includes(s);
+  const declined = ['declined'].includes(s);
+  return (
+    <span
+      className={
+        'shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide ' +
+        (done
+          ? 'bg-emerald-100 text-emerald-800'
+          : declined
+            ? 'bg-rose-100 text-rose-800'
+            : 'bg-amber-100 text-amber-800')
+      }
+    >
+      {done ? 'Signed' : declined ? 'Declined' : 'Pending'}
+    </span>
+  );
+}
+
+function CountdownChip({ date, accent }: { date: string; accent: string }) {
+  // DATE-ONLY countdown from the literal calendar day — timezone-stable to
+  // avoid hydration drift (mirrors lib/dates behavior).
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(date));
+  let days = 0;
+  if (m) {
+    const target = Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+    const today = new Date();
+    const todayUtc = Date.UTC(
+      today.getUTCFullYear(),
+      today.getUTCMonth(),
+      today.getUTCDate()
+    );
+    days = Math.round((target - todayUtc) / (1000 * 60 * 60 * 24));
+  }
+  const label = days <= 0 ? 'Today' : days === 1 ? '1d' : `${days}d`;
+  return (
+    <div
+      className="flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-lg text-center"
+      style={{ backgroundColor: accent + '15', color: accent }}
+    >
+      <span className="text-sm font-bold leading-none">{label}</span>
+    </div>
   );
 }
 
@@ -603,7 +952,7 @@ function Party({
         <div className="text-[10px] font-semibold uppercase tracking-wide text-ink-400">
           {label}
         </div>
-        <div className="truncate font-medium">{name || '—'}</div>
+        <div className="truncate font-medium text-ink-900">{name || '—'}</div>
         {email && (
           <a
             href={`mailto:${email}`}

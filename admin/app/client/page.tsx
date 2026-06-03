@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getMe, getSupabaseServerClient } from '@/lib/supabaseSsr';
 import { DealProgressTimeline } from '@/components/DealProgressTimeline';
+import { DealChat } from '@/components/DealChat';
+import { getDealChat } from '@/app/dashboard/deals/[id]/chatActions';
 import { buildCalendarFeedUrl } from '@/lib/ics';
 import { formatDateOnly } from '@/lib/dates';
 
@@ -69,6 +71,14 @@ export default async function ClientHomePage() {
         .eq('id', active.realtor_id)
         .maybeSingle()
     : { data: null };
+
+  // DEAL GROUP CHAT — the shared thread for the whole deal (every party with
+  // message access). The client is the principal on their own deal, so
+  // getDealChat authorizes them. This is the GROUP thread (private = false),
+  // distinct from the 1:1 DM at /client/messages.
+  const dealChat = active ? await getDealChat(active.id) : null;
+  const dealChatMessages =
+    dealChat && dealChat.ok ? dealChat.messages : [];
 
   // Firm branding + custom phase labels/messages for the progress timeline.
   const { data: firm } = me.firm_id
@@ -235,6 +245,18 @@ export default async function ClientHomePage() {
               </div>
             </section>
           )}
+
+          {/* Deal chat — the shared group thread for everyone on this deal.
+              Distinct from the 1:1 DM with your agent (the "Message" button
+              above). The client is the principal, so they can post here. */}
+          <div className="mt-4">
+            <DealChat
+              searchId={active.id}
+              me={{ userId: me.user_id, name: me.full_name }}
+              initialMessages={dealChatMessages}
+              canPost={true}
+            />
+          </div>
 
           {/* Important dates */}
           {dates && dates.length > 0 && (

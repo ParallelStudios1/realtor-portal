@@ -3,6 +3,7 @@ import { notFound, redirect } from 'next/navigation';
 import { getMe, getSupabaseServerClient } from '@/lib/supabaseSsr';
 import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
 import { DealWorkspace } from './DealWorkspace';
+import { getDealChat } from './chatActions';
 import { buildCalendarFeedUrl } from '@/lib/ics';
 
 export const dynamic = 'force-dynamic';
@@ -48,7 +49,7 @@ export default async function DealDetailPage({
        agreed_price, closing_amount, earnest_money, commission_pct,
        contract_url, notes, offer_amount, counter_offer_amount,
        closing_date, closed_message, offer_house_id, house_agreed_at,
-       house_agreed_by, created_at, updated_at,
+       house_agreed_by, created_by, created_at, updated_at,
        client:users!client_searches_client_id_fkey ( id, full_name, email, created_at ),
        realtor:users!client_searches_realtor_id_fkey ( id, full_name, email )`
     )
@@ -274,6 +275,43 @@ export default async function DealDetailPage({
     };
   }
 
+  // DEAL ADMIN — the deal's creator (client_searches.created_by) is the person
+  // with full control over the deal. Resolve their display name for the header.
+  // Reuse the already-fetched client/realtor rows when they match, otherwise
+  // do a single lookup. created_by may be null on legacy rows.
+  let dealAdmin: { id: string; name: string | null } | null = null;
+  const createdById = (deal as any).created_by as string | null;
+  if (createdById) {
+    if (createdById === (deal as any).realtor?.id) {
+      dealAdmin = {
+        id: createdById,
+        name: (deal as any).realtor?.full_name || (deal as any).realtor?.email || null,
+      };
+    } else if (createdById === (deal as any).client?.id) {
+      dealAdmin = {
+        id: createdById,
+        name: (deal as any).client?.full_name || (deal as any).client?.email || null,
+      };
+    } else {
+      const { data: adminUser } = await service
+        .from('users')
+        .select('full_name, email')
+        .eq('id', createdById)
+        .maybeSingle();
+      dealAdmin = {
+        id: createdById,
+        name: (adminUser as any)?.full_name || (adminUser as any)?.email || null,
+      };
+    }
+  }
+
+  // DEAL GROUP CHAT — the shared thread for the whole deal (group messages =
+  // private IS NULL OR private = false). getDealChat re-authorizes the caller;
+  // staff on the host firm always pass. Distinct from the 1:1 DM thread that
+  // the "Recent messages" rail / /dashboard/messages surface shows.
+  const dealChat = await getDealChat(params.id);
+  const dealChatMessages = dealChat.ok ? dealChat.messages : [];
+
   const phaseIdx = PHASES.findIndex((p) => p.id === (deal as any).phase);
 
   const canAssignRealtor =
@@ -305,10 +343,12 @@ export default async function DealDetailPage({
       activity={(activity || []) as any}
       teammates={(teammates || []) as any}
       recentMessages={(messages || []) as any}
+      dealChatMessages={dealChatMessages}
       showings={(showings || []) as any}
       envelopes={(envelopes || []) as any}
       buyerInterest={buyerInterest}
       agreedHome={agreedHome}
+      dealAdmin={dealAdmin}
       calendarUrl={buildCalendarFeedUrl(deal.id)}
     />
   );

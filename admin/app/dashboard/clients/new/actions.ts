@@ -140,6 +140,8 @@ export async function inviteClientAction(fd: FormData) {
           firm_id: me!.firm_id,
           client_id: clientId,
           realtor_id: me!.user_id,
+          // Deal admin = the staffer creating/inviting this client's deal.
+          created_by: me!.user_id,
           name:
             fullName + (roleInDeal === 'seller' ? "'s Listing" : "'s Search"),
           phase: 'searching',

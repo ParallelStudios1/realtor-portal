@@ -256,6 +256,9 @@ export async function POST(req: Request) {
           firm_id: realtor.firm_id,
           client_id: userId,
           realtor_id: realtor.id,
+          // Deal admin = the realtor who owns this starter deal. (The signing-up
+          // buyer/seller is the principal client, not the deal admin.)
+          created_by: realtor.id,
           name:
             fullName + (role === 'seller' ? "'s Listing" : "'s Search"),
           phase: 'searching',

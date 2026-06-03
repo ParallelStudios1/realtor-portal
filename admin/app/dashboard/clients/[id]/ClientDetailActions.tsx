@@ -24,6 +24,7 @@ import {
 } from './actions';
 import { useToast } from '@/components/Toast';
 import { getSupabaseBrowserClient } from '@/lib/supabaseBrowser';
+import { defaultPartyPermissions } from '@/lib/partyPermissions';
 
 type Teammate = { id: string; full_name: string | null; email: string | null };
 
@@ -1668,11 +1669,28 @@ function ParticipantModal({
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [docs, setDocs] = useState(true);
-  const [fin, setFin] = useState(false);
-  const [msgs, setMsgs] = useState(false);
-  const [dates, setDates] = useState(true);
+  // Visibility checkboxes — seeded from the role-based defaults for the initial
+  // role ('buyer'). Changing the Role <select> resets these to that role's
+  // defaults (the realtor can then override any individual checkbox before
+  // submitting).
+  const initialPerms = defaultPartyPermissions('buyer');
+  const [docs, setDocs] = useState(initialPerms.can_view_documents);
+  const [fin, setFin] = useState(initialPerms.can_view_financials);
+  const [msgs, setMsgs] = useState(initialPerms.can_view_messages);
+  const [dates, setDates] = useState(initialPerms.can_view_dates);
   const [pending, start] = useTransition();
+
+  // Apply role-based default visibility whenever the role changes. Simplest
+  // correct behavior: reset all four checkboxes to the new role's defaults.
+  // The realtor can still toggle individual boxes afterward.
+  function changeRole(next: PartyRole) {
+    setRole(next);
+    const p = defaultPartyPermissions(next);
+    setDocs(p.can_view_documents);
+    setFin(p.can_view_financials);
+    setMsgs(p.can_view_messages);
+    setDates(p.can_view_dates);
+  }
   const [people, setPeople] = useState<{
     users: Array<{ id: string; full_name: string | null; email: string; role: string }>;
     externals: Array<{
@@ -1754,7 +1772,7 @@ function ParticipantModal({
             <select
               className={inputCls}
               value={role}
-              onChange={(e) => setRole(e.target.value as PartyRole)}
+              onChange={(e) => changeRole(e.target.value as PartyRole)}
             >
               {PARTY_ROLES.map((r) => (
                 <option key={r.id} value={r.id}>
@@ -1937,7 +1955,7 @@ function ParticipantModal({
           <select
             className={inputCls}
             value={role}
-            onChange={(e) => setRole(e.target.value as PartyRole)}
+            onChange={(e) => changeRole(e.target.value as PartyRole)}
           >
             {PARTY_ROLES.map((r) => (
               <option key={r.id} value={r.id}>

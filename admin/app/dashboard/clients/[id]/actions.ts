@@ -7,6 +7,7 @@ import { sendEmail, escapeHtml } from '@/lib/email';
 import { emailEveryoneOnPhaseChange } from '@/lib/dealEmail';
 import { isFirmPlanActive, canUsePremiumForDeal } from '@/lib/planGate';
 import { notify, notifyDealParticipants } from '@/lib/notify';
+import { defaultPartyPermissions } from '@/lib/partyPermissions';
 
 /**
  * Server actions called from the rich realtor client-detail page. Each one
@@ -1257,6 +1258,9 @@ export async function addParticipantAction(
   // list directly without waiting on revalidatePath or realtime. This is
   // the source of truth — realtime is purely a "make it nicer when other
   // people add parties" mechanism.
+  // When a visibility flag is omitted by the caller, fall back to the
+  // role-based defaults (single source of truth in lib/partyPermissions).
+  const perms = defaultPartyPermissions(payload.role);
   const { data: inserted, error } = await service
     .from('deal_participants')
     .insert({
@@ -1268,10 +1272,10 @@ export async function addParticipantAction(
       external_phone: payload.phone || null,
       role: payload.role,
       represents,
-      can_view_documents: payload.can_view_documents ?? true,
-      can_view_financials: payload.can_view_financials ?? false,
-      can_view_messages: payload.can_view_messages ?? false,
-      can_view_dates: payload.can_view_dates ?? true,
+      can_view_documents: payload.can_view_documents ?? perms.can_view_documents,
+      can_view_financials: payload.can_view_financials ?? perms.can_view_financials,
+      can_view_messages: payload.can_view_messages ?? perms.can_view_messages,
+      can_view_dates: payload.can_view_dates ?? perms.can_view_dates,
       created_by: a.me.user_id,
     })
     .select(
@@ -1643,6 +1647,8 @@ export async function createNewDealAction(
       firm_id: me.firm_id,
       client_id: clientId,
       realtor_id: me.user_id,
+      // Deal admin = the staffer who created this deal.
+      created_by: me.user_id,
       kind: payload.kind,
       name:
         payload.name?.trim() ||

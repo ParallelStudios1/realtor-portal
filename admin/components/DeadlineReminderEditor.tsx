@@ -65,14 +65,33 @@ function daysUntil(date: string): number {
 export function DeadlineReminderEditor({
   date,
   teammates,
+  me,
 }: {
   date: DeadlineDate;
   teammates: Teammate[];
+  // The current user. `teammates` EXCLUDES self (the page filters out me.user_id),
+  // so without this a solo realtor would have nobody to assign as owner. We
+  // render self at the top of the owner list and merge in teammates.
+  me?: { id: string; fullName: string | null } | null;
 }) {
   const router = useRouter();
   const toast = useToast();
   const [pending, start] = useTransition();
   const [open, setOpen] = useState(false);
+
+  // Owner options: the current user first ("… (me)"), then teammates. Dedupe
+  // by id so we never render self twice if they somehow appear in teammates.
+  const ownerOptions: Array<{ id: string; label: string }> = [];
+  if (me?.id) {
+    ownerOptions.push({
+      id: me.id,
+      label: (me.fullName || 'Me') + ' (me)',
+    });
+  }
+  for (const t of teammates) {
+    if (me?.id && t.id === me.id) continue;
+    ownerOptions.push({ id: t.id, label: t.full_name || t.email });
+  }
 
   const reminders = date.reminders || [];
   const completed = Boolean(date.completed_at);
@@ -142,9 +161,9 @@ export function DeadlineReminderEditor({
           className="rounded-md border border-ink-200 bg-white px-1.5 py-0.5 text-[10px] text-ink-800 transition focus:border-ink-500 focus:outline-none focus:ring-2 focus:ring-ink-200 disabled:opacity-50"
         >
           <option value="">Unassigned</option>
-          {teammates.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.full_name || t.email}
+          {ownerOptions.map((o) => (
+            <option key={o.id} value={o.id}>
+              {o.label}
             </option>
           ))}
         </select>
