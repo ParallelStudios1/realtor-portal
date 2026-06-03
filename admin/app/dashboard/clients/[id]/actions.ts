@@ -466,6 +466,171 @@ export async function sendAlertAction(clientId: string, message: string) {
 }
 
 /**
+ * Add a SELLER-SIDE, HOUSE-SCOPED participant to a deal and send them the
+ * branded /invite/<token> email — mirroring addParticipantAction's invite
+ * pattern. Used by the convergence capture in goUnderContractAction.
+ *
+ * Idempotent: if a participant for the same email already exists on the
+ * search we skip the insert (and skip re-inviting). If a user already exists
+ * with that email we auto-link via user_id so login just works.
+ *
+ * `house_id` scopes the party to ONE house — they will only ever see that
+ * property on the deal read paths, never the buyer's other candidates.
+ */
+async function addHouseScopedSellerParty(
+  service: ReturnType<typeof getSupabaseServiceRoleClient>,
+  opts: {
+    searchId: string;
+    firmId: string;
+    createdBy: string;
+    houseId: string;
+    role: 'co_realtor' | 'seller';
+    name: string | null;
+    email: string | null;
+    firmName: string | null;
+  }
+): Promise<void> {
+  const email = opts.email?.trim() || null;
+  const name = opts.name?.trim() || null;
+
+  // Idempotency: don't duplicate a participant for the same email+search.
+  if (email) {
+    const { data: existing } = await service
+      .from('deal_participants')
+      .select('id')
+      .eq('search_id', opts.searchId)
+      .ilike('external_email', email)
+      .limit(1);
+    if (existing && existing.length > 0) return;
+  }
+
+  // Auto-link: if a user already exists with this email, attach user_id so
+  // their login resolves to the deal automatically.
+  let userId: string | null = null;
+  let userPhone: string | null = null;
+  if (email) {
+    const { data: u } = await service
+      .from('users')
+      .select('id, phone')
+      .ilike('email', email)
+      .maybeSingle();
+    userId = (u as any)?.id ?? null;
+    userPhone = (u as any)?.phone ?? null;
+  }
+
+  const { data: inserted, error } = await service
+    .from('deal_participants')
+    .insert({
+      search_id: opts.searchId,
+      firm_id: opts.firmId,
+      house_id: opts.houseId,
+      user_id: userId,
+      external_email: email,
+      external_name: name,
+      role: opts.role,
+      represents: 'seller',
+      // House-scoped seller parties get the same conservative default
+      // visibility as any added party — they can see docs + dates but not
+      // financials or the buyer-side message thread by default.
+      can_view_documents: true,
+      can_view_financials: false,
+      can_view_messages: false,
+      can_view_dates: true,
+      created_by: opts.createdBy,
+    })
+    .select('id')
+    .single();
+  if (error) {
+    console.error(
+      '[addHouseScopedSellerParty] insert failed',
+      error.message
+    );
+    return;
+  }
+
+  // Branded /invite/<token> — mirrors addParticipantAction. Only when we have
+  // an email to send to.
+  if (!email) return;
+  let invitePath: string | null = null;
+  try {
+    const { data: inviteRow } = await service
+      .from('deal_invites')
+      .insert({
+        search_id: opts.searchId,
+        firm_id: opts.firmId,
+        participant_id: (inserted as any).id,
+        role: opts.role,
+        name,
+        email: email.toLowerCase(),
+        created_by: opts.createdBy,
+      })
+      .select('token')
+      .single();
+    if (inviteRow) invitePath = '/invite/' + (inviteRow as any).token;
+  } catch (e: any) {
+    console.error(
+      '[addHouseScopedSellerParty] deal_invites insert threw',
+      e?.message || e
+    );
+  }
+
+  try {
+    const { data: ctx } = await service
+      .from('client_searches')
+      .select(
+        `firm:firms ( name ), realtor:users!client_searches_realtor_id_fkey ( full_name, email )`
+      )
+      .eq('id', opts.searchId)
+      .maybeSingle();
+    const firmName = (ctx as any)?.firm?.name || 'a Realtor Portal firm';
+    const realtorName =
+      (ctx as any)?.realtor?.full_name ||
+      (ctx as any)?.realtor?.email ||
+      'The buyer\'s agent';
+    const siteUrl =
+      process.env.SITE_URL || 'https://realtor-portal-ten.vercel.app';
+    const dealUrl = siteUrl + '/deal/' + opts.searchId;
+    const primaryUrl = invitePath ? siteUrl + invitePath : dealUrl;
+    const rolePretty =
+      opts.role === 'co_realtor' ? 'listing agent' : 'seller';
+    const displayName = name || email;
+    const safeName = escapeHtml(displayName);
+    const safeRealtor = escapeHtml(realtorName);
+    const safeFirm = escapeHtml(firmName);
+    const subject = `${realtorName} (${firmName}) is going under contract on your listing`;
+    const html = `
+        <div style="font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial;font-size:15px;color:#0F172A;max-width:560px;padding:24px">
+          <h2 style="font-size:20px;margin:0 0 12px">You've been added to a transaction</h2>
+          <p>${safeRealtor} at <strong>${safeFirm}</strong> added you as the <strong>${escapeHtml(rolePretty)}</strong> on a deal going under contract for your property.</p>
+          <p>You'll collaborate on <em>this one property only</em> — you won't see anything else on the buyer's side.</p>
+          <p style="margin:24px 0">
+            <a href="${primaryUrl}" style="display:inline-block;background:#0F172A;color:#fff;padding:10px 18px;border-radius:8px;font-weight:600;text-decoration:none">Open the transaction &rarr;</a>
+          </p>
+          <p style="color:#94A3B8;font-size:12px">If the button doesn't work, paste this link into your browser: ${primaryUrl}</p>
+          <p style="color:#64748B;font-size:13px">Hi ${safeName}.</p>
+        </div>
+      `;
+    const text =
+      `${realtorName} at ${firmName} added you as ${rolePretty} on a deal going under contract for your property.\n\n` +
+      `You'll collaborate on this one property only.\n\n` +
+      `Open the transaction:\n${primaryUrl}`;
+    await notify({
+      email,
+      phone: userPhone,
+      subject,
+      text,
+      html,
+      sms_text: `${realtorName} (${firmName}) added you as ${rolePretty} on a transaction. Open: ${primaryUrl}`,
+    });
+  } catch (e: any) {
+    console.error(
+      '[addHouseScopedSellerParty] notify failed',
+      e?.message || e
+    );
+  }
+}
+
+/**
  * "Going under contract" workflow. One submit that:
  *  - Flips deal phase → under_contract
  *  - Saves binding date, earnest due, due-diligence end, closing day as
@@ -485,6 +650,17 @@ export async function goUnderContractAction(
     closing_date?: string | null;
     contract_url?: string | null;
     message?: string;
+    // PHASE 1 — convergence capture. When the buyer-side realtor knows which
+    // house they're going under contract on, they pick it here and (optionally)
+    // tell us who's on the SELLING side. We mark that house under contract,
+    // store the seller_* info on it, and add the listing agent / seller as
+    // house-scoped deal participants (represents='seller', house_id=<house>).
+    offer_house_id?: string | null;
+    seller_name?: string | null;
+    seller_email?: string | null;
+    seller_realtor_name?: string | null;
+    seller_realtor_email?: string | null;
+    seller_realtor_firm?: string | null;
   }
 ) {
   const a = await authorize(clientId);
@@ -494,16 +670,83 @@ export async function goUnderContractAction(
   // Phase update is the source-of-truth write — bail out on failure so we
   // don't create a half-state (dates inserted, message posted, parties
   // emailed) without the phase actually flipping.
+  const searchUpdate: Record<string, any> = {
+    phase: 'under_contract',
+    contract_url: payload.contract_url || null,
+    earnest_money: payload.earnest_money_amount ?? null,
+  };
+  // Record the chosen house on the search so the workspace / read paths know
+  // which candidate converted into the live transaction.
+  if (payload.offer_house_id) searchUpdate.offer_house_id = payload.offer_house_id;
   const { error: phaseErr } = await service
     .from('client_searches')
-    .update({
-      phase: 'under_contract',
-      contract_url: payload.contract_url || null,
-      earnest_money: payload.earnest_money_amount ?? null,
-    })
+    .update(searchUpdate)
     .eq('id', a.search.id);
   if (phaseErr)
     return { ok: false as const, error: phaseErr.message };
+
+  // ---- Convergence capture: "Who's selling this house?" -------------------
+  // Only runs when the realtor picked a specific house. Marks it under
+  // contract, writes the seller_* fields, and links the other side as
+  // house-scoped participants. All best-effort: failures here must NOT undo
+  // the under-contract flip above.
+  if (payload.offer_house_id) {
+    try {
+      const houseUpdate: Record<string, any> = { is_under_contract: true };
+      if (payload.seller_name !== undefined)
+        houseUpdate.seller_name = payload.seller_name?.trim() || null;
+      if (payload.seller_email !== undefined)
+        houseUpdate.seller_email = payload.seller_email?.trim() || null;
+      if (payload.seller_realtor_name !== undefined)
+        houseUpdate.seller_realtor_name =
+          payload.seller_realtor_name?.trim() || null;
+      if (payload.seller_realtor_email !== undefined)
+        houseUpdate.seller_realtor_email =
+          payload.seller_realtor_email?.trim() || null;
+      if (payload.seller_realtor_firm !== undefined)
+        houseUpdate.seller_realtor_firm =
+          payload.seller_realtor_firm?.trim() || null;
+      // Scope the write to this deal's firm + search so we never touch a
+      // house on another deal even if the id is wrong.
+      await service
+        .from('houses')
+        .update(houseUpdate)
+        .eq('id', payload.offer_house_id)
+        .eq('search_id', a.search.id);
+
+      // Add the listing agent (and optionally the seller) as house-scoped
+      // seller-side participants. They land on the deal seeing ONLY this house.
+      if (payload.seller_realtor_email || payload.seller_realtor_name) {
+        await addHouseScopedSellerParty(service, {
+          searchId: a.search.id,
+          firmId: a.search.firm_id,
+          createdBy: a.me.user_id,
+          houseId: payload.offer_house_id,
+          role: 'co_realtor',
+          name: payload.seller_realtor_name || null,
+          email: payload.seller_realtor_email || null,
+          firmName: payload.seller_realtor_firm || null,
+        });
+      }
+      if (payload.seller_email || payload.seller_name) {
+        await addHouseScopedSellerParty(service, {
+          searchId: a.search.id,
+          firmId: a.search.firm_id,
+          createdBy: a.me.user_id,
+          houseId: payload.offer_house_id,
+          role: 'seller',
+          name: payload.seller_name || null,
+          email: payload.seller_email || null,
+          firmName: null,
+        });
+      }
+    } catch (e: any) {
+      console.error(
+        '[goUnderContractAction] convergence capture failed',
+        e?.message || e
+      );
+    }
+  }
 
   // Insert important dates (replace any existing rows with same label).
   const dates: Array<{ label: string; date: string }> = [];
@@ -543,7 +786,7 @@ export async function goUnderContractAction(
     search_id: a.search.id,
     sender_id: a.me.user_id,
     body:
-      '🎉 Congrats — we are UNDER CONTRACT! Key dates and contract are in the deal view.',
+      'Congrats — we are UNDER CONTRACT! Key dates and contract are in the deal view.',
   });
 
   // Email everyone the whole snapshot.

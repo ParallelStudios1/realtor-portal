@@ -121,6 +121,22 @@ export default async function DealPage({
   const brand = d.firm?.brand_color || '#0F172A';
   const accent = d.firm?.accent_color || '#2563EB';
 
+  // HOUSE-SCOPED VISIBILITY (the privacy core). When the caller's
+  // participant row is scoped to a single house (house_id is set — e.g. the
+  // seller's listing agent or the seller themselves), they must see ONLY that
+  // one house, never the buyer's other candidates. Staff and the principal
+  // client always have house_id NULL here, so they keep seeing everything.
+  const scopedHouseId: string | null =
+    !isStaffSameFirm && !isPrincipalClient
+      ? (myParticipantRow?.house_id as string | null) || null
+      : null;
+
+  const housesQuery = service
+    .from('houses')
+    .select('id, address, list_price, status, photo_url')
+    .eq('search_id', params.id);
+  if (scopedHouseId) housesQuery.eq('id', scopedHouseId);
+
   const [{ data: dates }, { data: documents }, { data: houses }] =
     await Promise.all([
       canSeeDates
@@ -137,11 +153,7 @@ export default async function DealPage({
             .eq('search_id', params.id)
             .order('created_at', { ascending: false })
         : Promise.resolve({ data: [] as any[] }),
-      service
-        .from('houses')
-        .select('id, address, list_price, status, photo_url')
-        .eq('search_id', params.id)
-        .order('created_at', { ascending: false }),
+      housesQuery.order('created_at', { ascending: false }),
     ]);
 
   return (

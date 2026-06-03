@@ -113,7 +113,11 @@ export default async function DealDetailPage({
       .order('created_at', { ascending: false }),
     supabase
       .from('houses')
-      .select('id, address, list_price, listing_url, photo_url, status, created_at')
+      .select(
+        'id, address, list_price, listing_url, photo_url, status, created_at, ' +
+          'is_under_contract, seller_name, seller_email, seller_realtor_name, ' +
+          'seller_realtor_email, seller_realtor_firm'
+      )
       .eq('search_id', params.id)
       .order('created_at', { ascending: false }),
     supabase

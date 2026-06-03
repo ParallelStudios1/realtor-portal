@@ -68,6 +68,7 @@ export function ClientDetailActions({
   dealKind,
   financials,
   teammates,
+  houses,
 }: {
   clientId: string;
   firmId: string;
@@ -85,6 +86,9 @@ export function ClientDetailActions({
     notes: string | null;
   };
   teammates: Teammate[];
+  // The deal's houses — used by the under-contract "which house?" picker and
+  // the convergence capture. Optional so legacy callers keep working.
+  houses?: Array<{ id: string; address: string }>;
 }) {
   const [open, setOpen] = useState<Action | null>(null);
   const toast = useToast();
@@ -93,6 +97,14 @@ export function ClientDetailActions({
   function close() {
     setOpen(null);
   }
+
+  // Let other parts of the workspace (e.g. the seller-deal "Add your listing"
+  // prompt) open the Add house modal by dispatching a window event.
+  useEffect(() => {
+    const handler = () => setOpen('house');
+    window.addEventListener('rp:open-add-house', handler);
+    return () => window.removeEventListener('rp:open-add-house', handler);
+  }, []);
   // After a server action mutates, revalidatePath flushes the cache but the
   // visible client tree doesn't re-render unless we tell it to. Call this
   // after every successful mutation so the new participant / house / date /
@@ -461,6 +473,8 @@ export function ClientDetailActions({
 
       {open === 'under_contract' && (
         <UnderContractModal
+          houses={houses}
+          dealKind={dealKind}
           onClose={close}
           onSubmit={async (payload) => {
             const r = await goUnderContractAction(clientId, payload);
@@ -2680,6 +2694,8 @@ function NewDealModal({
 function UnderContractModal({
   onClose,
   onSubmit,
+  houses,
+  dealKind,
 }: {
   onClose: () => void;
   onSubmit: (p: {
@@ -2690,7 +2706,15 @@ function UnderContractModal({
     closing_date?: string | null;
     contract_url?: string | null;
     message?: string;
+    offer_house_id?: string | null;
+    seller_name?: string | null;
+    seller_email?: string | null;
+    seller_realtor_name?: string | null;
+    seller_realtor_email?: string | null;
+    seller_realtor_firm?: string | null;
   }) => Promise<void>;
+  houses?: Array<{ id: string; address: string }>;
+  dealKind?: string | null;
 }) {
   const [binding, setBinding] = useState('');
   const [earnest, setEarnest] = useState('');
@@ -2699,7 +2723,21 @@ function UnderContractModal({
   const [closing, setClosing] = useState('');
   const [contract, setContract] = useState('');
   const [msg, setMsg] = useState('');
+  // Convergence capture (buyer deals): which house, and who's on the other side.
+  const houseList = houses || [];
+  const isBuyer = dealKind !== 'seller';
+  const [houseId, setHouseId] = useState<string>(
+    houseList.length === 1 ? houseList[0].id : ''
+  );
+  const [sellerName, setSellerName] = useState('');
+  const [sellerEmail, setSellerEmail] = useState('');
+  const [agentName, setAgentName] = useState('');
+  const [agentEmail, setAgentEmail] = useState('');
+  const [agentFirm, setAgentFirm] = useState('');
   const [pending, start] = useTransition();
+  // Only show the "who's selling this house?" capture for buyer deals that
+  // actually have candidate houses to choose from.
+  const showCapture = isBuyer && houseList.length > 0;
   return (
     <Modal title="Going under contract" onClose={onClose}>
       <p className="mb-3 text-xs text-ink-500">
@@ -2727,6 +2765,87 @@ function UnderContractModal({
         <Field label="Contract URL (PDF link or DocuSign)" hint="Anyone on the deal can click through to it from their email.">
           <input type="url" className={inputCls} value={contract} onChange={(e) => setContract(e.target.value)} />
         </Field>
+
+        {/* Convergence capture — buyer deals only. Optional / skippable. */}
+        {showCapture && (
+          <div className="rounded-lg border border-ink-200 bg-ink-50/60 p-3">
+            <Field
+              label="Which house?"
+              hint="Pick the property you're going under contract on — it gets marked under contract."
+            >
+              <select
+                className={inputCls}
+                value={houseId}
+                onChange={(e) => setHouseId(e.target.value)}
+              >
+                <option value="">(choose later)</option>
+                {houseList.map((h) => (
+                  <option key={h.id} value={h.id}>
+                    {h.address}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            {houseId && (
+              <div className="mt-3 space-y-3">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-500">
+                  Who's selling this house? (optional)
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Listing agent name">
+                    <input
+                      className={inputCls}
+                      value={agentName}
+                      onChange={(e) => setAgentName(e.target.value)}
+                      placeholder="Jane Agent"
+                    />
+                  </Field>
+                  <Field label="Listing agent email">
+                    <input
+                      type="email"
+                      className={inputCls}
+                      value={agentEmail}
+                      onChange={(e) => setAgentEmail(e.target.value)}
+                      placeholder="jane@firm.com"
+                    />
+                  </Field>
+                  <Field label="Listing agent firm">
+                    <input
+                      className={inputCls}
+                      value={agentFirm}
+                      onChange={(e) => setAgentFirm(e.target.value)}
+                      placeholder="Acme Realty"
+                    />
+                  </Field>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Seller name">
+                    <input
+                      className={inputCls}
+                      value={sellerName}
+                      onChange={(e) => setSellerName(e.target.value)}
+                      placeholder="Sam Seller"
+                    />
+                  </Field>
+                  <Field label="Seller email">
+                    <input
+                      type="email"
+                      className={inputCls}
+                      value={sellerEmail}
+                      onChange={(e) => setSellerEmail(e.target.value)}
+                      placeholder="sam@email.com"
+                    />
+                  </Field>
+                </div>
+                <p className="text-[11px] text-ink-400">
+                  We'll invite the listing agent (and seller, if given) to this
+                  one property only — they never see the buyer's other houses.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
         <Field label="Note to everyone (optional)">
           <textarea rows={3} className={inputCls} value={msg} onChange={(e) => setMsg(e.target.value)} placeholder="A line that appears in the email to all parties." />
         </Field>
@@ -2743,6 +2862,17 @@ function UnderContractModal({
               closing_date: closing || null,
               contract_url: contract.trim() || null,
               message: msg.trim() || undefined,
+              offer_house_id: showCapture && houseId ? houseId : null,
+              seller_name:
+                showCapture && houseId ? sellerName.trim() || null : null,
+              seller_email:
+                showCapture && houseId ? sellerEmail.trim() || null : null,
+              seller_realtor_name:
+                showCapture && houseId ? agentName.trim() || null : null,
+              seller_realtor_email:
+                showCapture && houseId ? agentEmail.trim() || null : null,
+              seller_realtor_firm:
+                showCapture && houseId ? agentFirm.trim() || null : null,
             })
           )
         }

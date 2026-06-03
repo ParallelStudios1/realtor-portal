@@ -413,73 +413,150 @@ export function DealWorkspace(props: {
             notes: deal.notes ?? null,
           }}
           teammates={teammates as any}
+          houses={houses as any}
         />
       </div>
 
       {/* Body grid */}
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
-          {/* Houses */}
-          <Card
-            title={`Houses (${houses.length})`}
-            right={
-              houses.length > 0 ? (
-                <button
-                  type="button"
-                  onClick={() => setShowingModal({ mode: 'new' })}
-                  className="rounded-lg bg-blue-600 px-2.5 py-1 text-[11px] font-semibold text-white shadow-soft-xs transition hover:bg-blue-700"
-                >
-                  + Schedule showing
-                </button>
-              ) : null
-            }
-            empty={houses.length === 0 ? 'No houses yet — use Add house above.' : null}
-          >
-            <ul className="divide-y divide-ink-100">
-              {houses.map((h: any) => (
-                <li
-                  key={h.id}
-                  className="flex items-center gap-4 px-5 py-3"
-                >
-                  {h.photo_url ? (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img
-                      src={h.photo_url}
-                      alt={h.address}
-                      className="h-14 w-20 rounded-md object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-14 w-20 items-center justify-center rounded-md bg-ink-100 text-ink-400">
-                      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M3 11l9-7 9 7M5 10v10h14V10" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </div>
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate font-medium">{h.address}</div>
-                    <div className="text-xs text-ink-500">
-                      {h.list_price
-                        ? '$' + Number(h.list_price).toLocaleString()
-                        : 'No price'}
-                      {h.status && h.status !== 'active'
-                        ? ' · ' + String(h.status).replace(/_/g, ' ')
-                        : ''}
-                    </div>
-                  </div>
-                  {h.listing_url && (
-                    <a
-                      href={h.listing_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs font-semibold text-blue-700 hover:underline"
+          {/* Houses — buyer vs seller differentiation.
+              SELLER deal: this section leads with the single LISTING house.
+              We label it "Listing" (singular) and, if there's no house yet,
+              show a prominent "Add your listing" prompt.
+              BUYER deal: the candidate list stays "Houses (N)", each row can
+              surface the captured listing-agent info + an under-contract badge. */}
+          {(() => {
+            const isSeller = deal.kind === 'seller';
+            const housesTitle = isSeller
+              ? 'Listing'
+              : `Houses (${houses.length})`;
+            return (
+              <Card
+                title={housesTitle}
+                right={
+                  houses.length > 0 ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowingModal({ mode: 'new' })}
+                      className="rounded-lg bg-blue-600 px-2.5 py-1 text-[11px] font-semibold text-white shadow-soft-xs transition hover:bg-blue-700"
                     >
-                      Listing ↗
-                    </a>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </Card>
+                      + Schedule showing
+                    </button>
+                  ) : null
+                }
+                empty={null}
+              >
+                {houses.length === 0 ? (
+                  isSeller ? (
+                    <div className="px-5 py-6 text-center">
+                      <p className="text-sm font-semibold text-ink-900">
+                        Add your listing
+                      </p>
+                      <p className="mt-1 text-xs text-ink-500">
+                        This is a listing (seller) deal. Add the property you're
+                        selling to lead the workspace with it.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          window.dispatchEvent(
+                            new CustomEvent('rp:open-add-house')
+                          )
+                        }
+                        className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-ink-900 px-3.5 py-2 text-xs font-semibold text-white shadow-soft-xs transition hover:bg-ink-700"
+                      >
+                        + Add listing
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="px-5 py-4 text-sm italic text-ink-500">
+                      No houses yet — use Add house above.
+                    </p>
+                  )
+                ) : (
+                  <ul className="divide-y divide-ink-100">
+                    {houses.map((h: any) => (
+                      <li
+                        key={h.id}
+                        className="flex items-center gap-4 px-5 py-3"
+                      >
+                        {h.photo_url ? (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img
+                            src={h.photo_url}
+                            alt={h.address}
+                            className="h-14 w-20 rounded-md object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-14 w-20 items-center justify-center rounded-md bg-ink-100 text-ink-400">
+                            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M3 11l9-7 9 7M5 10v10h14V10" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          </div>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="truncate font-medium">
+                              {h.address}
+                            </span>
+                            {h.is_under_contract && (
+                              <span className="shrink-0 rounded-full bg-ink-900 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white">
+                                Under contract
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-xs text-ink-500">
+                            {h.list_price
+                              ? '$' + Number(h.list_price).toLocaleString()
+                              : 'No price'}
+                            {h.status && h.status !== 'active'
+                              ? ' · ' + String(h.status).replace(/_/g, ' ')
+                              : ''}
+                          </div>
+                          {/* Captured "other side" info — buyer deals only. */}
+                          {!isSeller &&
+                            (h.seller_realtor_name ||
+                              h.seller_realtor_firm ||
+                              h.seller_name) && (
+                              <div className="mt-1 text-[11px] text-ink-500">
+                                {(h.seller_realtor_name ||
+                                  h.seller_realtor_firm) && (
+                                  <div className="truncate">
+                                    Listing agent:{' '}
+                                    {[
+                                      h.seller_realtor_name,
+                                      h.seller_realtor_firm,
+                                    ]
+                                      .filter(Boolean)
+                                      .join(' · ')}
+                                  </div>
+                                )}
+                                {h.seller_name && (
+                                  <div className="truncate">
+                                    Seller: {h.seller_name}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                        </div>
+                        {h.listing_url && (
+                          <a
+                            href={h.listing_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs font-semibold text-blue-700 hover:underline"
+                          >
+                            Listing ↗
+                          </a>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </Card>
+            );
+          })()}
 
           {/* Showings — upcoming, scheduled-ascending. */}
           <Card
