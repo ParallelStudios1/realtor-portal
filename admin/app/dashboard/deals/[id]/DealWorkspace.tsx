@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import { useToast } from '@/components/Toast';
 import {
   ClientDetailActions,
@@ -1007,7 +1007,7 @@ export function DealWorkspace(props: {
                     </span>
                     <span className="truncate text-ink-600">{a.target}</span>
                     <span className="ml-auto shrink-0 text-xs text-ink-400">
-                      {timeAgoShort(a.created_at)}
+                      <Ago iso={a.created_at} />
                     </span>
                   </li>
                 ))}
@@ -1143,7 +1143,7 @@ export function DealWorkspace(props: {
                     <li key={m.id} className="px-5 py-2.5 text-sm">
                       <div className="text-[10px] font-bold uppercase tracking-wide text-ink-400">
                         {mine ? 'You' : 'Client'} ·{' '}
-                        {timeAgoShort(m.created_at)}
+                        <Ago iso={m.created_at} />
                       </div>
                       <div className="mt-0.5 line-clamp-2 text-ink-700">
                         {m.body}
@@ -1453,6 +1453,15 @@ function timeAgoShort(iso: string) {
   const d = Math.floor(h / 24);
   if (d < 7) return d + 'd';
   return new Date(iso).toLocaleDateString();
+}
+
+// Relative time depends on Date.now() and the viewer's locale, so it differs
+// between the server render and the client hydrate. Render it client-only
+// (empty on first paint, filled after mount) to avoid hydration mismatches.
+function Ago({ iso }: { iso: string }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  return <span suppressHydrationWarning>{mounted ? timeAgoShort(iso) : ''}</span>;
 }
 
 /**
