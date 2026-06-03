@@ -100,7 +100,7 @@ function SignupSubmit({ role }: { role: Role }) {
       disabled={pending}
       aria-busy={pending}
       data-loading={pending ? 'true' : undefined}
-      className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-md bg-ink-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-ink-700 disabled:cursor-not-allowed disabled:opacity-60"
+      className="btn-primary mt-2 w-full px-4 py-2.5 disabled:cursor-not-allowed"
     >
       {pending && (
         <svg
@@ -134,15 +134,18 @@ function RoleButton({
     <button
       type="button"
       onClick={onClick}
+      aria-pressed={active}
       className={
-        'rounded-lg border px-3 py-3 text-center transition ' +
+        'rounded-xl border px-3 py-3.5 text-center transition active:scale-[0.98] ' +
         (active
-          ? 'border-ink-900 bg-ink-100 text-ink-900 shadow-inner'
-          : 'border-ink-200 hover:border-ink-300')
+          ? 'border-ink-900 bg-ink-900 text-white shadow-soft-sm'
+          : 'border-ink-200 bg-white text-ink-900 hover:border-ink-300 hover:bg-ink-50')
       }
     >
       <div className="text-sm font-semibold">{label}</div>
-      <div className="text-[11px] text-ink-500">{desc}</div>
+      <div className={'text-[11px] ' + (active ? 'text-white/70' : 'text-ink-500')}>
+        {desc}
+      </div>
     </button>
   );
 }
@@ -177,7 +180,7 @@ function Field({
         minLength={minLength}
         placeholder={placeholder}
         defaultValue={defaultValue}
-        className="mt-1 w-full rounded-md border border-ink-300 px-3 py-2 text-sm shadow-sm focus:border-ink-500 focus:outline-none focus:ring-1 focus:ring-ink-200"
+        className="input mt-1.5"
       />
       {hint && <p className="mt-1 text-xs text-ink-500">{hint}</p>}
     </div>

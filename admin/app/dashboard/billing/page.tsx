@@ -109,7 +109,10 @@ export default async function BillingPage({
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-8">
-      <h1 className="text-3xl font-bold tracking-tight">Billing</h1>
+      <div className="text-[11px] font-bold uppercase tracking-wider text-ink-500">
+        Plan &amp; usage
+      </div>
+      <h1 className="mt-1.5 text-3xl font-bold tracking-tight text-ink-900">Billing</h1>
       <p className="mt-1 text-sm text-ink-600">
         {me.firm_status === 'trial' ? (
           <>
@@ -129,12 +132,12 @@ export default async function BillingPage({
       </p>
 
       {searchParams.success && (
-        <div className="mt-6 rounded-md border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
+        <div className="mt-6 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
           Subscription started — your firm is active.
         </div>
       )}
       {searchParams.canceled && (
-        <div className="mt-6 rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+        <div className="mt-6 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
           Checkout canceled. No charge was made.
         </div>
       )}
@@ -142,9 +145,9 @@ export default async function BillingPage({
       {me.firm_id && (
         <div
           className={
-            'mt-6 rounded-xl border bg-white p-6 ' +
+            'mt-6 rounded-2xl border bg-white p-6 shadow-soft-sm ' +
             (atCap
-              ? 'border-red-300 ring-1 ring-red-200'
+              ? 'border-rose-300 ring-1 ring-rose-200'
               : nearCap
                 ? 'border-amber-300 ring-1 ring-amber-200'
                 : 'border-ink-200')
@@ -152,20 +155,18 @@ export default async function BillingPage({
         >
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <div className="text-xs uppercase tracking-wide text-ink-500">
+              <div className="text-[11px] font-bold uppercase tracking-wider text-ink-500">
                 Current plan
               </div>
-              <div className="mt-1 text-xl font-semibold">{planName}</div>
+              <div className="mt-1 text-xl font-semibold text-ink-900">{planName}</div>
               <div className="mt-1 text-sm text-ink-600">
-                <strong>{usedSeats}</strong> of <strong>{seatCap}</strong>{' '}
+                <strong className="text-ink-900">{usedSeats}</strong> of{' '}
+                <strong className="text-ink-900">{seatCap}</strong>{' '}
                 seat{seatCap === 1 ? '' : 's'} used
               </div>
             </div>
             {(nearCap || atCap) && upgradeTarget && (
-              <a
-                href="#plans"
-                className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-              >
+              <a href="#plans" className="btn-primary">
                 {atCap ? 'Upgrade required' : 'Upgrade to ' + PLANS[upgradeTarget].name}
               </a>
             )}
@@ -176,7 +177,7 @@ export default async function BillingPage({
               className={
                 'h-full transition-all ' +
                 (atCap
-                  ? 'bg-red-500'
+                  ? 'bg-rose-500'
                   : nearCap
                     ? 'bg-amber-500'
                     : 'bg-emerald-500')
@@ -186,7 +187,7 @@ export default async function BillingPage({
           </div>
 
           {atCap && (
-            <p className="mt-3 text-sm text-red-700">
+            <p className="mt-3 text-sm text-rose-700">
               You've reached your seat limit. Upgrade to invite more team members.
             </p>
           )}
@@ -203,12 +204,12 @@ export default async function BillingPage({
         <BillingClient plans={PLAN_CARDS} currentStatus={me.firm_status} />
       </div>
 
-      <div className="mt-8 rounded-xl border border-ink-200 bg-white p-6 text-sm text-ink-600">
+      <div className="mt-8 rounded-2xl border border-ink-200 bg-white p-6 text-sm text-ink-600 shadow-soft-sm">
         <strong className="block text-ink-900">Need an Enterprise plan?</strong>
         For 50+ agents, custom domain, app store white-label, or SSO,{' '}
         <a
           href="mailto:turnerlogan@parallelstudios.co"
-          className="font-medium text-blue-600 hover:underline"
+          className="font-semibold text-ink-900 underline underline-offset-2 hover:text-ink-700"
         >
           email us
         </a>{' '}

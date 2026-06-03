@@ -134,9 +134,13 @@ export default async function DealsListPage({
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
       <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Deals</h1>
+          <div className="text-[11px] font-bold uppercase tracking-wider text-ink-500">
+            Pipeline
+          </div>
+          <h1 className="mt-1.5 text-3xl font-bold tracking-tight text-ink-900">Deals</h1>
           <p className="mt-1 text-sm text-ink-600">
-            {active} active · {total} total
+            <span className="font-semibold text-ink-900">{active}</span> active ·{' '}
+            <span className="font-semibold text-ink-900">{total}</span> total
           </p>
         </div>
         <Link href="/dashboard/deals/new" className="btn-primary">
@@ -148,47 +152,38 @@ export default async function DealsListPage({
       </header>
 
       {total === 0 && (
-        <section className="mb-6 rounded-2xl border border-blue-200 bg-blue-50/60 p-5">
+        <section className="surface mb-6 overflow-hidden p-6">
           <div className="flex flex-wrap items-start gap-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white shadow-soft-sm">
+            <div
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-white shadow-soft-sm"
+              style={{ backgroundColor: me.firm_brand_color || '#0F172A' }}
+            >
               <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M12 2L2 7l10 5 10-5-10-5z" strokeLinejoin="round" />
                 <path d="M2 17l10 5 10-5M2 12l10 5 10-5" strokeLinejoin="round" />
               </svg>
             </div>
             <div className="min-w-0 flex-1">
-              <h2 className="text-base font-bold text-blue-950">
+              <h2 className="text-base font-bold text-ink-900">
                 Welcome to your firm's portal
               </h2>
-              <p className="mt-1 text-sm text-blue-900/80">
+              <p className="mt-1 max-w-2xl text-sm leading-relaxed text-ink-600">
                 Every deal you run gets its own workspace with phase tracking,
                 shared documents, financials, messages, and a branded client app.
                 You can start a deal now and add the client (or anyone else)
                 inside it, or invite a client first if you prefer.
               </p>
-              <div className="mt-3 flex flex-wrap gap-2 text-xs">
-                <Link
-                  href="/dashboard/deals/new"
-                  className="rounded-lg bg-blue-600 px-3 py-2 font-semibold text-white shadow-soft-sm transition hover:bg-blue-700"
-                >
+              <div className="mt-4 flex flex-wrap gap-2 text-xs">
+                <Link href="/dashboard/deals/new" className="btn-primary text-xs">
                   Start a deal →
                 </Link>
-                <Link
-                  href="/dashboard/clients/new"
-                  className="rounded-lg border border-blue-300 bg-white px-3 py-2 font-semibold text-blue-800 transition hover:bg-blue-50"
-                >
+                <Link href="/dashboard/clients/new" className="btn-secondary text-xs">
                   Invite a client
                 </Link>
-                <Link
-                  href="/dashboard/branding"
-                  className="rounded-lg border border-blue-300 bg-white px-3 py-2 font-semibold text-blue-800 transition hover:bg-blue-50"
-                >
+                <Link href="/dashboard/branding" className="btn-secondary text-xs">
                   Set up branding
                 </Link>
-                <Link
-                  href="/dashboard/settings#mobile"
-                  className="rounded-lg border border-blue-300 bg-white px-3 py-2 font-semibold text-blue-800 transition hover:bg-blue-50"
-                >
+                <Link href="/dashboard/settings#mobile" className="btn-secondary text-xs">
                   Get the mobile app
                 </Link>
               </div>

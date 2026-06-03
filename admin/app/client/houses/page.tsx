@@ -46,19 +46,38 @@ export default async function ClientHousesPage() {
     : { data: [] as any[] };
 
   return (
-    <main className="mx-auto max-w-4xl px-4 py-6 sm:px-6 sm:py-8">
-      <header className="mb-5">
-        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Houses</h1>
+    <main className="mx-auto max-w-4xl px-4 py-6 sm:px-6 sm:py-10">
+      <header className="mb-6">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-400">
+          Your search
+        </p>
+        <h1 className="mt-1.5 text-2xl font-bold tracking-tight sm:text-3xl">Houses</h1>
         <p className="mt-1 text-sm text-ink-600">
           {(houses?.length || 0)} {houses?.length === 1 ? 'property' : 'properties'} from your agent.
         </p>
       </header>
 
       {!houses || houses.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-ink-300 bg-white p-10 text-center">
-          <h3 className="text-base font-semibold">No houses yet</h3>
-          <p className="mt-1 text-sm text-ink-600">
-            Your realtor hasn't added any properties to your search yet.
+        <div className="rounded-2xl border border-dashed border-ink-300 bg-white bg-dotted p-12 text-center shadow-soft-sm">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-ink-100">
+            <svg
+              aria-hidden
+              viewBox="0 0 24 24"
+              className="h-6 w-6 text-ink-500"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+              <path d="M9 22V12h6v10" />
+            </svg>
+          </div>
+          <h3 className="mt-4 text-base font-semibold">No houses yet</h3>
+          <p className="mx-auto mt-1 max-w-sm text-sm text-ink-600">
+            Your realtor hasn&apos;t added any properties to your search yet. When
+            they do, they&apos;ll show up here.
           </p>
         </div>
       ) : (
@@ -69,7 +88,7 @@ export default async function ClientHousesPage() {
             <Link
               key={h.id}
               href={`/client/houses/${h.id}`}
-              className="group relative overflow-hidden rounded-xl border border-ink-200 bg-white shadow-sm transition hover:shadow-md"
+              className="group relative overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-soft transition hover:-translate-y-0.5 hover:border-ink-300 hover:shadow-soft-lg"
             >
               {badge === 'closed-home' && (
                 <div className="absolute left-3 top-3 z-10 flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow-md">
@@ -112,7 +131,8 @@ export default async function ClientHousesPage() {
                   )}
                 </div>
                 {h.status && (
-                  <div className="mt-3 inline-block rounded-full bg-ink-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-ink-600">
+                  <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-ink-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-ink-600">
+                    <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-ink-400" />
                     {h.status.replace(/_/g, ' ')}
                   </div>
                 )}

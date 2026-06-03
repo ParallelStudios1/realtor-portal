@@ -14,19 +14,19 @@ export default async function OnboardingPage() {
   return (
     <main className="min-h-screen bg-ink-50 py-12">
       <div className="mx-auto max-w-2xl px-6">
-        <div className="mb-8 flex items-center gap-2 text-sm text-ink-500">
-          <span className="rounded-full bg-ink-900 px-2 py-0.5 text-xs font-semibold text-white">
+        <div className="mb-8 flex items-center gap-2.5 text-sm text-ink-500">
+          <span className="rounded-full bg-ink-900 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-white">
             Step 1 of 1
           </span>
-          <span>Make it yours</span>
+          <span className="font-medium">Make it yours</span>
         </div>
 
-        <div className="rounded-xl border border-ink-200 bg-white p-8 shadow-sm">
-          <h1 className="text-2xl font-bold tracking-tight">
+        <div className="rounded-2xl border border-ink-200 bg-white p-8 shadow-soft-lg">
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
             Welcome, {me.full_name?.split(' ')[0]}.
           </h1>
-          <p className="mt-1 text-ink-600">
-            Let's brand <strong>{me.firm_name}</strong>. This is what your clients will see when they
+          <p className="mt-2 text-ink-600">
+            Let&apos;s brand <strong>{me.firm_name}</strong>. This is what your clients will see when they
             open the app.
           </p>
 

@@ -12,11 +12,16 @@ export default async function ClientProfilePage() {
   }
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-8">
-      <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Profile</h1>
-      <p className="mt-1 text-sm text-ink-600">
-        Update your name and password.
-      </p>
+    <main className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-10">
+      <header>
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-400">
+          Account
+        </p>
+        <h1 className="mt-1.5 text-2xl font-bold tracking-tight sm:text-3xl">Profile</h1>
+        <p className="mt-1 text-sm text-ink-600">
+          Update your name and password.
+        </p>
+      </header>
 
       <div className="mt-8">
         <ClientProfileForm fullName={me.full_name ?? ''} email={me.email ?? ''} />

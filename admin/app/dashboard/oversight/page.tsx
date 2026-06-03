@@ -104,17 +104,20 @@ export default async function OversightPage() {
   return (
     <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
       <div className="mb-6">
-        <nav className="mb-1 flex items-center gap-2 text-xs text-ink-500">
-          <Link href="/dashboard" className="font-semibold hover:text-ink-900">
+        <nav className="mb-2 flex items-center gap-2 text-xs text-ink-500">
+          <Link href="/dashboard" className="font-semibold transition hover:text-ink-900">
             Dashboard
           </Link>
           <span>/</span>
           <span className="font-semibold text-ink-900">Oversight</span>
         </nav>
-        <h1 className="text-2xl font-bold tracking-tight text-ink-900">
+        <div className="text-[11px] font-bold uppercase tracking-wider text-ink-500">
+          Broker view
+        </div>
+        <h1 className="mt-1.5 text-3xl font-bold tracking-tight text-ink-900">
           Deadline oversight
         </h1>
-        <p className="mt-1 text-sm text-ink-500">
+        <p className="mt-1 text-sm text-ink-600">
           Firm-wide view of overdue and at-risk deadlines, grouped by the agent
           responsible. Acknowledged deadlines are hidden.
         </p>
@@ -152,12 +155,14 @@ function StatCard({
   tone: 'rose' | 'amber';
 }) {
   const accent = tone === 'rose' ? 'text-rose-700' : 'text-amber-700';
+  const bar = tone === 'rose' ? 'bg-rose-500' : 'bg-amber-500';
   return (
-    <div className="rounded-2xl border border-ink-200 bg-white p-4 shadow-soft-sm">
+    <div className="relative overflow-hidden rounded-2xl border border-ink-200 bg-white p-5 shadow-soft-sm">
+      <div className={'absolute inset-x-0 top-0 h-1 ' + bar} />
       <div className="text-[11px] font-bold uppercase tracking-wider text-ink-500">
         {label}
       </div>
-      <div className={'mt-1 text-3xl font-bold ' + accent}>{value}</div>
+      <div className={'mt-1.5 text-3xl font-bold tabular-nums ' + accent}>{value}</div>
     </div>
   );
 }
@@ -179,7 +184,7 @@ function Section({
         {title}
       </h2>
       {groups.length === 0 ? (
-        <div className="rounded-2xl border border-ink-200 bg-white px-5 py-8 text-center text-sm text-ink-500">
+        <div className="bg-dotted rounded-2xl border border-ink-200 bg-white px-5 py-10 text-center text-sm text-ink-500 shadow-soft-sm">
           {empty}
         </div>
       ) : (

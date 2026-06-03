@@ -35,14 +35,36 @@ export default async function DealPage({
   const me = await getMe();
   if (!me?.user_id) {
     return (
-      <main className="mx-auto max-w-3xl px-6 py-12">
-        <h1 className="text-2xl font-bold">Sign in to view this deal</h1>
-        <Link
-          href={`/login?next=${encodeURIComponent('/deal/' + params.id)}`}
-          className="mt-4 inline-block rounded-md bg-ink-900 px-4 py-2 text-sm font-semibold text-white"
-        >
-          Sign in →
-        </Link>
+      <main className="flex min-h-screen items-center justify-center bg-ink-50 px-6 py-12">
+        <div className="w-full max-w-md rounded-2xl border border-ink-200 bg-white p-8 text-center shadow-soft-lg">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-ink-100">
+            <svg
+              aria-hidden
+              viewBox="0 0 24 24"
+              className="h-6 w-6 text-ink-500"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <rect x="3" y="11" width="18" height="11" rx="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+          </div>
+          <h1 className="mt-4 text-xl font-bold tracking-tight">
+            Sign in to view this deal
+          </h1>
+          <p className="mt-1 text-sm text-ink-600">
+            This deal is private. Sign in with the email it was shared with.
+          </p>
+          <Link
+            href={`/login?next=${encodeURIComponent('/deal/' + params.id)}`}
+            className="btn-primary mt-6 w-full justify-center"
+          >
+            Sign in
+          </Link>
+        </div>
       </main>
     );
   }
@@ -157,28 +179,28 @@ export default async function DealPage({
     ]);
 
   return (
-    <main className="min-h-screen" style={{ backgroundColor: brand + '08' }}>
+    <main className="min-h-screen" style={{ backgroundColor: brand + '0A' }}>
       <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-10">
         {/* Branded header */}
         <header
-          className="overflow-hidden rounded-2xl text-white shadow-lg"
+          className="overflow-hidden rounded-2xl text-white shadow-soft-lg"
           style={{ backgroundColor: brand }}
         >
-          <div className="flex items-center gap-4 px-6 py-5">
+          <div className="flex items-center gap-4 px-6 py-6">
             {d.firm?.logo_url ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={d.firm.logo_url}
                 alt=""
-                className="h-12 w-12 rounded-lg bg-white object-contain p-1"
+                className="h-12 w-12 rounded-xl bg-white object-contain p-1.5 shadow-soft-sm"
               />
             ) : (
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-white/15 text-lg font-bold">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/15 text-lg font-bold">
                 {(d.firm?.name || '?').slice(0, 1)}
               </div>
             )}
             <div className="min-w-0 flex-1">
-              <div className="text-xs font-semibold uppercase tracking-wide opacity-80">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.16em] opacity-80">
                 {d.firm?.name}
               </div>
               <h1 className="truncate text-2xl font-bold tracking-tight">
@@ -186,31 +208,51 @@ export default async function DealPage({
               </h1>
             </div>
             <span
-              className="shrink-0 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider"
               style={{ backgroundColor: 'rgba(255,255,255,0.18)' }}
             >
+              <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-white" />
               {String(d.phase).replace(/_/g, ' ')}
             </span>
           </div>
           {/* Phase stepper */}
-          <div className="border-t border-white/15 px-6 py-4">
+          <div className="border-t border-white/15 px-6 py-5">
             <div className="flex items-center gap-2">
               {PHASES.map((p, i) => {
                 const done = phaseIdx >= 0 && i <= phaseIdx;
+                const isCurrent = i === phaseIdx;
                 return (
                   <div key={p} className="flex flex-1 items-center gap-2">
                     <div
-                      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold"
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-bold transition"
                       style={{
                         backgroundColor: done ? accent : 'rgba(255,255,255,0.2)',
                         color: '#fff',
+                        boxShadow: isCurrent
+                          ? '0 0 0 4px rgba(255,255,255,0.18)'
+                          : undefined,
                       }}
                     >
-                      {i + 1}
+                      {done && !isCurrent ? (
+                        <svg
+                          aria-hidden
+                          viewBox="0 0 24 24"
+                          className="h-3.5 w-3.5"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M20 6 9 17l-5-5" />
+                        </svg>
+                      ) : (
+                        i + 1
+                      )}
                     </div>
                     {i < PHASES.length - 1 && (
                       <div
-                        className="h-0.5 flex-1 rounded-full"
+                        className="h-1 flex-1 rounded-full"
                         style={{
                           backgroundColor:
                             done && i < phaseIdx
@@ -223,9 +265,15 @@ export default async function DealPage({
                 );
               })}
             </div>
-            <div className="mt-1.5 flex items-center gap-2 text-[10px] opacity-80">
-              {PHASES.map((p) => (
-                <div key={p} className="flex-1 text-center capitalize">
+            <div className="mt-2 flex items-center gap-2 text-[10px]">
+              {PHASES.map((p, i) => (
+                <div
+                  key={p}
+                  className={
+                    'flex-1 text-center capitalize ' +
+                    (i === phaseIdx ? 'font-semibold opacity-100' : 'opacity-70')
+                  }
+                >
                   {p.replace(/_/g, ' ')}
                 </div>
               ))}
@@ -236,7 +284,7 @@ export default async function DealPage({
         {/* Your-role banner */}
         {myRoleLabel && (
           <div
-            className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-ink-200 bg-white px-4 py-2.5 text-sm shadow-sm"
+            className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-ink-200 bg-white px-4 py-3 text-sm shadow-soft"
             style={{ borderColor: brand + '33' }}
           >
             <div className="flex items-center gap-2">
@@ -487,7 +535,7 @@ export default async function DealPage({
                 ))}
               </ul>
               {!canSeeMessages && !isStaffSameFirm && (
-                <p className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-2 text-[11px] text-amber-800">
+                <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-[11px] leading-relaxed text-amber-800">
                   You have a read-only view. Some sections are hidden based on
                   what the realtor shared with you.
                 </p>
@@ -498,9 +546,9 @@ export default async function DealPage({
               <Section title="Realtor controls">
                 <Link
                   href={`/dashboard/clients/${d.client?.id}`}
-                  className="block rounded-lg border border-ink-200 px-3 py-2 text-center text-sm font-semibold transition hover:bg-ink-50"
+                  className="btn-secondary w-full justify-center"
                 >
-                  Open full dashboard →
+                  Open full dashboard
                 </Link>
               </Section>
             )}
@@ -519,8 +567,8 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-xl border border-ink-200 bg-white p-5 shadow-sm">
-      <h2 className="text-xs font-semibold uppercase tracking-wide text-ink-500">
+    <section className="rounded-2xl border border-ink-200 bg-white p-5 shadow-soft">
+      <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-400">
         {title}
       </h2>
       <div className="mt-3">{children}</div>
@@ -529,7 +577,24 @@ function Section({
 }
 
 function Empty({ msg }: { msg: string }) {
-  return <p className="text-sm italic text-ink-500">{msg}</p>;
+  return (
+    <div className="flex items-center gap-2.5 rounded-xl border border-dashed border-ink-200 bg-ink-50 px-3.5 py-3 text-sm text-ink-500">
+      <svg
+        aria-hidden
+        viewBox="0 0 24 24"
+        className="h-4 w-4 shrink-0 text-ink-400"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 8h.01M11 12h1v4h1" />
+      </svg>
+      <span>{msg}</span>
+    </div>
+  );
 }
 
 function Row({ label, value, raw }: { label: string; value: any; raw?: boolean }) {

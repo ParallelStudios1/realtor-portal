@@ -60,37 +60,41 @@ export function BillingClient({
   return (
     <>
       {error && (
-        <div className="mt-6 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+        <div className="mt-6 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">
           {error}
         </div>
       )}
-      <div className="mt-8 grid gap-6 md:grid-cols-3">
+      <div className="mt-8 grid items-start gap-6 md:grid-cols-3">
         {plans.map((p) => {
           const pending = pendingPlan === p.id;
           return (
             <div
               key={p.id}
               className={
-                'rounded-xl border bg-white p-6 ' +
+                'relative rounded-2xl border bg-white p-6 transition ' +
                 (p.popular
-                  ? 'border-blue-500 shadow-lg ring-2 ring-blue-500'
-                  : 'border-ink-200')
+                  ? 'border-ink-900 shadow-soft-lg ring-1 ring-ink-900 md:-translate-y-1'
+                  : 'border-ink-200 shadow-soft-sm hover:border-ink-300 hover:shadow-soft-md')
               }
             >
               {p.popular && (
-                <div className="mb-2 inline-block rounded-full bg-blue-600 px-2 py-0.5 text-xs font-semibold text-white">
+                <div className="absolute -top-3 left-6 inline-flex items-center rounded-full bg-ink-900 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white shadow-soft-sm">
                   Most popular
                 </div>
               )}
-              <h3 className="font-semibold">{p.name}</h3>
+              <h3 className="text-sm font-bold uppercase tracking-wide text-ink-700">
+                {p.name}
+              </h3>
               <div className="mt-3 flex items-baseline gap-1">
-                <span className="text-3xl font-bold">{p.price}</span>
+                <span className="text-4xl font-bold tracking-tight text-ink-900">
+                  {p.price}
+                </span>
                 <span className="text-sm text-ink-500">{p.sub}</span>
               </div>
               <p className="mt-1 text-xs text-ink-500">{p.who}</p>
-              <ul className="mt-4 space-y-2 text-sm">
+              <ul className="mt-5 space-y-2.5 border-t border-ink-100 pt-5 text-sm">
                 {p.features.map((f) => (
-                  <li key={f} className="flex items-start gap-2">
+                  <li key={f} className="flex items-start gap-2 text-ink-700">
                     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.5" className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" aria-hidden>
                       <path d="M4 10.5l3.5 3.5L16 5" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
@@ -102,11 +106,12 @@ export function BillingClient({
                 type="button"
                 disabled={pending}
                 onClick={() => startCheckout(p.id)}
+                data-loading={pending ? 'true' : undefined}
                 className={
-                  'mt-6 block w-full rounded-md px-4 py-2 text-center text-sm font-semibold disabled:opacity-50 ' +
+                  'mt-6 block w-full rounded-lg px-4 py-2.5 text-center text-sm font-semibold transition active:scale-[0.98] disabled:opacity-60 disabled:pointer-events-none ' +
                   (p.popular
-                    ? 'bg-blue-600 text-white hover:bg-blue-700'
-                    : 'bg-ink-900 text-white hover:bg-ink-700')
+                    ? 'bg-ink-900 text-white shadow-soft-sm hover:bg-ink-700'
+                    : 'border border-ink-300 bg-white text-ink-800 hover:bg-ink-50')
                 }
               >
                 {pending

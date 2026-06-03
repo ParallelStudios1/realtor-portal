@@ -101,11 +101,22 @@ export function DealsBoard({
         ))}
         <div className="ml-auto flex items-center gap-2">
           <div className="relative">
+            <svg
+              viewBox="0 0 20 20"
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-400"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              aria-hidden
+            >
+              <circle cx="9" cy="9" r="6" />
+              <path d="M14 14l4 4" strokeLinecap="round" />
+            </svg>
             <input
               type="search"
               defaultValue={query}
               placeholder="Search client, address, realtor…"
-              className="w-64 rounded-lg border border-ink-300 bg-white px-3 py-2 text-sm focus:border-ink-500 focus:outline-none focus:ring-2 focus:ring-ink-200"
+              className="input w-64 pl-9"
               onChange={(e) => {
                 const v = e.target.value.trim();
                 if (searchTimer.current) clearTimeout(searchTimer.current);
@@ -136,20 +147,19 @@ export function DealsBoard({
       )}
 
       {deals.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-ink-300 bg-white p-12 text-center">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mx-auto h-8 w-8 text-ink-300" aria-hidden>
-            <rect x="5" y="4" width="14" height="16" rx="2" />
-            <path d="M9 4V3h6v1M9 10h6M9 14h4" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          <h3 className="mt-3 font-semibold">No deals match those filters</h3>
-          <p className="mt-1 text-sm text-ink-600">
+        <div className="bg-dotted rounded-2xl border border-dashed border-ink-300 bg-white p-14 text-center shadow-soft-sm">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-ink-900 text-white shadow-soft-sm">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" className="h-7 w-7" aria-hidden>
+              <rect x="5" y="4" width="14" height="16" rx="2" />
+              <path d="M9 4V3h6v1M9 10h6M9 14h4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+          <h3 className="mt-4 text-base font-semibold text-ink-900">No deals match those filters</h3>
+          <p className="mx-auto mt-1.5 max-w-md text-sm leading-relaxed text-ink-600">
             Clear filters or invite a new client to get started.
           </p>
-          <Link
-            href="/dashboard/clients/new"
-            className="mt-4 inline-block rounded-lg bg-ink-900 px-4 py-2 text-sm font-semibold text-white hover:bg-ink-700"
-          >
-            + Invite client
+          <Link href="/dashboard/clients/new" className="btn-primary mt-6">
+            Invite client
           </Link>
         </div>
       ) : view === 'list' ? (
@@ -279,7 +289,7 @@ function DealCard({ d, compact }: { d: Deal; compact?: boolean }) {
       <Link
         href={`/dashboard/deals/${d.id}`}
         className={
-          'block rounded-xl border border-ink-200 bg-white shadow-sm transition hover:-tranink-y-0.5 hover:border-ink-300 hover:shadow-md ' +
+          'block rounded-2xl border border-ink-200 bg-white shadow-soft-sm transition hover:-translate-y-0.5 hover:border-ink-300 hover:shadow-soft-md ' +
           (compact ? 'p-3' : 'p-4')
         }
       >

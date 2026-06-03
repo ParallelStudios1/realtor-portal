@@ -210,8 +210,11 @@ export default async function ContactsPage({
     <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
       <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Contacts</h1>
-          <p className="mt-1 text-sm text-ink-600">
+          <div className="text-[11px] font-bold uppercase tracking-wider text-ink-500">
+            Address book
+          </div>
+          <h1 className="mt-1.5 text-3xl font-bold tracking-tight text-ink-900">Contacts</h1>
+          <p className="mt-1 max-w-2xl text-sm text-ink-600">
             Every person you&apos;ve worked with — clients, co-realtors,
             attorneys, inspectors, lenders. Auto-built from your past deals,
             plus anyone you add by hand.
@@ -272,14 +275,21 @@ export default async function ContactsPage({
       </div>
 
       {filtered.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-ink-300 bg-white p-12 text-center">
-          <h2 className="text-lg font-semibold">No contacts yet</h2>
-          <p className="mx-auto mt-1 max-w-md text-sm text-ink-600">
+        <div className="bg-dotted rounded-2xl border border-dashed border-ink-300 bg-white p-14 text-center shadow-soft-sm">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-ink-900 text-white shadow-soft-sm">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" className="h-7 w-7" aria-hidden>
+              <rect x="4" y="3" width="16" height="18" rx="2" />
+              <circle cx="12" cy="11" r="3" />
+              <path d="M7 18c.8-2 2.7-3 5-3s4.2 1 5 3" strokeLinecap="round" />
+            </svg>
+          </div>
+          <h2 className="mt-4 text-base font-semibold text-ink-900">No contacts yet</h2>
+          <p className="mx-auto mt-1.5 max-w-md text-sm leading-relaxed text-ink-600">
             Anyone you invite to a deal automatically lands here. You can also
             add someone manually — a co-realtor at another firm, your usual
             lender, an inspector — without putting them on a deal first.
           </p>
-          <div className="mt-4 flex justify-center">
+          <div className="mt-6 flex justify-center">
             <AddContactButton />
           </div>
         </div>
@@ -288,7 +298,7 @@ export default async function ContactsPage({
           {filtered.map((c) => (
             <li
               key={c.key}
-              className="rounded-2xl border border-ink-200 bg-white p-4 shadow-soft transition hover:-tranink-y-0.5 hover:shadow-soft-md"
+              className="rounded-2xl border border-ink-200 bg-white p-4 shadow-soft-sm transition hover:-translate-y-0.5 hover:border-ink-300 hover:shadow-soft-md"
             >
               <div className="flex items-start gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ink-100 text-sm font-bold text-ink-700">
@@ -306,7 +316,7 @@ export default async function ContactsPage({
                   {c.email && (
                     <a
                       href={'mailto:' + c.email}
-                      className="block truncate text-xs text-blue-600 hover:underline"
+                      className="block truncate text-xs font-medium text-ink-600 transition hover:text-ink-900 hover:underline"
                     >
                       {c.email}
                     </a>
@@ -314,7 +324,7 @@ export default async function ContactsPage({
                   {c.phone && (
                     <a
                       href={'tel:' + c.phone}
-                      className="block text-xs text-blue-600 hover:underline"
+                      className="block text-xs font-medium text-ink-600 transition hover:text-ink-900 hover:underline"
                     >
                       {c.phone}
                     </a>
@@ -331,7 +341,7 @@ export default async function ContactsPage({
                   </span>
                 ))}
                 {c.dealCount > 0 && (
-                  <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
+                  <span className="rounded-full bg-ink-900 px-2 py-0.5 text-[10px] font-semibold text-white">
                     {c.dealCount} deal{c.dealCount === 1 ? '' : 's'}
                   </span>
                 )}

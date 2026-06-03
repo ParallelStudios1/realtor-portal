@@ -68,42 +68,37 @@ export function EmptyState({
   const cta = ctaLabel
     ? ctaHref
       ? (
-          <Link
-            href={ctaHref}
-            className="mt-5 inline-flex items-center gap-1.5 rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
-          >
+          <Link href={ctaHref} className="btn-primary mt-6">
             {ctaLabel}
           </Link>
         )
       : (
-          <button
-            type="button"
-            onClick={onCtaClick}
-            className="mt-5 inline-flex items-center gap-1.5 rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
-          >
+          <button type="button" onClick={onCtaClick} className="btn-primary mt-6">
             {ctaLabel}
           </button>
         )
     : null;
 
   return (
-    <div className="rounded-xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
-      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-blue-50 ring-1 ring-blue-100">
+    <div className="bg-dotted rounded-2xl border border-dashed border-ink-300 bg-white px-6 py-14 text-center shadow-soft-sm">
+      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-ink-900 text-white shadow-soft-sm">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           fill="none"
           viewBox="0 0 24 24"
           strokeWidth={1.5}
           stroke="currentColor"
-          className="h-7 w-7 text-blue-600"
+          className="h-7 w-7"
           aria-hidden="true"
         >
           {ICONS[icon]}
         </svg>
       </div>
-      <h3 className="mt-4 text-base font-semibold text-slate-900">{title}</h3>
+      <h3 className="mt-4 text-base font-semibold text-ink-900">{title}</h3>
       {body && (
-        <p className="mx-auto mt-1 max-w-md text-sm text-slate-600">{body}</p>
+        <p className="mx-auto mt-1.5 max-w-md text-sm leading-relaxed text-ink-600">
+          {body}
+        </p>
       )}
       {cta}
     </div>

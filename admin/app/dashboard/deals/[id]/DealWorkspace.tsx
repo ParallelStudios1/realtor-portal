@@ -64,6 +64,12 @@ export function DealWorkspace(props: {
   recentMessages: any[];
   showings?: any[];
   envelopes?: any[];
+  buyerInterest?: {
+    showingCount: number;
+    tourRequestCount: number;
+    linkedBuyerCount: number;
+    underContractBuyerCount: number;
+  } | null;
   calendarUrl?: string | null;
 }) {
   const {
@@ -83,6 +89,7 @@ export function DealWorkspace(props: {
     teammates,
     recentMessages,
     showings,
+    buyerInterest,
   } = props;
 
   const [docFolder, setDocFolder] = useState<string>('all');
@@ -420,6 +427,15 @@ export function DealWorkspace(props: {
       {/* Body grid */}
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
+          {/* Buyer interest — SELLER deals only. Read-only aggregate of the
+              demand on this listing: scheduled/past showings, tour requests,
+              and any linked buyer who's gone under contract on our property
+              (via houses.listing_search_id back-reference). Flat ink, no
+              gradients. Leads the seller workspace ahead of the listing card. */}
+          {deal.kind === 'seller' && buyerInterest && (
+            <BuyerInterestPanel data={buyerInterest} />
+          )}
+
           {/* Houses — buyer vs seller differentiation.
               SELLER deal: this section leads with the single LISTING house.
               We label it "Listing" (singular) and, if there's no house yet,
@@ -1045,6 +1061,101 @@ function Card({
         children
       )}
     </section>
+  );
+}
+
+/**
+ * Buyer interest summary for a SELLER (listing) deal. Aggregates demand on the
+ * listing — showings, tour requests, and any linked buyer transaction — into a
+ * flat, read-only strip of stat tiles plus a one-line headline. All numbers are
+ * derived server-side from existing tables; nothing here is editable.
+ */
+function BuyerInterestPanel({
+  data,
+}: {
+  data: {
+    showingCount: number;
+    tourRequestCount: number;
+    linkedBuyerCount: number;
+    underContractBuyerCount: number;
+  };
+}) {
+  const { showingCount, tourRequestCount, linkedBuyerCount, underContractBuyerCount } =
+    data;
+
+  // Build a single, plain-language headline so the agent gets the gist at a
+  // glance. Order by significance: under-contract buyers first.
+  const bits: string[] = [];
+  if (underContractBuyerCount > 0) {
+    bits.push(
+      underContractBuyerCount +
+        ' buyer' +
+        (underContractBuyerCount === 1 ? '' : 's') +
+        ' under contract'
+    );
+  } else if (linkedBuyerCount > 0) {
+    bits.push(
+      linkedBuyerCount + ' linked buyer' + (linkedBuyerCount === 1 ? '' : 's')
+    );
+  }
+  if (showingCount > 0)
+    bits.push(showingCount + ' showing' + (showingCount === 1 ? '' : 's'));
+  if (tourRequestCount > 0)
+    bits.push(
+      tourRequestCount + ' tour request' + (tourRequestCount === 1 ? '' : 's')
+    );
+  const headline =
+    bits.length > 0
+      ? bits.join(' · ')
+      : 'No buyer activity on this listing yet.';
+
+  return (
+    <Card title="Buyer interest">
+      <div className="px-5 py-4">
+        <p className="text-sm font-semibold text-ink-900">{headline}</p>
+        <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <StatTile label="Under contract" value={underContractBuyerCount} emphasize />
+          <StatTile label="Linked buyers" value={linkedBuyerCount} />
+          <StatTile label="Showings" value={showingCount} />
+          <StatTile label="Tour requests" value={tourRequestCount} />
+        </div>
+        <p className="mt-3 text-[11px] text-ink-400">
+          Aggregated from showings, tour requests, and any buyer deal linked to
+          this listing. The buyer&rsquo;s other activity stays private to them.
+        </p>
+      </div>
+    </Card>
+  );
+}
+
+function StatTile({
+  label,
+  value,
+  emphasize,
+}: {
+  label: string;
+  value: number;
+  emphasize?: boolean;
+}) {
+  return (
+    <div
+      className={
+        'rounded-xl border px-3 py-3 ' +
+        (emphasize && value > 0
+          ? 'border-ink-900 bg-ink-900 text-white'
+          : 'border-ink-200 bg-white text-ink-900')
+      }
+    >
+      <div className="text-2xl font-bold tabular-nums">{value}</div>
+      <div
+        className={
+          'mt-0.5 text-[10px] font-semibold uppercase tracking-wide ' +
+          (emphasize && value > 0 ? 'text-white/70' : 'text-ink-500')
+        }
+      >
+        {label}
+      </div>
+    </div>
   );
 }
 

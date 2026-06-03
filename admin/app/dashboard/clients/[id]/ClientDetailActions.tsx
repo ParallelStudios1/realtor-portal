@@ -601,7 +601,7 @@ function ActionCard({
 }) {
   const t = TONE_STYLES[tone];
   const cls =
-    'group relative flex items-start gap-3 overflow-hidden rounded-xl border border-ink-200 bg-white p-3 text-left shadow-soft-xs transition hover:-tranink-y-0.5 hover:shadow-soft-md hover:border-ink-300 active:scale-[0.98]';
+    'group relative flex items-start gap-3 overflow-hidden rounded-xl border border-ink-200 bg-white p-3 text-left shadow-soft-xs transition hover:-translate-y-0.5 hover:shadow-soft-md hover:border-ink-300 active:scale-[0.98]';
   const inner = (
     <>
       <span

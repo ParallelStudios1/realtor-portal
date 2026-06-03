@@ -258,11 +258,13 @@ export default async function AnalyticsPage() {
         <div>
           <Link
             href="/dashboard"
-            className="text-xs font-semibold text-ink-500 hover:text-ink-700"
+            className="text-xs font-semibold text-ink-500 transition hover:text-ink-900"
           >
             ← Dashboard
           </Link>
-          <h1 className="mt-1 text-3xl font-bold tracking-tight">Analytics</h1>
+          <h1 className="mt-1 text-3xl font-bold tracking-tight text-ink-900">
+            Analytics
+          </h1>
           <p className="mt-1 text-sm text-ink-600">
             {isAdmin
               ? `Firm-wide performance for ${me.firm_name || 'your firm'}.`

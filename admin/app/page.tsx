@@ -30,26 +30,23 @@ export default function HomePage() {
   return (
     <main className="min-h-screen bg-white text-ink-900 antialiased leading-[1.6]">
       {/* Nav */}
-      <header className="border-b border-ink-200">
-        <nav className="mx-auto flex max-w-5xl items-center justify-between px-6 py-5">
-          <Link href="/" className="flex items-center gap-2 font-semibold">
-            <span aria-hidden className="inline-block h-6 w-6 rounded-sm bg-ink-900" />
+      <header className="sticky top-0 z-40 border-b border-ink-200 bg-white/80 backdrop-blur">
+        <nav className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
+          <Link href="/" className="flex items-center gap-2 font-semibold tracking-tight">
+            <span aria-hidden className="inline-block h-6 w-6 rounded-md bg-ink-900" />
             <span>Realtor Portal</span>
           </Link>
           <div className="flex items-center gap-6 text-sm">
-            <a href="#how" className="hidden text-ink-600 hover:text-ink-900 sm:inline">
+            <a href="#how" className="hidden text-ink-600 transition hover:text-ink-900 sm:inline">
               How it works
             </a>
-            <a href="#pricing" className="hidden text-ink-600 hover:text-ink-900 sm:inline">
+            <a href="#pricing" className="hidden text-ink-600 transition hover:text-ink-900 sm:inline">
               Pricing
             </a>
-            <Link href="/login" className="text-ink-600 hover:text-ink-900">
+            <Link href="/login" className="text-ink-600 transition hover:text-ink-900">
               Sign in
             </Link>
-            <Link
-              href="/signup"
-              className="rounded-md bg-ink-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-ink-700"
-            >
+            <Link href="/signup" className="btn-primary">
               Start free trial
             </Link>
           </div>
@@ -58,9 +55,13 @@ export default function HomePage() {
 
       {/* Hero */}
       <section className="border-b border-ink-200">
-        <div className="mx-auto max-w-5xl px-6 py-24">
+        <div className="mx-auto max-w-5xl px-6 py-24 sm:py-32">
           <div className="max-w-2xl">
-            <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
+            <span className="inline-flex items-center gap-2 rounded-full border border-ink-200 bg-ink-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-ink-600">
+              <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-ink-900" />
+              Branded client portal for real estate firms
+            </span>
+            <h1 className="mt-6 text-4xl font-semibold tracking-tight sm:text-[3.4rem] sm:leading-[1.05]">
               Your buyers and sellers stop asking &ldquo;any update?&rdquo;
             </h1>
             <p className="mt-6 text-lg text-ink-700">
@@ -74,14 +75,23 @@ export default function HomePage() {
               per client. Fourteen days free, no card.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link
-                href="/signup"
-                className="inline-flex items-center rounded-md bg-ink-900 px-5 py-3 text-base font-medium text-white hover:bg-ink-700"
-              >
+              <Link href="/signup" className="btn-primary px-5 py-3 text-base">
                 Start free trial
               </Link>
-              <DemoButton className="inline-flex items-center rounded-md border border-ink-300 bg-white px-5 py-3 text-base font-medium text-ink-700 hover:bg-ink-50 disabled:opacity-60" />
+              <DemoButton className="btn-secondary px-5 py-3 text-base" />
             </div>
+            <dl className="mt-12 grid max-w-lg grid-cols-3 gap-6 border-t border-ink-200 pt-8">
+              {[
+                { k: '~10 min', v: 'to set up your firm' },
+                { k: 'Per firm', v: 'unlimited clients' },
+                { k: '14 days', v: 'free, no card' },
+              ].map((s) => (
+                <div key={s.v}>
+                  <dt className="text-2xl font-semibold tracking-tight">{s.k}</dt>
+                  <dd className="mt-1 text-xs text-ink-500">{s.v}</dd>
+                </div>
+              ))}
+            </dl>
           </div>
         </div>
       </section>
@@ -93,50 +103,87 @@ export default function HomePage() {
           rather than a placeholder graphic. */}
       <section className="border-b border-ink-200 bg-ink-50">
         <div className="mx-auto max-w-5xl px-6 py-24">
-          <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+          <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ink-500">
+            The product
+          </div>
+          <h2 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">
             What you actually get
           </h2>
-          <div className="mt-10 grid gap-8 sm:grid-cols-2">
-            <div>
-              <h3 className="text-base font-semibold">A client app with your branding</h3>
-              <p className="mt-2 text-sm text-ink-700">
-                When a client signs in, they see your firm name in the header,
-                your logo on the home screen, and your brand color on every
-                button. Same APK / IPA, different skin per firm.
-              </p>
-            </div>
-            <div>
-              <h3 className="text-base font-semibold">One workspace per deal</h3>
-              <p className="mt-2 text-sm text-ink-700">
-                Phase tracking, key dates, the contract, the parties (buyer,
-                seller, both agents, attorney, lender), messages, and
-                documents — all on one page instead of scattered across your
-                inbox.
-              </p>
-            </div>
-            <div>
-              <h3 className="text-base font-semibold">Status updates the client can see</h3>
-              <p className="mt-2 text-sm text-ink-700">
-                When you move a deal to under contract, the client gets a
-                push notification, an email, and a celebration message in
-                the app. Same for closing, counter offers, and any custom
-                phase you define for your firm.
-              </p>
-            </div>
-            <div>
-              <h3 className="text-base font-semibold">Documents in one place</h3>
-              <p className="mt-2 text-sm text-ink-700">
-                Drag-and-drop uploads, folders (Contracts, Disclosures,
-                Closing, etc.), per-party visibility flags, signed-URL
-                downloads. Everyone on the deal sees what you chose to share.
-              </p>
-            </div>
+          <div className="mt-10 grid gap-5 sm:grid-cols-2">
+            {[
+              {
+                title: 'A client app with your branding',
+                body:
+                  'When a client signs in, they see your firm name in the header, your logo on the home screen, and your brand color on every button. Same APK / IPA, different skin per firm.',
+                icon: (
+                  <>
+                    <rect x="7" y="3" width="10" height="18" rx="2" />
+                    <path d="M11 18h2" />
+                  </>
+                ),
+              },
+              {
+                title: 'One workspace per deal',
+                body:
+                  'Phase tracking, key dates, the contract, the parties (buyer, seller, both agents, attorney, lender), messages, and documents — all on one page instead of scattered across your inbox.',
+                icon: (
+                  <>
+                    <rect x="3" y="4" width="18" height="16" rx="2" />
+                    <path d="M3 9h18M9 20V9" />
+                  </>
+                ),
+              },
+              {
+                title: 'Status updates the client can see',
+                body:
+                  'When you move a deal to under contract, the client gets a push notification, an email, and an update in the app. Same for closing, counter offers, and any custom phase you define for your firm.',
+                icon: (
+                  <>
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                    <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+                  </>
+                ),
+              },
+              {
+                title: 'Documents in one place',
+                body:
+                  'Drag-and-drop uploads, folders (Contracts, Disclosures, Closing, etc.), per-party visibility flags, signed-URL downloads. Everyone on the deal sees what you chose to share.',
+                icon: (
+                  <>
+                    <path d="M14 3v4a1 1 0 0 0 1 1h4" />
+                    <path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2Z" />
+                  </>
+                ),
+              },
+            ].map((f) => (
+              <div
+                key={f.title}
+                className="rounded-2xl border border-ink-200 bg-white p-6 shadow-soft transition hover:shadow-soft-md"
+              >
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-ink-100 text-ink-700">
+                  <svg
+                    aria-hidden
+                    viewBox="0 0 24 24"
+                    className="h-5 w-5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.6"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    {f.icon}
+                  </svg>
+                </div>
+                <h3 className="mt-4 text-base font-semibold">{f.title}</h3>
+                <p className="mt-2 text-sm text-ink-600">{f.body}</p>
+              </div>
+            ))}
           </div>
 
           {/* Screenshot slot — drop a real image into /public/screenshots/
               and uncomment. Don't ship a fake dashboard mockup here. */}
           {/*
-          <div className="mt-12 overflow-hidden rounded-lg border border-ink-200 bg-white">
+          <div className="mt-12 overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-soft-md">
             <img
               src="/screenshots/deal-workspace.png"
               alt="The deal workspace inside Realtor Portal"
@@ -150,42 +197,38 @@ export default function HomePage() {
       {/* How it works — three steps, no decorative icons. */}
       <section id="how" className="border-b border-ink-200">
         <div className="mx-auto max-w-5xl px-6 py-24">
-          <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+          <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ink-500">
+            Getting started
+          </div>
+          <h2 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">
             How it works
           </h2>
-          <ol className="mt-10 space-y-8">
-            <li className="grid gap-4 sm:grid-cols-[3rem_1fr]">
-              <div className="text-xl font-semibold text-ink-400">01</div>
-              <div>
-                <h3 className="text-base font-semibold">Set your brand</h3>
-                <p className="mt-2 text-sm text-ink-700">
-                  Sign up, name your firm, drop in a logo and a primary color.
-                  The mobile app and web portal pick that up everywhere. About
-                  a minute.
-                </p>
-              </div>
-            </li>
-            <li className="grid gap-4 sm:grid-cols-[3rem_1fr]">
-              <div className="text-xl font-semibold text-ink-400">02</div>
-              <div>
-                <h3 className="text-base font-semibold">Invite your first client</h3>
-                <p className="mt-2 text-sm text-ink-700">
-                  Type their name and email. They get a sign-in email and a
-                  link to download your app. They&apos;re in within a few minutes.
-                </p>
-              </div>
-            </li>
-            <li className="grid gap-4 sm:grid-cols-[3rem_1fr]">
-              <div className="text-xl font-semibold text-ink-400">03</div>
-              <div>
-                <h3 className="text-base font-semibold">Run the deal</h3>
-                <p className="mt-2 text-sm text-ink-700">
-                  Add the property, move the phase as things happen, upload
-                  documents, message the client. Everything they need is in
-                  the app — you stop fielding &ldquo;any update?&rdquo; texts.
-                </p>
-              </div>
-            </li>
+          <ol className="mt-10 grid gap-px overflow-hidden rounded-2xl border border-ink-200 bg-ink-200 sm:grid-cols-3">
+            {[
+              {
+                n: '01',
+                t: 'Set your brand',
+                b: 'Sign up, name your firm, drop in a logo and a primary color. The mobile app and web portal pick that up everywhere. About a minute.',
+              },
+              {
+                n: '02',
+                t: 'Invite your first client',
+                b: 'Type their name and email. They get a sign-in email and a link to download your app. They’re in within a few minutes.',
+              },
+              {
+                n: '03',
+                t: 'Run the deal',
+                b: 'Add the property, move the phase as things happen, upload documents, message the client. Everything they need is in the app — you stop fielding “any update?” texts.',
+              },
+            ].map((s) => (
+              <li key={s.n} className="bg-white p-7">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-ink-900 text-sm font-semibold text-white">
+                  {s.n}
+                </div>
+                <h3 className="mt-4 text-base font-semibold">{s.t}</h3>
+                <p className="mt-2 text-sm text-ink-600">{s.b}</p>
+              </li>
+            ))}
           </ol>
         </div>
       </section>
@@ -194,12 +237,15 @@ export default function HomePage() {
           subtle border highlight instead of a ring. */}
       <section id="pricing" className="border-b border-ink-200 bg-ink-50">
         <div className="mx-auto max-w-5xl px-6 py-24">
-          <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+          <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ink-500">
             Pricing
+          </div>
+          <h2 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">
+            One price per firm. Every client included.
           </h2>
           <p className="mt-3 max-w-xl text-sm text-ink-700">
-            Per-firm pricing. Unlimited clients on every plan. Cancel from your
-            dashboard, month-to-month. Fourteen days free, no card.
+            Unlimited clients on every plan. Cancel from your dashboard,
+            month-to-month. Fourteen days free, no card.
           </p>
 
           <div className="mt-10 grid gap-6 md:grid-cols-3">
@@ -247,29 +293,42 @@ export default function HomePage() {
               <div
                 key={p.id}
                 className={
-                  'rounded-lg border bg-white p-6 ' +
-                  (p.popular ? 'border-ink-900' : 'border-ink-200')
+                  'relative flex flex-col rounded-2xl border bg-white p-6 transition ' +
+                  (p.popular
+                    ? 'border-ink-900 shadow-soft-lg'
+                    : 'border-ink-200 shadow-soft hover:shadow-soft-md')
                 }
               >
-                <div className="flex items-baseline justify-between">
+                <div className="flex items-center justify-between">
                   <h3 className="font-semibold">{p.name}</h3>
                   {p.popular && (
-                    <span className="text-[10px] font-semibold uppercase tracking-wider text-ink-500">
+                    <span className="rounded-full bg-ink-900 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white">
                       Most chosen
                     </span>
                   )}
                 </div>
-                <div className="mt-3 flex items-baseline gap-1">
-                  <span className="text-3xl font-semibold tracking-tight">
+                <div className="mt-4 flex items-baseline gap-1">
+                  <span className="text-4xl font-semibold tracking-tight">
                     {p.price}
                   </span>
                   <span className="text-sm text-ink-500">/mo</span>
                 </div>
                 <p className="mt-1 text-xs text-ink-500">{p.who}</p>
-                <ul className="mt-5 space-y-2 text-sm text-ink-700">
+                <ul className="mt-6 space-y-2.5 text-sm text-ink-700">
                   {p.features.map((feat) => (
-                    <li key={feat} className="flex gap-2">
-                      <span aria-hidden className="text-ink-400">·</span>
+                    <li key={feat} className="flex gap-2.5">
+                      <svg
+                        aria-hidden
+                        viewBox="0 0 24 24"
+                        className="mt-0.5 h-4 w-4 shrink-0 text-ink-400"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M20 6 9 17l-5-5" />
+                      </svg>
                       <span>{feat}</span>
                     </li>
                   ))}
@@ -277,9 +336,9 @@ export default function HomePage() {
                 <Link
                   href={`/signup?role=realtor&plan=${p.id}`}
                   className={
-                    'mt-6 block rounded-md px-4 py-2.5 text-center text-sm font-medium ' +
+                    'mt-7 block rounded-lg px-4 py-2.5 text-center text-sm font-semibold transition active:scale-[0.98] ' +
                     (p.popular
-                      ? 'bg-ink-900 text-white hover:bg-ink-700'
+                      ? 'bg-ink-900 text-white shadow-soft-sm hover:bg-ink-700'
                       : 'border border-ink-300 text-ink-700 hover:bg-ink-50')
                   }
                 >
@@ -294,7 +353,10 @@ export default function HomePage() {
       {/* FAQ — plain accordion, no flourish. */}
       <section className="border-b border-ink-200">
         <div className="mx-auto max-w-3xl px-6 py-24">
-          <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+          <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ink-500">
+            FAQ
+          </div>
+          <h2 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">
             Questions people ask
           </h2>
           <div className="mt-8 divide-y divide-ink-200 border-y border-ink-200">
@@ -337,33 +399,39 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Final CTA — single accent, flat. */}
-      <section>
-        <div className="mx-auto max-w-3xl px-6 py-24 text-center">
-          <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-            Try it for fourteen days, no card.
-          </h2>
-          <p className="mt-3 text-sm text-ink-700">
-            Set up your firm, invite a real client, see if it&apos;s actually
-            useful for the way you work. Cancel any time inside the app.
-          </p>
-          <Link
-            href="/signup"
-            className="mt-8 inline-flex items-center rounded-md bg-ink-900 px-5 py-3 text-base font-medium text-white hover:bg-ink-700"
-          >
-            Start free trial
-          </Link>
+      {/* Final CTA — single confident dark panel, flat. */}
+      <section className="bg-white">
+        <div className="mx-auto max-w-5xl px-6 py-24">
+          <div className="rounded-3xl bg-ink-900 px-8 py-16 text-center text-white sm:px-16">
+            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+              Try it for fourteen days, no card.
+            </h2>
+            <p className="mx-auto mt-4 max-w-xl text-sm text-ink-300">
+              Set up your firm, invite a real client, see if it&apos;s actually
+              useful for the way you work. Cancel any time inside the app.
+            </p>
+            <Link
+              href="/signup"
+              className="mt-8 inline-flex items-center justify-center rounded-lg bg-white px-6 py-3 text-base font-semibold text-ink-900 shadow-soft-sm transition hover:bg-ink-100 active:scale-[0.98]"
+            >
+              Start free trial
+            </Link>
+          </div>
         </div>
       </section>
 
       <footer className="border-t border-ink-200">
-        <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-3 px-6 py-8 text-sm text-ink-500 sm:flex-row">
-          <p>© {new Date().getFullYear()} Parallel Studios LLC</p>
+        <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-3 px-6 py-10 text-sm text-ink-500 sm:flex-row">
+          <Link href="/" className="flex items-center gap-2 font-semibold text-ink-700">
+            <span aria-hidden className="inline-block h-5 w-5 rounded-md bg-ink-900" />
+            <span>Realtor Portal</span>
+          </Link>
+          <p className="text-xs">© {new Date().getFullYear()} Parallel Studios LLC</p>
           <div className="flex gap-6">
-            <Link href="/privacy" className="hover:text-ink-700">
+            <Link href="/privacy" className="transition hover:text-ink-700">
               Privacy
             </Link>
-            <Link href="/terms" className="hover:text-ink-700">
+            <Link href="/terms" className="transition hover:text-ink-700">
               Terms
             </Link>
           </div>

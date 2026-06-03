@@ -58,6 +58,89 @@ async function resolveCaller(req: Request): Promise<{
 }
 
 /**
+ * Cross-firm linking helper (Phase 2) — the API-route twin of the server
+ * action's tryLinkSellerDeal(). If the listing agent (by email) is an in-app
+ * user, find a seller-side deal in their firm whose listing house address
+ * matches the chosen house, and stamp houses.listing_search_id so the two
+ * sides converge. Best-effort + idempotent; never throws to the caller.
+ */
+async function tryLinkSellerDealFromApi(
+  service: ReturnType<typeof getSupabaseServiceRoleClient>,
+  opts: {
+    buyerSearchId: string;
+    firmId: string;
+    actorId: string;
+    houseId: string;
+    listingAgentEmail: string | null;
+  }
+): Promise<void> {
+  try {
+    const listingEmail = opts.listingAgentEmail?.trim().toLowerCase();
+    if (!listingEmail) return;
+
+    const { data: houseRow } = await service
+      .from('houses')
+      .select('id, address, listing_search_id')
+      .eq('id', opts.houseId)
+      .maybeSingle();
+    if (!houseRow) return;
+    if ((houseRow as any).listing_search_id) return;
+    const address = ((houseRow as any).address || '').trim();
+    if (!address) return;
+
+    const { data: agentUser } = await service
+      .from('users')
+      .select('id, firm_id')
+      .ilike('email', listingEmail)
+      .maybeSingle();
+    const agentFirmId = (agentUser as any)?.firm_id as string | undefined;
+    if (!agentFirmId) return;
+
+    const { data: sellerDeals } = await service
+      .from('client_searches')
+      .select('id, kind, houses ( id, address )')
+      .eq('firm_id', agentFirmId)
+      .in('kind', ['seller', 'both']);
+    if (!sellerDeals || sellerDeals.length === 0) return;
+
+    const wantAddr = address.toLowerCase();
+    let matched: string | null = null;
+    for (const d of sellerDeals as any[]) {
+      const dealHouses = Array.isArray(d.houses) ? d.houses : [];
+      if (
+        dealHouses.some(
+          (h: any) => (h.address || '').trim().toLowerCase() === wantAddr
+        )
+      ) {
+        matched = d.id;
+        break;
+      }
+    }
+    if (!matched || matched === opts.buyerSearchId) return;
+
+    const { error: linkErr } = await service
+      .from('houses')
+      .update({ listing_search_id: matched })
+      .eq('id', opts.houseId)
+      .eq('search_id', opts.buyerSearchId);
+    if (linkErr) {
+      console.error('[tryLinkSellerDealFromApi] link failed', linkErr.message);
+      return;
+    }
+    await service.from('activities').insert({
+      firm_id: opts.firmId,
+      search_id: opts.buyerSearchId,
+      actor_id: opts.actorId,
+      action: 'seller_deal_linked',
+      target: address,
+      metadata: { listing_search_id: matched, house_id: opts.houseId },
+    });
+  } catch (e: any) {
+    console.error('[tryLinkSellerDealFromApi] threw', e?.message || e);
+  }
+}
+
+/**
  * POST /api/participants/add
  *
  * Mobile-friendly wrapper around the same Add Party logic as the
@@ -111,6 +194,22 @@ export async function POST(req: Request) {
       email?: string;
       phone?: string;
       represents?: 'buyer' | 'seller';
+      // PHASE 2 — house-scoped seller capture (mobile parity with the web
+      // goUnderContractAction convergence flow). When the caller is marking a
+      // buyer deal under contract on a specific house, they can pass:
+      //   house_id          — scopes this party to ONE house (they see only it)
+      //   seller_capture    — flags + seller_* fields to stamp onto the house,
+      //                       flip it under contract, and attempt cross-firm
+      //                       linking to the listing agent's seller deal.
+      house_id?: string;
+      seller_capture?: {
+        mark_under_contract?: boolean;
+        seller_name?: string | null;
+        seller_email?: string | null;
+        seller_realtor_name?: string | null;
+        seller_realtor_email?: string | null;
+        seller_realtor_firm?: string | null;
+      };
       can_view_documents?: boolean;
       can_view_financials?: boolean;
       can_view_messages?: boolean;
@@ -217,12 +316,66 @@ export async function POST(req: Request) {
         ? body.represents
         : null;
 
+    // SELLER CAPTURE (Phase 2) — runs before the participant insert. If the
+    // caller passed a seller_capture block + house_id, stamp the chosen house
+    // under contract with the seller_* details, flip the deal under contract,
+    // and try to link the listing agent's seller deal. All best-effort: a
+    // failure here must NOT block the party from being added.
+    const houseScopeId =
+      typeof body.house_id === 'string' && body.house_id ? body.house_id : null;
+    if (houseScopeId && body.seller_capture) {
+      try {
+        const cap = body.seller_capture;
+        const houseUpdate: Record<string, any> = {};
+        if (cap.mark_under_contract) houseUpdate.is_under_contract = true;
+        if (cap.seller_name !== undefined)
+          houseUpdate.seller_name = cap.seller_name?.trim() || null;
+        if (cap.seller_email !== undefined)
+          houseUpdate.seller_email = cap.seller_email?.trim() || null;
+        if (cap.seller_realtor_name !== undefined)
+          houseUpdate.seller_realtor_name =
+            cap.seller_realtor_name?.trim() || null;
+        if (cap.seller_realtor_email !== undefined)
+          houseUpdate.seller_realtor_email =
+            cap.seller_realtor_email?.trim() || null;
+        if (cap.seller_realtor_firm !== undefined)
+          houseUpdate.seller_realtor_firm =
+            cap.seller_realtor_firm?.trim() || null;
+        if (Object.keys(houseUpdate).length > 0) {
+          await service
+            .from('houses')
+            .update(houseUpdate)
+            .eq('id', houseScopeId)
+            .eq('search_id', (search as any).id);
+        }
+        if (cap.mark_under_contract) {
+          const searchUpd: Record<string, any> = { offer_house_id: houseScopeId };
+          if ((search as any).phase !== 'closed') searchUpd.phase = 'under_contract';
+          await service
+            .from('client_searches')
+            .update(searchUpd)
+            .eq('id', (search as any).id);
+        }
+        // Cross-firm linking — mirror the server action's tryLinkSellerDeal.
+        await tryLinkSellerDealFromApi(service, {
+          buyerSearchId: (search as any).id,
+          firmId: (search as any).firm_id,
+          actorId: me.user_id,
+          houseId: houseScopeId,
+          listingAgentEmail: cap.seller_realtor_email || null,
+        });
+      } catch (e: any) {
+        console.error('[/api/participants/add] seller_capture failed', e?.message || e);
+      }
+    }
+
     const { data: inserted, error } = await service
       .from('deal_participants')
       .insert({
         search_id: (search as any).id,
         firm_id: (search as any).firm_id,
         user_id: userId,
+        house_id: houseScopeId,
         external_email: body.email || null,
         external_name: body.name || null,
         external_phone: body.phone || null,

@@ -110,15 +110,27 @@ export default async function HouseDetailPage({
     .maybeSingle();
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-8">
+    <main className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-10">
       <Link
         href="/client/houses"
-        className="text-sm text-ink-500 hover:text-ink-900"
+        className="inline-flex items-center gap-1.5 text-sm font-medium text-ink-500 transition hover:text-ink-900"
       >
-        ← Back to houses
+        <svg
+          aria-hidden
+          viewBox="0 0 24 24"
+          className="h-4 w-4"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="m15 18-6-6 6-6" />
+        </svg>
+        Back to houses
       </Link>
 
-      <div className="mt-3 overflow-hidden rounded-xl border border-ink-200 bg-white shadow-sm">
+      <div className="mt-4 overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-soft-md">
         <div className="aspect-video w-full bg-ink-100">
           {house.photo_url ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -150,8 +162,13 @@ export default async function HouseDetailPage({
           </div>
 
           {house.notes && (
-            <div className="mt-4 whitespace-pre-wrap rounded-md bg-ink-50 p-4 text-sm text-ink-700">
-              {house.notes}
+            <div className="mt-4 rounded-xl border border-ink-200 bg-ink-50 p-4">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-400">
+                From your agent
+              </div>
+              <p className="mt-1.5 whitespace-pre-wrap text-sm text-ink-700">
+                {house.notes}
+              </p>
             </div>
           )}
 
@@ -160,9 +177,21 @@ export default async function HouseDetailPage({
               href={house.listing_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-4 inline-block text-sm font-semibold text-ink-900 hover:underline"
+              className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-ink-900 hover:underline"
             >
-              View original listing →
+              View original listing
+              <svg
+                aria-hidden
+                viewBox="0 0 24 24"
+                className="h-3.5 w-3.5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M7 17 17 7M7 7h10v10" />
+              </svg>
             </a>
           )}
 
@@ -176,13 +205,13 @@ export default async function HouseDetailPage({
       {/* Rating */}
       <section
         className={
-          'mt-6 rounded-xl border bg-white p-5 ' +
+          'mt-6 rounded-2xl border bg-white p-5 shadow-soft ' +
           (showPostTourPrompt
             ? 'border-amber-300 ring-2 ring-amber-100'
             : 'border-ink-200')
         }
       >
-        <div className="text-xs font-semibold uppercase tracking-wide text-ink-500">
+        <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-400">
           {showPostTourPrompt
             ? 'How was the tour?'
             : 'What do you think?'}

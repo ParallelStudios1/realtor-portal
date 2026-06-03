@@ -28,12 +28,30 @@ export default async function ClientMessagesPage() {
 
   if (!search) {
     return (
-      <main className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-8">
-        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Messages</h1>
-        <div className="mt-6 rounded-xl border border-dashed border-ink-300 bg-white p-10 text-center">
-          <p className="text-sm text-ink-600">
-            No active conversations. Once your realtor sets up your search,
-            you'll be able to message them here.
+      <main className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-10">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-400">
+          Conversation
+        </p>
+        <h1 className="mt-1.5 text-2xl font-bold tracking-tight sm:text-3xl">Messages</h1>
+        <div className="mt-6 rounded-2xl border border-dashed border-ink-300 bg-white bg-dotted p-12 text-center shadow-soft-sm">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-ink-100">
+            <svg
+              aria-hidden
+              viewBox="0 0 24 24"
+              className="h-6 w-6 text-ink-500"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+          </div>
+          <h3 className="mt-4 text-base font-semibold">No conversation yet</h3>
+          <p className="mx-auto mt-1 max-w-sm text-sm text-ink-600">
+            Once your realtor sets up your search, you&apos;ll be able to message
+            them here.
           </p>
         </div>
       </main>
@@ -57,8 +75,11 @@ export default async function ClientMessagesPage() {
     : { data: null };
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-8">
-      <h1 className="mb-4 text-2xl font-bold tracking-tight sm:text-3xl">
+    <main className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-10">
+      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-400">
+        Conversation
+      </p>
+      <h1 className="mb-4 mt-1.5 text-2xl font-bold tracking-tight sm:text-3xl">
         Messages
       </h1>
       <ClientMessagesClient

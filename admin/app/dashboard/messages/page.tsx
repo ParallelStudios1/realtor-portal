@@ -58,16 +58,25 @@ export default async function MessagesPage() {
   return (
     <main className="mx-auto max-w-6xl px-6 py-8">
       <header className="mb-6">
-        <h1 className="text-3xl font-bold tracking-tight">Messages</h1>
+        <div className="text-[11px] font-bold uppercase tracking-wider text-ink-500">
+          Conversations
+        </div>
+        <h1 className="mt-1.5 text-3xl font-bold tracking-tight text-ink-900">Messages</h1>
         <p className="mt-1 text-sm text-ink-600">
-          {threads.length} client {threads.length === 1 ? 'thread' : 'threads'}.
+          <span className="font-semibold text-ink-900">{threads.length}</span> client{' '}
+          {threads.length === 1 ? 'thread' : 'threads'}.
         </p>
       </header>
 
       {threads.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-ink-300 bg-white p-12 text-center">
-          <h3 className="font-semibold">No conversations yet</h3>
-          <p className="mt-1 text-sm text-ink-600">
+        <div className="bg-dotted rounded-2xl border border-dashed border-ink-300 bg-white p-14 text-center shadow-soft-sm">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-ink-900 text-white shadow-soft-sm">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" className="h-7 w-7" aria-hidden>
+              <path d="M21 12a8 8 0 11-3.1-6.32L21 5l-1 4 1 1a8 8 0 010 2z" strokeLinejoin="round" />
+            </svg>
+          </div>
+          <h3 className="mt-4 text-base font-semibold text-ink-900">No conversations yet</h3>
+          <p className="mx-auto mt-1.5 max-w-md text-sm leading-relaxed text-ink-600">
             Once you invite clients and they start a search, you'll see threads
             here. New messages appear in real time.
           </p>

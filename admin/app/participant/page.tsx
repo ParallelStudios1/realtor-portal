@@ -46,11 +46,33 @@ export default async function ParticipantHome() {
   const me = await getMe();
   if (!me?.user_id) {
     return (
-      <main className="mx-auto max-w-3xl px-6 py-12">
-        <h1 className="text-2xl font-bold">Sign in to see your deals</h1>
-        <Link href="/login" className="mt-4 inline-block rounded-md bg-ink-900 px-4 py-2 text-sm font-semibold text-white">
-          Sign in →
-        </Link>
+      <main className="flex min-h-screen items-center justify-center bg-ink-50 px-6 py-12">
+        <div className="w-full max-w-md rounded-2xl border border-ink-200 bg-white p-8 text-center shadow-soft-lg">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-ink-100">
+            <svg
+              aria-hidden
+              viewBox="0 0 24 24"
+              className="h-6 w-6 text-ink-500"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <rect x="3" y="11" width="18" height="11" rx="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+          </div>
+          <h1 className="mt-4 text-xl font-bold tracking-tight">
+            Sign in to see your deals
+          </h1>
+          <p className="mt-1 text-sm text-ink-600">
+            Use the email a realtor added you with.
+          </p>
+          <Link href="/login" className="btn-primary mt-6 w-full justify-center">
+            Sign in
+          </Link>
+        </div>
       </main>
     );
   }
@@ -85,15 +107,18 @@ export default async function ParticipantHome() {
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-8">
-      <header className="mb-6 flex items-end justify-between">
+      <header className="mb-7 flex items-end justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Your deals</h1>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-400">
+            Your access
+          </p>
+          <h1 className="mt-1.5 text-3xl font-bold tracking-tight">Your deals</h1>
           <p className="mt-1 text-sm text-ink-600">
-            Every real-estate deal you've been added to. Tap any to see what
+            Every real-estate deal you&apos;ve been added to. Tap any to see what
             the realtor shared with you.
           </p>
         </div>
-        <span className="hidden rounded-full bg-ink-100 px-3 py-1.5 text-xs font-semibold text-ink-700 sm:inline">
+        <span className="hidden rounded-full border border-ink-200 bg-white px-3 py-1.5 text-xs font-semibold text-ink-700 shadow-soft-xs sm:inline">
           {items.length} {items.length === 1 ? 'deal' : 'deals'}
         </span>
       </header>
@@ -142,7 +167,7 @@ export default async function ParticipantHome() {
                     <Link
                       key={p.id}
                       href={`/deal/${s.id}`}
-                      className="group block rounded-xl border border-ink-200 bg-white p-4 shadow-sm transition hover:border-ink-300 hover:shadow-md"
+                      className="group block rounded-2xl border border-ink-200 bg-white p-4 shadow-soft transition hover:-translate-y-0.5 hover:border-ink-300 hover:shadow-soft-lg"
                     >
                       <div className="flex items-start gap-3">
                         {s.firm?.logo_url ? (

@@ -37,7 +37,10 @@ export default async function SettingsPage() {
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-8">
-      <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
+      <div className="text-[11px] font-bold uppercase tracking-wider text-ink-500">
+        Account
+      </div>
+      <h1 className="mt-1.5 text-3xl font-bold tracking-tight text-ink-900">Settings</h1>
       <p className="mt-1 text-sm text-ink-600">
         Manage your profile, account security, and firm details.
       </p>
@@ -46,31 +49,31 @@ export default async function SettingsPage() {
       <div className="mt-6 grid gap-3 sm:grid-cols-2">
         <Link
           href="/dashboard/branding"
-          className="flex items-center justify-between rounded-xl border border-ink-200 bg-white p-4 transition hover:border-ink-300 hover:shadow-sm"
+          className="group flex items-center justify-between rounded-2xl border border-ink-200 bg-white p-4 shadow-soft-sm transition hover:-translate-y-0.5 hover:border-ink-300 hover:shadow-soft-md"
         >
           <div>
-            <div className="text-xs font-semibold uppercase tracking-wide text-ink-500">
+            <div className="text-[11px] font-bold uppercase tracking-wider text-ink-500">
               Branding
             </div>
-            <div className="mt-0.5 text-sm font-semibold">
+            <div className="mt-0.5 text-sm font-semibold text-ink-900">
               Logo, colors, tagline
             </div>
           </div>
-          <span aria-hidden className="text-ink-400">→</span>
+          <span aria-hidden className="text-ink-400 transition group-hover:translate-x-0.5 group-hover:text-ink-700">→</span>
         </Link>
         <Link
           href="/dashboard/billing"
-          className="flex items-center justify-between rounded-xl border border-ink-200 bg-white p-4 transition hover:border-ink-300 hover:shadow-sm"
+          className="group flex items-center justify-between rounded-2xl border border-ink-200 bg-white p-4 shadow-soft-sm transition hover:-translate-y-0.5 hover:border-ink-300 hover:shadow-soft-md"
         >
           <div>
-            <div className="text-xs font-semibold uppercase tracking-wide text-ink-500">
+            <div className="text-[11px] font-bold uppercase tracking-wider text-ink-500">
               Billing
             </div>
-            <div className="mt-0.5 text-sm font-semibold">
+            <div className="mt-0.5 text-sm font-semibold text-ink-900">
               Plan, payment, invoices
             </div>
           </div>
-          <span aria-hidden className="text-ink-400">→</span>
+          <span aria-hidden className="text-ink-400 transition group-hover:translate-x-0.5 group-hover:text-ink-700">→</span>
         </Link>
       </div>
 
@@ -95,8 +98,8 @@ export default async function SettingsPage() {
         />
       </div>
 
-      <section id="sms" className="mt-8 rounded-xl border border-ink-200 bg-white p-6">
-        <h2 className="text-lg font-semibold">SMS</h2>
+      <section id="sms" className="mt-8 rounded-2xl border border-ink-200 bg-white p-6 shadow-soft-sm">
+        <h2 className="text-lg font-semibold text-ink-900">SMS</h2>
         <p className="mt-1 text-sm text-ink-600">
           We send invite + alert texts through Twilio. To send to US numbers
           your sending number must be registered for A2P 10DLC (long-code) or
@@ -117,8 +120,8 @@ export default async function SettingsPage() {
         </div>
       </section>
 
-      <section id="mobile" className="mt-8 rounded-xl border border-ink-200 bg-white p-6">
-        <h2 className="text-lg font-semibold">Mobile app</h2>
+      <section id="mobile" className="mt-8 rounded-2xl border border-ink-200 bg-white p-6 shadow-soft-sm">
+        <h2 className="text-lg font-semibold text-ink-900">Mobile app</h2>
         <p className="mt-1 text-sm text-ink-600">
           Download Realtor Portal on iOS or Android. Sign in with the same
           email and password you use here.
@@ -126,24 +129,27 @@ export default async function SettingsPage() {
         <div className="mt-4 flex gap-3">
           <a
             href="https://apps.apple.com/app/realtor-portal/id6768115138"
-            className="rounded-md border border-ink-300 bg-white px-4 py-2 text-sm font-semibold text-ink-700 hover:border-ink-400"
+            className="btn-secondary"
           >
             App Store
           </a>
           <a
             href="https://play.google.com/store/apps/details?id=com.parallelstudios.realtorportal"
-            className="rounded-md border border-ink-300 bg-white px-4 py-2 text-sm font-semibold text-ink-700 hover:border-ink-400"
+            className="btn-secondary"
           >
             Google Play
           </a>
         </div>
       </section>
 
-      <section className="mt-8 rounded-xl border border-red-200 bg-red-50 p-6">
-        <h2 className="text-lg font-semibold text-red-900">Danger zone</h2>
-        <p className="mt-1 text-sm text-red-700">
+      <section className="mt-8 rounded-2xl border border-rose-200 bg-rose-50 p-6">
+        <h2 className="text-lg font-semibold text-rose-900">Danger zone</h2>
+        <p className="mt-1 text-sm text-rose-700">
           Need to delete your firm? Email{' '}
-          <a href="mailto:turnerlogan@parallelstudios.co" className="underline">
+          <a
+            href="mailto:turnerlogan@parallelstudios.co"
+            className="font-semibold underline underline-offset-2"
+          >
             turnerlogan@parallelstudios.co
           </a>{' '}
           and we'll remove it within 24 hours.

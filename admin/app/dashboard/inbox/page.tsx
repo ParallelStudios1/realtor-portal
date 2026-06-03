@@ -161,27 +161,36 @@ export default async function InboxPage() {
   return (
     <main className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-8">
       <header className="mb-6">
-        <h1 className="text-3xl font-bold tracking-tight">Inbox</h1>
+        <div className="text-[11px] font-bold uppercase tracking-wider text-ink-500">
+          Activity
+        </div>
+        <h1 className="mt-1.5 text-3xl font-bold tracking-tight text-ink-900">Inbox</h1>
         <p className="mt-1 text-sm text-ink-600">
           Everything new across your firm in the last 14 days.
         </p>
       </header>
 
       {items.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-ink-300 bg-white p-10 text-center">
-          <h2 className="font-semibold">Nothing new</h2>
-          <p className="mt-1 text-sm text-ink-600">
+        <div className="bg-dotted rounded-2xl border border-dashed border-ink-300 bg-white p-14 text-center shadow-soft-sm">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-ink-900 text-white shadow-soft-sm">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" className="h-7 w-7" aria-hidden>
+              <path d="M4 13l2-7h12l2 7v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5z" strokeLinejoin="round" />
+              <path d="M4 13h5l1 2h4l1-2h5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+          <h2 className="mt-4 text-base font-semibold text-ink-900">Nothing new</h2>
+          <p className="mx-auto mt-1.5 max-w-md text-sm leading-relaxed text-ink-600">
             Tour requests, messages, document uploads, and phase updates show
             up here.
           </p>
         </div>
       ) : (
-        <ol className="space-y-2">
+        <ol className="space-y-2.5">
           {items.map((it) => (
             <li key={it.key}>
               <Link
                 href={it.href}
-                className="block rounded-xl border border-ink-200 bg-white p-4 transition hover:border-ink-300 hover:bg-ink-50"
+                className="block rounded-2xl border border-ink-200 bg-white p-4 shadow-soft-sm transition hover:border-ink-300 hover:bg-ink-50 hover:shadow-soft-md"
               >
                 <div className="flex items-start gap-3">
                   <span

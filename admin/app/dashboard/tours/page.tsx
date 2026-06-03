@@ -59,23 +59,33 @@ export default async function ToursPage() {
   return (
     <main className="mx-auto max-w-6xl px-6 py-8">
       <header className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">Tours</h1>
+        <div className="text-[11px] font-bold uppercase tracking-wider text-ink-500">
+          Scheduling
+        </div>
+        <h1 className="mt-1.5 text-3xl font-bold tracking-tight text-ink-900">Tours</h1>
         <p className="mt-1 text-sm text-ink-600">
-          {pending.length} pending {pending.length === 1 ? 'request' : 'requests'}
+          <span className="font-semibold text-ink-900">{pending.length}</span> pending{' '}
+          {pending.length === 1 ? 'request' : 'requests'}
           {recent.length > 0 ? ` · ${recent.length} recent` : ''}.
         </p>
       </header>
 
       {error && (
-        <div className="mb-6 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="mb-6 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
           Could not load tour requests: {error.message}
         </div>
       )}
 
       {tours.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-ink-300 bg-white p-12 text-center">
-          <h3 className="font-semibold">No tour requests yet</h3>
-          <p className="mt-1 text-sm text-ink-600">
+        <div className="bg-dotted rounded-2xl border border-dashed border-ink-300 bg-white p-14 text-center shadow-soft-sm">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-ink-900 text-white shadow-soft-sm">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" className="h-7 w-7" aria-hidden>
+              <rect x="3" y="5" width="18" height="16" rx="2" />
+              <path d="M3 9h18M8 3v4M16 3v4" strokeLinecap="round" />
+            </svg>
+          </div>
+          <h3 className="mt-4 text-base font-semibold text-ink-900">No tour requests yet</h3>
+          <p className="mx-auto mt-1.5 max-w-md text-sm leading-relaxed text-ink-600">
             When clients request a tour from the mobile app, you'll see them
             here and can confirm or decline with one tap.
           </p>

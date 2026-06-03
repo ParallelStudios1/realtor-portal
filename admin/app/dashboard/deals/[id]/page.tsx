@@ -185,6 +185,49 @@ export default async function DealDetailPage({
       .order('created_at', { ascending: false }),
   ]);
 
+  // BUYER INTEREST (Phase 2) — only meaningful for seller (listing) deals.
+  // Aggregate, read-only, from existing tables:
+  //   - total showings + tour requests on this listing's houses
+  //   - linked buyer transactions: any house on ANOTHER (buyer) deal whose
+  //     listing_search_id back-references this seller deal. Each such house
+  //     that is under contract = a buyer locked in on our listing.
+  // We use the service role for the back-reference query because the linked
+  // house lives on a buyer deal hosted by a (possibly) different firm — RLS
+  // would (correctly) hide it from the seller, but the aggregate count is safe
+  // to surface without leaking the buyer's private candidate list.
+  let buyerInterest: {
+    showingCount: number;
+    tourRequestCount: number;
+    linkedBuyerCount: number;
+    underContractBuyerCount: number;
+  } | null = null;
+  if ((deal as any).kind === 'seller') {
+    const [showingAgg, tourAgg, linkedHouses] = await Promise.all([
+      service
+        .from('showings')
+        .select('id', { count: 'exact', head: true })
+        .eq('search_id', params.id),
+      service
+        .from('tour_requests')
+        .select('id', { count: 'exact', head: true })
+        .eq('search_id', params.id),
+      service
+        .from('houses')
+        .select('id, is_under_contract')
+        .eq('listing_search_id', params.id),
+    ]);
+    const linked = (linkedHouses.data || []) as Array<{
+      id: string;
+      is_under_contract: boolean | null;
+    }>;
+    buyerInterest = {
+      showingCount: showingAgg.count ?? 0,
+      tourRequestCount: tourAgg.count ?? 0,
+      linkedBuyerCount: linked.length,
+      underContractBuyerCount: linked.filter((h) => h.is_under_contract).length,
+    };
+  }
+
   const phaseIdx = PHASES.findIndex((p) => p.id === (deal as any).phase);
 
   const canAssignRealtor =
@@ -218,6 +261,7 @@ export default async function DealDetailPage({
       recentMessages={(messages || []) as any}
       showings={(showings || []) as any}
       envelopes={(envelopes || []) as any}
+      buyerInterest={buyerInterest}
       calendarUrl={buildCalendarFeedUrl(deal.id)}
     />
   );

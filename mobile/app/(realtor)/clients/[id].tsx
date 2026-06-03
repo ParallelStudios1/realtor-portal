@@ -277,6 +277,16 @@ export default function RealtorClientDetailScreen() {
               onPress={choosePhase}
             />
             <ActionTile
+              tone="#0F172A"
+              icon="document-attach"
+              label="Under contract"
+              onPress={() =>
+                router.push(
+                  `/(realtor)/clients/${id}/under-contract` as any,
+                )
+              }
+            />
+            <ActionTile
               tone="#059669"
               icon="calendar"
               label="Add date"

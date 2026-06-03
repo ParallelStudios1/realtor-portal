@@ -86,8 +86,8 @@ export function ClientProfileForm({ fullName, email }: Props) {
 
   return (
     <div className="space-y-8">
-      <section className="rounded-xl border border-ink-200 bg-white p-6">
-        <h2 className="text-lg font-semibold">Profile</h2>
+      <section className="surface p-6">
+        <h2 className="text-lg font-semibold tracking-tight">Profile</h2>
         <p className="mt-1 text-sm text-ink-600">The name your realtor sees.</p>
         <form onSubmit={submitProfile} className="mt-5 space-y-4">
           <div>
@@ -97,15 +97,15 @@ export function ClientProfileForm({ fullName, email }: Props) {
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
-              className="mt-1 w-full rounded-md border border-ink-300 px-3 py-2 text-sm shadow-sm focus:border-ink-500 focus:outline-none focus:ring-1 focus:ring-ink-200"
+              className="input mt-1.5"
             />
           </div>
           {profileMsg && (
             <div
               className={
                 profileMsg.kind === 'ok'
-                  ? 'rounded-md border border-green-200 bg-green-50 p-3 text-sm text-green-800'
-                  : 'rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800'
+                  ? 'rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800'
+                  : 'rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800'
               }
             >
               {profileMsg.text}
@@ -114,15 +114,15 @@ export function ClientProfileForm({ fullName, email }: Props) {
           <button
             type="submit"
             disabled={profilePending}
-            className="rounded-md bg-ink-900 px-4 py-2 text-sm font-semibold text-white hover:bg-ink-700 disabled:opacity-50"
+            className="btn-primary"
           >
             {profilePending ? 'Saving…' : 'Save profile'}
           </button>
         </form>
       </section>
 
-      <section className="rounded-xl border border-ink-200 bg-white p-6">
-        <h2 className="text-lg font-semibold">Account</h2>
+      <section className="surface p-6">
+        <h2 className="text-lg font-semibold tracking-tight">Account</h2>
         <dl className="mt-4 space-y-3 text-sm">
           <div className="flex justify-between border-b border-ink-100 pb-2">
             <dt className="text-ink-500">Email</dt>
@@ -144,7 +144,7 @@ export function ClientProfileForm({ fullName, email }: Props) {
               onChange={(e) => setCurrentPw(e.target.value)}
               autoComplete="current-password"
               required
-              className="mt-1 w-full rounded-md border border-ink-300 px-3 py-2 text-sm shadow-sm focus:border-ink-500 focus:outline-none focus:ring-1 focus:ring-ink-200"
+              className="input mt-1.5"
             />
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -158,7 +158,7 @@ export function ClientProfileForm({ fullName, email }: Props) {
                 autoComplete="new-password"
                 minLength={8}
                 required
-                className="mt-1 w-full rounded-md border border-ink-300 px-3 py-2 text-sm shadow-sm focus:border-ink-500 focus:outline-none focus:ring-1 focus:ring-ink-200"
+                className="input mt-1.5"
               />
             </div>
             <div>
@@ -171,7 +171,7 @@ export function ClientProfileForm({ fullName, email }: Props) {
                 autoComplete="new-password"
                 minLength={8}
                 required
-                className="mt-1 w-full rounded-md border border-ink-300 px-3 py-2 text-sm shadow-sm focus:border-ink-500 focus:outline-none focus:ring-1 focus:ring-ink-200"
+                className="input mt-1.5"
               />
             </div>
           </div>
@@ -179,8 +179,8 @@ export function ClientProfileForm({ fullName, email }: Props) {
             <div
               className={
                 pwMsg.kind === 'ok'
-                  ? 'rounded-md border border-green-200 bg-green-50 p-3 text-sm text-green-800'
-                  : 'rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800'
+                  ? 'rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800'
+                  : 'rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800'
               }
             >
               {pwMsg.text}
@@ -189,7 +189,7 @@ export function ClientProfileForm({ fullName, email }: Props) {
           <button
             type="submit"
             disabled={pwPending}
-            className="rounded-md border border-ink-300 bg-white px-4 py-2 text-sm font-semibold text-ink-700 hover:border-ink-400 disabled:opacity-50"
+            className="btn-secondary"
           >
             {pwPending ? 'Updating…' : 'Update password'}
           </button>

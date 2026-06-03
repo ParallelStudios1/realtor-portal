@@ -78,10 +78,10 @@ export function HouseRatingClient({
                 save(f.v, notes);
               }}
               className={
-                'rounded-md border px-3 py-2 text-xs font-semibold transition ' +
+                'rounded-xl border px-4 py-2 text-sm font-semibold transition active:scale-[0.97] ' +
                 (on
-                  ? 'border-ink-900 bg-ink-100 text-ink-900'
-                  : 'border-ink-200 hover:border-ink-300')
+                  ? 'border-ink-900 bg-ink-900 text-white shadow-soft-sm'
+                  : 'border-ink-200 bg-white text-ink-700 hover:border-ink-300 hover:bg-ink-50')
               }
             >
               {f.text}
@@ -96,7 +96,7 @@ export function HouseRatingClient({
         onBlur={() => save(stars, notes)}
         placeholder="Anything you'd want your agent to know? (optional)"
         rows={3}
-        className="mt-3 w-full rounded-md border border-ink-300 px-3 py-2 text-sm focus:border-ink-500 focus:outline-none focus:ring-1 focus:ring-ink-200"
+        className="input mt-3"
       />
 
       <div className="mt-2 text-xs text-ink-500">

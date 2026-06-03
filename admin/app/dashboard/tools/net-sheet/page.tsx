@@ -84,10 +84,13 @@ export default async function NetSheetPage({
       <header className="mb-6">
         <Link
           href="/dashboard"
-          className="text-xs font-semibold text-ink-500 hover:text-ink-700"
+          className="text-xs font-semibold text-ink-500 transition hover:text-ink-900"
         >
           ← Dashboard
         </Link>
+        <div className="mt-2 text-[11px] font-bold uppercase tracking-wider text-ink-500">
+          Tools
+        </div>
         <h1 className="mt-1 text-3xl font-bold tracking-tight text-ink-900">
           Seller net sheet
         </h1>

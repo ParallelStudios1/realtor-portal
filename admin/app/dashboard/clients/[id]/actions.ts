@@ -631,6 +631,113 @@ async function addHouseScopedSellerParty(
 }
 
 /**
+ * TWO-WAY CROSS-FIRM LINKING (Phase 2).
+ *
+ * When a buyer deal captures the listing agent for the house it's going under
+ * contract on, the listing agent may *also* be running this same property as a
+ * SELLER deal inside Realtor Portal. If so, we want to connect the two sides so
+ * the seller's "Buyer interest" panel can show "1 buyer under contract" without
+ * either side ever seeing the other's private data.
+ *
+ * We connect them by stamping `houses.listing_search_id` on the buyer-deal house
+ * with the id of the matching seller deal. Matching is conservative:
+ *   1. Resolve the listing agent's firm. If their email belongs to an in-app
+ *      user, use that user's firm_id. (We never guess across firms by name.)
+ *   2. Within that firm, find a seller-side deal (kind in 'seller','both') that
+ *      owns a house whose address matches the chosen house address
+ *      (case-insensitive, trimmed).
+ *   3. If exactly such a deal exists, set houses.listing_search_id and log it.
+ *
+ * Fully best-effort and idempotent: any failure is swallowed so it can never
+ * break the under-contract flip. If the column/relationship isn't present yet,
+ * the try/catch around the caller absorbs it.
+ */
+async function tryLinkSellerDeal(
+  service: ReturnType<typeof getSupabaseServiceRoleClient>,
+  opts: {
+    buyerSearchId: string;
+    firmId: string;
+    actorId: string;
+    houseId: string;
+    houseAddress: string | null;
+    listingAgentEmail: string | null;
+  }
+): Promise<void> {
+  const address = opts.houseAddress?.trim();
+  const listingEmail = opts.listingAgentEmail?.trim().toLowerCase();
+  if (!address || !listingEmail) return;
+
+  // Idempotency: if this house is already linked, do nothing.
+  const { data: houseRow } = await service
+    .from('houses')
+    .select('id, listing_search_id')
+    .eq('id', opts.houseId)
+    .maybeSingle();
+  if (!houseRow) return;
+  if ((houseRow as any).listing_search_id) return;
+
+  // 1) Resolve the listing agent's firm via an in-app user with that email.
+  //    We deliberately only auto-link when the listing agent is a real user —
+  //    that's the signal that "both sides run this in-app".
+  const { data: agentUser } = await service
+    .from('users')
+    .select('id, firm_id')
+    .ilike('email', listingEmail)
+    .maybeSingle();
+  const agentFirmId = (agentUser as any)?.firm_id as string | undefined;
+  if (!agentFirmId) return;
+
+  // 2) Find seller-side deals in that firm and match by listing-house address.
+  const { data: sellerDeals } = await service
+    .from('client_searches')
+    .select('id, kind, houses ( id, address )')
+    .eq('firm_id', agentFirmId)
+    .in('kind', ['seller', 'both']);
+  if (!sellerDeals || sellerDeals.length === 0) return;
+
+  const wantAddr = address.toLowerCase();
+  let matchedSellerSearchId: string | null = null;
+  for (const d of sellerDeals as any[]) {
+    const dealHouses = Array.isArray(d.houses) ? d.houses : [];
+    const hit = dealHouses.some(
+      (h: any) => (h.address || '').trim().toLowerCase() === wantAddr
+    );
+    if (hit) {
+      matchedSellerSearchId = d.id;
+      break;
+    }
+  }
+  if (!matchedSellerSearchId) return;
+  // Don't link a deal to itself (shouldn't happen across firms, but be safe).
+  if (matchedSellerSearchId === opts.buyerSearchId) return;
+
+  // 3) Stamp the link onto the buyer-deal house.
+  const { error: linkErr } = await service
+    .from('houses')
+    .update({ listing_search_id: matchedSellerSearchId })
+    .eq('id', opts.houseId)
+    .eq('search_id', opts.buyerSearchId);
+  if (linkErr) {
+    console.error('[tryLinkSellerDeal] link update failed', linkErr.message);
+    return;
+  }
+
+  // Log it on the buyer deal so the timeline reflects the convergence.
+  try {
+    await service.from('activities').insert({
+      firm_id: opts.firmId,
+      search_id: opts.buyerSearchId,
+      actor_id: opts.actorId,
+      action: 'seller_deal_linked',
+      target: address,
+      metadata: { listing_search_id: matchedSellerSearchId, house_id: opts.houseId },
+    });
+  } catch (e: any) {
+    console.error('[tryLinkSellerDeal] activity insert failed', e?.message || e);
+  }
+}
+
+/**
  * "Going under contract" workflow. One submit that:
  *  - Flips deal phase → under_contract
  *  - Saves binding date, earnest due, due-diligence end, closing day as
@@ -739,6 +846,30 @@ export async function goUnderContractAction(
           email: payload.seller_email || null,
           firmName: null,
         });
+      }
+
+      // Two-way cross-firm linking: if the listing agent also runs this same
+      // property as a seller deal in-app, stamp houses.listing_search_id so the
+      // two sides converge. Best-effort, idempotent — never breaks the flip.
+      try {
+        const { data: chosenHouse } = await service
+          .from('houses')
+          .select('address')
+          .eq('id', payload.offer_house_id)
+          .maybeSingle();
+        await tryLinkSellerDeal(service, {
+          buyerSearchId: a.search.id,
+          firmId: a.search.firm_id,
+          actorId: a.me.user_id,
+          houseId: payload.offer_house_id,
+          houseAddress: (chosenHouse as any)?.address ?? null,
+          listingAgentEmail: payload.seller_realtor_email || null,
+        });
+      } catch (e: any) {
+        console.error(
+          '[goUnderContractAction] tryLinkSellerDeal failed',
+          e?.message || e
+        );
       }
     } catch (e: any) {
       console.error(

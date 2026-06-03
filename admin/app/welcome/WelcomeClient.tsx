@@ -201,7 +201,7 @@ export function WelcomeClient({ firm, hasSession, email, fullName }: Props) {
         </div>
 
         {/* Card */}
-        <div className="rounded-2xl bg-white p-7 shadow-2xl">
+        <div className="rounded-2xl bg-white p-7 shadow-soft-xl">
           {step === 'redeeming' && (
             <div className="flex flex-col items-center py-10">
               <div className="h-10 w-10 animate-spin rounded-full border-4 border-ink-200 border-t-ink-900" />
