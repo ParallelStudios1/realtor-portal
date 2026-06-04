@@ -69,6 +69,9 @@ export default function RealtorTabsLayout() {
       <Tabs.Screen name="clients/[id]/add-house" options={{ href: null, title: 'Add house' }} />
       <Tabs.Screen name="clients/[id]/houses/[houseId]" options={{ href: null, title: 'House' }} />
       <Tabs.Screen name="clients/[id]/financials" options={{ href: null, title: 'Financials' }} />
+      <Tabs.Screen name="clients/[id]/under-contract" options={{ href: null, title: 'Under contract' }} />
+      <Tabs.Screen name="clients/[id]/phase" options={{ href: null, title: 'Update phase' }} />
+      <Tabs.Screen name="clients/[id]/deal-chat" options={{ href: null, title: 'Deal chat' }} />
       <Tabs.Screen name="clients/[id]/alert" options={{ href: null, title: 'Send alert' }} />
       <Tabs.Screen name="clients/[id]/attorney" options={{ href: null, title: 'Attorney' }} />
       <Tabs.Screen name="clients/[id]/docusign" options={{ href: null, title: 'DocuSign' }} />

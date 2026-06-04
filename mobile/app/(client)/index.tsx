@@ -22,6 +22,7 @@ import {
 } from '@/lib/queries';
 import { Skeleton, SkeletonRow } from '@/components/Skeleton';
 import { EmptyState } from '@/components/EmptyState';
+import { AgreedHomeCard } from '@/components/AgreedHomeCard';
 import { supabase } from '@/lib/supabase';
 import { useQuery } from '@tanstack/react-query';
 
@@ -364,6 +365,20 @@ export default function ClientHomeScreen() {
               </View>
             </Card>
 
+            {/* Agreed home — once a home is confirmed on the deal, surface it
+                prominently so the client sees the house everyone agreed on. */}
+            {(activeSearch as any).offer_house_id &&
+            (activeSearch as any).house_agreed_at ? (
+              <AgreedHomeCard
+                search={activeSearch}
+                onPress={() =>
+                  router.push(
+                    `/(client)/houses/${(activeSearch as any).offer_house_id}` as any,
+                  )
+                }
+              />
+            ) : null}
+
             {/* Deal milestones — surfaces whatever the realtor stamped on
                 the deal as they moved through phases. Shows up only when
                 there's something worth showing so an early-stage deal
@@ -668,9 +683,9 @@ export default function ClientHomeScreen() {
               />
               <QuickLink
                 colors={colors}
-                icon="chatbubble-ellipses"
-                label="Messages"
-                onPress={() => router.push('/(client)/messages' as any)}
+                icon="chatbubbles"
+                label="Deal chat"
+                onPress={() => router.push('/(client)/deal-chat' as any)}
               />
               <QuickLink
                 colors={colors}

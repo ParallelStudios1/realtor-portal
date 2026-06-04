@@ -22,9 +22,9 @@ import {
   useActivities,
   useDealParticipants,
 } from '@/lib/queries';
-import { useUpdatePhase, useLogActivity } from '@/lib/mutations';
 import { ActivityRow } from '@/components/ActivityRow';
 import { Skeleton } from '@/components/Skeleton';
+import { AgreedHomeCard } from '@/components/AgreedHomeCard';
 import { formatPhase } from '@/lib/format';
 import type { DealPhase } from '@/lib/database.types';
 
@@ -52,9 +52,6 @@ export default function RealtorClientDetailScreen() {
   const { data: participants, refetch: refetchParticipants } =
     useDealParticipants(id);
 
-  const updatePhase = useUpdatePhase();
-  const logActivity = useLogActivity();
-
   const onRefresh = async () => {
     await Promise.all([
       refetchSearch(),
@@ -64,57 +61,6 @@ export default function RealtorClientDetailScreen() {
       refetchActivities(),
       refetchParticipants(),
     ]);
-  };
-
-  const handlePhaseChange = (newPhase: DealPhase) => {
-    if (!search || !userProfile?.firm_id || !user?.id) return;
-    if (search.phase === newPhase) return;
-
-    Alert.alert(
-      'Move to ' + formatPhase(newPhase),
-      `Are you sure you want to move this deal to "${formatPhase(newPhase)}"? The client will be notified.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Move',
-          style: 'default',
-          onPress: async () => {
-            try {
-              await updatePhase.mutateAsync({
-                searchId: search.id,
-                newPhase,
-              });
-              await logActivity.mutateAsync({
-                searchId: search.id,
-                firmId: userProfile.firm_id!,
-                actorId: user.id,
-                action: 'moved',
-                target: 'Deal Phase',
-                metadata: { from: search.phase, to: newPhase },
-              });
-            } catch (e: any) {
-              Alert.alert('Error', e.message || 'Failed to update phase');
-            }
-          },
-        },
-      ],
-    );
-  };
-
-  const choosePhase = () => {
-    if (!search) return;
-    Alert.alert(
-      'Update deal phase',
-      'Move this deal to a new phase. The client gets a celebration message on milestones.',
-      [
-        ...PHASES.map((p) => ({
-          text:
-            (search.phase === p ? '● ' : '   ') + formatPhase(p),
-          onPress: () => handlePhaseChange(p),
-        })),
-        { text: 'Cancel', style: 'cancel' as const },
-      ],
-    );
   };
 
   if (isLoading || !search) {
@@ -256,6 +202,20 @@ export default function RealtorClientDetailScreen() {
           </View>
         </View>
 
+        {/* Agreed home — shows once a home has been confirmed on the deal. */}
+        {(search as any).offer_house_id && (search as any).house_agreed_at ? (
+          <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
+            <AgreedHomeCard
+              search={search}
+              onPress={() =>
+                router.push(
+                  `/(realtor)/clients/${id}/houses/${(search as any).offer_house_id}` as any,
+                )
+              }
+            />
+          </View>
+        ) : null}
+
         {/* Quick actions grid */}
         <View style={[styles.section, { paddingBottom: 16 }]}>
           <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
@@ -274,7 +234,9 @@ export default function RealtorClientDetailScreen() {
               tone="#4F46E5"
               icon="flag"
               label="Update phase"
-              onPress={choosePhase}
+              onPress={() =>
+                router.push(`/(realtor)/clients/${id}/phase` as any)
+              }
             />
             <ActionTile
               tone="#0F172A"
@@ -329,8 +291,10 @@ export default function RealtorClientDetailScreen() {
             <ActionTile
               tone="#0284C7"
               icon="chatbubble-ellipses"
-              label="Message"
-              onPress={() => router.push('/(realtor)/messages')}
+              label="Deal chat"
+              onPress={() =>
+                router.push(`/(realtor)/clients/${id}/deal-chat` as any)
+              }
             />
             <ActionTile
               tone="#E11D48"

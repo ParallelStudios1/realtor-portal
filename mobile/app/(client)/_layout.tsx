@@ -70,6 +70,7 @@ export default function ClientLayout() {
       {/* Activity & Profile are still routable but not in the tab bar.
           Profile is reachable via the home screen's header button. */}
       <Tabs.Screen name="activity" options={{ href: null, title: 'Activity' }} />
+      <Tabs.Screen name="deal-chat" options={{ href: null, title: 'Deal chat' }} />
       <Tabs.Screen
         name="houses/[id]"
         options={{ href: null, title: 'Property' }}
