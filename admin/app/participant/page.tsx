@@ -196,7 +196,7 @@ export default async function ParticipantHome() {
                     <Link
                       key={p.id}
                       href={`/deal/${s.id}`}
-                      className="group block rounded-2xl border border-ink-200 bg-white p-4 shadow-soft transition hover:-translate-y-0.5 hover:border-ink-300 hover:shadow-soft-lg"
+                      className="card-interactive group block p-4"
                     >
                       <div className="flex items-start gap-3">
                         {s.firm?.logo_url ? (
