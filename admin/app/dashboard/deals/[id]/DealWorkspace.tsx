@@ -82,6 +82,13 @@ export function DealWorkspace(props: {
     agreedByName: string | null;
     agreedByRole: 'client' | 'realtor' | 'other' | null;
   } | null;
+  // A house the client PROPOSED ("this is the one") that the realtor hasn't
+  // confirmed yet. Drives the confirm banner.
+  proposedHome?: {
+    id: string;
+    address: string | null;
+    proposedByName: string | null;
+  } | null;
   // The deal admin — the creator of the deal (client_searches.created_by),
   // the person with full control. Null on legacy rows with no creator stamped.
   dealAdmin?: { id: string; name: string | null } | null;
@@ -107,6 +114,7 @@ export function DealWorkspace(props: {
     showings,
     buyerInterest,
     agreedHome,
+    proposedHome,
     dealAdmin,
   } = props;
 
@@ -359,6 +367,39 @@ export function DealWorkspace(props: {
           </ol>
         </div>
       </section>
+
+      {/* CLIENT PROPOSED A HOME — awaiting realtor confirmation. Confirming
+          agrees the home + auto-advances the deal to Awaiting offer. */}
+      {proposedHome && (
+        <section className="mt-6 overflow-hidden rounded-2xl border-2 border-amber-400 bg-amber-50 shadow-soft-md">
+          <div className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-amber-700">
+                Confirm the home
+              </div>
+              <p className="mt-1 text-sm text-amber-900">
+                <span className="font-semibold">
+                  {proposedHome.proposedByName || 'The client'}
+                </span>{' '}
+                picked{' '}
+                <span className="font-semibold">
+                  {proposedHome.address || 'a home'}
+                </span>{' '}
+                as the one they want. Confirm to lock it in and move the deal to
+                Awaiting offer.
+              </p>
+            </div>
+            <button
+              type="button"
+              disabled={savingAgreedHome}
+              onClick={() => setAgreedHouse(proposedHome.id)}
+              className="shrink-0 rounded-lg bg-ink-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-ink-800 disabled:opacity-50"
+            >
+              {savingAgreedHome ? 'Confirming…' : 'Confirm this home'}
+            </button>
+          </div>
+        </section>
+      )}
 
       {/* AGREED HOME — prominent, first-class. Shows the property the client
           and realtor settled on (set by either side), or a prompt to set it.

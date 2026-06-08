@@ -50,7 +50,8 @@ export default async function DealDetailPage({
        agreed_price, closing_amount, earnest_money, commission_pct,
        contract_url, notes, offer_amount, counter_offer_amount,
        closing_date, closed_message, offer_house_id, house_agreed_at,
-       house_agreed_by, created_by, created_at, updated_at,
+       house_agreed_by, house_proposed_house_id, house_proposed_by, house_proposed_at,
+       created_by, created_at, updated_at,
        client:users!client_searches_client_id_fkey ( id, full_name, email, created_at ),
        realtor:users!client_searches_realtor_id_fkey ( id, full_name, email )`
     )
@@ -276,6 +277,38 @@ export default async function DealDetailPage({
     };
   }
 
+  // PROPOSED HOME — the client said "this is the house I want" and is awaiting
+  // the realtor's confirmation. Surfaced as a confirm banner in the workspace.
+  // Only show when there's a pending proposal that hasn't already been agreed.
+  let proposedHome: { id: string; address: string | null; proposedByName: string | null } | null =
+    null;
+  if (
+    (deal as any).house_proposed_house_id &&
+    !(deal as any).house_agreed_at
+  ) {
+    const ph = (houses || []).find(
+      (h: any) => h.id === (deal as any).house_proposed_house_id
+    );
+    let proposedByName: string | null = null;
+    const pid = (deal as any).house_proposed_by as string | null;
+    if (pid === (deal as any).client?.id) {
+      proposedByName =
+        (deal as any).client?.full_name || (deal as any).client?.email || 'The client';
+    } else if (pid) {
+      const { data: who } = await service
+        .from('users')
+        .select('full_name, email')
+        .eq('id', pid)
+        .maybeSingle();
+      proposedByName = (who as any)?.full_name || (who as any)?.email || 'The client';
+    }
+    proposedHome = {
+      id: (deal as any).house_proposed_house_id,
+      address: (ph as any)?.address ?? null,
+      proposedByName,
+    };
+  }
+
   // DEAL ADMIN — the deal's creator (client_searches.created_by) is the person
   // with full control over the deal. Resolve their display name for the header.
   // Reuse the already-fetched client/realtor rows when they match, otherwise
@@ -349,6 +382,7 @@ export default async function DealDetailPage({
       envelopes={(envelopes || []) as any}
       buyerInterest={buyerInterest}
       agreedHome={agreedHome}
+      proposedHome={proposedHome}
       dealAdmin={dealAdmin}
       calendarUrl={buildCalendarFeedUrl(deal.id)}
     />

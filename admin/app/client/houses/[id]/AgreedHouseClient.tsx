@@ -23,13 +23,32 @@ export function AgreedHouseClient({
 }: {
   houseId: string;
   brandColor: string | null;
-  state: 'agreedHere' | 'agreedElsewhere' | 'none';
+  state: 'agreedHere' | 'agreedElsewhere' | 'proposedHere' | 'none';
   agreedAddress?: string | null;
 }) {
   const [pending, start] = useTransition();
   const router = useRouter();
   const toast = useToast();
   const accent = brandColor || '#0F172A';
+
+  if (state === 'proposedHere') {
+    return (
+      <div className="mt-5 flex items-start gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm">
+        <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-400 text-amber-950" aria-hidden>
+          <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <path d="M12 7v5l3 2" strokeLinecap="round" strokeLinejoin="round" />
+            <circle cx="12" cy="12" r="9" />
+          </svg>
+        </span>
+        <div>
+          <div className="font-semibold text-amber-900">Sent to your agent</div>
+          <p className="mt-0.5 text-xs text-amber-800">
+            You picked this home — your agent will confirm it to make it official.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (state === 'agreedHere') {
     return (
@@ -63,7 +82,7 @@ export function AgreedHouseClient({
         toast.show(r.error || 'Failed', { variant: 'error' });
         return;
       }
-      toast.show('Your agent has been notified — this is your home.', {
+      toast.show('Sent to your agent — they’ll confirm to make it official.', {
         variant: 'success',
       });
       router.refresh();

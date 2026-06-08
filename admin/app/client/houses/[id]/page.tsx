@@ -73,7 +73,9 @@ export default async function HouseDetailPage({
   // whichever home is currently agreed (set by either side).
   const { data: agreementSearch } = await supabase
     .from('client_searches')
-    .select('id, client_id, offer_house_id, house_agreed_at')
+    .select(
+      'id, client_id, offer_house_id, house_agreed_at, house_proposed_house_id'
+    )
     .eq('id', house.search_id)
     .maybeSingle();
   const isPrincipalClient =
@@ -81,8 +83,15 @@ export default async function HouseDetailPage({
   const agreedHouseId = (agreementSearch as any)?.offer_house_id as
     | string
     | null;
+  const proposedHouseId = (agreementSearch as any)?.house_proposed_house_id as
+    | string
+    | null;
   const houseIsAgreed = (agreementSearch as any)?.house_agreed_at != null;
-  let agreementState: 'agreedHere' | 'agreedElsewhere' | 'none' = 'none';
+  let agreementState:
+    | 'agreedHere'
+    | 'agreedElsewhere'
+    | 'proposedHere'
+    | 'none' = 'none';
   let agreedAddress: string | null = null;
   if (houseIsAgreed && agreedHouseId === house.id) {
     agreementState = 'agreedHere';
@@ -94,6 +103,9 @@ export default async function HouseDetailPage({
       .eq('id', agreedHouseId)
       .maybeSingle();
     agreedAddress = (other as any)?.address ?? null;
+  } else if (!houseIsAgreed && proposedHouseId === house.id) {
+    // Client proposed this home; awaiting the realtor's confirmation.
+    agreementState = 'proposedHere';
   }
 
   // Brand color for the agreement control accent.
