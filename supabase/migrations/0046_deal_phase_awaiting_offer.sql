@@ -1,0 +1,11 @@
+-- 0046 — Add 'awaiting_offer' to the deal_phase enum.
+--
+-- client_searches.phase is a Postgres ENUM (deal_phase), not free text. The
+-- app added "awaiting_offer" (house agreed, no offer yet) across every phase
+-- list, but writing it failed at the DB with "invalid input value for enum
+-- deal_phase". This adds the value in the correct position (right after
+-- 'searching', before 'offer_made').
+--
+-- Note: ALTER TYPE ... ADD VALUE cannot run inside a transaction block on
+-- older Postgres; run this migration on its own.
+ALTER TYPE deal_phase ADD VALUE IF NOT EXISTS 'awaiting_offer' AFTER 'searching';

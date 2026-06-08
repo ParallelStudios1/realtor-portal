@@ -149,6 +149,34 @@ export function DealWorkspace(props: {
     });
   }
 
+  // Confirm a client's proposed home. Routed through the deal-id API (not the
+  // client-keyed action) so it works on every deal — including seller-side /
+  // two-sided deals that have no principal client_id. The API agrees the home,
+  // clears the pending proposal, and auto-advances the deal to awaiting_offer.
+  function confirmProposedHouse(houseId: string) {
+    startAgreedHome(async () => {
+      try {
+        const res = await fetch(`/api/deals/${deal.id}/agree-house`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ house_id: houseId }),
+        });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok || !json?.ok) {
+          throw new Error(json?.error || `Failed (${res.status})`);
+        }
+        toast.show('Home confirmed — deal moved to Awaiting offer.', {
+          variant: 'success',
+        });
+        router.refresh();
+      } catch (err: any) {
+        toast.show(err?.message || 'Could not confirm the home.', {
+          variant: 'error',
+        });
+      }
+    });
+  }
+
   async function extractDates(doc: any) {
     setExtractingId(doc.id);
     try {
@@ -392,7 +420,7 @@ export function DealWorkspace(props: {
             <button
               type="button"
               disabled={savingAgreedHome}
-              onClick={() => setAgreedHouse(proposedHome.id)}
+              onClick={() => confirmProposedHouse(proposedHome.id)}
               className="shrink-0 rounded-lg bg-ink-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-ink-800 disabled:opacity-50"
             >
               {savingAgreedHome ? 'Confirming…' : 'Confirm this home'}
