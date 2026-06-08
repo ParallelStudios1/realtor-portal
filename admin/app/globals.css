@@ -41,13 +41,22 @@ body {
 /* Reusable surface utilities — flat ink fills, no gradients. */
 @layer components {
   .surface {
-    @apply rounded-2xl border border-ink-200 bg-white shadow-soft;
+    @apply rounded-2xl border border-ink-200/80 bg-white shadow-soft transition duration-200 ease-snap;
   }
   .surface-elev {
-    @apply rounded-2xl border border-ink-200 bg-white shadow-soft-md;
+    @apply rounded-2xl border border-ink-200/80 bg-white shadow-soft-md transition duration-200 ease-snap;
   }
   .surface-muted {
-    @apply rounded-2xl border border-ink-200 bg-ink-50;
+    @apply rounded-2xl border border-ink-200/80 bg-ink-50;
+  }
+  /* Interactive card — gentle lift + crisper border on hover. Apply to any
+     card the user can click (deal cards, house cards, action tiles). */
+  .card-interactive {
+    @apply rounded-2xl border border-ink-200/80 bg-white shadow-soft transition duration-200 ease-snap hover:-translate-y-0.5 hover:border-ink-300 hover:shadow-soft-lg;
+  }
+  /* Consistent eyebrow/section label. */
+  .eyebrow {
+    @apply text-[11px] font-bold uppercase tracking-[0.16em] text-ink-400;
   }
   .chip {
     @apply inline-flex items-center gap-1 rounded-full bg-ink-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-ink-700;
@@ -65,10 +74,10 @@ body {
     @apply inline-flex items-center gap-1 rounded-full bg-rose-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-rose-800;
   }
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-1.5 rounded-lg bg-ink-900 px-4 py-2 text-sm font-semibold text-white shadow-soft-sm transition hover:bg-ink-700 active:scale-[0.98] disabled:opacity-60 disabled:pointer-events-none;
+    @apply inline-flex items-center justify-center gap-1.5 rounded-xl bg-ink-900 px-4 py-2.5 text-sm font-semibold text-white shadow-soft transition duration-200 ease-snap hover:-translate-y-px hover:bg-ink-800 hover:shadow-soft-md active:translate-y-0 active:scale-[0.98] disabled:opacity-60 disabled:pointer-events-none disabled:shadow-none disabled:translate-y-0;
   }
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-1.5 rounded-lg border border-ink-300 bg-white px-4 py-2 text-sm font-semibold text-ink-700 transition hover:bg-ink-50 active:scale-[0.98] disabled:opacity-60 disabled:pointer-events-none;
+    @apply inline-flex items-center justify-center gap-1.5 rounded-xl border border-ink-300 bg-white px-4 py-2.5 text-sm font-semibold text-ink-700 shadow-soft-xs transition duration-200 ease-snap hover:-translate-y-px hover:border-ink-400 hover:bg-ink-50 hover:shadow-soft active:translate-y-0 active:scale-[0.98] disabled:opacity-60 disabled:pointer-events-none;
   }
   .btn-ghost {
     @apply inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold text-ink-700 transition hover:bg-ink-100 active:scale-[0.98] disabled:opacity-60 disabled:pointer-events-none;
@@ -85,7 +94,7 @@ body {
     @apply inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide;
   }
   .input {
-    @apply w-full rounded-lg border border-ink-300 bg-white px-3 py-2 text-sm placeholder:text-ink-400 focus:border-ink-500 focus:outline-none focus:ring-2 focus:ring-ink-200;
+    @apply w-full rounded-xl border border-ink-300 bg-white px-3.5 py-2.5 text-sm shadow-soft-xs transition placeholder:text-ink-400 focus:border-ink-500 focus:outline-none focus:ring-4 focus:ring-ink-900/5;
   }
   .label {
     @apply block text-xs font-semibold uppercase tracking-wide text-ink-500;
