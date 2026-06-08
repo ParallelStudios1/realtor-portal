@@ -1,19 +1,22 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { getSupabaseServerClient } from '@/lib/supabaseSsr';
+import { getMe } from '@/lib/supabaseSsr';
 import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
 
 /**
- * Save firm branding. Uses service-role for the storage upload (so a single
- * RLS policy doesn't have to know about every nuance of multipart uploads),
- * but writes the firms row through the user's auth context so RLS verifies
- * they're a firm_admin of that firm.
+ * Save firm branding (onboarding "Save & continue").
+ *
+ * Uses the proven server-action pattern — getMe() for auth + the service-role
+ * client for the write — instead of constructing a user-scoped SSR client and
+ * calling auth.getUser() inline. The old version stalled here during onboarding
+ * (the firm was created but onboarding_completed never flipped, and the page
+ * hung before reaching /dashboard). getMe() + service-role is what every other
+ * server action in the app uses and is reliable.
  */
 export async function saveBrandingAction(fd: FormData) {
-  const userClient = getSupabaseServerClient();
-  const { data: { user } } = await userClient.auth.getUser();
-  if (!user) return { error: 'Not signed in.' };
+  const me = await getMe();
+  if (!me?.user_id) return { error: 'Not signed in.' };
 
   const firmId = fd.get('firm_id') as string;
   const name = (fd.get('name') as string)?.trim();
@@ -27,12 +30,21 @@ export async function saveBrandingAction(fd: FormData) {
 
   if (!firmId || !name) return { error: 'Missing firm name.' };
 
+  // Authorize: the caller must be an admin/owner of this exact firm.
+  if (
+    me.firm_id !== firmId ||
+    !['firm_admin', 'owner', 'super_admin'].includes(me.role || '')
+  ) {
+    return { error: 'You are not allowed to edit this firm.' };
+  }
+
+  const service = getSupabaseServiceRoleClient();
+
   let logoUrl: string | null = null;
   if (logo && logo.size > 0) {
-    const service = getSupabaseServiceRoleClient();
-
-    // Make sure the bucket exists (idempotent)
-    await service.storage.createBucket('firm-assets', { public: true }).catch(() => {});
+    await service.storage
+      .createBucket('firm-assets', { public: true })
+      .catch(() => {});
 
     const ext = logo.name.split('.').pop()?.toLowerCase() || 'png';
     const path = `${firmId}/logo-${Date.now()}.${ext}`;
@@ -42,7 +54,9 @@ export async function saveBrandingAction(fd: FormData) {
       .upload(path, buf, { contentType: logo.type, upsert: true });
     if (upErr) return { error: 'Logo upload failed: ' + upErr.message };
 
-    const { data: pub } = service.storage.from('firm-assets').getPublicUrl(path);
+    const { data: pub } = service.storage
+      .from('firm-assets')
+      .getPublicUrl(path);
     logoUrl = pub.publicUrl;
   }
 
@@ -58,7 +72,7 @@ export async function saveBrandingAction(fd: FormData) {
   };
   if (logoUrl) update.logo_url = logoUrl;
 
-  const { error } = await userClient.from('firms').update(update).eq('id', firmId);
+  const { error } = await service.from('firms').update(update).eq('id', firmId);
   if (error) return { error: error.message };
 
   revalidatePath('/dashboard');
