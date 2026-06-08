@@ -22,6 +22,7 @@ type Deal = {
 
 const PHASE_DEFS = [
   { id: 'searching', label: 'Searching', tone: 'slate' },
+  { id: 'awaiting_offer', label: 'Awaiting offer', tone: 'amber' },
   { id: 'offer_made', label: 'Offer made', tone: 'amber' },
   { id: 'counter_offer', label: 'Counter', tone: 'amber' },
   { id: 'under_contract', label: 'Under contract', tone: 'blue' },

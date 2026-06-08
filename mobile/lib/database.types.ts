@@ -1,5 +1,5 @@
 export type UserRole = 'super_admin' | 'realtor' | 'client';
-export type DealPhase = 'searching' | 'offer_made' | 'under_contract' | 'closing' | 'closed';
+export type DealPhase = 'searching' | 'awaiting_offer' | 'offer_made' | 'under_contract' | 'closing' | 'closed';
 export type HouseStatus = 'interested' | 'tour_requested' | 'toured' | 'offered' | 'passed';
 export type TourRequestStatus = 'pending' | 'confirmed' | 'declined' | 'cancelled';
 

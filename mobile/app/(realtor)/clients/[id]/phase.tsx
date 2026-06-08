@@ -42,10 +42,11 @@ import { humanError } from '@/lib/humanError';
  *   - closed       → closing_amount (falls back to the deal's existing amount)
  */
 
-type Phase = 'searching' | 'offer_made' | 'counter_offer' | 'closing' | 'closed';
+type Phase = 'searching' | 'awaiting_offer' | 'offer_made' | 'counter_offer' | 'closing' | 'closed';
 
 const PHASE_OPTIONS: { id: Phase; label: string; hint: string }[] = [
   { id: 'searching', label: 'Searching', hint: 'Back to actively looking.' },
+  { id: 'awaiting_offer', label: 'Awaiting offer', hint: 'Home agreed — preparing the offer.' },
   {
     id: 'offer_made',
     label: 'Offer made',

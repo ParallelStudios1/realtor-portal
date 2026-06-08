@@ -34,6 +34,7 @@ export type TimelineDate = {
 // Canonical phase order. Must mirror the public.deal_phase enum.
 export const DEAL_PHASES: { id: string; defaultLabel: string }[] = [
   { id: 'searching', defaultLabel: 'Searching' },
+  { id: 'awaiting_offer', defaultLabel: 'Awaiting Offer' },
   { id: 'offer_made', defaultLabel: 'Offer Made' },
   { id: 'counter_offer', defaultLabel: 'Counter Offer' },
   { id: 'under_contract', defaultLabel: 'Under Contract' },
@@ -47,6 +48,8 @@ export const DEAL_PHASES: { id: string; defaultLabel: string }[] = [
 const DEFAULT_MESSAGES: Record<string, string> = {
   searching:
     "We're finding and reviewing homes that fit what you're looking for. You'll see new properties here as they come in.",
+  awaiting_offer:
+    "You've agreed on the home you want. We're preparing your offer and getting ready to submit it to the seller.",
   offer_made:
     "Your offer is in. We're waiting to hear back from the seller — this can take anywhere from a few hours to a couple of days.",
   counter_offer:

@@ -30,6 +30,7 @@ import type { DealPhase } from '@/lib/database.types';
 
 const PHASES: DealPhase[] = [
   'searching',
+  'awaiting_offer',
   'offer_made',
   'under_contract',
   'closing',

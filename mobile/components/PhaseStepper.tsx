@@ -9,7 +9,7 @@ interface PhaseStepperProps {
   size?: 'small' | 'large';
 }
 
-const phases: DealPhase[] = ['searching', 'offer_made', 'under_contract', 'closing', 'closed'];
+const phases: DealPhase[] = ['searching', 'awaiting_offer', 'offer_made', 'under_contract', 'closing', 'closed'];
 
 export function PhaseStepper({ currentPhase, size = 'large' }: PhaseStepperProps) {
   const { colors } = useTheme();

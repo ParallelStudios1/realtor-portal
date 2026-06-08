@@ -514,6 +514,7 @@ function prettyTarget(action: string, target: string) {
   if (action === 'phase_change') {
     const map: Record<string, string> = {
       searching: 'Searching',
+      awaiting_offer: 'Awaiting offer',
       offer_made: 'Offer Made',
       under_contract: 'Under Contract',
       closing: 'Closing',

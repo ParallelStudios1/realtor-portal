@@ -64,6 +64,7 @@ const CELEBRATIONS: Record<
 
 const PHASES = [
   { id: 'searching', label: 'Searching' },
+  { id: 'awaiting_offer', label: 'Awaiting Offer' },
   { id: 'offer_made', label: 'Offer' },
   { id: 'counter_offer', label: 'Counter' },
   { id: 'under_contract', label: 'Under contract' },

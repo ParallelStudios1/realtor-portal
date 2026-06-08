@@ -4,6 +4,7 @@ import { DealPhase } from './database.types';
 export function formatPhase(phase: DealPhase): string {
   const phaseMap: Record<DealPhase, string> = {
     searching: 'Searching',
+    awaiting_offer: 'Awaiting Offer',
     offer_made: 'Offer Made',
     under_contract: 'Under Contract',
     closing: 'Closing',

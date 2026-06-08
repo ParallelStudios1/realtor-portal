@@ -21,6 +21,7 @@ export const dynamic = 'force-dynamic';
  */
 const PHASE_TONE: Record<string, string> = {
   searching: 'bg-ink-100 text-ink-700',
+  awaiting_offer: 'bg-amber-100 text-amber-800',
   offer_made: 'bg-amber-100 text-amber-800',
   counter_offer: 'bg-amber-100 text-amber-800',
   under_contract: 'bg-blue-100 text-blue-800',

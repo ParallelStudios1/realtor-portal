@@ -120,6 +120,7 @@ export default async function DealsListPage({
 
   const byPhase = {
     searching: 0,
+    awaiting_offer: 0,
     offer_made: 0,
     counter_offer: 0,
     under_contract: 0,
