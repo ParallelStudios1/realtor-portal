@@ -30,10 +30,21 @@ export async function sendSms(input: {
 
   const auth = Buffer.from(sid + ':' + token).toString('base64');
 
+  // Compliance: every message should identify the sender and how to opt out.
+  // Append a STOP footer when the body doesn't already contain one, and prefix
+  // the platform name when the body doesn't already start with it.
+  let body = input.body.trim();
+  if (!/\bstop\b/i.test(body)) {
+    body = body + '\n\nReply STOP to opt out.';
+  }
+  if (!/realtor portal/i.test(body.slice(0, 40))) {
+    body = 'Realtor Portal: ' + body;
+  }
+
   const form = new URLSearchParams();
   form.set('To', input.to);
   form.set('From', from);
-  form.set('Body', input.body.slice(0, 1500));
+  form.set('Body', body.slice(0, 1500));
 
   try {
     const r = await fetch(url, {
