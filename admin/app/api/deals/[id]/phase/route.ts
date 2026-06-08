@@ -44,6 +44,7 @@ const STAFF_ROLES = [
 
 const VALID_PHASES = [
   'searching',
+  'awaiting_offer',
   'offer_made',
   'counter_offer',
   'under_contract',
@@ -53,6 +54,8 @@ const VALID_PHASES = [
 type Phase = (typeof VALID_PHASES)[number];
 
 const PHASE_CELEBRATIONS: Record<string, string> = {
+  awaiting_offer:
+    'You and your agent have agreed on the home. Next step is preparing and submitting your offer.',
   offer_made:
     '🎯 Offer is in! Your agent has submitted your offer. Fingers crossed.',
   counter_offer:

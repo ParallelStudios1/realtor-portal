@@ -127,12 +127,14 @@ export async function markAgreedHouseAction(houseId: string) {
   if (!search || (search as any).client_id !== me.user_id)
     return { ok: false as const, error: 'Not your house.' };
 
+  // The client PROPOSES the home; the realtor confirms it (which then agrees
+  // it + advances the deal to awaiting_offer). We record a pending proposal.
   const { error } = await service
     .from('client_searches')
     .update({
-      offer_house_id: houseId,
-      house_agreed_at: new Date().toISOString(),
-      house_agreed_by: me.user_id,
+      house_proposed_house_id: houseId,
+      house_proposed_by: me.user_id,
+      house_proposed_at: new Date().toISOString(),
     })
     .eq('id', (search as any).id);
   if (error) return { ok: false as const, error: error.message };
@@ -141,7 +143,7 @@ export async function markAgreedHouseAction(houseId: string) {
     firm_id: (house as any).firm_id,
     search_id: (search as any).id,
     actor_id: me.user_id,
-    action: 'house_agreed',
+    action: 'house_proposed',
     target: (house as any).address || houseId,
     metadata: { house_id: houseId, by: 'client' },
   });
@@ -164,19 +166,20 @@ export async function markAgreedHouseAction(houseId: string) {
       await notify({
         email: (realtor as any)?.email || null,
         phone: (realtor as any)?.phone || null,
-        subject: clientName + ' picked their home: ' + addr,
+        subject: 'Action needed: ' + clientName + ' picked a home — ' + addr,
         text:
           clientName +
-          ' marked the home they want on their deal:\n\n' +
+          ' said this is the home they want:\n\n' +
           addr +
-          '\n\nOpen the deal: ' +
+          '\n\nConfirm it on the deal to lock it in and move to Awaiting offer:\n' +
           dealUrl,
         html: `<p><strong>${escapeHtml(
           clientName
-        )}</strong> marked the home they want:</p><p><strong>${escapeHtml(
+        )}</strong> said this is the home they want:</p><p><strong>${escapeHtml(
           addr
-        )}</strong></p><p><a href="${dealUrl}">Open the deal &rarr;</a></p>`,
-        sms_text: clientName + ' picked their home: ' + addr + ' — ' + dealUrl,
+        )}</strong></p><p>Confirm it on the deal to lock it in and move to <em>Awaiting offer</em>:</p><p><a href="${dealUrl}">Open the deal &rarr;</a></p>`,
+        sms_text:
+          clientName + ' picked a home: ' + addr + '. Confirm it: ' + dealUrl,
       });
     }
   } catch (e: any) {

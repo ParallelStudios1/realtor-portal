@@ -410,12 +410,24 @@ export async function addHouseAction(
 export async function linkDocusignAction(clientId: string, url: string) {
   const a = await authorize(clientId);
   if ('error' in a) return { ok: false as const, error: a.error };
-  if (!/^https?:\/\/.*docusign\./i.test(url))
+  if (!/^https?:\/\//i.test(url))
     return {
       ok: false as const,
-      error: 'That does not look like a DocuSign URL.',
+      error: 'Enter a full https:// signing link.',
     };
   const service = getSupabaseServiceRoleClient();
+  // Record a proper envelope row so the link shows in the deal's Signing links
+  // panel and is visible to every party (esign participant-read policy).
+  await service.from('esign_envelopes').insert({
+    firm_id: a.search.firm_id,
+    search_id: a.search.id,
+    provider: 'manual',
+    envelope_id: 'manual-' + (globalThis.crypto?.randomUUID?.() || Date.now()),
+    envelope_url: url,
+    status: 'sent',
+    recipients: [],
+    created_by: a.me.user_id,
+  });
   const { error } = await service
     .from('client_searches')
     .update({ docusign_envelope_url: url })
@@ -1033,13 +1045,29 @@ export async function setAgreedHouseAction(
   if (!house)
     return { ok: false as const, error: 'That house is not on this deal.' };
 
+  // Auto-open the next phase when the home is confirmed from searching.
+  const { data: cur } = await service
+    .from('client_searches')
+    .select('phase')
+    .eq('id', a.search.id)
+    .maybeSingle();
+  const curPhase = (cur as any)?.phase as string | null;
+
+  const agreedUpdate: Record<string, any> = {
+    offer_house_id: houseId,
+    house_agreed_at: new Date().toISOString(),
+    house_agreed_by: a.me.user_id,
+    house_proposed_house_id: null,
+    house_proposed_by: null,
+    house_proposed_at: null,
+  };
+  if (!curPhase || curPhase === 'searching') {
+    agreedUpdate.phase = 'awaiting_offer';
+  }
+
   const { error } = await service
     .from('client_searches')
-    .update({
-      offer_house_id: houseId,
-      house_agreed_at: new Date().toISOString(),
-      house_agreed_by: a.me.user_id,
-    })
+    .update(agreedUpdate)
     .eq('id', a.search.id);
   if (error) return { ok: false as const, error: error.message };
 

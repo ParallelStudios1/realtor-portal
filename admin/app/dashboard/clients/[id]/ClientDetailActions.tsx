@@ -44,6 +44,7 @@ type Action =
 
 const PHASES = [
   { id: 'searching', label: 'Searching' },
+  { id: 'awaiting_offer', label: 'Awaiting offer' },
   { id: 'offer_made', label: 'Offer made' },
   { id: 'counter_offer', label: 'Counter offer' },
   { id: 'under_contract', label: 'Under contract' },
@@ -65,6 +66,7 @@ const DATE_PRESETS = [
 export function ClientDetailActions({
   clientId,
   firmId,
+  searchId,
   currentPhase,
   dealKind,
   financials,
@@ -225,7 +227,7 @@ export function ClientDetailActions({
               icon={<IconDocument />}
               title="Upload document"
               subtitle="Drag & drop, PDFs"
-              href={`/dashboard/clients/${clientId}/upload`}
+              href={`/dashboard/deals/${searchId}/upload`}
             />
             <ActionCard
               tone="orange"
@@ -642,6 +644,7 @@ function ActionCard({
 function phaseLabel(p: string) {
   const map: Record<string, string> = {
     searching: 'Searching',
+    awaiting_offer: 'Awaiting offer',
     offer_made: 'Offer made',
     under_contract: 'Under contract',
     closing: 'Closing',
@@ -1535,7 +1538,7 @@ function AttorneyModal({
 }: {
   onClose: () => void;
   onSubmit: (payload: {
-    name: string;
+    name?: string;
     email?: string;
     phone?: string;
   }) => Promise<void>;
@@ -1550,7 +1553,7 @@ function AttorneyModal({
         <Field label="Name">
           <input className={inputCls} value={name} onChange={(e) => setName(e.target.value)} />
         </Field>
-        <Field label="Email">
+        <Field label="Email — required" hint="How they get access to the deal.">
           <input
             type="email"
             className={inputCls}
@@ -1558,18 +1561,18 @@ function AttorneyModal({
             onChange={(e) => setEmail(e.target.value)}
           />
         </Field>
-        <Field label="Phone">
+        <Field label="Phone (optional)">
           <input className={inputCls} value={phone} onChange={(e) => setPhone(e.target.value)} />
         </Field>
       </div>
       <PrimaryButton
         pending={pending}
-        disabled={!name}
+        disabled={!email.trim()}
         onClick={() =>
           start(() =>
             onSubmit({
-              name: name.trim(),
-              email: email.trim() || undefined,
+              name: name.trim() || undefined,
+              email: email.trim(),
               phone: phone.trim() || undefined,
             })
           )
@@ -1994,9 +1997,18 @@ function ParticipantModal({
           />
         </Field>
         <div className="grid grid-cols-2 gap-3">
+          <Field label="Email — required" hint="How they get access to the deal.">
+            <input
+              type="email"
+              className={inputCls}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="name@example.com"
+            />
+          </Field>
           <Field
-            label="Phone (text invite)"
-            hint="We'll text them the deal link. US numbers OK in any format."
+            label="Phone (optional)"
+            hint="If given, we'll also text them the deal link."
           >
             <input
               type="tel"
@@ -2004,14 +2016,6 @@ function ParticipantModal({
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="(555) 123-4567"
-            />
-          </Field>
-          <Field label="Email (optional)" hint="If they have an account, we grant access by email.">
-            <input
-              type="email"
-              className={inputCls}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
             />
           </Field>
         </div>
@@ -2029,7 +2033,7 @@ function ParticipantModal({
         </fieldset>
         <PrimaryButton
           pending={pending}
-          disabled={!name && !email && !phone}
+          disabled={!email.trim()}
           onClick={() =>
             start(() =>
               onSubmit({
@@ -2441,20 +2445,21 @@ function EditPartyModal({
           />
         </Field>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Phone">
-            <input
-              type="tel"
-              className={inputCls}
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-            />
-          </Field>
-          <Field label="Email">
+          <Field label="Email — required">
             <input
               type="email"
               className={inputCls}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              placeholder="name@example.com"
+            />
+          </Field>
+          <Field label="Phone (optional)">
+            <input
+              type="tel"
+              className={inputCls}
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
             />
           </Field>
         </div>
@@ -2471,6 +2476,7 @@ function EditPartyModal({
         </fieldset>
         <PrimaryButton
           pending={pending}
+          disabled={!email.trim()}
           onClick={() =>
             start(() =>
               onSave({

@@ -10,6 +10,7 @@ export const dynamic = 'force-dynamic';
 
 const PHASES = [
   { id: 'searching', label: 'Searching' },
+  { id: 'awaiting_offer', label: 'Awaiting offer' },
   { id: 'offer_made', label: 'Offer made' },
   { id: 'counter_offer', label: 'Counter' },
   { id: 'under_contract', label: 'Under contract' },

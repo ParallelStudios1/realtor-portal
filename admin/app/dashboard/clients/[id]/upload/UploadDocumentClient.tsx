@@ -25,10 +25,12 @@ export function UploadDocumentClient({
   firmId,
   searchId,
   clientId,
+  redirectTo,
 }: {
   firmId: string;
   searchId: string;
-  clientId: string;
+  clientId?: string | null;
+  redirectTo?: string;
 }) {
   const supabase = getSupabaseBrowserClient();
   const router = useRouter();
@@ -95,7 +97,7 @@ export function UploadDocumentClient({
           names: files.slice(0, ok).map((f) => f.name),
         }),
       }).catch(() => {});
-      router.push(`/dashboard/clients/${clientId}`);
+      router.push(redirectTo || `/dashboard/deals/${searchId}`);
       router.refresh();
     }
   }

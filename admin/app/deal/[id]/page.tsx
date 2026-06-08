@@ -16,6 +16,7 @@ export const metadata = { title: 'Deal' };
 
 const PHASES = [
   'searching',
+  'awaiting_offer',
   'offer_made',
   'under_contract',
   'closing',

@@ -90,7 +90,7 @@ export async function POST(
     const service = getSupabaseServiceRoleClient();
     const { data: deal } = await service
       .from('client_searches')
-      .select('id, firm_id, client_id')
+      .select('id, firm_id, client_id, phase')
       .eq('id', params.id)
       .maybeSingle();
     if (!deal) {
@@ -99,7 +99,12 @@ export async function POST(
         { status: 404 }
       );
     }
-    const d = deal as { id: string; firm_id: string; client_id: string | null };
+    const d = deal as {
+      id: string;
+      firm_id: string;
+      client_id: string | null;
+      phase: string | null;
+    };
 
     // Authorize: principal client OR firm staff on the deal's host firm.
     const isPrincipalClient = d.client_id === me.user_id;
@@ -130,19 +135,52 @@ export async function POST(
       );
     }
 
-    const { error } = await service
-      .from('client_searches')
-      .update({
+    // Two paths:
+    //  - CLIENT proposes ("this is the house I want") → record a pending
+    //    proposal and notify the realtor to confirm. Does NOT agree or advance.
+    //  - STAFF confirms/sets → agree the home, clear any pending proposal, and
+    //    auto-advance the deal to awaiting_offer (only from 'searching', so we
+    //    never regress a later phase).
+    const proposing = isPrincipalClient && !isStaffSameFirm;
+
+    if (proposing) {
+      const { error } = await service
+        .from('client_searches')
+        .update({
+          house_proposed_house_id: houseId,
+          house_proposed_by: me.user_id,
+          house_proposed_at: new Date().toISOString(),
+        })
+        .eq('id', d.id);
+      if (error) {
+        return NextResponse.json(
+          { ok: false, error: error.message },
+          { status: 500 }
+        );
+      }
+    } else {
+      const update: Record<string, any> = {
         offer_house_id: houseId,
         house_agreed_at: new Date().toISOString(),
         house_agreed_by: me.user_id,
-      })
-      .eq('id', d.id);
-    if (error) {
-      return NextResponse.json(
-        { ok: false, error: error.message },
-        { status: 500 }
-      );
+        house_proposed_house_id: null,
+        house_proposed_by: null,
+        house_proposed_at: null,
+      };
+      // Auto-open the next phase when the home is confirmed from searching.
+      if (!d.phase || d.phase === 'searching') {
+        update.phase = 'awaiting_offer';
+      }
+      const { error } = await service
+        .from('client_searches')
+        .update(update)
+        .eq('id', d.id);
+      if (error) {
+        return NextResponse.json(
+          { ok: false, error: error.message },
+          { status: 500 }
+        );
+      }
     }
 
     // Activity row.
@@ -151,7 +189,7 @@ export async function POST(
         firm_id: d.firm_id,
         search_id: d.id,
         actor_id: me.user_id,
-        action: 'house_agreed',
+        action: proposing ? 'house_proposed' : 'house_agreed',
         target: (house as any).address || houseId,
         metadata: {
           house_id: houseId,
@@ -183,17 +221,17 @@ export async function POST(
           await notify({
             email: realtor?.email || null,
             phone: realtor?.phone || null,
-            subject: 'Your client confirmed the home: ' + addr,
+            subject: 'Action needed: your client picked a home — ' + addr,
             text:
-              'Your client confirmed the home for the deal:\n\n' +
+              'Your client said this is the home they want:\n\n' +
               addr +
-              '\n\nOpen the deal: ' +
+              '\n\nConfirm it on the deal to lock it in and move to Awaiting offer:\n' +
               dealUrl,
-            html: `<p>Your client confirmed the home for the deal:</p><p><strong>${escapeHtml(
+            html: `<p>Your client said this is the home they want:</p><p><strong>${escapeHtml(
               addr
-            )}</strong></p><p><a href="${dealUrl}">Open the deal &rarr;</a></p>`,
+            )}</strong></p><p>Confirm it on the deal to lock it in and move to <em>Awaiting offer</em>:</p><p><a href="${dealUrl}">Open the deal &rarr;</a></p>`,
             sms_text:
-              'Your client confirmed the home: ' + addr + ' — ' + dealUrl,
+              'Your client picked a home: ' + addr + '. Confirm it: ' + dealUrl,
           });
         }
       } else {

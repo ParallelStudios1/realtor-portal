@@ -161,6 +161,7 @@ export default async function AnalyticsPage() {
   // --- Pipeline by phase -------------------------------------------------
   const PHASES = [
     'searching',
+    'awaiting_offer',
     'offer_made',
     'counter_offer',
     'under_contract',
@@ -660,6 +661,7 @@ function prettyTarget(action: string, target: string | null) {
   if (action === 'phase_change') {
     const map: Record<string, string> = {
       searching: 'Searching',
+      awaiting_offer: 'Awaiting Offer',
       offer_made: 'Offer Made',
       counter_offer: 'Counter Offer',
       under_contract: 'Under Contract',

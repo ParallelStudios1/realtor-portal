@@ -997,7 +997,7 @@ export function DealWorkspace(props: {
             </ul>
             <div className="border-t border-ink-100 px-5 py-2 text-right">
               <Link
-                href={`/dashboard/clients/${clientId}/upload?searchId=${deal.id}`}
+                href={`/dashboard/deals/${deal.id}/upload`}
                 className="text-xs font-semibold text-blue-600 hover:underline"
               >
                 + Upload more →

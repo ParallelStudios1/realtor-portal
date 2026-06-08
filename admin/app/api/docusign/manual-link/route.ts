@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { randomUUID } from 'crypto';
 import { getMe } from '@/lib/supabaseSsr';
 import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
 import { logAudit } from '@/lib/audit';
@@ -6,22 +7,38 @@ import { logAudit } from '@/lib/audit';
 export const runtime = 'nodejs';
 
 /**
- * Manual fallback used when DocuSign is NOT configured on this deployment.
- * The realtor signs the document in DocuSign by hand, then pastes the
- * envelope URL here. We record it on client_searches.docusign_envelope_url
- * (the legacy "Open DocuSign" affordance) so the link is available on the deal.
+ * Attach a signing link to the deal.
  *
- * Body: { searchId, envelopeUrl }
+ * We do NOT integrate the DocuSign API (by product decision). Instead the
+ * realtor creates the envelope in DocuSign (or any e-sign tool) themselves and
+ * pastes the signing URL here, optionally tying it to a specific uploaded
+ * document ("which document does this apply to?") and giving it a label.
+ *
+ * Each saved link becomes an esign_envelopes row so every party on the deal can
+ * see and open it (participant read policy added in migration 0045). We also
+ * mirror the most recent link onto client_searches.docusign_envelope_url for
+ * the legacy "Open DocuSign" affordance at the top of the deal.
+ *
+ * Body: { searchId, envelopeUrl, documentId?, label? }
  */
 export async function POST(req: NextRequest) {
   const me = await getMe();
   if (!me?.firm_id)
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
-  if (me.role !== 'realtor' && me.role !== 'firm_admin' && me.role !== 'super_admin')
+  if (
+    me.role !== 'realtor' &&
+    me.role !== 'firm_admin' &&
+    me.role !== 'super_admin' &&
+    me.role !== 'owner' &&
+    me.role !== 'manager' &&
+    me.role !== 'agent'
+  )
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
 
   const body = await req.json().catch(() => null);
   const url = (body?.envelopeUrl || '').trim();
+  const label = (body?.label || '').trim() || null;
+  const documentId = (body?.documentId || '').trim() || null;
   if (!body?.searchId || !url) {
     return NextResponse.json({ error: 'bad request' }, { status: 400 });
   }
@@ -41,6 +58,38 @@ export async function POST(req: NextRequest) {
     .maybeSingle();
   if (!deal) return NextResponse.json({ error: 'deal not found' }, { status: 404 });
 
+  // If a document was named, confirm it belongs to this deal.
+  let docId: string | null = null;
+  if (documentId) {
+    const { data: doc } = await service
+      .from('documents')
+      .select('id')
+      .eq('id', documentId)
+      .eq('search_id', body.searchId)
+      .maybeSingle();
+    docId = doc ? documentId : null;
+  }
+
+  const { data: inserted, error: insErr } = await service
+    .from('esign_envelopes')
+    .insert({
+      firm_id: me.firm_id,
+      search_id: body.searchId,
+      document_id: docId,
+      provider: 'manual',
+      envelope_id: 'manual-' + randomUUID(),
+      envelope_url: url,
+      status: 'sent',
+      recipients: label ? [{ label }] : [],
+      created_by: me.user_id,
+    })
+    .select('id, envelope_id, envelope_url, document_id, status, created_at, recipients')
+    .single();
+  if (insErr) {
+    return NextResponse.json({ error: insErr.message }, { status: 500 });
+  }
+
+  // Mirror onto the deal for the legacy top-of-deal "Open DocuSign" link.
   await service
     .from('client_searches')
     .update({ docusign_envelope_url: url })
@@ -53,9 +102,9 @@ export async function POST(req: NextRequest) {
     action: 'esign.linked',
     entityType: 'client_search',
     entityId: body.searchId,
-    summary: 'Manually linked a DocuSign envelope URL to the deal',
-    metadata: { manual: true },
+    summary: 'Attached a signing link to the deal',
+    metadata: { manual: true, documentId: docId, label },
   });
 
-  return NextResponse.json({ ok: true, envelopeUrl: url });
+  return NextResponse.json({ ok: true, envelope: inserted });
 }

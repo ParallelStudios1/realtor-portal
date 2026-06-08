@@ -13,6 +13,7 @@ import {
 
 const PHASES = [
   { id: 'searching', defaultLabel: 'Searching' },
+  { id: 'awaiting_offer', defaultLabel: 'Awaiting offer' },
   { id: 'offer_made', defaultLabel: 'Offer made' },
   { id: 'counter_offer', defaultLabel: 'Counter offer' },
   { id: 'under_contract', defaultLabel: 'Under contract' },

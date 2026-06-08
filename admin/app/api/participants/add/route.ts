@@ -223,15 +223,25 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-    if (!body.name && !body.email && !body.phone) {
+    // Email is required (it's how every party gets portal access + notices).
+    // Phone is optional.
+    const emailTrimmed = (body.email || '').trim();
+    if (!emailTrimmed) {
       return NextResponse.json(
         {
           ok: false,
-          error: 'Give me a name, phone, or email so we can identify them.',
+          error: 'An email address is required so this party can access the deal.',
         },
         { status: 400 }
       );
     }
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(emailTrimmed)) {
+      return NextResponse.json(
+        { ok: false, error: 'Enter a valid email address.' },
+        { status: 400 }
+      );
+    }
+    body.email = emailTrimmed;
 
     const service = getSupabaseServiceRoleClient();
     const { data: search } = await service
