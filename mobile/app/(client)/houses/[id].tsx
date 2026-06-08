@@ -80,14 +80,27 @@ export default function ClientHouseDetailScreen() {
 
   const handleRequestTour = async () => {
     if (!user?.id || !userProfile?.firm_id) return;
+    // A concrete date AND time is required — no time, no tour request.
+    if (!tourWhenDate) {
+      toast.show('Pick a date and time for the tour.', { variant: 'error' });
+      return;
+    }
     setRequesting(true);
     try {
+      const human = tourWhenDate.toLocaleString([], {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+      });
       await requestTour.mutateAsync({
         houseId: house.id,
         searchId: house.search_id,
         firmId: userProfile.firm_id,
         clientId: user.id,
-        preferredWhen: tourWhenDate ? tourWhenDate.toISOString() : undefined,
+        requestedAt: tourWhenDate.toISOString(),
+        preferredWhen: human,
         notes: tourNotes.trim() || undefined,
       });
       await logActivity.mutateAsync({
@@ -187,7 +200,7 @@ export default function ClientHouseDetailScreen() {
       queryClient.invalidateQueries({ queryKey: ['clientSearches'] });
       queryClient.invalidateQueries({ queryKey: ['activities', house.search_id] });
       await refetchSearch();
-      toast.show('This is the home — your agent has been notified.', {
+      toast.show('Sent to your agent — they’ll confirm to make it official.', {
         variant: 'success',
       });
     } catch (e: any) {

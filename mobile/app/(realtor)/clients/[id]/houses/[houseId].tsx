@@ -14,6 +14,7 @@ import { Image } from 'expo-image';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useAuth } from '@/lib/auth';
 import { useTheme } from '@/lib/theme';
+import { supabase } from '@/lib/supabase';
 import { useHouse, useSearch, useHouseRating } from '@/lib/queries';
 import {
   useUpdateHouseStatus,
@@ -77,6 +78,44 @@ export default function RealtorHouseDetailScreen() {
     }
   };
 
+  // Confirm the client's proposed home (or set this as the agreed home). Routed
+  // through the deal-id agree-house API: staff confirm agrees the home, clears
+  // the proposal, and auto-advances the deal to awaiting_offer.
+  const confirmHome = async () => {
+    setWorking(true);
+    try {
+      const { data: sess } = await supabase.auth.getSession();
+      const token = sess.session?.access_token;
+      const apiBase = (
+        (process.env.EXPO_PUBLIC_API_URL as string | undefined) ||
+        'https://realtor-portal-ten.vercel.app'
+      ).replace(/\/$/, '');
+      const r = await fetch(`${apiBase}/api/deals/${house.search_id}/agree-house`, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ house_id: house.id }),
+      });
+      const json = await r.json().catch(() => null);
+      if (!r.ok || !json?.ok) throw new Error(json?.error || `Failed (HTTP ${r.status}).`);
+      await refetch();
+      Alert.alert('Confirmed', 'Home locked in — the deal moved to Awaiting offer.');
+    } catch (e: any) {
+      Alert.alert('Could not confirm', e.message ?? String(e));
+    } finally {
+      setWorking(false);
+    }
+  };
+
+  const clientProposedThis =
+    (search as any)?.house_proposed_house_id === house.id &&
+    !(search as any)?.house_agreed_at;
+  const isAgreedHome =
+    (search as any)?.offer_house_id === house.id &&
+    !!(search as any)?.house_agreed_at;
+
   const requestFeedback = async () => {
     if (!userProfile?.firm_id || !user?.id) return;
     setWorking(true);
@@ -115,6 +154,30 @@ export default function RealtorHouseDetailScreen() {
 
         <View style={styles.body}>
           <Text style={[styles.address, { color: colors.text }]}>{house.address}</Text>
+
+          {clientProposedThis && (
+            <View style={styles.confirmBanner}>
+              <Text style={styles.confirmTitle}>Client picked this home</Text>
+              <Text style={styles.confirmBody}>
+                Your client wants this house. Confirm to lock it in and move the
+                deal to Awaiting offer.
+              </Text>
+              <Pressable
+                onPress={confirmHome}
+                disabled={working}
+                style={[styles.confirmBtn, working && { opacity: 0.6 }]}
+              >
+                <Text style={styles.confirmBtnText}>
+                  {working ? 'Confirming…' : 'Confirm this home'}
+                </Text>
+              </Pressable>
+            </View>
+          )}
+          {isAgreedHome && (
+            <View style={styles.agreedBanner}>
+              <Text style={styles.agreedText}>✓ Agreed home for this deal</Text>
+            </View>
+          )}
 
           {house.list_price ? (
             <Text style={[styles.price, { color: colors.text }]}>
@@ -226,6 +289,39 @@ const styles = StyleSheet.create({
   photoPlaceholder: { width: '100%', height: 220, alignItems: 'center', justifyContent: 'center' },
   body: { padding: 20 },
   address: { fontSize: 22, fontWeight: '700' },
+  confirmBanner: {
+    marginTop: 14,
+    borderWidth: 1.5,
+    borderColor: '#FBBF24',
+    backgroundColor: '#FFFBEB',
+    borderRadius: 16,
+    padding: 14,
+  },
+  confirmTitle: {
+    fontSize: 11,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    color: '#B45309',
+  },
+  confirmBody: { marginTop: 4, fontSize: 14, color: '#92400E', lineHeight: 20 },
+  confirmBtn: {
+    marginTop: 12,
+    backgroundColor: '#0F172A',
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  confirmBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  agreedBanner: {
+    marginTop: 14,
+    borderWidth: 1.5,
+    borderColor: '#10B981',
+    backgroundColor: '#ECFDF5',
+    borderRadius: 16,
+    padding: 12,
+  },
+  agreedText: { color: '#047857', fontWeight: '700', fontSize: 14 },
   price: { fontSize: 20, fontWeight: '700', marginTop: 12 },
   specRow: { fontSize: 13, marginTop: 4 },
   linkBtn: { borderWidth: 1, padding: 12, borderRadius: 8, alignItems: 'center', marginTop: 16 },

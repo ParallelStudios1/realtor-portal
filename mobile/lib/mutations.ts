@@ -719,6 +719,7 @@ export function useRequestTour() {
       firmId,
       clientId,
       preferredWhen,
+      requestedAt,
       notes,
     }: {
       houseId: string;
@@ -726,6 +727,7 @@ export function useRequestTour() {
       firmId: string;
       clientId: string;
       preferredWhen?: string;
+      requestedAt?: string;
       notes?: string;
     }) => {
       const { data: inserted, error: insertError } = await supabase
@@ -736,6 +738,7 @@ export function useRequestTour() {
           firm_id: firmId,
           client_id: clientId,
           preferred_when: preferredWhen ?? null,
+          requested_at: requestedAt ?? null,
           notes: notes ?? null,
           status: 'pending',
         })
