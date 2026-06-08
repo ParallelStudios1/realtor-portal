@@ -24,6 +24,7 @@ import { LocalDateTime } from '@/components/LocalDateTime';
 import { EsignPanel } from './EsignPanel';
 import { ExtractReview, type StagedExtraction } from './ExtractReview';
 import { DealChat } from '@/components/DealChat';
+import { SubphaseEditor } from './SubphaseEditor';
 import type { DealChatMessage } from './chatActions';
 
 /**
@@ -393,6 +394,13 @@ export function DealWorkspace(props: {
               );
             })}
           </ol>
+          {/* Free-text status / subphase under the current phase. */}
+          <div className="mt-4 border-t border-ink-100 pt-3">
+            <SubphaseEditor
+              clientId={clientId}
+              initial={(deal as any).subphase ?? null}
+            />
+          </div>
         </div>
       </section>
 

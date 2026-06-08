@@ -105,6 +105,7 @@ function CheckIcon({ color }: { color: string }) {
 
 export function DealProgressTimeline({
   phase,
+  subphase,
   brandColor,
   phaseLabels,
   phaseMessages,
@@ -112,6 +113,8 @@ export function DealProgressTimeline({
 }: {
   /** Current deal phase id (e.g. 'under_contract'). */
   phase: string | null | undefined;
+  /** Optional free-text status note under the current phase. */
+  subphase?: string | null;
   /** Firm brand color (hex). Used only for the active/completed accent. */
   brandColor?: string | null;
   /** firms.phase_labels jsonb — keyed by phase id. */
@@ -181,6 +184,19 @@ export function DealProgressTimeline({
                 >
                   {label}
                 </div>
+
+                {isCurrent && subphase && (
+                  <span
+                    className="mt-1.5 inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                    style={{ backgroundColor: accent + '15', color: accent }}
+                  >
+                    <span
+                      className="h-1.5 w-1.5 rounded-full"
+                      style={{ backgroundColor: accent }}
+                    />
+                    {subphase}
+                  </span>
+                )}
 
                 {isCurrent && (
                   <p className="mt-1.5 max-w-prose text-sm leading-relaxed text-ink-600">

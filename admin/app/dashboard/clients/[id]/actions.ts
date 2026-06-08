@@ -407,6 +407,35 @@ export async function addHouseAction(
   return { ok: true as const, houseId: data?.id };
 }
 
+/**
+ * Set a free-text SUBPHASE / status note on the deal (e.g. "Inspection
+ * scheduled", "Awaiting appraisal"). Shown under the current phase to every
+ * party + on the client timeline. Pass an empty string to clear it.
+ */
+export async function setSubphaseAction(clientId: string, subphase: string) {
+  const a = await authorize(clientId);
+  if ('error' in a) return { ok: false as const, error: a.error };
+  const value = (subphase || '').trim().slice(0, 120) || null;
+  const service = getSupabaseServiceRoleClient();
+  const { error } = await service
+    .from('client_searches')
+    .update({ subphase: value })
+    .eq('id', a.search.id);
+  if (error) return { ok: false as const, error: error.message };
+  await activity(
+    a.search.id,
+    a.search.firm_id,
+    a.me.user_id,
+    'subphase_set',
+    value || '(cleared)'
+  );
+  revalidatePath(`/dashboard/clients/${clientId}`);
+  revalidatePath('/dashboard/deals/' + a.search.id);
+  revalidatePath('/deal/' + a.search.id);
+  revalidatePath('/client');
+  return { ok: true as const, subphase: value };
+}
+
 export async function linkDocusignAction(clientId: string, url: string) {
   const a = await authorize(clientId);
   if ('error' in a) return { ok: false as const, error: a.error };

@@ -45,7 +45,7 @@ export default async function DealDetailPage({
   const { data: deal } = await service
     .from('client_searches')
     .select(
-      `id, firm_id, client_id, kind, phase, name, description, attorney_name, attorney_email,
+      `id, firm_id, client_id, kind, phase, subphase, name, description, attorney_name, attorney_email,
        attorney_phone, docusign_envelope_url, co_realtor_id, realtor_id,
        agreed_price, closing_amount, earnest_money, commission_pct,
        contract_url, notes, offer_amount, counter_offer_amount,
