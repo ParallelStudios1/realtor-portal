@@ -7,6 +7,8 @@ import { formatDateOnly } from '@/lib/dates';
 import { AgreedHomeCard } from '@/components/AgreedHomeCard';
 import { AttorneyDocList, type AttorneyDoc } from '@/components/AttorneyDocList';
 import { DealChat } from '@/components/DealChat';
+import { PrivateMessages } from '@/components/PrivateMessages';
+import { getPrivateParties } from '@/app/dashboard/deals/[id]/privateActions';
 import {
   getDealChat,
   type DealChatMessage,
@@ -204,6 +206,12 @@ export default async function DealPage({
     const chat = await getDealChat(params.id);
     if (chat.ok) dealChatMessages = chat.messages;
   }
+
+  // Private 1:1 messaging parties (everyone can DM a specific other party).
+  const privateRes = canSeeMessages
+    ? await getPrivateParties(params.id)
+    : { ok: false as const, error: 'no access' };
+  const privateParties = privateRes.ok ? privateRes.parties : [];
 
   // AGREED HOME — surface the chosen house once client + realtor have agreed.
   // Privacy: we only resolve it from the `houses` array the viewer is already
@@ -642,6 +650,22 @@ export default async function DealPage({
                 initialMessages={dealChatMessages}
                 canPost={canSeeMessages}
               />
+            )}
+
+            {/* Private 1:1 messages — DM a specific party; only the two of you
+                can see it. Separate from the group chat above. */}
+            {canSeeMessages && privateParties.length > 0 && (
+              <Section title="Private messages">
+                <p className="mb-3 -mt-1 text-xs text-ink-500">
+                  A private thread with one party — only the two of you can see
+                  it.
+                </p>
+                <PrivateMessages
+                  searchId={params.id}
+                  parties={privateParties}
+                  accent={brand}
+                />
+              </Section>
             )}
           </div>
 

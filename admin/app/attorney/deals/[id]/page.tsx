@@ -6,6 +6,8 @@ import { formatDateOnly, formatDateOnlyLong } from '@/lib/dates';
 import { AgreedHomeCard } from '@/components/AgreedHomeCard';
 import { AttorneyDocList, type AttorneyDoc } from '@/components/AttorneyDocList';
 import { LocalDateTime } from '@/components/LocalDateTime';
+import { PrivateMessages } from '@/components/PrivateMessages';
+import { getPrivateParties } from '@/app/dashboard/deals/[id]/privateActions';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Deal' };
@@ -187,6 +189,12 @@ export default async function AttorneyDealPage({
 
   // Other parties (excluding this attorney) for the roster.
   const otherParts = parts.filter((p) => p.id !== myAttorneyRow?.id);
+
+  // Private 1:1 messaging — the attorney messages a specific party privately
+  // (NOT the whole-deal group chat). Parties resolved + access re-checked
+  // server-side.
+  const privateRes = await getPrivateParties(params.id);
+  const privateParties = privateRes.ok ? privateRes.parties : [];
 
   // ---- NEEDS YOUR ATTENTION -------------------------------------------------
   const openEnvelopes = (envelopes as any[] | null || []).filter((e) =>
@@ -748,6 +756,19 @@ export default async function AttorneyDealPage({
                 })}
               </ul>
             )}
+          </Section>
+
+          {/* ============== PRIVATE MESSAGES ============== */}
+          <Section title="Private messages">
+            <p className="mb-3 -mt-1 text-xs text-ink-500">
+              A private 1:1 thread with a specific party — only the two of you
+              can see it. This is separate from any all-parties group chat.
+            </p>
+            <PrivateMessages
+              searchId={params.id}
+              parties={privateParties}
+              accent={accent}
+            />
           </Section>
 
           {/* ============== PARTIES & CONTACTS ============== */}
