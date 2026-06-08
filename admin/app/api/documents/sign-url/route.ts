@@ -137,6 +137,19 @@ export async function POST(req: Request) {
       ) {
         allowed = true;
       }
+
+      // Legacy attorney: attached via client_searches.attorney_email (no
+      // participant row). They can review documents on their closing.
+      if (!allowed && myEmail) {
+        const { data: legacy } = await service
+          .from('client_searches')
+          .select('id')
+          .eq('id', pathSearchId)
+          .eq('firm_id', pathFirmId)
+          .ilike('attorney_email', myEmail)
+          .maybeSingle();
+        if (legacy?.id) allowed = true;
+      }
     }
 
     if (!allowed) {

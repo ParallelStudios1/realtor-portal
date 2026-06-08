@@ -50,6 +50,24 @@ export default async function ClientHomePage() {
         .limit(5)
     : { data: [] as any[] };
 
+  // Upcoming tours — concrete date+time visits the client requested, with the
+  // house address. Shown with a countdown + time-of-day on the dashboard.
+  const nowIso = new Date().toISOString();
+  const { data: tours } = active
+    ? await supabase
+        .from('tour_requests')
+        .select(
+          `id, requested_at, preferred_when, status,
+           house:houses!tour_requests_house_id_fkey ( id, address )`
+        )
+        .eq('search_id', active.id)
+        .not('requested_at', 'is', null)
+        .gte('requested_at', nowIso)
+        .in('status', ['pending', 'confirmed'])
+        .order('requested_at', { ascending: true })
+        .limit(6)
+    : { data: [] as any[] };
+
   // Recent activity feed — "Maria updated phase to under contract", etc.
   const { data: feed } = active
     ? await supabase
@@ -258,6 +276,56 @@ export default async function ClientHomePage() {
             />
           </div>
 
+          {/* Upcoming tours — countdown + time of day */}
+          {tours && tours.length > 0 && (
+            <section className="mt-4 surface p-5">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-400">
+                Upcoming tours
+              </div>
+              <ul className="mt-3 divide-y divide-ink-100">
+                {(tours as any[]).map((t) => {
+                  const dt = new Date(t.requested_at);
+                  return (
+                    <li key={t.id} className="flex items-center justify-between gap-3 py-3">
+                      <div className="min-w-0">
+                        <div className="truncate text-sm font-semibold">
+                          {t.house?.address || 'A home'}
+                        </div>
+                        <div className="mt-0.5 text-xs text-ink-500">
+                          {dt.toLocaleString(undefined, {
+                            weekday: 'long',
+                            month: 'short',
+                            day: 'numeric',
+                          })}{' '}
+                          · {timeOfDay(dt)} ·{' '}
+                          {dt.toLocaleTimeString(undefined, {
+                            hour: 'numeric',
+                            minute: '2-digit',
+                          })}
+                        </div>
+                      </div>
+                      <div className="flex shrink-0 flex-col items-end gap-1">
+                        <span
+                          className={
+                            'rounded-full px-2 py-0.5 text-[11px] font-semibold ' +
+                            (t.status === 'confirmed'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : 'bg-amber-100 text-amber-800')
+                          }
+                        >
+                          {t.status === 'confirmed' ? 'Confirmed' : 'Requested'}
+                        </span>
+                        <span className="text-xs font-semibold text-ink-600">
+                          {countdownLabel(dt)}
+                        </span>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          )}
+
           {/* Important dates */}
           {dates && dates.length > 0 && (
             <section className="mt-4 surface p-5">
@@ -389,6 +457,26 @@ export default async function ClientHomePage() {
       )}
     </main>
   );
+}
+
+function timeOfDay(d: Date): string {
+  const h = d.getHours();
+  if (h < 12) return 'Morning';
+  if (h < 17) return 'Afternoon';
+  return 'Evening';
+}
+
+function countdownLabel(d: Date): string {
+  const ms = d.getTime() - Date.now();
+  if (ms <= 0) return 'now';
+  const mins = Math.round(ms / 60000);
+  if (mins < 60) return `in ${mins} min`;
+  const hours = Math.round(mins / 60);
+  if (hours < 24) return `in ${hours} hr${hours === 1 ? '' : 's'}`;
+  const days = Math.round(hours / 24);
+  if (days < 14) return `in ${days} day${days === 1 ? '' : 's'}`;
+  const weeks = Math.round(days / 7);
+  return `in ${weeks} week${weeks === 1 ? '' : 's'}`;
 }
 
 function humanizeAction(action: string): string {

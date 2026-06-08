@@ -14,12 +14,21 @@ import { escapeHtml } from '@/lib/email';
  */
 export async function requestTourAction(
   houseId: string,
-  payload: { preferred_when?: string; notes?: string }
+  payload: { requested_at?: string; preferred_when?: string; notes?: string }
 ) {
   const me = await getMe();
   if (!me?.user_id) return { ok: false as const, error: 'Not authenticated.' };
   if (me.role !== 'client')
     return { ok: false as const, error: 'Only clients can request tours.' };
+
+  // A concrete date AND time is required — no time, no tour request.
+  const requestedAt = payload.requested_at ? new Date(payload.requested_at) : null;
+  if (!requestedAt || isNaN(requestedAt.getTime())) {
+    return {
+      ok: false as const,
+      error: 'Pick a date and time for the tour.',
+    };
+  }
 
   const service = getSupabaseServiceRoleClient();
 
@@ -60,6 +69,7 @@ export async function requestTourAction(
       house_id: houseId,
       client_id: me.user_id,
       status: 'pending',
+      requested_at: requestedAt.toISOString(),
       preferred_when: payload.preferred_when || null,
       notes: payload.notes || null,
     })

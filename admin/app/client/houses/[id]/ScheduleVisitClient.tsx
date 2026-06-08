@@ -60,7 +60,8 @@ export function ScheduleVisitClient({
       <div className="text-sm font-semibold">Schedule a visit</div>
       <label className="mt-3 block text-sm">
         <span className="block text-xs font-medium text-ink-600">
-          When would you like to go?
+          Pick a date <span className="font-semibold">and time</span> — both are
+          required
         </span>
         <input
           type="datetime-local"
@@ -68,6 +69,7 @@ export function ScheduleVisitClient({
           value={when}
           onChange={(e) => setWhen(e.target.value)}
           min={new Date().toISOString().slice(0, 16)}
+          required
         />
       </label>
       <label className="mt-3 block text-sm">
@@ -84,11 +86,26 @@ export function ScheduleVisitClient({
       </label>
       <div className="mt-4 flex gap-2">
         <button
-          disabled={pending}
-          onClick={() =>
+          disabled={pending || !when}
+          onClick={() => {
+            if (!when) {
+              toast.show('Pick a date and time for the tour.', {
+                variant: 'error',
+              });
+              return;
+            }
+            const dt = new Date(when);
+            const human = dt.toLocaleString(undefined, {
+              weekday: 'short',
+              month: 'short',
+              day: 'numeric',
+              hour: 'numeric',
+              minute: '2-digit',
+            });
             start(async () => {
               const r = await requestTourAction(houseId, {
-                preferred_when: when.trim() || undefined,
+                requested_at: dt.toISOString(),
+                preferred_when: human,
                 notes: notes.trim() || undefined,
               });
               if (!r.ok)
@@ -99,9 +116,9 @@ export function ScheduleVisitClient({
               setOpen(false);
               setWhen('');
               setNotes('');
-            })
-          }
-          className="btn-primary"
+            });
+          }}
+          className="btn-primary disabled:opacity-50"
         >
           {pending ? 'Sending…' : 'Request tour'}
         </button>
