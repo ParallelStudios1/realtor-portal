@@ -2013,7 +2013,7 @@ function ParticipantModal({
           </Field>
           <Field
             label="Phone (optional)"
-            hint="If given, we'll also text them the deal link."
+            hint="If given, we'll text them transactional deal updates."
           >
             <input
               type="tel"
@@ -2024,6 +2024,22 @@ function ParticipantModal({
             />
           </Field>
         </div>
+        {phone.trim() && (
+          <p className="-mt-1 text-[11px] leading-snug text-ink-500">
+            By adding a mobile number you confirm this person agreed to receive
+            transactional texts about this deal. Msg &amp; data rates may apply;
+            reply STOP to opt out. See our{' '}
+            <a
+              href="/privacy#sms"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline underline-offset-2"
+            >
+              SMS terms
+            </a>
+            .
+          </p>
+        )}
 
         {(role === 'seller' ||
           role === 'buyer' ||

@@ -54,6 +54,58 @@ export default function PrivacyPage() {
               </a>
               .
             </p>
+
+            <h2
+              id="sms"
+              className="scroll-mt-24 pt-4 text-lg font-bold tracking-tight text-ink-900"
+            >
+              SMS / Text Messaging
+            </h2>
+            <p>
+              Realtor Portal (operated by Parallel Studios LLC) sends transactional
+              text messages on behalf of the real estate firm you are working with.
+              These messages relate only to your transaction — for example: deal
+              status and phase updates, tour requests and confirmations, important
+              dates and deadline reminders, document and e-signature notifications,
+              and direct messages from your agent or another party on your deal. We
+              do not send marketing or promotional text messages.
+            </p>
+            <p>
+              <strong className="text-ink-900">Consent (opt-in).</strong> You opt in
+              to receive these texts when you provide your mobile number to your
+              agent or enter it in the portal in connection with a transaction you
+              are part of. Providing your number is voluntary and is not a condition
+              of any purchase. Message frequency varies based on activity on your
+              deal.
+            </p>
+            <p>
+              <strong className="text-ink-900">Rates.</strong> Message and data rates
+              may apply, depending on your mobile carrier and plan.
+            </p>
+            <p>
+              <strong className="text-ink-900">Opt-out and help.</strong> You can opt
+              out of text messages at any time by replying{' '}
+              <span className="font-mono text-ink-900">STOP</span> to any message;
+              you will receive a single confirmation and no further texts. Reply{' '}
+              <span className="font-mono text-ink-900">HELP</span> for help, or
+              contact{' '}
+              <a
+                href="mailto:turnerlogan@parallelstudios.co"
+                className="font-medium text-ink-900 underline underline-offset-2"
+              >
+                turnerlogan@parallelstudios.co
+              </a>
+              .
+            </p>
+            <p>
+              <strong className="text-ink-900">
+                We never share your mobile number or messaging consent with third
+                parties for their own marketing,
+              </strong>{' '}
+              and we do not share it between firms. Carriers are not liable for
+              delayed or undelivered messages.
+            </p>
+
             <p>
               For full terms, see{' '}
               <Link href="/terms" className="font-medium text-ink-900 underline underline-offset-2">
