@@ -365,6 +365,7 @@ export function ClientDetailActions({
         <ParticipantModal
           clientId={clientId}
           dealKind={dealKind}
+          houses={houses}
           onClose={close}
           onSubmit={async (payload) => {
             const r = await addParticipantAction(clientId, payload);
@@ -1640,11 +1641,13 @@ const PARTY_ROLES: { id: PartyRole; label: string; helper: string }[] = [
 function ParticipantModal({
   clientId,
   dealKind,
+  houses,
   onClose,
   onSubmit,
 }: {
   clientId: string;
   dealKind?: string | null;
+  houses?: Array<{ id: string; address: string }>;
   onClose: () => void;
   onSubmit: (payload: {
     role: PartyRole;
@@ -1652,12 +1655,14 @@ function ParticipantModal({
     email?: string;
     phone?: string;
     represents?: 'buyer' | 'seller';
+    house_id?: string | null;
     can_view_documents?: boolean;
     can_view_financials?: boolean;
     can_view_messages?: boolean;
     can_view_dates?: boolean;
   }) => Promise<void>;
 }) {
+  const [houseId, setHouseId] = useState<string>('');
   const [tab, setTab] = useState<'existing' | 'new'>('existing');
   const [role, setRole] = useState<PartyRole>('buyer');
   // SMART DEFAULT for the co-realtor "Represents" side. A cross-firm co-op
@@ -2020,6 +2025,29 @@ function ParticipantModal({
           </Field>
         </div>
 
+        {(role === 'seller' ||
+          role === 'buyer' ||
+          role === 'co_realtor') &&
+          (houses?.length || 0) > 0 && (
+            <Field
+              label="Which house is this for? (optional)"
+              hint="Scopes a seller, buyer, or co-realtor to one property — their dashboard shows exactly that home."
+            >
+              <select
+                className={inputCls}
+                value={houseId}
+                onChange={(e) => setHouseId(e.target.value)}
+              >
+                <option value="">All houses on this deal</option>
+                {houses!.map((h) => (
+                  <option key={h.id} value={h.id}>
+                    {h.address}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          )}
+
         <fieldset className="rounded-lg border border-ink-200 p-3">
           <legend className="px-2 text-xs font-semibold uppercase tracking-wide text-ink-500">
             What this party can see
@@ -2043,6 +2071,7 @@ function ParticipantModal({
                 phone: phone.trim() || undefined,
                 represents:
                   role === 'co_realtor' && represents ? represents : undefined,
+                house_id: houseId || undefined,
                 can_view_documents: docs,
                 can_view_financials: fin,
                 can_view_messages: msgs,

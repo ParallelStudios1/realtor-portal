@@ -82,9 +82,9 @@ export default async function ParticipantHome() {
   const { data: matches } = await service
     .from('deal_participants')
     .select(
-      `id, role, can_view_documents, can_view_financials, search_id, created_at,
+      `id, role, represents, house_id, can_view_documents, can_view_financials, search_id, created_at,
        search:client_searches (
-         id, phase, kind, agreed_price, closing_amount,
+         id, phase, kind, agreed_price, closing_amount, offer_house_id,
          firm:firms ( name, logo_url, brand_color ),
          client:users!client_searches_client_id_fkey ( full_name, email ),
          realtor:users!client_searches_realtor_id_fkey ( full_name, email )
@@ -96,6 +96,25 @@ export default async function ParticipantHome() {
     .order('created_at', { ascending: false });
 
   const items = ((matches as any[]) || []).filter((m) => m.search);
+
+  // Resolve the property each party is tied to — their house_id if scoped to
+  // one, else the deal's agreed home. Sellers see "the house they're selling".
+  const houseIds = Array.from(
+    new Set(
+      items
+        .map((m) => m.house_id || m.search?.offer_house_id)
+        .filter((x): x is string => !!x)
+    )
+  );
+  const houseById = new Map<string, { address: string; photo_url: string | null }>();
+  if (houseIds.length > 0) {
+    const { data: hs } = await service
+      .from('houses')
+      .select('id, address, photo_url')
+      .in('id', houseIds);
+    for (const h of (hs as any[]) || [])
+      houseById.set(h.id, { address: h.address, photo_url: h.photo_url });
+  }
 
   // Group by role for cleaner display.
   const grouped = new Map<string, any[]>();
@@ -163,6 +182,16 @@ export default async function ParticipantHome() {
                 {list.map((p: any) => {
                   const s = p.search;
                   const brand = s.firm?.brand_color || '#0F172A';
+                  const house =
+                    houseById.get(p.house_id) ||
+                    houseById.get(s.offer_house_id) ||
+                    null;
+                  const houseLabel =
+                    p.role === 'seller'
+                      ? 'Your listing'
+                      : p.role === 'buyer'
+                        ? 'The home'
+                        : 'Property';
                   return (
                     <Link
                       key={p.id}
@@ -211,6 +240,34 @@ export default async function ParticipantHome() {
                           </div>
                         </div>
                       </div>
+                      {house && (
+                        <div className="mt-3 flex items-center gap-3 rounded-xl border border-ink-100 bg-ink-50/70 p-2.5">
+                          <div className="h-12 w-16 shrink-0 overflow-hidden rounded-lg bg-ink-200">
+                            {house.photo_url ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={house.photo_url}
+                                alt=""
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center text-ink-400">
+                                <svg aria-hidden viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                                  <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                                </svg>
+                              </div>
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="text-[10px] font-bold uppercase tracking-wider text-ink-400">
+                              {houseLabel}
+                            </div>
+                            <div className="truncate text-sm font-semibold text-ink-900">
+                              {house.address}
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </Link>
                   );
                 })}

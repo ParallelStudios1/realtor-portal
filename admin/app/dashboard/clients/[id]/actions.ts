@@ -1249,6 +1249,7 @@ export async function addParticipantAction(
     email?: string;
     phone?: string;
     represents?: 'buyer' | 'seller';
+    house_id?: string | null;
     can_view_documents?: boolean;
     can_view_financials?: boolean;
     can_view_messages?: boolean;
@@ -1257,11 +1258,13 @@ export async function addParticipantAction(
 ) {
   const a = await authorize(clientId);
   if ('error' in a) return { ok: false as const, error: a.error };
-  if (!payload.name && !payload.email && !payload.phone)
+  const emailTrim = (payload.email || '').trim();
+  if (!emailTrim)
     return {
       ok: false as const,
-      error: 'Give me a name, phone, or email so we can identify them.',
+      error: 'An email is required so this party can access the deal.',
     };
+  payload.email = emailTrim;
   // `represents` is only meaningful for co-realtors (buyer-side / seller-side).
   // Ignore (NULL) it for any other role, and reject an out-of-range value.
   const represents =
@@ -1300,6 +1303,9 @@ export async function addParticipantAction(
       external_phone: payload.phone || null,
       role: payload.role,
       represents,
+      // Scope sellers/buyers (and their co-realtors) to a specific house when
+      // chosen, so their dashboard shows exactly the property they're on.
+      house_id: payload.house_id || null,
       can_view_documents: payload.can_view_documents ?? perms.can_view_documents,
       can_view_financials: payload.can_view_financials ?? perms.can_view_financials,
       can_view_messages: payload.can_view_messages ?? perms.can_view_messages,
