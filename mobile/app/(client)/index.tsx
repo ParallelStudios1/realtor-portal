@@ -62,6 +62,23 @@ const CELEBRATIONS: Record<
   },
 };
 
+// Seller (listing) labels for the same phase ids — most realtors are listing
+// agents, so a seller deal must read like a listing, not a buyer search.
+const SELLER_PHASE_LABELS: Record<string, string> = {
+  searching: 'Prep',
+  awaiting_offer: 'Active',
+  offer_made: 'Offer in',
+  counter_offer: 'Negotiating',
+  under_contract: 'Under contract',
+  closing: 'Closing',
+  closed: 'Sold',
+};
+
+function phaseLabel(id: string, kind: string | null | undefined, fallback: string) {
+  if (kind === 'seller') return SELLER_PHASE_LABELS[id] || fallback;
+  return fallback;
+}
+
 const PHASES = [
   { id: 'searching', label: 'Searching' },
   { id: 'awaiting_offer', label: 'Awaiting Offer' },
@@ -360,7 +377,7 @@ export default function ClientHomeScreen() {
                       fontWeight: phaseIdx === i ? '700' : '500',
                     }}
                   >
-                    {p.label}
+                    {phaseLabel(p.id, (activeSearch as any)?.kind, p.label)}
                   </Text>
                 ))}
               </View>
