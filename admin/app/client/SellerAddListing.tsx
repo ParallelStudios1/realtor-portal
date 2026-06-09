@@ -3,7 +3,11 @@
 import { useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/components/Toast';
-import { addSellerListingAction } from './listingActions';
+import { getSupabaseBrowserClient } from '@/lib/supabaseBrowser';
+import {
+  addSellerListingAction,
+  prepareSellerListingUploads,
+} from './listingActions';
 
 /**
  * Seller self-service: add the home you're selling, with optional related
@@ -36,37 +40,91 @@ export function SellerAddListing({
       toast.show('Enter the address.', { variant: 'error' });
       return;
     }
-    const fd = new FormData();
-    fd.set('address', address.trim());
-    fd.set('list_price', price);
-    fd.set('photo_url', photo.trim());
-    fd.set('bedrooms', beds);
-    fd.set('bathrooms', baths);
-    fd.set('square_feet', sqft);
-    fd.set('notes', notes.trim());
-    for (const f of files) fd.append('docs', f);
     start(async () => {
-      const r = await addSellerListingAction(fd);
-      if (!r.ok) {
-        toast.show(r.error || 'Could not add the home.', { variant: 'error' });
-        return;
+      try {
+        // Upload any attached documents DIRECTLY to storage first (via signed
+        // URLs), so big PDFs/photos never travel through the server action's
+        // ~1MB body limit. Only metadata is sent to create the listing.
+        let docsMeta: {
+          name: string;
+          path: string;
+          size: number;
+          type: string;
+        }[] = [];
+
+        if (files.length > 0) {
+          const prep = await prepareSellerListingUploads(
+            files.map((f) => ({ name: f.name, size: f.size, type: f.type }))
+          );
+          if (!prep || !prep.ok) {
+            toast.show(
+              (prep && (prep as any).error) || 'Could not prepare the upload.',
+              { variant: 'error' }
+            );
+            return;
+          }
+          const supabase = getSupabaseBrowserClient();
+          for (let i = 0; i < prep.targets.length; i++) {
+            const t = prep.targets[i];
+            const file = files[i];
+            const { error: upErr } = await supabase.storage
+              .from('client-docs')
+              .uploadToSignedUrl(t.path, t.token, file, {
+                contentType: file.type || undefined,
+              });
+            if (upErr) {
+              toast.show(`Couldn't upload ${file.name}: ${upErr.message}`, {
+                variant: 'error',
+              });
+              return;
+            }
+          }
+          docsMeta = prep.targets.map((t) => ({
+            name: t.name,
+            path: t.path,
+            size: t.size,
+            type: t.type,
+          }));
+        }
+
+        const fd = new FormData();
+        fd.set('address', address.trim());
+        fd.set('list_price', price);
+        fd.set('photo_url', photo.trim());
+        fd.set('bedrooms', beds);
+        fd.set('bathrooms', baths);
+        fd.set('square_feet', sqft);
+        fd.set('notes', notes.trim());
+        fd.set('docs_meta', JSON.stringify(docsMeta));
+
+        const r = await addSellerListingAction(fd);
+        if (!r || !r.ok) {
+          toast.show((r && (r as any).error) || 'Could not add the home.', {
+            variant: 'error',
+          });
+          return;
+        }
+        toast.show(
+          'Home added' +
+            (r.docsAttached ? ` · ${r.docsAttached} doc(s) attached` : '') +
+            '.',
+          { variant: 'success' }
+        );
+        setOpen(false);
+        setAddress('');
+        setPrice('');
+        setPhoto('');
+        setBeds('');
+        setBaths('');
+        setSqft('');
+        setNotes('');
+        setFiles([]);
+        router.refresh();
+      } catch (e: any) {
+        toast.show(e?.message || 'Something went wrong adding the home.', {
+          variant: 'error',
+        });
       }
-      toast.show(
-        'Home added' +
-          (r.docsAttached ? ` · ${r.docsAttached} doc(s) attached` : '') +
-          '.',
-        { variant: 'success' }
-      );
-      setOpen(false);
-      setAddress('');
-      setPrice('');
-      setPhoto('');
-      setBeds('');
-      setBaths('');
-      setSqft('');
-      setNotes('');
-      setFiles([]);
-      router.refresh();
     });
   };
 
