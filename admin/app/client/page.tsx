@@ -7,6 +7,7 @@ import { getDealChat } from '@/app/dashboard/deals/[id]/chatActions';
 import { buildCalendarFeedUrl } from '@/lib/ics';
 import { formatDateOnly } from '@/lib/dates';
 import { listingStatusLabel } from '@/lib/dealKind';
+import { SellerAddListing } from './SellerAddListing';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Home' };
@@ -199,10 +200,14 @@ export default async function ClientHomePage() {
                 </div>
               </div>
               {(myListings || []).length === 0 ? (
-                <p className="mt-2 text-sm text-ink-600">
-                  Your agent will add the home you&apos;re selling here — you&apos;ll
-                  see its status, showings, and offers as things move.
-                </p>
+                <>
+                  <p className="mt-2 text-sm text-ink-600">
+                    Add the home you&apos;re selling and your agent will take it
+                    from there — you&apos;ll see its status, showings, and offers
+                    as things move. You can attach disclosures or photos now too.
+                  </p>
+                  <SellerAddListing brandColor={brandColor} hasListings={false} />
+                </>
               ) : (
                 <ul className="mt-3 space-y-3">
                   {(myListings as any[]).map((h) => (
@@ -246,6 +251,9 @@ export default async function ClientHomePage() {
                     </Link>
                   ))}
                 </ul>
+              )}
+              {(myListings || []).length > 0 && (
+                <SellerAddListing brandColor={brandColor} hasListings={true} />
               )}
             </section>
           )}
