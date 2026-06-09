@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getMe, getSupabaseServerClient } from '@/lib/supabaseSsr';
+import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
+import { phaseLabelFor } from '@/lib/dealKind';
 import { DealProgressTimeline } from '@/components/DealProgressTimeline';
 import { DealChat } from '@/components/DealChat';
 import { getDealChat } from '@/app/dashboard/deals/[id]/chatActions';
@@ -31,6 +33,45 @@ export default async function ClientHomePage() {
 
   const active = searches?.[0];
   const isSeller = (active as any)?.kind === 'seller';
+
+  // DEALS YOU'RE A PARTICIPANT ON (not the principal client) — e.g. an added
+  // co-buyer, attorney, lender. Previously these were invisible here because we
+  // only looked at deals where you ARE the principal client. Surface them with
+  // a link into the full deal view (/deal/[id]) which authorizes participants.
+  const principalIds = new Set((searches || []).map((s: any) => s.id));
+  const svc = getSupabaseServiceRoleClient();
+  const orClause = [
+    `user_id.eq.${me.user_id}`,
+    me.email ? `external_email.ilike.${me.email}` : null,
+  ]
+    .filter(Boolean)
+    .join(',');
+  const { data: partRows } = await svc
+    .from('deal_participants')
+    .select('search_id, role')
+    .or(orClause);
+  const roleBySearch = new Map<string, string>();
+  for (const p of (partRows || []) as any[]) {
+    if (!roleBySearch.has(p.search_id)) roleBySearch.set(p.search_id, p.role);
+  }
+  const memberSearchIds = [...roleBySearch.keys()].filter(
+    (id) => !principalIds.has(id)
+  );
+  let memberDeals: any[] = [];
+  if (memberSearchIds.length > 0) {
+    const { data: md } = await svc
+      .from('client_searches')
+      .select(
+        `id, name, kind, phase,
+         realtor:users!client_searches_realtor_id_fkey ( full_name, email ),
+         firm:firms ( name, brand_color )`
+      )
+      .in('id', memberSearchIds)
+      .order('created_at', { ascending: false });
+    memberDeals = (md || []) as any[];
+  }
+  const prettyRole = (r: string | undefined) =>
+    (r || 'Party').replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
   // CLIENT ↔ REALTOR HOUSE AGREEMENT — the agreed home, shown prominently on
   // the client's home when either side has set it (BUYER deals only).
@@ -142,6 +183,45 @@ export default async function ClientHomePage() {
     })
     .slice(0, 3);
 
+  const accent = brandColor || '#0F172A';
+  const memberDealsSection =
+    memberDeals.length > 0 ? (
+      <section className="mt-4 surface p-5">
+        <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-400">
+          {active ? "Other deals you're on" : "Deals you're on"}
+        </div>
+        <ul className="mt-3 space-y-2.5">
+          {memberDeals.map((d: any) => (
+            <Link
+              key={d.id}
+              href={`/deal/${d.id}`}
+              className="flex items-center justify-between gap-3 rounded-xl border border-ink-200 bg-white px-4 py-3 transition hover:border-ink-300 hover:shadow-soft-md"
+            >
+              <div className="min-w-0">
+                <div className="truncate text-sm font-semibold text-ink-900">
+                  {d.name || d.realtor?.full_name || d.firm?.name || 'Deal'}
+                </div>
+                <div className="mt-0.5 text-xs text-ink-500">
+                  {prettyRole(roleBySearch.get(d.id))}
+                  {d.firm?.name ? ` · ${d.firm.name}` : ''}
+                </div>
+              </div>
+              <span
+                className="shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide"
+                style={{
+                  backgroundColor:
+                    ((d.firm?.brand_color as string) || accent) + '15',
+                  color: (d.firm?.brand_color as string) || accent,
+                }}
+              >
+                {phaseLabelFor(d.phase, d.kind)}
+              </span>
+            </Link>
+          ))}
+        </ul>
+      </section>
+    ) : null;
+
   return (
     <main className="mx-auto max-w-4xl px-4 py-6 sm:px-6 sm:py-10">
       <header>
@@ -154,28 +234,32 @@ export default async function ClientHomePage() {
       </header>
 
       {!active ? (
-        <div className="mt-8 rounded-2xl border border-dashed border-ink-300 bg-white bg-dotted p-12 text-center shadow-soft-sm">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-ink-100">
-            <svg
-              aria-hidden
-              viewBox="0 0 24 24"
-              className="h-6 w-6 text-ink-500"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-              <path d="M9 22V12h6v10" />
-            </svg>
+        memberDeals.length > 0 ? (
+          memberDealsSection
+        ) : (
+          <div className="mt-8 rounded-2xl border border-dashed border-ink-300 bg-white bg-dotted p-12 text-center shadow-soft-sm">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-ink-100">
+              <svg
+                aria-hidden
+                viewBox="0 0 24 24"
+                className="h-6 w-6 text-ink-500"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                <path d="M9 22V12h6v10" />
+              </svg>
+            </div>
+            <h3 className="mt-4 text-base font-semibold">No active search yet</h3>
+            <p className="mx-auto mt-1 max-w-sm text-sm text-ink-600">
+              Your realtor will get you set up — you&apos;ll see your deal here once
+              they do.
+            </p>
           </div>
-          <h3 className="mt-4 text-base font-semibold">No active search yet</h3>
-          <p className="mx-auto mt-1 max-w-sm text-sm text-ink-600">
-            Your realtor will get you set up — you&apos;ll see your deal here once
-            they do.
-          </p>
-        </div>
+        )
       ) : (
         <>
           {/* Client-facing progress timeline — where the deal is + what's next */}
@@ -476,6 +560,8 @@ export default async function ClientHomePage() {
               </ol>
             </section>
           )}
+
+          {memberDealsSection}
 
           <div className="mt-6 grid gap-3 sm:grid-cols-3" id="quicklinks">
             {[
