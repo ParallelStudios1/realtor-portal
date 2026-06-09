@@ -21,7 +21,7 @@ export default async function ClientHomePage() {
   const { data: searches } = await supabase
     .from('client_searches')
     .select(
-      'id, phase, subphase, created_at, realtor_id, offer_house_id, house_agreed_at'
+      'id, phase, subphase, kind, created_at, realtor_id, offer_house_id, house_agreed_at'
     )
     .eq('client_id', me.user_id)
     .order('created_at', { ascending: false })
@@ -167,6 +167,7 @@ export default async function ClientHomePage() {
             <DealProgressTimeline
               phase={active.phase}
               subphase={(active as any).subphase ?? null}
+              kind={(active as any).kind ?? null}
               brandColor={brandColor}
               phaseLabels={phaseLabels}
               phaseMessages={phaseMessages}

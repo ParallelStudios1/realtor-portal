@@ -1,5 +1,7 @@
 'use client';
 
+import { phaseLabelFor, phaseMessageFor } from '@/lib/dealKind';
+
 /**
  * Client-facing deal progress timeline.
  *
@@ -106,6 +108,7 @@ function CheckIcon({ color }: { color: string }) {
 export function DealProgressTimeline({
   phase,
   subphase,
+  kind,
   brandColor,
   phaseLabels,
   phaseMessages,
@@ -115,6 +118,8 @@ export function DealProgressTimeline({
   phase: string | null | undefined;
   /** Optional free-text status note under the current phase. */
   subphase?: string | null;
+  /** 'seller' relabels the lifecycle as a listing (Active, Offer received, Sold…). */
+  kind?: 'buyer' | 'seller' | 'both' | null;
   /** Firm brand color (hex). Used only for the active/completed accent. */
   brandColor?: string | null;
   /** firms.phase_labels jsonb — keyed by phase id. */
@@ -138,7 +143,10 @@ export function DealProgressTimeline({
           const isDone = currentIdx >= 0 && i < currentIdx;
           const isCurrent = i === currentIdx;
           const isLast = i === DEAL_PHASES.length - 1;
-          const label = resolveLabel(p.id, p.defaultLabel, phaseLabels);
+          const label =
+            kind === 'seller' && !(phaseLabels && phaseLabels[p.id])
+              ? phaseLabelFor(p.id, 'seller')
+              : resolveLabel(p.id, p.defaultLabel, phaseLabels);
 
           return (
             <li key={p.id} className="relative flex gap-4">
@@ -200,7 +208,10 @@ export function DealProgressTimeline({
 
                 {isCurrent && (
                   <p className="mt-1.5 max-w-prose text-sm leading-relaxed text-ink-600">
-                    {resolveMessage(p.id, phaseMessages)}
+                    {kind === 'seller' &&
+                    !(phaseMessages && phaseMessages[p.id])
+                      ? phaseMessageFor(p.id, 'seller')
+                      : resolveMessage(p.id, phaseMessages)}
                   </p>
                 )}
               </div>

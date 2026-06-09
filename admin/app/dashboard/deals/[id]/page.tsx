@@ -108,6 +108,7 @@ export default async function DealDetailPage({
     { data: messages },
     { data: showings },
     { data: envelopes },
+    { data: listingOffers },
   ] = await Promise.all([
     supabase
       .from('client_searches')
@@ -121,7 +122,8 @@ export default async function DealDetailPage({
         'id, address, list_price, listing_url, photo_url, status, created_at, ' +
           'bedrooms, bathrooms, square_feet, ' +
           'is_under_contract, seller_name, seller_email, seller_realtor_name, ' +
-          'seller_realtor_email, seller_realtor_firm'
+          'seller_realtor_email, seller_realtor_firm, ' +
+          'listing_status, mls_number, listed_at, commission_pct, sold_price, sold_at'
       )
       .eq('search_id', params.id)
       .order('created_at', { ascending: false }),
@@ -185,6 +187,13 @@ export default async function DealDetailPage({
       .from('esign_envelopes')
       .select(
         'id, envelope_id, envelope_url, status, recipients, completed_at, created_at, document_id'
+      )
+      .eq('search_id', params.id)
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('listing_offers')
+      .select(
+        'id, house_id, buyer_name, buyer_agent, amount, earnest_money, financing, status, offer_date, notes, created_at'
       )
       .eq('search_id', params.id)
       .order('created_at', { ascending: false }),
@@ -383,6 +392,7 @@ export default async function DealDetailPage({
       buyerInterest={buyerInterest}
       agreedHome={agreedHome}
       proposedHome={proposedHome}
+      listingOffers={(listingOffers || []) as any}
       dealAdmin={dealAdmin}
       calendarUrl={buildCalendarFeedUrl(deal.id)}
     />

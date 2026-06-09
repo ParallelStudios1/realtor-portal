@@ -25,6 +25,11 @@ import { EsignPanel } from './EsignPanel';
 import { ExtractReview, type StagedExtraction } from './ExtractReview';
 import { DealChat } from '@/components/DealChat';
 import { SubphaseEditor } from './SubphaseEditor';
+import {
+  SellerListingPanel,
+  type ListingOffer,
+} from './SellerListingPanel';
+import { phaseLabelFor } from '@/lib/dealKind';
 import type { DealChatMessage } from './chatActions';
 
 /**
@@ -90,6 +95,8 @@ export function DealWorkspace(props: {
     address: string | null;
     proposedByName: string | null;
   } | null;
+  // Offers received on a seller's listing (listing_offers rows).
+  listingOffers?: ListingOffer[];
   // The deal admin — the creator of the deal (client_searches.created_by),
   // the person with full control. Null on legacy rows with no creator stamped.
   dealAdmin?: { id: string; name: string | null } | null;
@@ -116,6 +123,7 @@ export function DealWorkspace(props: {
     buyerInterest,
     agreedHome,
     proposedHome,
+    listingOffers,
     dealAdmin,
   } = props;
 
@@ -344,8 +352,8 @@ export function DealWorkspace(props: {
             </h2>
             <span className="text-xs text-ink-500">
               Currently{' '}
-              <strong className="capitalize text-ink-900">
-                {String(deal.phase).replace(/_/g, ' ')}
+              <strong className="text-ink-900">
+                {phaseLabelFor(deal.phase, deal.kind)}
               </strong>
             </span>
           </div>
@@ -383,7 +391,9 @@ export function DealWorkspace(props: {
                       i + 1
                     )}
                   </span>
-                  <span className="truncate">{p.label}</span>
+                  <span className="truncate">
+                    {phaseLabelFor(p.id, deal.kind)}
+                  </span>
                   {isCurrent && (
                     <span
                       aria-hidden
@@ -692,6 +702,26 @@ export function DealWorkspace(props: {
               gradients. Leads the seller workspace ahead of the listing card. */}
           {deal.kind === 'seller' && buyerInterest && (
             <BuyerInterestPanel data={buyerInterest} />
+          )}
+
+          {/* SELLER LISTINGS + OFFERS — first-class listing-agent workspace:
+              manage each listing's status / price / MLS and track the offers
+              received from buyers. */}
+          {deal.kind === 'seller' && (
+            <SellerListingPanel
+              searchId={deal.id}
+              houses={(houses as any[]).map((h) => ({
+                id: h.id,
+                address: h.address,
+                list_price: h.list_price,
+                photo_url: h.photo_url,
+                listing_status: h.listing_status ?? null,
+                mls_number: h.mls_number ?? null,
+                listed_at: h.listed_at ?? null,
+                sold_price: h.sold_price ?? null,
+              }))}
+              offers={(listingOffers || []) as ListingOffer[]}
+            />
           )}
 
           {/* Houses — buyer vs seller differentiation.
