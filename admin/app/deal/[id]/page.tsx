@@ -346,10 +346,12 @@ export default async function DealPage({
             </div>
             <span className="text-xs text-ink-500">
               {isStaffSameFirm
-                ? "You can edit everything."
+                ? 'You can edit everything.'
                 : isPrincipalClient
-                ? "You're the principal on this deal."
-                : 'Read-only view scoped to what your realtor shared.'}
+                ? d.kind === 'seller'
+                  ? "You're the seller on this deal."
+                  : "You're the buyer on this deal."
+                : rolePurpose((myParticipantRow?.role as string) || '')}
             </span>
           </div>
         )}
@@ -739,6 +741,31 @@ export default async function DealPage({
       </div>
     </main>
   );
+}
+
+/** What each participant role is here to do — shown in the role banner. */
+function rolePurpose(role: string): string {
+  switch (role) {
+    case 'attorney':
+      return 'Review the contract, documents, signing links, and key dates.';
+    case 'co_realtor':
+      return 'Collaborate on this deal across firms.';
+    case 'lender':
+    case 'mortgage_broker':
+      return 'See the financials, dates, and documents you need to fund this deal.';
+    case 'title_agent':
+      return 'Access the parties, documents, and closing dates for title work.';
+    case 'inspector':
+      return 'See the property and the dates relevant to the inspection.';
+    case 'appraiser':
+      return 'See the property and the dates relevant to the appraisal.';
+    case 'seller':
+      return 'Track your sale — status, showings, offers, and key dates.';
+    case 'buyer':
+      return 'Track your purchase — the home, key dates, and documents.';
+    default:
+      return 'Read-only view scoped to what the realtor shared with you.';
+  }
 }
 
 function Section({
