@@ -50,7 +50,7 @@ export default async function ClientMessagesPage() {
           </div>
           <h3 className="mt-4 text-base font-semibold">No conversation yet</h3>
           <p className="mx-auto mt-1 max-w-sm text-sm text-ink-600">
-            Once your realtor sets up your search, you&apos;ll be able to message
+            Once your realtor sets up your deal, you&apos;ll be able to message
             them here.
           </p>
         </div>

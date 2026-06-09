@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getMe, getSupabaseServerClient } from '@/lib/supabaseSsr';
+import { SellerAddListing } from '../SellerAddListing';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Houses' };
@@ -81,11 +82,19 @@ export default async function ClientHousesPage() {
               <path d="M9 22V12h6v10" />
             </svg>
           </div>
-          <h3 className="mt-4 text-base font-semibold">No houses yet</h3>
+          <h3 className="mt-4 text-base font-semibold">
+            {isSeller ? 'No listings yet' : 'No houses yet'}
+          </h3>
           <p className="mx-auto mt-1 max-w-sm text-sm text-ink-600">
-            Your realtor hasn&apos;t added any properties to your search yet. When
-            they do, they&apos;ll show up here.
+            {isSeller
+              ? "Add the home you're selling and your agent will take it from there."
+              : "Your realtor hasn't added any properties to your search yet. When they do, they'll show up here."}
           </p>
+          {isSeller && (
+            <div className="mt-3 flex justify-center">
+              <SellerAddListing brandColor={me.firm_brand_color} hasListings={false} />
+            </div>
+          )}
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
@@ -147,6 +156,12 @@ export default async function ClientHousesPage() {
             </Link>
             );
           })}
+        </div>
+      )}
+
+      {isSeller && houses && houses.length > 0 && (
+        <div className="mt-5">
+          <SellerAddListing brandColor={me.firm_brand_color} hasListings={true} />
         </div>
       )}
     </main>

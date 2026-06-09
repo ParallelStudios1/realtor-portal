@@ -481,8 +481,10 @@ export default async function ClientHomePage() {
             {[
               {
                 href: '/client/houses',
-                title: 'Houses',
-                desc: 'See properties from your agent',
+                title: isSeller ? 'Your listings' : 'Houses',
+                desc: isSeller
+                  ? "Homes you're selling"
+                  : 'See properties from your agent',
                 icon: (
                   <>
                     <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
@@ -501,7 +503,7 @@ export default async function ClientHomePage() {
               {
                 href: '/client/documents',
                 title: 'Documents',
-                desc: 'Disclosures & contracts',
+                desc: isSeller ? 'Disclosures & listing docs' : 'Disclosures & contracts',
                 icon: (
                   <>
                     <path d="M14 3v4a1 1 0 0 0 1 1h4" />
