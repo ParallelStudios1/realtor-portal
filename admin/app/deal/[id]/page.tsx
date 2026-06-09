@@ -609,46 +609,90 @@ export default async function DealPage({
               <Section title={`Signing links (${envelopes.length})`}>
                 <ul className="divide-y divide-ink-100">
                   {(envelopes as any[]).map((env) => {
-                    const recips = Array.isArray(env.recipients)
-                      ? env.recipients
-                      : env.recipients?.signers || [];
+                    const rec: any = env.recipients;
+                    const recLabel = Array.isArray(rec)
+                      ? rec.find((r: any) => r?.label)?.label
+                      : rec?.label;
+                    const signers: any[] = Array.isArray(rec)
+                      ? rec.filter((r: any) => r?.key || r?.name)
+                      : Array.isArray(rec?.signers)
+                        ? rec.signers
+                        : [];
                     const label =
-                      recips.find((r: any) => r?.label)?.label ||
+                      recLabel ||
                       (documents || []).find((d: any) => d.id === env.document_id)
                         ?.name ||
                       'Signing link';
                     const signed = env.status === 'completed';
+                    const signedCount = signers.filter((s) => s.signed).length;
                     return (
-                      <li
-                        key={env.id}
-                        className="flex flex-wrap items-center justify-between gap-2 py-3"
-                      >
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span
-                              className={
-                                'inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ' +
-                                (signed
-                                  ? 'bg-emerald-100 text-emerald-800'
-                                  : 'bg-amber-100 text-amber-800')
-                              }
-                            >
-                              {signed ? 'Signed' : 'Awaiting signature'}
-                            </span>
-                            <span className="truncate text-sm font-medium text-ink-900">
-                              {label}
-                            </span>
+                      <li key={env.id} className="py-3">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={
+                                  'inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ' +
+                                  (signed
+                                    ? 'bg-emerald-100 text-emerald-800'
+                                    : 'bg-amber-100 text-amber-800')
+                                }
+                              >
+                                {signed ? 'Signed' : 'Awaiting signature'}
+                              </span>
+                              <span className="truncate text-sm font-medium text-ink-900">
+                                {label}
+                              </span>
+                            </div>
+                            {signers.length > 0 && (
+                              <div className="mt-0.5 text-xs text-ink-500">
+                                {signedCount}/{signers.length} signed
+                              </div>
+                            )}
                           </div>
+                          {env.envelope_url && !signed && (
+                            <a
+                              href={env.envelope_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="rounded-lg bg-amber-400 px-3 py-1.5 text-xs font-bold text-amber-950 transition hover:bg-amber-300"
+                            >
+                              Open to sign ↗
+                            </a>
+                          )}
                         </div>
-                        {env.envelope_url && !signed && (
-                          <a
-                            href={env.envelope_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="rounded-lg bg-amber-400 px-3 py-1.5 text-xs font-bold text-amber-950 transition hover:bg-amber-300"
-                          >
-                            Open to sign ↗
-                          </a>
+                        {signers.length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-1.5">
+                            {signers.map((s: any, i: number) => (
+                              <span
+                                key={s.key || i}
+                                className={
+                                  'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs ' +
+                                  (s.signed
+                                    ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
+                                    : 'border-ink-200 bg-white text-ink-700')
+                                }
+                              >
+                                <span
+                                  aria-hidden
+                                  className={
+                                    'flex h-3.5 w-3.5 items-center justify-center rounded-full ' +
+                                    (s.signed
+                                      ? 'bg-emerald-500 text-white'
+                                      : 'border border-ink-300')
+                                  }
+                                >
+                                  {s.signed && (
+                                    <svg viewBox="0 0 16 16" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth="3">
+                                      <path d="M3 8.5l3.5 3.5L13 5" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
+                                  )}
+                                </span>
+                                <span className="font-medium">{s.name}</span>
+                                {s.role && <span className="text-ink-400">· {s.role}</span>}
+                              </span>
+                            ))}
+                          </div>
                         )}
                       </li>
                     );
