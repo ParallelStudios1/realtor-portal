@@ -5,6 +5,8 @@ import { getMe, getSupabaseServerClient } from '@/lib/supabaseSsr';
 import { HouseRatingClient } from './HouseRatingClient';
 import { ScheduleVisitClient } from './ScheduleVisitClient';
 import { AgreedHouseClient } from './AgreedHouseClient';
+import { SellerListingControls } from './SellerListingControls';
+import { listingStatusLabel } from '@/lib/dealKind';
 
 export const dynamic = 'force-dynamic';
 
@@ -221,7 +223,7 @@ export default async function HouseDetailPage({
           {house.notes && (
             <div className="mt-4 rounded-xl border border-ink-200 bg-ink-50 p-4">
               <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-400">
-                From your agent
+                {isSellerListing ? 'Notes' : 'From your agent'}
               </div>
               <p className="mt-1.5 whitespace-pre-wrap text-sm text-ink-700">
                 {house.notes}
@@ -253,19 +255,47 @@ export default async function HouseDetailPage({
           )}
 
           {isSellerListing ? (
-            <div
-              className="mt-5 rounded-xl border px-4 py-3 text-sm"
-              style={{
-                borderColor: (agBrandColor || '#0F172A') + '40',
-                backgroundColor: (agBrandColor || '#0F172A') + '0A',
-              }}
-            >
-              <div className="font-semibold text-ink-900">This is your listing</div>
-              <p className="mt-0.5 text-xs text-ink-600">
-                Your agent manages the status, showings, and offers — you&apos;ll
-                see updates here and on your home screen.
-              </p>
-            </div>
+            <>
+              <div
+                className="mt-5 rounded-xl border px-4 py-3 text-sm"
+                style={{
+                  borderColor: (agBrandColor || '#0F172A') + '40',
+                  backgroundColor: (agBrandColor || '#0F172A') + '0A',
+                }}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div className="font-semibold text-ink-900">This is your listing</div>
+                  <span
+                    className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide"
+                    style={{
+                      backgroundColor: (agBrandColor || '#0F172A') + '15',
+                      color: agBrandColor || '#0F172A',
+                    }}
+                  >
+                    {listingStatusLabel((house as any).listing_status)}
+                  </span>
+                </div>
+                <p className="mt-0.5 text-xs text-ink-600">
+                  You and your agent can both update this — edit the details or
+                  status below, or remove it. Your agent also manages showings
+                  and offers.
+                </p>
+              </div>
+              <SellerListingControls
+                house={{
+                  id: house.id,
+                  address: house.address,
+                  list_price: house.list_price,
+                  bedrooms: house.bedrooms,
+                  bathrooms: house.bathrooms,
+                  square_feet: house.square_feet,
+                  photo_url: house.photo_url,
+                  notes: house.notes,
+                  listing_status: (house as any).listing_status,
+                }}
+                brandColor={agBrandColor}
+              />
+            </>
           ) : (
             <>
               <ScheduleVisitClient
