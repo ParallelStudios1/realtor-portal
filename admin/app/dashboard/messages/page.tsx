@@ -59,11 +59,14 @@ export default async function MessagesPage() {
     <main className="mx-auto max-w-6xl px-6 py-8">
       <header className="mb-6">
         <div className="text-[11px] font-bold uppercase tracking-wider text-ink-500">
-          Conversations
+          Direct · private
         </div>
-        <h1 className="mt-1.5 text-3xl font-bold tracking-tight text-ink-900">Messages</h1>
+        <h1 className="mt-1.5 text-3xl font-bold tracking-tight text-ink-900">
+          Direct messages
+        </h1>
         <p className="mt-1 text-sm text-ink-600">
-          <span className="font-semibold text-ink-900">{threads.length}</span> client{' '}
+          Private 1:1 threads with each client — separate from the all-parties
+          Deal chat inside each deal. <span className="font-semibold text-ink-900">{threads.length}</span> client{' '}
           {threads.length === 1 ? 'thread' : 'threads'}.
         </p>
       </header>

@@ -58,12 +58,19 @@ export default async function ClientMessagesPage() {
     );
   }
 
-  // Initial messages
-  const { data: initialMessages } = await supabase
-    .from('messages')
-    .select('id, search_id, sender_id, body, created_at')
-    .eq('search_id', search.id)
-    .order('created_at', { ascending: true });
+  // Initial messages — the PRIVATE 1:1 thread with the agent only (recipient
+  // set + the realtor involved), NOT the all-parties group Deal chat.
+  const { data: initialMessages } = search.realtor_id
+    ? await supabase
+        .from('messages')
+        .select('id, search_id, sender_id, recipient_user_id, body, created_at')
+        .eq('search_id', search.id)
+        .not('recipient_user_id', 'is', null)
+        .or(
+          `sender_id.eq.${search.realtor_id},recipient_user_id.eq.${search.realtor_id}`
+        )
+        .order('created_at', { ascending: true })
+    : { data: [] as any[] };
 
   // Realtor name for header
   const { data: realtor } = search.realtor_id
@@ -77,15 +84,20 @@ export default async function ClientMessagesPage() {
   return (
     <main className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-10">
       <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-400">
-        Conversation
+        Direct · private
       </p>
-      <h1 className="mb-4 mt-1.5 text-2xl font-bold tracking-tight sm:text-3xl">
-        Messages
+      <h1 className="mt-1.5 text-2xl font-bold tracking-tight sm:text-3xl">
+        Direct messages
       </h1>
+      <p className="mb-4 mt-1 text-sm text-ink-600">
+        A private 1:1 thread with your agent — only the two of you can see it.
+        This is separate from the all-parties Deal chat on your home screen.
+      </p>
       <ClientMessagesClient
         searchId={search.id}
         firmId={search.firm_id}
         currentUserId={me.user_id}
+        realtorId={search.realtor_id ?? null}
         realtorName={realtor?.full_name || realtor?.email || 'Your realtor'}
         initialMessages={initialMessages || []}
       />

@@ -9,6 +9,7 @@ type Message = {
   id: string;
   search_id: string;
   sender_id: string;
+  recipient_user_id?: string | null;
   body: string;
   created_at: string;
 };
@@ -17,15 +18,22 @@ export function ClientMessagesClient({
   searchId,
   firmId,
   currentUserId,
+  realtorId,
   realtorName,
   initialMessages,
 }: {
   searchId: string;
   firmId: string;
   currentUserId: string;
+  realtorId: string | null;
   realtorName: string;
   initialMessages: Message[];
 }) {
+  // This is the PRIVATE 1:1 thread with the agent (recipient-scoped), distinct
+  // from the all-parties Deal chat (which is recipient-null / group).
+  const involvesAgent = (m: Message) =>
+    !!m.recipient_user_id &&
+    (m.sender_id === realtorId || m.recipient_user_id === realtorId);
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
@@ -49,6 +57,7 @@ export function ClientMessagesClient({
         },
         (payload) => {
           const msg = payload.new as Message;
+          if (!involvesAgent(msg)) return; // ignore group + other-party DMs
           setMessages((prev) => {
             if (prev.some((m) => m.id === msg.id)) return prev;
             return [...prev, msg];
@@ -62,14 +71,15 @@ export function ClientMessagesClient({
         if (status !== 'SUBSCRIBED' || cancelled) return;
         const { data, error: fetchErr } = await supabase
           .from('messages')
-          .select('id, search_id, sender_id, body, created_at')
+          .select('id, search_id, sender_id, recipient_user_id, body, created_at')
           .eq('search_id', searchId)
+          .not('recipient_user_id', 'is', null)
           .order('created_at', { ascending: true });
         if (cancelled || fetchErr || !data) return;
         setMessages((prev) => {
           const seen = new Set(prev.map((m) => m.id));
           const merged = [...prev];
-          for (const m of data as Message[]) {
+          for (const m of (data as Message[]).filter(involvesAgent)) {
             if (!seen.has(m.id)) {
               merged.push(m);
               seen.add(m.id);
@@ -103,9 +113,10 @@ export function ClientMessagesClient({
         firm_id: firmId,
         search_id: searchId,
         sender_id: currentUserId,
+        recipient_user_id: realtorId, // private 1:1 with the agent
         body,
       })
-      .select('id')
+      .select('id, recipient_user_id')
       .single();
     if (e) {
       const msg = humanError(e);

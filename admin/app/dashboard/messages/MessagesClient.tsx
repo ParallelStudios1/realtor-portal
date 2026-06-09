@@ -52,15 +52,22 @@ export function MessagesClient({
   useEffect(() => {
     if (!activeId) return;
     if (messages[activeId]) return; // Already loaded
+    const clientId = threads.find((t) => t.searchId === activeId)?.clientId || null;
     (async () => {
-      const { data } = await supabase
+      // PRIVATE 1:1 with the client only (recipient set + the client involved),
+      // distinct from the all-parties group Deal chat.
+      let q = supabase
         .from('messages')
         .select('*')
         .eq('search_id', activeId)
+        .not('recipient_user_id', 'is', null)
         .order('created_at', { ascending: true });
+      if (clientId)
+        q = q.or(`sender_id.eq.${clientId},recipient_user_id.eq.${clientId}`);
+      const { data } = await q;
       setMessages((prev) => ({ ...prev, [activeId]: (data as Message[]) || [] }));
     })();
-  }, [activeId, supabase, messages]);
+  }, [activeId, supabase, messages, threads]);
 
   // Realtime: subscribe to inserts on messages for any of the firm's threads.
   // Filter is firm_id-scoped so we get every thread in one channel.
@@ -78,6 +85,8 @@ export function MessagesClient({
         },
         (payload) => {
           const msg = payload.new as Message;
+          // Direct-messages hub: ignore group Deal-chat posts (recipient null).
+          if (!(msg as any).recipient_user_id) return;
           setMessages((prev) => {
             const list = prev[msg.search_id] || [];
             if (list.some((m) => m.id === msg.id)) return prev; // dedupe
@@ -190,12 +199,16 @@ export function MessagesClient({
     setError(null);
     const body = draft.trim();
     setDraft('');
+    // Private 1:1 with the client (recipient-scoped) — NOT the group Deal chat.
+    const activeClientId =
+      threads.find((t) => t.searchId === activeId)?.clientId || null;
     const { data: inserted, error: e } = await supabase
       .from('messages')
       .insert({
         firm_id: firmId,
         search_id: activeId,
         sender_id: currentUserId,
+        recipient_user_id: activeClientId,
         body,
       })
       .select('*')
