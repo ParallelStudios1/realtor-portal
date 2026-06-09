@@ -39,6 +39,18 @@ export async function POST(req: NextRequest) {
   const url = (body?.envelopeUrl || '').trim();
   const label = (body?.label || '').trim() || null;
   const documentId = (body?.documentId || '').trim() || null;
+  // Designated signers — who on the deal is supposed to sign this.
+  const rawSigners = Array.isArray(body?.signers) ? body.signers : [];
+  const signers = rawSigners
+    .filter((s: any) => s && (s.key || s.name))
+    .slice(0, 25)
+    .map((s: any) => ({
+      key: String(s.key || s.name).slice(0, 200),
+      name: String(s.name || s.key).slice(0, 200),
+      role: s.role ? String(s.role).slice(0, 80) : null,
+      signed: false,
+      signed_at: null as string | null,
+    }));
   if (!body?.searchId || !url) {
     return NextResponse.json({ error: 'bad request' }, { status: 400 });
   }
@@ -80,7 +92,7 @@ export async function POST(req: NextRequest) {
       envelope_id: 'manual-' + randomUUID(),
       envelope_url: url,
       status: 'sent',
-      recipients: label ? [{ label }] : [],
+      recipients: { label, signers },
       created_by: me.user_id,
     })
     .select('id, envelope_id, envelope_url, document_id, status, created_at, recipients')

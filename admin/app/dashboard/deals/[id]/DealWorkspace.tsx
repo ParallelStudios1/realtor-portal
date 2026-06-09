@@ -219,6 +219,37 @@ export function DealWorkspace(props: {
 
   const principal = deal.client;
 
+  // Everyone on the deal who could be a required signer on a document — the
+  // realtor picks from these when attaching a signing link.
+  const prettyRole = (r: string | null | undefined) =>
+    (r || 'Party')
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+  const signerCandidates = [
+    principal
+      ? {
+          key: 'client:' + (principal.id || clientId),
+          name: principal.full_name || principal.email || 'Client',
+          role: deal.kind === 'seller' ? 'Seller' : 'Client',
+        }
+      : null,
+    deal.realtor
+      ? {
+          key: 'realtor:' + deal.realtor.id,
+          name: deal.realtor.full_name || deal.realtor.email || 'Realtor',
+          role: 'Realtor',
+        }
+      : null,
+    deal.attorney_name
+      ? { key: 'attorney', name: deal.attorney_name, role: 'Attorney' }
+      : null,
+    ...(participants || []).map((p: any) => ({
+      key: 'participant:' + p.id,
+      name: p.external_name || p.external_email || 'Participant',
+      role: prettyRole(p.role),
+    })),
+  ].filter(Boolean) as { key: string; name: string; role: string }[];
+
   return (
     <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
       {/* "Guest on this deal" banner — appears when this deal is hosted by
@@ -1121,6 +1152,7 @@ export function DealWorkspace(props: {
               storage_path: d.storage_path,
             }))}
             envelopes={props.envelopes || []}
+            signerCandidates={signerCandidates}
           />
 
           {/* Activity timeline */}

@@ -21,6 +21,35 @@ export type EsignDocument = {
   storage_path: string;
 };
 
+/** A person on the deal who can be designated as a required signer. */
+export type SignerCandidate = {
+  key: string;
+  name: string;
+  role: string | null;
+};
+
+type Signer = {
+  key: string;
+  name: string;
+  role?: string | null;
+  signed?: boolean;
+  signed_at?: string | null;
+};
+
+/** Normalize the legacy/new recipients shapes into { label, signers }. */
+function readRecipients(recipients: any): { label: string | null; signers: Signer[] } {
+  if (Array.isArray(recipients)) {
+    return {
+      label: recipients.find((r: any) => r?.label)?.label ?? null,
+      signers: recipients.filter((r: any) => r?.key || r?.name),
+    };
+  }
+  return {
+    label: recipients?.label ?? null,
+    signers: Array.isArray(recipients?.signers) ? recipients.signers : [],
+  };
+}
+
 export type EsignEnvelopeRow = {
   id: string;
   envelope_id: string;
@@ -37,6 +66,8 @@ export type EsignPanelProps = {
   documents: EsignDocument[];
   envelopes: EsignEnvelopeRow[];
   canManage?: boolean;
+  /** People on the deal the realtor can mark as required signers. */
+  signerCandidates?: SignerCandidate[];
 };
 
 const STATUS_STYLE: Record<string, string> = {
@@ -76,6 +107,7 @@ export function EsignPanel({
   documents,
   envelopes,
   canManage = true,
+  signerCandidates = [],
 }: EsignPanelProps) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -83,13 +115,45 @@ export function EsignPanel({
   const [url, setUrl] = useState('');
   const [label, setLabel] = useState('');
   const [docId, setDocId] = useState('');
+  const [signerKeys, setSignerKeys] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [markingId, setMarkingId] = useState<string | null>(null);
+  const [togglingKey, setTogglingKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
   const docNameById = (id: string | null) =>
     id ? documents.find((d) => d.id === id)?.name || null : null;
+
+  const toggleSignerKey = (key: string) =>
+    setSignerKeys((prev) =>
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
+    );
+
+  const toggleSigned = async (
+    envelopeId: string,
+    signer: Signer,
+    signed: boolean
+  ) => {
+    setError(null);
+    setTogglingKey(envelopeId + ':' + signer.key);
+    try {
+      const res = await fetch('/api/docusign/manual-link/signer', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ envelopeId, signerKey: signer.key, signed }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || !json?.ok) {
+        throw new Error(json?.error || `Could not update (${res.status})`);
+      }
+      startTransition(() => router.refresh());
+    } catch (err: any) {
+      setError(err?.message || 'Could not update signer.');
+    } finally {
+      setTogglingKey(null);
+    }
+  };
 
   const save = async () => {
     setError(null);
@@ -109,6 +173,9 @@ export function EsignPanel({
           envelopeUrl: u,
           documentId: docId || undefined,
           label: label.trim() || undefined,
+          signers: signerCandidates
+            .filter((c) => signerKeys.includes(c.key))
+            .map((c) => ({ key: c.key, name: c.name, role: c.role })),
         }),
       });
       const json = await res.json().catch(() => ({}));
@@ -119,6 +186,7 @@ export function EsignPanel({
       setUrl('');
       setLabel('');
       setDocId('');
+      setSignerKeys([]);
       startTransition(() => router.refresh());
     } catch (err: any) {
       setError(err?.message || 'Could not save the link.');
@@ -211,6 +279,54 @@ export function EsignPanel({
                 />
               </label>
             </div>
+
+            {signerCandidates.length > 0 && (
+              <div>
+                <span className="mb-1 block text-[11px] font-semibold text-ink-600">
+                  Who needs to sign?
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {signerCandidates.map((c) => {
+                    const on = signerKeys.includes(c.key);
+                    return (
+                      <button
+                        key={c.key}
+                        type="button"
+                        onClick={() => toggleSignerKey(c.key)}
+                        disabled={busy}
+                        className={
+                          'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition ' +
+                          (on
+                            ? 'border-ink-900 bg-ink-900 text-white'
+                            : 'border-ink-200 bg-white text-ink-700 hover:border-ink-400')
+                        }
+                      >
+                        <span
+                          aria-hidden
+                          className={
+                            'flex h-3.5 w-3.5 items-center justify-center rounded-[4px] border ' +
+                            (on ? 'border-white bg-white' : 'border-ink-300')
+                          }
+                        >
+                          {on && (
+                            <svg viewBox="0 0 16 16" className="h-2.5 w-2.5 text-ink-900" fill="none" stroke="currentColor" strokeWidth="3">
+                              <path d="M3 8.5l3.5 3.5L13 5" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          )}
+                        </span>
+                        {c.name}
+                        {c.role && (
+                          <span className={on ? 'text-white/70' : 'text-ink-400'}>
+                            · {c.role}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             <div className="flex justify-end">
               <button
                 type="button"
@@ -244,59 +360,115 @@ export function EsignPanel({
         ) : (
           <ul className="divide-y divide-ink-100 border-t border-ink-100 pt-1">
             {envelopes.map((env) => {
-              const recips = Array.isArray(env.recipients)
-                ? env.recipients
-                : env.recipients?.signers
-                  ? env.recipients.signers
-                  : [];
+              const { label: recLabel, signers } = readRecipients(
+                env.recipients
+              );
               const labelText =
-                recips.find((r: any) => r?.label)?.label ||
-                docNameById(env.document_id) ||
-                'Signing link';
+                recLabel || docNameById(env.document_id) || 'Signing link';
               const doc = docNameById(env.document_id);
+              const signedCount = signers.filter((s) => s.signed).length;
               return (
-                <li
-                  key={env.id}
-                  className="flex flex-wrap items-center justify-between gap-2 py-3"
-                >
-                  <div className="min-w-0">
+                <li key={env.id} className="py-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <StatusBadge status={env.status} />
+                        <span className="truncate text-sm font-medium text-ink-900">
+                          {labelText}
+                        </span>
+                      </div>
+                      <div className="mt-0.5 text-xs text-ink-500">
+                        Added {new Date(env.created_at).toLocaleDateString()}
+                        {doc && <> · Document: {doc}</>}
+                        {signers.length > 0 && (
+                          <>
+                            {' '}
+                            · {signedCount}/{signers.length} signed
+                          </>
+                        )}
+                      </div>
+                    </div>
                     <div className="flex items-center gap-2">
-                      <StatusBadge status={env.status} />
-                      <span className="truncate text-sm font-medium text-ink-900">
-                        {labelText}
-                      </span>
-                    </div>
-                    <div className="mt-0.5 text-xs text-ink-500">
-                      Added {new Date(env.created_at).toLocaleDateString()}
-                      {doc && <> · Document: {doc}</>}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {canManage &&
-                      env.status !== 'completed' &&
-                      env.status !== 'voided' && (
-                        <button
-                          type="button"
-                          onClick={() => markSigned(env.envelope_id)}
-                          disabled={markingId === env.envelope_id || pending}
-                          className="rounded-lg border border-ink-200 px-3 py-1.5 text-xs font-semibold text-ink-700 transition hover:bg-ink-50 disabled:opacity-50"
+                      {canManage &&
+                        signers.length === 0 &&
+                        env.status !== 'completed' &&
+                        env.status !== 'voided' && (
+                          <button
+                            type="button"
+                            onClick={() => markSigned(env.envelope_id)}
+                            disabled={markingId === env.envelope_id || pending}
+                            className="rounded-lg border border-ink-200 px-3 py-1.5 text-xs font-semibold text-ink-700 transition hover:bg-ink-50 disabled:opacity-50"
+                          >
+                            {markingId === env.envelope_id
+                              ? 'Saving…'
+                              : 'Mark signed'}
+                          </button>
+                        )}
+                      {env.envelope_url && (
+                        <a
+                          href={env.envelope_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="rounded-lg bg-amber-400 px-3 py-1.5 text-xs font-bold text-amber-950 transition hover:bg-amber-300"
                         >
-                          {markingId === env.envelope_id
-                            ? 'Saving…'
-                            : 'Mark signed'}
-                        </button>
+                          Open to sign ↗
+                        </a>
                       )}
-                    {env.envelope_url && (
-                      <a
-                        href={env.envelope_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="rounded-lg bg-amber-400 px-3 py-1.5 text-xs font-bold text-amber-950 transition hover:bg-amber-300"
-                      >
-                        Open to sign ↗
-                      </a>
-                    )}
+                    </div>
                   </div>
+
+                  {/* Designated signers — who must sign + check them off. */}
+                  {signers.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {signers.map((s) => {
+                        const busyKey = togglingKey === env.envelope_id + ':' + s.key;
+                        const chip = (
+                          <>
+                            <span
+                              aria-hidden
+                              className={
+                                'flex h-3.5 w-3.5 items-center justify-center rounded-full ' +
+                                (s.signed
+                                  ? 'bg-emerald-500 text-white'
+                                  : 'border border-ink-300')
+                              }
+                            >
+                              {s.signed && (
+                                <svg viewBox="0 0 16 16" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth="3">
+                                  <path d="M3 8.5l3.5 3.5L13 5" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                              )}
+                            </span>
+                            <span className="font-medium">{s.name}</span>
+                            {s.role && (
+                              <span className="text-ink-400">· {s.role}</span>
+                            )}
+                          </>
+                        );
+                        const cls =
+                          'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs ' +
+                          (s.signed
+                            ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
+                            : 'border-ink-200 bg-white text-ink-700');
+                        return canManage ? (
+                          <button
+                            key={s.key}
+                            type="button"
+                            onClick={() => toggleSigned(env.envelope_id, s, !s.signed)}
+                            disabled={busyKey || pending}
+                            title={s.signed ? 'Mark as not signed' : 'Mark as signed'}
+                            className={cls + ' transition hover:border-ink-400 disabled:opacity-50'}
+                          >
+                            {chip}
+                          </button>
+                        ) : (
+                          <span key={s.key} className={cls}>
+                            {chip}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
                 </li>
               );
             })}
