@@ -1,6 +1,6 @@
 'use client';
 
-import { phaseLabelFor, phaseMessageFor } from '@/lib/dealKind';
+import { phaseLabelFor, phaseMessageFor, nextStepHintFor } from '@/lib/dealKind';
 
 /**
  * Client-facing deal progress timeline.
@@ -143,10 +143,13 @@ export function DealProgressTimeline({
           const isDone = currentIdx >= 0 && i < currentIdx;
           const isCurrent = i === currentIdx;
           const isLast = i === DEAL_PHASES.length - 1;
+          // Firm override wins; otherwise use the clear kind-aware label
+          // ("Home search"/"Preparing offer" for buyers, "Active · Listed"…
+          // for sellers) rather than the raw enum default.
           const label =
-            kind === 'seller' && !(phaseLabels && phaseLabels[p.id])
-              ? phaseLabelFor(p.id, 'seller')
-              : resolveLabel(p.id, p.defaultLabel, phaseLabels);
+            phaseLabels && phaseLabels[p.id]
+              ? phaseLabels[p.id]
+              : phaseLabelFor(p.id, (kind as any) || 'buyer');
 
           return (
             <li key={p.id} className="relative flex gap-4">
@@ -212,6 +215,18 @@ export function DealProgressTimeline({
                     !(phaseMessages && phaseMessages[p.id])
                       ? phaseMessageFor(p.id, 'seller')
                       : resolveMessage(p.id, phaseMessages)}
+                  </p>
+                )}
+
+                {isCurrent && nextStepHintFor(p.id, kind) && (
+                  <p
+                    className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold"
+                    style={{ color: accent }}
+                  >
+                    <svg viewBox="0 0 16 16" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden>
+                      <path d="M6 3l5 5-5 5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    {nextStepHintFor(p.id, kind)}
                   </p>
                 )}
               </div>

@@ -120,19 +120,24 @@ export function ClientDetailActions({
 
   return (
     <>
-      <section className="surface-muted overflow-hidden p-5 shadow-soft">
-        <div className="mb-4 flex items-baseline justify-between">
+      <section className="overflow-hidden rounded-2xl border border-ink-200 bg-white p-5 shadow-soft sm:p-6">
+        <div className="mb-5 flex items-center gap-3">
+          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-ink-900 text-white">
+            <svg aria-hidden viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z" />
+            </svg>
+          </span>
           <div>
-            <h2 className="text-lg font-bold tracking-tight text-ink-900">
+            <h2 className="text-base font-bold tracking-tight text-ink-900">
               Deal actions
             </h2>
             <p className="mt-0.5 text-xs text-ink-500">
-              Everything you can do for this deal — grouped by what they affect.
+              Everything you can do for this deal, grouped by what it affects.
             </p>
           </div>
         </div>
 
-        <div className="space-y-5">
+        <div className="space-y-6">
           <ActionGroup
             label="Deal Control"
             hint="Phase, financials, dates, and contract"
@@ -507,65 +512,11 @@ type Tone =
   | 'sky'
   | 'rose';
 
-const TONE_STYLES: Record<
-  Tone,
-  { bg: string; ring: string; icon: string; iconBg: string }
-> = {
-  blue: {
-    bg: 'hover:bg-blue-50',
-    ring: 'hover:ring-blue-200',
-    icon: 'text-blue-600',
-    iconBg: 'bg-blue-100',
-  },
-  indigo: {
-    bg: 'hover:bg-ink-100',
-    ring: 'hover:ring-ink-300',
-    icon: 'text-ink-700',
-    iconBg: 'bg-ink-200',
-  },
-  emerald: {
-    bg: 'hover:bg-emerald-50',
-    ring: 'hover:ring-emerald-200',
-    icon: 'text-emerald-600',
-    iconBg: 'bg-emerald-100',
-  },
-  amber: {
-    bg: 'hover:bg-amber-50',
-    ring: 'hover:ring-amber-200',
-    icon: 'text-amber-700',
-    iconBg: 'bg-amber-100',
-  },
-  violet: {
-    bg: 'hover:bg-ink-100',
-    ring: 'hover:ring-ink-300',
-    icon: 'text-ink-700',
-    iconBg: 'bg-ink-200',
-  },
-  orange: {
-    bg: 'hover:bg-amber-50',
-    ring: 'hover:ring-amber-200',
-    icon: 'text-amber-700',
-    iconBg: 'bg-amber-100',
-  },
-  slate: {
-    bg: 'hover:bg-ink-100',
-    ring: 'hover:ring-ink-300',
-    icon: 'text-ink-700',
-    iconBg: 'bg-ink-200',
-  },
-  sky: {
-    bg: 'hover:bg-blue-50',
-    ring: 'hover:ring-blue-200',
-    icon: 'text-blue-600',
-    iconBg: 'bg-blue-100',
-  },
-  rose: {
-    bg: 'hover:bg-rose-50',
-    ring: 'hover:ring-rose-300',
-    icon: 'text-rose-600',
-    iconBg: 'bg-rose-100',
-  },
-};
+// Flat-ink design: action tiles share ONE calm, neutral look instead of a
+// rainbow of per-tile colors. Emphasis comes from a single accent tone (the
+// primary/destructive "Go under contract") — everything else is monochrome
+// ink, which reads as clean and professional rather than busy.
+const ACCENT_TONES: ReadonlySet<Tone> = new Set(['rose']);
 
 function ActionGroup({
   label,
@@ -584,7 +535,7 @@ function ActionGroup({
         </h3>
         {hint && <span className="text-[11px] text-ink-400">{hint}</span>}
       </div>
-      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
         {children}
       </div>
     </div>
@@ -606,17 +557,20 @@ function ActionCard({
   onClick?: () => void;
   href?: string;
 }) {
-  const t = TONE_STYLES[tone];
+  const accent = ACCENT_TONES.has(tone);
   const cls =
-    'group relative flex items-start gap-3 overflow-hidden rounded-xl border border-ink-200 bg-white p-3 text-left shadow-soft-xs transition hover:-translate-y-0.5 hover:shadow-soft-md hover:border-ink-300 active:scale-[0.98]';
+    'group relative flex items-center gap-3 rounded-xl border bg-white px-3.5 py-3 text-left transition active:scale-[0.99] ' +
+    (accent
+      ? 'border-ink-900 hover:bg-ink-50'
+      : 'border-ink-200 hover:border-ink-300 hover:bg-ink-50/60');
   const inner = (
     <>
       <span
         className={
-          'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition group-hover:scale-105 ' +
-          t.iconBg +
-          ' ' +
-          t.icon
+          'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition ' +
+          (accent
+            ? 'bg-ink-900 text-white'
+            : 'bg-ink-100 text-ink-700 group-hover:bg-ink-900 group-hover:text-white')
         }
       >
         {icon}
@@ -627,6 +581,16 @@ function ActionCard({
         </div>
         <div className="line-clamp-1 text-[11px] text-ink-500">{subtitle}</div>
       </div>
+      <svg
+        aria-hidden
+        viewBox="0 0 16 16"
+        className="h-4 w-4 shrink-0 text-ink-300 transition group-hover:translate-x-0.5 group-hover:text-ink-500"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
+        <path d="M6 3l5 5-5 5" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
     </>
   );
   if (href)

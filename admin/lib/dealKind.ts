@@ -19,13 +19,59 @@ const SELLER_PHASE_LABELS: Record<string, string> = {
 };
 
 const BUYER_PHASE_LABELS: Record<string, string> = {
-  searching: 'Searching',
-  awaiting_offer: 'Awaiting offer',
-  offer_made: 'Offer made',
-  counter_offer: 'Counter offer',
+  searching: 'Home search',
+  awaiting_offer: 'Preparing offer',
+  offer_made: 'Offer submitted',
+  counter_offer: 'Negotiating',
   under_contract: 'Under contract',
   closing: 'Closing',
   closed: 'Closed',
+};
+
+/** Listing-lifecycle "what's happening now" copy for a buyer deal. */
+const BUYER_PHASE_MESSAGES: Record<string, string> = {
+  searching:
+    'We are finding and touring homes that fit what you are looking for.',
+  awaiting_offer:
+    'You found a home you love. We are putting your offer together.',
+  offer_made:
+    'Your offer is in. We are waiting to hear back from the seller.',
+  counter_offer:
+    'We are negotiating the terms to get you the best deal.',
+  under_contract:
+    'Your offer was accepted! Inspection, appraisal, and financing happen during this stretch.',
+  closing:
+    'Almost home. We are finalizing the paperwork and scheduling your closing.',
+  closed: 'It is official — congratulations on your new home!',
+};
+
+/** One-line "what happens next" hint, shown under the current phase. */
+const NEXT_STEP_HINTS: Record<string, { buyer: string; seller: string }> = {
+  searching: {
+    buyer: 'Next: pick the home you want to make an offer on.',
+    seller: 'Next: finalize pricing and go live on the market.',
+  },
+  awaiting_offer: {
+    buyer: 'Next: submit your offer to the seller.',
+    seller: 'Next: review offers as they come in.',
+  },
+  offer_made: {
+    buyer: 'Next: the seller accepts, counters, or declines.',
+    seller: 'Next: accept, counter, or decline the offer.',
+  },
+  counter_offer: {
+    buyer: 'Next: agree on final terms and go under contract.',
+    seller: 'Next: agree on final terms and go under contract.',
+  },
+  under_contract: {
+    buyer: 'Next: complete inspection, appraisal, and financing.',
+    seller: 'Next: the buyer completes inspection and financing.',
+  },
+  closing: {
+    buyer: 'Next: sign the closing documents and get your keys.',
+    seller: 'Next: sign the closing documents and hand over the keys.',
+  },
+  closed: { buyer: '', seller: '' },
 };
 
 /** Listing-lifecycle "what's happening now" copy for a seller deal. */
@@ -70,7 +116,18 @@ export function phaseMessageFor(
   const p = phase || 'searching';
   if (overrides && overrides[p]) return overrides[p];
   if (isSellerKind(kind)) return SELLER_PHASE_MESSAGES[p] || '';
-  return '';
+  return BUYER_PHASE_MESSAGES[p] || '';
+}
+
+/** Short "what happens next" hint that adapts to the deal kind. */
+export function nextStepHintFor(
+  phase: string | null | undefined,
+  kind: DealKind
+): string {
+  const p = phase || 'searching';
+  const h = NEXT_STEP_HINTS[p];
+  if (!h) return '';
+  return isSellerKind(kind) ? h.seller : h.buyer;
 }
 
 export const LISTING_STATUSES = [
