@@ -408,10 +408,24 @@ export default async function DealPage({
         {/* Body grid */}
         <div className="mt-6 grid gap-6 md:grid-cols-3">
           <div className="space-y-6 md:col-span-2">
-            {/* Houses */}
-            <Section title={`Houses (${houses?.length || 0})`}>
+            {/* Houses / listings */}
+            <Section
+              title={
+                d.kind === 'seller'
+                  ? `${(houses?.length || 0) === 1 ? 'Listing' : 'Listings'} (${
+                      houses?.length || 0
+                    })`
+                  : `Houses (${houses?.length || 0})`
+              }
+            >
               {!houses || houses.length === 0 ? (
-                <Empty msg="No houses yet." />
+                <Empty
+                  msg={
+                    d.kind === 'seller'
+                      ? 'No listing on this deal yet.'
+                      : 'No houses yet.'
+                  }
+                />
               ) : (
                 <ul className="divide-y divide-ink-100">
                   {houses.map((h: any) => {

@@ -17,10 +17,13 @@ export default async function ClientHousesPage() {
   // actually bought once a deal closes ("Your home" badge).
   const { data: searches } = await supabase
     .from('client_searches')
-    .select('id, phase, offer_house_id')
+    .select('id, phase, offer_house_id, kind')
     .eq('client_id', me.user_id);
 
   const searchIds = (searches || []).map((s: any) => s.id);
+  const isSeller =
+    (searches || []).length > 0 &&
+    (searches || []).every((s: any) => s.kind === 'seller');
   // Map of house id -> 'closed-home' | 'pending-home' | undefined
   const homeBadge = new Map<string, 'closed-home' | 'pending-home'>();
   for (const s of (searches || []) as any[]) {
@@ -49,11 +52,15 @@ export default async function ClientHousesPage() {
     <main className="mx-auto max-w-4xl px-4 py-6 sm:px-6 sm:py-10">
       <header className="mb-6">
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-400">
-          Your search
+          {isSeller ? 'Your listings' : 'Your search'}
         </p>
-        <h1 className="mt-1.5 text-2xl font-bold tracking-tight sm:text-3xl">Houses</h1>
+        <h1 className="mt-1.5 text-2xl font-bold tracking-tight sm:text-3xl">
+          {isSeller ? 'Homes you’re selling' : 'Houses'}
+        </h1>
         <p className="mt-1 text-sm text-ink-600">
-          {(houses?.length || 0)} {houses?.length === 1 ? 'property' : 'properties'} from your agent.
+          {(houses?.length || 0)}{' '}
+          {houses?.length === 1 ? 'property' : 'properties'}{' '}
+          {isSeller ? 'on the market with your agent.' : 'from your agent.'}
         </p>
       </header>
 

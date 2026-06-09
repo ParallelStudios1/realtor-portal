@@ -74,12 +74,15 @@ export default async function HouseDetailPage({
   const { data: agreementSearch } = await supabase
     .from('client_searches')
     .select(
-      'id, client_id, offer_house_id, house_agreed_at, house_proposed_house_id'
+      'id, client_id, offer_house_id, house_agreed_at, house_proposed_house_id, kind'
     )
     .eq('id', house.search_id)
     .maybeSingle();
   const isPrincipalClient =
     (agreementSearch as any)?.client_id === me.user_id;
+  // On a SELLER deal this IS the client's own listing — the buyer actions
+  // (request a tour, "this is the house I want", rate the tour) don't apply.
+  const isSellerListing = (agreementSearch as any)?.kind === 'seller';
   const agreedHouseId = (agreementSearch as any)?.offer_house_id as
     | string
     | null;
@@ -249,49 +252,68 @@ export default async function HouseDetailPage({
             </a>
           )}
 
-          <ScheduleVisitClient
-            houseId={house.id}
-            pendingTour={pendingTour || null}
-          />
+          {isSellerListing ? (
+            <div
+              className="mt-5 rounded-xl border px-4 py-3 text-sm"
+              style={{
+                borderColor: (agBrandColor || '#0F172A') + '40',
+                backgroundColor: (agBrandColor || '#0F172A') + '0A',
+              }}
+            >
+              <div className="font-semibold text-ink-900">This is your listing</div>
+              <p className="mt-0.5 text-xs text-ink-600">
+                Your agent manages the status, showings, and offers — you&apos;ll
+                see updates here and on your home screen.
+              </p>
+            </div>
+          ) : (
+            <>
+              <ScheduleVisitClient
+                houseId={house.id}
+                pendingTour={pendingTour || null}
+              />
 
-          {isPrincipalClient && (
-            <AgreedHouseClient
-              houseId={house.id}
-              brandColor={agBrandColor}
-              state={agreementState}
-              agreedAddress={agreedAddress}
-            />
+              {isPrincipalClient && (
+                <AgreedHouseClient
+                  houseId={house.id}
+                  brandColor={agBrandColor}
+                  state={agreementState}
+                  agreedAddress={agreedAddress}
+                />
+              )}
+            </>
           )}
         </div>
       </div>
 
-      {/* Rating */}
-      <section
-        className={
-          'mt-6 rounded-2xl border bg-white p-5 shadow-soft ' +
-          (showPostTourPrompt
-            ? 'border-amber-300 ring-2 ring-amber-100'
-            : 'border-ink-200')
-        }
-      >
-        <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-400">
-          {showPostTourPrompt
-            ? 'How was the tour?'
-            : 'What do you think?'}
-        </div>
-        <p className="mt-1 text-sm text-ink-600">
-          {showPostTourPrompt
-            ? 'You just toured this place. Rate it 1–5 and add a note — your agent reads this to find better matches.'
-            : 'Your agent uses your feedback to filter what they show you next.'}
-        </p>
-        <HouseRatingClient
-          houseId={house.id}
-          searchId={house.search_id}
-          firmId={house.firm_id}
-          clientId={me.user_id}
-          existing={rating || null}
-        />
-      </section>
+      {/* Rating — buyer feedback on a candidate home. Not shown on a seller's
+          own listing (you don't rate your own house). */}
+      {!isSellerListing && (
+        <section
+          className={
+            'mt-6 rounded-2xl border bg-white p-5 shadow-soft ' +
+            (showPostTourPrompt
+              ? 'border-amber-300 ring-2 ring-amber-100'
+              : 'border-ink-200')
+          }
+        >
+          <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-400">
+            {showPostTourPrompt ? 'How was the tour?' : 'What do you think?'}
+          </div>
+          <p className="mt-1 text-sm text-ink-600">
+            {showPostTourPrompt
+              ? 'You just toured this place. Rate it 1–5 and add a note — your agent reads this to find better matches.'
+              : 'Your agent uses your feedback to filter what they show you next.'}
+          </p>
+          <HouseRatingClient
+            houseId={house.id}
+            searchId={house.search_id}
+            firmId={house.firm_id}
+            clientId={me.user_id}
+            existing={rating || null}
+          />
+        </section>
+      )}
     </main>
   );
 }

@@ -6,6 +6,7 @@ import { DealChat } from '@/components/DealChat';
 import { getDealChat } from '@/app/dashboard/deals/[id]/chatActions';
 import { buildCalendarFeedUrl } from '@/lib/ics';
 import { formatDateOnly } from '@/lib/dates';
+import { listingStatusLabel } from '@/lib/dealKind';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Home' };
@@ -28,17 +29,31 @@ export default async function ClientHomePage() {
     .limit(5);
 
   const active = searches?.[0];
+  const isSeller = (active as any)?.kind === 'seller';
 
   // CLIENT ↔ REALTOR HOUSE AGREEMENT — the agreed home, shown prominently on
-  // the client's home when either side has set it.
+  // the client's home when either side has set it (BUYER deals only).
   const { data: agreedHouse } =
-    active && (active as any).house_agreed_at && (active as any).offer_house_id
+    !isSeller &&
+    active &&
+    (active as any).house_agreed_at &&
+    (active as any).offer_house_id
       ? await supabase
           .from('houses')
           .select('id, address, photo_url, list_price')
           .eq('id', (active as any).offer_house_id)
           .maybeSingle()
       : { data: null };
+
+  // SELLER deal — the client's own listing(s), shown prominently with status.
+  const { data: myListings } =
+    isSeller && active
+      ? await supabase
+          .from('houses')
+          .select('id, address, photo_url, list_price, listing_status, mls_number')
+          .eq('search_id', active.id)
+          .order('created_at', { ascending: false })
+      : { data: [] as any[] };
 
   // Important dates for the active search
   const { data: dates } = active
@@ -175,7 +190,67 @@ export default async function ClientHomePage() {
             />
           </div>
 
-          {/* Agreed home — the property you and your agent settled on */}
+          {/* SELLER — your listing(s), the homes you're selling, with status. */}
+          {isSeller && (
+            <section className="mt-4 surface p-5">
+              <div className="flex items-baseline justify-between">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-400">
+                  {(myListings || []).length > 1 ? 'Your listings' : 'Your home for sale'}
+                </div>
+              </div>
+              {(myListings || []).length === 0 ? (
+                <p className="mt-2 text-sm text-ink-600">
+                  Your agent will add the home you&apos;re selling here — you&apos;ll
+                  see its status, showings, and offers as things move.
+                </p>
+              ) : (
+                <ul className="mt-3 space-y-3">
+                  {(myListings as any[]).map((h) => (
+                    <Link
+                      key={h.id}
+                      href={`/client/houses/${h.id}`}
+                      className="flex items-stretch gap-0 overflow-hidden rounded-xl border border-ink-200 bg-white transition hover:shadow-soft-md"
+                    >
+                      <div className="w-24 shrink-0 bg-ink-100 sm:w-32">
+                        {h.photo_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={h.photo_url} alt="" className="h-full w-full object-cover" />
+                        ) : (
+                          <div className="flex h-full items-center justify-center text-ink-400">
+                            <svg aria-hidden viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                            </svg>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex min-w-0 flex-1 flex-col justify-center p-4">
+                        <span
+                          className="inline-flex w-fit items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide"
+                          style={{
+                            backgroundColor: (brandColor || '#0F172A') + '15',
+                            color: brandColor || '#0F172A',
+                          }}
+                        >
+                          {listingStatusLabel(h.listing_status)}
+                        </span>
+                        <div className="mt-1.5 truncate text-base font-semibold text-ink-900">
+                          {h.address}
+                        </div>
+                        {h.list_price != null && (
+                          <div className="mt-0.5 text-sm font-semibold text-ink-700">
+                            ${Number(h.list_price).toLocaleString()}
+                            {h.mls_number ? ` · MLS ${h.mls_number}` : ''}
+                          </div>
+                        )}
+                      </div>
+                    </Link>
+                  ))}
+                </ul>
+              )}
+            </section>
+          )}
+
+          {/* Agreed home — the property you and your agent settled on (buyer). */}
           {agreedHouse && (
             <Link
               href={`/client/houses/${(agreedHouse as any).id}`}
