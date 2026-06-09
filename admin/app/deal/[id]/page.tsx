@@ -4,6 +4,7 @@ import { getMe } from '@/lib/supabaseSsr';
 import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
 import { buildCalendarFeedUrl } from '@/lib/ics';
 import { formatDateOnly } from '@/lib/dates';
+import { phaseLabelFor } from '@/lib/dealKind';
 import { AgreedHomeCard } from '@/components/AgreedHomeCard';
 import { AttorneyDocList, type AttorneyDoc } from '@/components/AttorneyDocList';
 import { DealChat } from '@/components/DealChat';
@@ -258,7 +259,7 @@ export default async function DealPage({
               style={{ backgroundColor: 'rgba(255,255,255,0.18)' }}
             >
               <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-white" />
-              {String(d.phase).replace(/_/g, ' ')}
+              {phaseLabelFor(d.phase, (d as any).kind)}
             </span>
           </div>
           {/* Phase stepper */}
@@ -316,11 +317,11 @@ export default async function DealPage({
                 <div
                   key={p}
                   className={
-                    'flex-1 text-center capitalize ' +
+                    'flex-1 text-center ' +
                     (i === phaseIdx ? 'font-semibold opacity-100' : 'opacity-70')
                   }
                 >
-                  {p.replace(/_/g, ' ')}
+                  {phaseLabelFor(p, (d as any).kind)}
                 </div>
               ))}
             </div>
