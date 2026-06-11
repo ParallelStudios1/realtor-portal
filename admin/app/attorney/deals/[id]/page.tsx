@@ -8,18 +8,12 @@ import { AttorneyDocList, type AttorneyDoc } from '@/components/AttorneyDocList'
 import { LocalDateTime } from '@/components/LocalDateTime';
 import { PrivateMessages } from '@/components/PrivateMessages';
 import { getPrivateParties } from '@/app/dashboard/deals/[id]/privateActions';
+import { phaseLabelFor, DEAL_PHASES } from '@/lib/dealKind';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Deal' };
 
-const PHASES = [
-  'searching',
-  'awaiting_offer',
-  'offer_made',
-  'under_contract',
-  'closing',
-  'closed',
-] as const;
+const PHASES = DEAL_PHASES;
 
 // Open e-sign states (not yet finished) — these are what an attorney must chase.
 const OPEN_SIG = new Set(['created', 'sent', 'delivered']);
@@ -271,7 +265,7 @@ export default async function AttorneyDealPage({
               style={{ backgroundColor: 'rgba(255,255,255,0.18)' }}
             >
               <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-white" />
-              {String(d.phase).replace(/_/g, ' ')}
+              {phaseLabelFor(d.phase, (d as any).kind)}
             </span>
           </div>
           {/* Phase stepper */}
@@ -329,11 +323,11 @@ export default async function AttorneyDealPage({
                 <div
                   key={p}
                   className={
-                    'flex-1 text-center capitalize ' +
+                    'flex-1 text-center ' +
                     (i === phaseIdx ? 'font-semibold opacity-100' : 'opacity-70')
                   }
                 >
-                  {p.replace(/_/g, ' ')}
+                  {phaseLabelFor(p, (d as any).kind)}
                 </div>
               ))}
             </div>

@@ -31,18 +31,29 @@ export default async function MessagesPage() {
 
   const searchIds = (searches || []).map((s: any) => s.id);
 
+  // DIRECT messages only (recipient set). Without this filter the previews
+  // showed group Deal-chat posts in the private-DM hub.
   const { data: latestMessages } =
     searchIds.length > 0
       ? await supabase
           .from('messages')
-          .select('id, search_id, body, sender_id, created_at')
+          .select('id, search_id, body, sender_id, recipient_user_id, created_at')
           .in('search_id', searchIds)
+          .not('recipient_user_id', 'is', null)
           .order('created_at', { ascending: false })
       : { data: [] as any[] };
 
-  // Build a map: searchId -> most recent message
+  // Build a map: searchId -> most recent DM in the realtor↔client thread.
+  // Skip private threads with OTHER parties (e.g. realtor↔attorney) so the
+  // preview always matches the thread you open.
+  const clientBySearch = new Map<string, string | null>();
+  for (const s of searches || []) {
+    clientBySearch.set((s as any).id, (s as any).client?.id || null);
+  }
   const latestBySearch = new Map<string, any>();
   for (const m of latestMessages || []) {
+    const cid = clientBySearch.get(m.search_id);
+    if (cid && m.sender_id !== cid && m.recipient_user_id !== cid) continue;
     if (!latestBySearch.has(m.search_id)) latestBySearch.set(m.search_id, m);
   }
 

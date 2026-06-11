@@ -29,7 +29,7 @@ import {
   SellerListingPanel,
   type ListingOffer,
 } from './SellerListingPanel';
-import { phaseLabelFor } from '@/lib/dealKind';
+import { phaseLabelFor, listingStatusLabel } from '@/lib/dealKind';
 import type { DealChatMessage } from './chatActions';
 
 /**
@@ -857,9 +857,13 @@ export function DealWorkspace(props: {
                             {h.list_price
                               ? '$' + Number(h.list_price).toLocaleString()
                               : 'No price'}
-                            {h.status && h.status !== 'active'
-                              ? ' · ' + String(h.status).replace(/_/g, ' ')
-                              : ''}
+                            {isSeller
+                              ? h.listing_status
+                                ? ' · ' + listingStatusLabel(h.listing_status)
+                                : ''
+                              : h.status && h.status !== 'active'
+                                ? ' · ' + String(h.status).replace(/_/g, ' ')
+                                : ''}
                           </div>
                           {/* Captured "other side" info — buyer deals only. */}
                           {!isSeller &&

@@ -64,15 +64,15 @@ export default function GlobalError({
 
   return (
     <main className="flex min-h-[60vh] items-center justify-center px-6 py-16">
-      <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-blue-50 ring-1 ring-blue-100">
+      <div className="w-full max-w-md rounded-2xl border border-ink-200 bg-white p-8 text-center shadow-soft-lg">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-ink-100 ring-1 ring-ink-200">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
             strokeWidth={1.5}
             stroke="currentColor"
-            className="h-7 w-7 text-blue-600"
+            className="h-7 w-7 text-ink-700"
             aria-hidden="true"
           >
             <path
@@ -106,15 +106,17 @@ export default function GlobalError({
                 reset();
               }
             }}
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
+            className="rounded-lg bg-ink-900 px-4 py-2 text-sm font-semibold text-white shadow-soft-sm transition hover:bg-ink-700"
           >
             {chunkError ? 'Reload now' : 'Try again'}
           </button>
+          {/* /login role-routes signed-in users to their own home
+              (client → /client, attorney → /attorney, staff → /dashboard). */}
           <a
-            href="/dashboard"
-            className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400"
+            href="/login"
+            className="rounded-lg border border-ink-300 bg-white px-4 py-2 text-sm font-semibold text-ink-700 transition hover:border-ink-400"
           >
-            Go to dashboard
+            Go to my home screen
           </a>
         </div>
       </div>

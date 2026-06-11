@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useMemo, useRef, useTransition } from 'react';
+import { phaseLabelFor } from '@/lib/dealKind';
 
 type Deal = {
   id: string;
@@ -322,7 +323,7 @@ function DealCard({ d, compact }: { d: Deal; compact?: boolean }) {
               t.ring
             }
           >
-            {String(d.phase).replace(/_/g, ' ')}
+            {phaseLabelFor(d.phase, d.kind)}
           </span>
         </div>
         {!compact && (
@@ -330,7 +331,9 @@ function DealCard({ d, compact }: { d: Deal; compact?: boolean }) {
             <span>
               {d.agreed_price
                 ? '$' + Number(d.agreed_price).toLocaleString()
-                : (d.kind || 'buyer') + ' deal'}
+                : d.kind === 'seller'
+                  ? 'Listing deal'
+                  : 'Buyer deal'}
             </span>
             <span>Updated {timeAgo(d.updated_at)}</span>
           </div>

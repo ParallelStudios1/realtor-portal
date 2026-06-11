@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getMe, getSupabaseServerClient } from '@/lib/supabaseSsr';
+import { phaseLabelFor, type DealKind } from '@/lib/dealKind';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,12 +27,12 @@ export default async function ClientsListPage() {
 
   // Lookup each client's latest deal (one query).
   const ids = (clients || []).map((c: any) => c.id);
-  let dealMap: Record<string, { id: string; phase: string; updated_at: string }> = {};
+  let dealMap: Record<string, { id: string; phase: string; kind: DealKind; updated_at: string }> = {};
   let countMap: Record<string, number> = {};
   if (ids.length > 0) {
     const { data: rows } = await supabase
       .from('client_searches')
-      .select('id, client_id, phase, updated_at')
+      .select('id, client_id, phase, kind, updated_at')
       .eq('firm_id', me.firm_id!)
       .in('client_id', ids)
       .order('updated_at', { ascending: false });
@@ -41,6 +42,7 @@ export default async function ClientsListPage() {
         dealMap[(r as any).client_id] = {
           id: (r as any).id,
           phase: (r as any).phase,
+          kind: (r as any).kind,
           updated_at: (r as any).updated_at,
         };
       }
@@ -121,7 +123,7 @@ export default async function ClientsListPage() {
                     </div>
                     {latest ? (
                       <span className="shrink-0 rounded-full bg-ink-900 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
-                        {String(latest.phase).replace(/_/g, ' ')}
+                        {phaseLabelFor(latest.phase, latest.kind)}
                       </span>
                     ) : (
                       <span className="shrink-0 rounded-full bg-ink-100 px-2 py-0.5 text-[10px] font-bold uppercase text-ink-500">

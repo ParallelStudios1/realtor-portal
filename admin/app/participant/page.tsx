@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { getMe } from '@/lib/supabaseSsr';
 import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
+import { phaseLabelFor } from '@/lib/dealKind';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Your deals' };
@@ -229,9 +230,13 @@ export default async function ParticipantHome() {
                                 color: brand,
                               }}
                             >
-                              {String(s.phase).replace(/_/g, ' ')}
+                              {phaseLabelFor(s.phase, s.kind)}
                             </span>
-                            {s.kind && <span>· {s.kind}</span>}
+                            {s.kind && (
+                              <span>
+                                · {s.kind === 'seller' ? 'Listing' : 'Buyer'} deal
+                              </span>
+                            )}
                             {p.can_view_financials && s.agreed_price && (
                               <span className="font-semibold text-ink-900">
                                 · ${Number(s.agreed_price).toLocaleString()}

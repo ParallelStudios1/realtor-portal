@@ -55,7 +55,7 @@ export default function HomePage() {
 
       {/* Hero */}
       <section className="border-b border-ink-200">
-        <div className="mx-auto max-w-5xl px-6 py-24 sm:py-32">
+        <div className="mx-auto grid max-w-6xl items-center gap-16 px-6 py-24 sm:py-32 lg:grid-cols-[1.15fr_0.85fr]">
           <div className="max-w-2xl">
             <span className="inline-flex items-center gap-2 rounded-full border border-ink-200 bg-ink-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-ink-600">
               <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-ink-900" />
@@ -92,6 +92,90 @@ export default function HomePage() {
                 </div>
               ))}
             </dl>
+          </div>
+
+          {/* Product preview — a pure-CSS mock of the client portal so the
+              hero shows the thing being sold. No screenshot to go stale, no
+              gradients, flat ink + one borrowed brand tone. */}
+          <div aria-hidden className="relative hidden lg:block">
+            <div className="absolute -inset-6 rounded-[2rem] bg-ink-50" />
+            <div className="relative rotate-1 rounded-2xl border border-ink-200 bg-white p-5 shadow-soft-xl transition hover:rotate-0">
+              {/* Branded header */}
+              <div className="flex items-center gap-2.5 border-b border-ink-100 pb-4">
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-ink-900 text-[10px] font-bold text-white">
+                  LR
+                </span>
+                <div>
+                  <div className="text-sm font-semibold leading-none text-ink-900">
+                    Logan Realty
+                  </div>
+                  <div className="mt-1 text-[10px] uppercase tracking-wider text-ink-400">
+                    Your deal
+                  </div>
+                </div>
+                <span className="ml-auto rounded-full bg-ink-100 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider text-ink-600">
+                  Under contract
+                </span>
+              </div>
+              {/* Stepper */}
+              <div className="mt-4 flex items-center gap-1.5">
+                {[1, 2, 3, 4, 5, 6, 7].map((n) => (
+                  <span
+                    key={n}
+                    className={
+                      'h-1.5 flex-1 rounded-full ' +
+                      (n <= 5 ? 'bg-ink-900' : 'bg-ink-100')
+                    }
+                  />
+                ))}
+              </div>
+              <p className="mt-2 text-[11px] text-ink-500">
+                Next: complete inspection, appraisal, and financing.
+              </p>
+              {/* Listing row */}
+              <div className="mt-4 flex items-center gap-3 rounded-xl border border-ink-200 p-3">
+                <span className="flex h-11 w-14 items-center justify-center rounded-lg bg-ink-100">
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="h-5 w-5 text-ink-400"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                  </svg>
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-xs font-semibold text-ink-900">
+                    412 Maple Avenue
+                  </div>
+                  <div className="text-[11px] text-ink-500">
+                    $485,000 · closing Jun 28
+                  </div>
+                </div>
+                <span className="rounded-full bg-ink-900 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white">
+                  Your home
+                </span>
+              </div>
+              {/* Chat snippet */}
+              <div className="mt-4 space-y-2">
+                <div className="max-w-[85%] rounded-2xl rounded-bl-md border border-ink-200 bg-white px-3 py-2 text-[11px] text-ink-800 shadow-soft-xs">
+                  Inspection passed — report is in your documents.
+                </div>
+                <div className="ml-auto max-w-[70%] rounded-2xl rounded-br-md bg-ink-900 px-3 py-2 text-[11px] text-white">
+                  Amazing. What&apos;s left before closing?
+                </div>
+              </div>
+              {/* Date row */}
+              <div className="mt-4 flex items-center justify-between rounded-xl bg-ink-50 px-3 py-2.5">
+                <span className="text-[11px] font-semibold text-ink-700">
+                  Final walkthrough
+                </span>
+                <span className="text-[11px] text-ink-500">Thu, Jun 26</span>
+              </div>
+            </div>
           </div>
         </div>
       </section>

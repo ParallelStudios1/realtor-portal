@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getMe, getSupabaseServerClient } from '@/lib/supabaseSsr';
+import { phaseLabelFor } from '@/lib/dealKind';
 
 export const dynamic = 'force-dynamic';
 
@@ -152,7 +153,7 @@ export default async function DashboardOverviewPage() {
                         </div>
                       </div>
                       <span className="shrink-0 rounded-full bg-ink-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-ink-700">
-                        {String(d.phase || 'pending').replace(/_/g, ' ')}
+                        {phaseLabelFor(d.phase, d.kind)}
                       </span>
                       <span className="ml-2 hidden text-xs text-ink-400 sm:inline">
                         {new Date(d.updated_at).toLocaleDateString()}

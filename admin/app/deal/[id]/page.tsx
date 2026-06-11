@@ -4,7 +4,7 @@ import { getMe } from '@/lib/supabaseSsr';
 import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
 import { buildCalendarFeedUrl } from '@/lib/ics';
 import { formatDateOnly } from '@/lib/dates';
-import { phaseLabelFor } from '@/lib/dealKind';
+import { phaseLabelFor, listingStatusLabel, isSellerKind, DEAL_PHASES } from '@/lib/dealKind';
 import { AgreedHomeCard } from '@/components/AgreedHomeCard';
 import { AttorneyDocList, type AttorneyDoc } from '@/components/AttorneyDocList';
 import { DealChat } from '@/components/DealChat';
@@ -18,14 +18,7 @@ import {
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Deal' };
 
-const PHASES = [
-  'searching',
-  'awaiting_offer',
-  'offer_made',
-  'under_contract',
-  'closing',
-  'closed',
-] as const;
+const PHASES = DEAL_PHASES;
 
 /**
  * Universal deal page. Each party (realtor, buyer, seller, attorney, etc.)
@@ -167,7 +160,7 @@ export default async function DealPage({
 
   const housesQuery = service
     .from('houses')
-    .select('id, address, list_price, status, photo_url, is_under_contract')
+    .select('id, address, list_price, status, listing_status, photo_url, is_under_contract')
     .eq('search_id', params.id);
   if (scopedHouseId) housesQuery.eq('id', scopedHouseId);
 
@@ -473,7 +466,9 @@ export default async function DealPage({
                           className="rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase"
                           style={{ color: brand, backgroundColor: brand + '15' }}
                         >
-                          {String(h.status).replace(/_/g, ' ')}
+                          {isSellerKind((d as any).kind)
+                            ? listingStatusLabel((h as any).listing_status)
+                            : String(h.status).replace(/_/g, ' ')}
                         </span>
                       </li>
                     );
@@ -485,6 +480,16 @@ export default async function DealPage({
             {/* Financials — gated */}
             {canSeeFinancials && (
               <Section title="Financials">
+                {d.agreed_price == null &&
+                d.closing_amount == null &&
+                d.earnest_money == null &&
+                d.commission_pct == null &&
+                !d.contract_url ? (
+                  <p className="text-sm text-ink-400">
+                    Nothing here yet — financial terms appear once an offer is
+                    agreed.
+                  </p>
+                ) : null}
                 <dl className="grid grid-cols-2 gap-3 text-sm">
                   <Row label="Agreed price" value={d.agreed_price} />
                   <Row label="Closing amount" value={d.closing_amount} />

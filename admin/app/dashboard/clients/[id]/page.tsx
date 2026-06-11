@@ -4,6 +4,7 @@ import { getMe, getSupabaseServerClient } from '@/lib/supabaseSsr';
 import { ClientProfileActions } from './ClientProfileActions';
 import { formatDateOnly } from '@/lib/dates';
 import { LocalDateTime } from '@/components/LocalDateTime';
+import { phaseLabelFor } from '@/lib/dealKind';
 
 export const dynamic = 'force-dynamic';
 
@@ -170,7 +171,7 @@ export default async function ClientProfilePage({
                       (PHASE_TONE[d.phase as string] || PHASE_TONE.searching)
                     }
                   >
-                    {String(d.phase).replace(/_/g, ' ')}
+                    {phaseLabelFor(d.phase, d.kind)}
                   </span>
                   {d.agreed_price && (
                     <span className="shrink-0 text-xs font-semibold text-ink-700">

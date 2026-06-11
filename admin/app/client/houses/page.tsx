@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getMe, getSupabaseServerClient } from '@/lib/supabaseSsr';
 import { SellerAddListing } from '../SellerAddListing';
+import { listingStatusLabel } from '@/lib/dealKind';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Houses' };
@@ -43,7 +44,7 @@ export default async function ClientHousesPage() {
     ? await supabase
         .from('houses')
         .select(
-          'id, address, list_price, bedrooms, bathrooms, square_feet, photo_url, status, created_at, listing_url, notes'
+          'id, address, list_price, bedrooms, bathrooms, square_feet, photo_url, status, listing_status, created_at, listing_url, notes'
         )
         .in('search_id', searchIds)
         .order('created_at', { ascending: false })
@@ -146,11 +147,18 @@ export default async function ClientHousesPage() {
                     <span>{Number(h.square_feet).toLocaleString()} sqft</span>
                   )}
                 </div>
-                {h.status && (
+                {isSeller ? (
                   <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-ink-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-ink-600">
                     <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-ink-400" />
-                    {h.status.replace(/_/g, ' ')}
+                    {listingStatusLabel(h.listing_status)}
                   </div>
+                ) : (
+                  h.status && (
+                    <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-ink-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-ink-600">
+                      <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-ink-400" />
+                      {h.status.replace(/_/g, ' ')}
+                    </div>
+                  )
                 )}
               </div>
             </Link>

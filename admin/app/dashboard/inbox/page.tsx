@@ -38,7 +38,7 @@ export default async function InboxPage() {
     supabase
       .from('messages')
       .select(
-        `id, body, created_at, search_id,
+        `id, body, created_at, search_id, recipient_user_id,
          sender:users!messages_sender_id_fkey ( full_name, email )`
       )
       .eq('firm_id', me.firm_id!)
@@ -106,11 +106,15 @@ export default async function InboxPage() {
       title: (
         <>
           <strong>{(m as any).sender?.full_name || 'Someone'}</strong>{' '}
-          sent a message
+          {(m as any).recipient_user_id
+            ? 'sent a direct message'
+            : 'posted in the deal chat'}
         </>
       ),
       body: m.body,
-      href: '/dashboard/messages',
+      href: (m as any).recipient_user_id
+        ? '/dashboard/messages'
+        : '/dashboard/deals/' + m.search_id,
       accent: '#0EA5E9',
     });
   }

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { getMe } from '@/lib/supabaseSsr';
 import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
 import { formatDateOnly, formatDateOnlyLong } from '@/lib/dates';
+import { phaseLabelFor } from '@/lib/dealKind';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Attorney workspace' };
@@ -297,7 +298,7 @@ export default async function AttorneyDashboardPage() {
 
                     {/* Phase chip */}
                     <span className="shrink-0 rounded-full bg-ink-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-ink-700">
-                      {String(d.phase).replace(/_/g, ' ')}
+                      {phaseLabelFor(d.phase, (d as any).kind)}
                     </span>
 
                     {/* Needs-signature flag */}

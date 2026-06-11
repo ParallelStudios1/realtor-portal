@@ -25,6 +25,7 @@ import {
 import { useToast } from '@/components/Toast';
 import { getSupabaseBrowserClient } from '@/lib/supabaseBrowser';
 import { defaultPartyPermissions } from '@/lib/partyPermissions';
+import { phaseLabelFor } from '@/lib/dealKind';
 
 type Teammate = { id: string; full_name: string | null; email: string | null };
 
@@ -146,7 +147,7 @@ export function ClientDetailActions({
               tone="indigo"
               icon={<IconFlag />}
               title="Update phase"
-              subtitle={phaseLabel(currentPhase)}
+              subtitle={phaseLabel(currentPhase, dealKind)}
               onClick={() => setOpen('phase')}
             />
             <ActionCard
@@ -275,6 +276,7 @@ export function ClientDetailActions({
       {open === 'phase' && (
         <PhaseModal
           currentPhase={currentPhase}
+          dealKind={dealKind}
           houses={houses}
           currentClosingAmount={financials.closing_amount}
           onUnderContract={() => setOpen('under_contract')}
@@ -606,16 +608,8 @@ function ActionCard({
   );
 }
 
-function phaseLabel(p: string) {
-  const map: Record<string, string> = {
-    searching: 'Searching',
-    awaiting_offer: 'Awaiting offer',
-    offer_made: 'Offer made',
-    under_contract: 'Under contract',
-    closing: 'Closing',
-    closed: 'Closed',
-  };
-  return 'Currently: ' + (map[p] || p);
+function phaseLabel(p: string, kind?: string | null) {
+  return 'Currently: ' + phaseLabelFor(p, kind as any);
 }
 
 // -- icons (inline svg, no extra dependency) -------------------------------
@@ -754,13 +748,24 @@ function Modal({
   onClose: () => void;
   children: React.ReactNode;
 }) {
+  // Close on Escape — modals were mouse-only before.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
   return (
     <div
       className="fixed inset-0 z-50 flex items-end justify-center bg-ink-900/40 p-0 backdrop-blur-sm animate-fade-in sm:items-center sm:p-4"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-t-2xl bg-white shadow-soft-xl sm:rounded-2xl animate-slide-up"
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        className="max-h-[92vh] w-full max-w-md overflow-y-auto rounded-t-2xl bg-white shadow-soft-xl sm:rounded-2xl animate-slide-up"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-ink-100 px-5 py-3.5">
@@ -857,6 +862,7 @@ const inputCls =
 
 function PhaseModal({
   currentPhase,
+  dealKind,
   houses,
   currentClosingAmount,
   onUnderContract,
@@ -864,6 +870,7 @@ function PhaseModal({
   onSubmit,
 }: {
   currentPhase: string;
+  dealKind?: string | null;
   houses?: Array<{ id: string; address: string }>;
   currentClosingAmount?: number | null;
   onUnderContract: () => void;
@@ -954,7 +961,9 @@ function PhaseModal({
                 checked={selected}
                 onChange={() => setPhase(p.id)}
               />
-              <span className="font-medium text-ink-800">{p.label}</span>
+              <span className="font-medium text-ink-800">
+                {phaseLabelFor(p.id, dealKind as any)}
+              </span>
               {p.id === currentPhase && (
                 <span className="ml-auto text-[10px] font-bold uppercase tracking-wide text-ink-400">
                   Current

@@ -23,6 +23,7 @@ type Message = {
   id: string;
   search_id: string;
   sender_id: string;
+  recipient_user_id?: string | null;
   body: string;
   created_at: string;
 };
@@ -47,6 +48,11 @@ export function MessagesClient({
   const supabase = getSupabaseBrowserClient();
   const scrollRef = useRef<HTMLDivElement>(null);
   const toast = useToast();
+  // Stable ref so the long-lived realtime closure can read current threads.
+  const threadsRef = useRef(initialThreads);
+  useEffect(() => {
+    threadsRef.current = threads;
+  }, [threads]);
 
   // Load messages when active thread changes
   useEffect(() => {
@@ -85,8 +91,19 @@ export function MessagesClient({
         },
         (payload) => {
           const msg = payload.new as Message;
-          // Direct-messages hub: ignore group Deal-chat posts (recipient null).
+          // Direct-messages hub: ignore group Deal-chat posts (recipient null)
+          // AND private threads with other parties — only realtor↔client DMs
+          // belong here.
           if (!(msg as any).recipient_user_id) return;
+          const tClient = threadsRef.current.find(
+            (t) => t.searchId === msg.search_id
+          )?.clientId;
+          if (
+            tClient &&
+            msg.sender_id !== tClient &&
+            (msg as any).recipient_user_id !== tClient
+          )
+            return;
           setMessages((prev) => {
             const list = prev[msg.search_id] || [];
             if (list.some((m) => m.id === msg.id)) return prev; // dedupe
@@ -115,17 +132,26 @@ export function MessagesClient({
         // and realtime subscription. Pull any messages that arrived between
         // the latest preview we know about and now, then merge by id.
         if (status !== 'SUBSCRIBED' || cancelled) return;
+        // DIRECT messages only — without the recipient filter this catch-up
+        // merged group Deal-chat posts into the private threads.
         const { data, error: fetchErr } = await supabase
           .from('messages')
-          .select('id, search_id, sender_id, body, created_at')
+          .select('id, search_id, sender_id, recipient_user_id, body, created_at')
           .eq('firm_id', firmId)
+          .not('recipient_user_id', 'is', null)
           .order('created_at', { ascending: true });
         if (cancelled || fetchErr || !data) return;
         const rows = data as Message[];
 
-        // Group rows by search_id
+        // Group rows by search_id, keeping only the realtor↔client thread
+        // (drop private threads with other parties, e.g. attorneys).
+        const clientBySearch = new Map(
+          threadsRef.current.map((t) => [t.searchId, t.clientId])
+        );
         const bySearch = new Map<string, Message[]>();
         for (const m of rows) {
+          const cid = clientBySearch.get(m.search_id);
+          if (cid && m.sender_id !== cid && m.recipient_user_id !== cid) continue;
           const arr = bySearch.get(m.search_id) || [];
           arr.push(m);
           bySearch.set(m.search_id, arr);
@@ -258,43 +284,63 @@ export function MessagesClient({
   }
 
   const active = threads.find((t) => t.searchId === activeId) || null;
+  const activeLoading = !!activeId && messages[activeId] === undefined;
   const activeMessages = activeId ? messages[activeId] || [] : [];
 
   return (
-    <div className="grid h-[calc(100vh-12rem)] grid-cols-12 gap-0 overflow-hidden rounded-xl border border-ink-200 bg-white">
+    <div className="grid h-[calc(100vh-12rem)] grid-cols-12 gap-0 overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-soft-sm">
       {/* Left: thread list */}
       <aside className="col-span-12 max-h-72 overflow-y-auto border-b border-ink-200 md:col-span-4 md:max-h-none md:border-b-0 md:border-r">
         {threads.map((t) => {
           const isActive = t.searchId === activeId;
+          const initials = (t.clientName || '?')
+            .split(' ')
+            .map((w) => w[0])
+            .slice(0, 2)
+            .join('')
+            .toUpperCase();
           return (
             <button
               key={t.searchId}
               onClick={() => setActiveId(t.searchId)}
+              aria-current={isActive ? 'true' : undefined}
               className={
-                'block w-full border-b border-ink-100 px-4 py-3 text-left transition hover:bg-ink-50 ' +
-                (isActive ? 'bg-ink-100' : '')
+                'flex w-full items-center gap-3 border-b border-ink-100 px-4 py-3 text-left transition hover:bg-ink-50 ' +
+                (isActive ? 'bg-ink-50 shadow-[inset_3px_0_0_0_#0f172a]' : '')
               }
             >
-              <div className="flex items-baseline justify-between gap-2">
-                <span className="truncate text-sm font-semibold">
-                  {t.clientName}
+              <span
+                className={
+                  'flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold ' +
+                  (isActive
+                    ? 'bg-ink-900 text-white'
+                    : 'bg-ink-100 text-ink-700')
+                }
+              >
+                {initials}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="flex items-baseline justify-between gap-2">
+                  <span className="truncate text-sm font-semibold text-ink-900">
+                    {t.clientName}
+                  </span>
+                  {t.latest && (
+                    <span className="shrink-0 text-[11px] text-ink-400">
+                      {timeAgo(t.latest.created_at)}
+                    </span>
+                  )}
                 </span>
-                {t.latest && (
-                  <span className="shrink-0 text-xs text-ink-400">
-                    {timeAgo(t.latest.created_at)}
+                {t.latest ? (
+                  <span className="mt-0.5 block truncate text-xs text-ink-500">
+                    {t.latest.sender_id === currentUserId ? 'You: ' : ''}
+                    {t.latest.body}
+                  </span>
+                ) : (
+                  <span className="mt-0.5 block text-xs italic text-ink-400">
+                    No messages yet
                   </span>
                 )}
-              </div>
-              {t.latest ? (
-                <div className="mt-0.5 line-clamp-2 text-xs text-ink-600">
-                  {t.latest.sender_id === currentUserId ? 'You: ' : ''}
-                  {t.latest.body}
-                </div>
-              ) : (
-                <div className="mt-0.5 text-xs italic text-ink-400">
-                  No messages yet
-                </div>
-              )}
+              </span>
             </button>
           );
         })}
@@ -308,20 +354,31 @@ export function MessagesClient({
           </div>
         ) : (
           <>
-            <header className="border-b border-ink-200 bg-white px-5 py-3">
-              <div className="font-semibold">{active.clientName}</div>
-              {active.clientEmail && (
-                <div className="text-xs text-ink-500">
-                  {active.clientEmail}
+            <header className="flex items-center justify-between gap-3 border-b border-ink-200 bg-white px-5 py-3">
+              <div className="min-w-0">
+                <div className="truncate font-semibold text-ink-900">
+                  {active.clientName}
                 </div>
-              )}
+                {active.clientEmail && (
+                  <div className="truncate text-xs text-ink-500">
+                    {active.clientEmail}
+                  </div>
+                )}
+              </div>
+              <span className="shrink-0 rounded-full bg-ink-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-ink-600">
+                Private · 1:1
+              </span>
             </header>
 
             <div
               ref={scrollRef}
               className="flex-1 space-y-2 overflow-y-auto bg-ink-50 px-5 py-4"
             >
-              {activeMessages.length === 0 ? (
+              {activeLoading ? (
+                <div className="flex items-center justify-center py-10">
+                  <div className="h-6 w-6 animate-spin rounded-full border-2 border-ink-200 border-t-ink-900" />
+                </div>
+              ) : activeMessages.length === 0 ? (
                 <div className="py-8 text-center text-sm text-ink-400">
                   No messages yet. Send the first one below.
                 </div>
@@ -335,17 +392,17 @@ export function MessagesClient({
                     >
                       <div
                         className={
-                          'max-w-[75%] rounded-2xl px-4 py-2 text-sm ' +
+                          'max-w-[75%] rounded-2xl px-4 py-2.5 text-sm shadow-soft-xs ' +
                           (own
-                            ? 'rounded-br-sm bg-blue-600 text-white'
-                            : 'rounded-bl-sm bg-white text-ink-900 shadow-sm')
+                            ? 'rounded-br-md bg-ink-900 text-white'
+                            : 'rounded-bl-md border border-ink-200 bg-white text-ink-900')
                         }
                       >
-                        <div className="whitespace-pre-wrap">{m.body}</div>
+                        <div className="whitespace-pre-wrap break-words">{m.body}</div>
                         <div
                           className={
                             'mt-1 text-[10px] ' +
-                            (own ? 'text-blue-100' : 'text-ink-400')
+                            (own ? 'text-white/60' : 'text-ink-400')
                           }
                         >
                           {new Date(m.created_at).toLocaleTimeString([], {
@@ -379,12 +436,12 @@ export function MessagesClient({
                 onChange={(e) => setDraft(e.target.value)}
                 placeholder="Type a message…"
                 disabled={sending}
-                className="flex-1 rounded-md border border-ink-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
+                className="input flex-1"
               />
               <button
                 type="submit"
                 disabled={!draft.trim() || sending}
-                className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+                className="btn-primary shrink-0"
               >
                 {sending ? 'Sending…' : 'Send'}
               </button>

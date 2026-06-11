@@ -15,13 +15,32 @@ export async function loginAction(formData: FormData) {
   }
 
   const supabase = getSupabaseServerClient();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
 
   if (error) {
     redirect('/login?error=' + encodeURIComponent(error.message));
   }
 
-  redirect(next);
+  // When no explicit destination was requested, send each role straight to
+  // its own home. (Server-action redirects skip the middleware hop, so a
+  // client signing in used to land on /dashboard's URL showing /client's
+  // content.)
+  let dest = next;
+  if (next === '/dashboard' && data?.user) {
+    const { data: row } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', data.user.id)
+      .maybeSingle();
+    const role = (row?.role as string) || null;
+    dest =
+      role === 'client' ? '/client' : role === 'attorney' ? '/attorney' : next;
+  }
+
+  redirect(dest);
 }
 
 export async function logoutAction() {

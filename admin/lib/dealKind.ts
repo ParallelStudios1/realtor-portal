@@ -8,6 +8,22 @@
 
 export type DealKind = 'buyer' | 'seller' | 'both' | null | undefined;
 
+/**
+ * Canonical phase order — the single source of truth for every stepper and
+ * picker. Mirrors the Postgres `deal_phase` enum exactly. Don't fork this
+ * list locally: divergent copies are how /deal ended up missing
+ * `counter_offer` while /client showed all seven.
+ */
+export const DEAL_PHASES = [
+  'searching',
+  'awaiting_offer',
+  'offer_made',
+  'counter_offer',
+  'under_contract',
+  'closing',
+  'closed',
+] as const;
+
 const SELLER_PHASE_LABELS: Record<string, string> = {
   searching: 'Listing prep',
   awaiting_offer: 'Active · Listed',

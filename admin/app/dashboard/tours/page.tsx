@@ -86,8 +86,8 @@ export default async function ToursPage() {
           </div>
           <h3 className="mt-4 text-base font-semibold text-ink-900">No tour requests yet</h3>
           <p className="mx-auto mt-1.5 max-w-md text-sm leading-relaxed text-ink-600">
-            When clients request a tour from the mobile app, you'll see them
-            here and can confirm or decline with one tap.
+            When clients request a tour — from their portal or the mobile app —
+            you'll see it here and can confirm or decline with one tap.
           </p>
         </div>
       ) : (
