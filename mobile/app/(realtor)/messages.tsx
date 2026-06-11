@@ -48,16 +48,29 @@ export default function RealtorMessagesScreen() {
     enabled: !!userProfile?.firm_id,
   });
 
-  // Messages for the active thread
+  // The active thread's client — DMs are scoped to the realtor↔client pair.
+  const activeClientId: string | null =
+    (threads || []).find((t: any) => t.id === activeId)?.client?.id || null;
+
+  // PRIVATE 1:1 messages for the active thread (recipient set, client
+  // involved) — matches the web Direct-messages hub. Previously this pulled
+  // the whole-deal GROUP chat too, mixing "private" and public messages.
   const { data: messages } = useQuery({
-    queryKey: ['messages', activeId],
+    queryKey: ['messages', activeId, activeClientId || 'group'],
     queryFn: async () => {
       if (!activeId) return [];
-      const { data } = await supabase
+      let q = supabase
         .from('messages')
         .select('*')
         .eq('search_id', activeId)
+        .not('recipient_user_id', 'is', null)
         .order('created_at', { ascending: true });
+      if (activeClientId) {
+        q = q.or(
+          `sender_id.eq.${activeClientId},recipient_user_id.eq.${activeClientId}`
+        );
+      }
+      const { data } = await q;
       return (data || []) as any[];
     },
     enabled: !!activeId,
@@ -78,11 +91,18 @@ export default function RealtorMessagesScreen() {
         },
         (payload) => {
           const msg = payload.new as any;
-          queryClient.setQueryData<any[]>(['messages', msg.search_id], (prev) => {
-            if (!prev) return [msg];
-            if (prev.some((m: any) => m.id === msg.id)) return prev;
-            return [...prev, msg];
-          });
+          // DM hub: ignore group deal-chat posts (no recipient).
+          if (!msg.recipient_user_id) return;
+          const pairId =
+            msg.sender_id === user?.id ? msg.recipient_user_id : msg.sender_id;
+          queryClient.setQueryData<any[]>(
+            ['messages', msg.search_id, pairId],
+            (prev) => {
+              if (!prev) return [msg];
+              if (prev.some((m: any) => m.id === msg.id)) return prev;
+              return [...prev, msg];
+            }
+          );
         }
       )
       .subscribe();
@@ -102,6 +122,8 @@ export default function RealtorMessagesScreen() {
         firm_id: userProfile!.firm_id!,
         search_id: activeId,
         sender_id: user!.id,
+        // Private 1:1 with the client — NOT the group deal chat.
+        recipient_user_id: activeClientId,
         body,
       })
       .select('id')

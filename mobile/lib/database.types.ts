@@ -1,5 +1,5 @@
 export type UserRole = 'super_admin' | 'realtor' | 'client';
-export type DealPhase = 'searching' | 'awaiting_offer' | 'offer_made' | 'under_contract' | 'closing' | 'closed';
+export type DealPhase = 'searching' | 'awaiting_offer' | 'offer_made' | 'counter_offer' | 'under_contract' | 'closing' | 'closed';
 export type HouseStatus = 'interested' | 'tour_requested' | 'toured' | 'offered' | 'passed';
 export type TourRequestStatus = 'pending' | 'confirmed' | 'declined' | 'cancelled';
 
@@ -142,6 +142,8 @@ export type Message = {
   firm_id: string;
   search_id: string;
   sender_id: string;
+  /** NULL = whole-deal group chat; set = private 1:1 direct message. */
+  recipient_user_id?: string | null;
   body: string;
   read_at: string | null;
   created_at: string;

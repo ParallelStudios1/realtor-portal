@@ -106,7 +106,7 @@ function ClientRow({ search, onPress }: { search: ClientSearch; onPress: () => v
         </Text>
       </View>
       <View style={[styles.phaseChip, { backgroundColor: colors.primary + '22', borderColor: colors.primary }]}>
-        <Text style={[styles.phaseChipText, { color: colors.primary }]}>{formatPhase(search.phase)}</Text>
+        <Text style={[styles.phaseChipText, { color: colors.primary }]}>{formatPhase(search.phase, (search as any).kind)}</Text>
       </View>
     </Pressable>
   );

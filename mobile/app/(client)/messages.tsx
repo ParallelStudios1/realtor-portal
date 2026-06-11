@@ -30,12 +30,25 @@ export default function MessagesScreen() {
   );
 
   const activeSearch = searches?.[0];
-  const { data: messages, isLoading: messagesLoading } = useMessages(activeSearch?.id);
+  // PRIVATE 1:1 thread with the realtor — recipient-scoped, distinct from the
+  // all-parties Deal chat screen. Previously this tab read/wrote the GROUP
+  // thread, so "private" messages were visible to everyone on the deal.
+  const realtorId = (activeSearch as any)?.realtor_id || null;
+  const { data: messages, isLoading: messagesLoading } = useMessages(
+    activeSearch?.id,
+    realtorId
+  );
 
   const sendMessage = useSendMessage();
 
   const handleSend = () => {
-    if (!messageText.trim() || !activeSearch || !user?.id || !userProfile?.firm_id) {
+    if (
+      !messageText.trim() ||
+      !activeSearch ||
+      !user?.id ||
+      !userProfile?.firm_id ||
+      !realtorId
+    ) {
       return;
     }
 
@@ -44,6 +57,7 @@ export default function MessagesScreen() {
       firmId: userProfile.firm_id,
       body: messageText.trim(),
       senderId: user.id,
+      recipientUserId: realtorId,
     });
 
     setMessageText('');
@@ -121,7 +135,7 @@ export default function MessagesScreen() {
           <EmptyState
             icon="chatbubble-ellipses-outline"
             title="No messages yet"
-            body="Say hi to your realtor! They'll get notified right away."
+            body="Say hi to your realtor! This thread is private — just the two of you. They'll get notified right away."
           />
         )}
 

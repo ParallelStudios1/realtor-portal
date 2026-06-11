@@ -25,17 +25,10 @@ import {
 import { ActivityRow } from '@/components/ActivityRow';
 import { Skeleton } from '@/components/Skeleton';
 import { AgreedHomeCard } from '@/components/AgreedHomeCard';
-import { formatPhase } from '@/lib/format';
 import type { DealPhase } from '@/lib/database.types';
+import { DEAL_PHASES, phaseLabelShortFor } from '@/lib/dealKind';
 
-const PHASES: DealPhase[] = [
-  'searching',
-  'awaiting_offer',
-  'offer_made',
-  'under_contract',
-  'closing',
-  'closed',
-];
+const PHASES = DEAL_PHASES as readonly DealPhase[];
 
 /**
  * Realtor's deal detail screen — polished cards + icon-grid quick actions.
@@ -197,7 +190,7 @@ export default function RealtorClientDetailScreen() {
                   fontWeight: phaseIdx === i ? '700' : '500',
                 }}
               >
-                {formatPhase(p)}
+                {phaseLabelShortFor(p, (search as any)?.kind)}
               </Text>
             ))}
           </View>

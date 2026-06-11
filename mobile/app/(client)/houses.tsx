@@ -15,8 +15,10 @@ import { useClientSearches, useHouses } from '@/lib/queries';
 import { useUpdateFavoriteHouse } from '@/lib/mutations';
 import { formatPrice } from '@/lib/format';
 import { formatHouseStatus } from '@/lib/houseStatus';
+import { listingStatusLabel } from '@/lib/dealKind';
 import { SkeletonRow } from '@/components/Skeleton';
 import { EmptyState } from '@/components/EmptyState';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function HousesScreen() {
   const { user, userProfile } = useAuth();
@@ -29,6 +31,7 @@ export default function HousesScreen() {
   );
 
   const activeSearch = searches?.[0];
+  const isSeller = (activeSearch as any)?.kind === 'seller';
   const { data: houses, isLoading: housesLoading, refetch: refetchHouses } = useHouses(activeSearch?.id);
 
   const updateFavorite = useUpdateFavoriteHouse();
@@ -104,7 +107,9 @@ export default function HousesScreen() {
                       { color: colors.primary, borderColor: colors.primary },
                     ]}
                   >
-                    {formatHouseStatus(house.status)}
+                    {isSeller
+                      ? listingStatusLabel((house as any).listing_status)
+                      : formatHouseStatus(house.status)}
                   </Text>
                 </View>
                 <TouchableOpacity
@@ -115,9 +120,11 @@ export default function HousesScreen() {
                   style={styles.favoriteButton}
                   hitSlop={8}
                 >
-                  <Text style={styles.favoriteIcon}>
-                    {house.is_favorite ? '❤️' : '🤍'}
-                  </Text>
+                  <Ionicons
+                    name={house.is_favorite ? 'heart' : 'heart-outline'}
+                    size={22}
+                    color={house.is_favorite ? colors.primary : colors.textSecondary}
+                  />
                 </TouchableOpacity>
               </TouchableOpacity>
             ))}
@@ -125,8 +132,12 @@ export default function HousesScreen() {
         ) : (
           <EmptyState
             icon="home-outline"
-            title="No houses yet"
-            body="Your realtor will add properties to your search soon. They'll show up here."
+            title={isSeller ? 'No listings yet' : 'No houses yet'}
+            body={
+              isSeller
+                ? "Your listing will show up here once it's added — you or your agent can add it from the web portal."
+                : "Your realtor will add properties to your search soon. They'll show up here."
+            }
           />
         )}
       </ScrollView>

@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/lib/auth';
 import { useTheme } from '@/lib/theme';
 import { supabase } from '@/lib/supabase';
@@ -148,7 +149,7 @@ export default function RealtorHouseDetailScreen() {
           <Image source={{ uri: house.photo_url }} style={styles.photo} contentFit="cover" />
         ) : (
           <View style={[styles.photoPlaceholder, { backgroundColor: colors.surface }]}>
-            <Text style={{ fontSize: 40 }}>🏠</Text>
+            <Ionicons name="home-outline" size={40} color={colors.textSecondary} />
           </View>
         )}
 

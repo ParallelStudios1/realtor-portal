@@ -18,6 +18,7 @@ import { useToast } from '@/components/Toast';
 import { humanError } from '@/lib/humanError';
 import { SkeletonRow } from '@/components/Skeleton';
 import { EmptyState } from '@/components/EmptyState';
+import { Ionicons } from '@expo/vector-icons';
 
 /**
  * Client-facing list of documents shared by the realtor.
@@ -121,7 +122,12 @@ export default function ClientDocumentsScreen() {
                 },
               ]}
             >
-              <Text style={styles.icon}>📄</Text>
+              <Ionicons
+                name="document-text-outline"
+                size={22}
+                color={colors.textSecondary}
+                style={styles.icon}
+              />
               <View style={{ flex: 1 }}>
                 <Text
                   style={[styles.docName, { color: colors.text }]}
@@ -169,7 +175,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     gap: 12,
   },
-  icon: { fontSize: 20 },
+  icon: { marginRight: 2 },
   docName: { fontSize: 15, fontWeight: '500' },
   docMeta: { fontSize: 12, marginTop: 2 },
   chev: { fontSize: 24 },

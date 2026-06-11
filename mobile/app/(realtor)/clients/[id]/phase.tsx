@@ -22,6 +22,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useSearch, useHouses } from '@/lib/queries';
 import { useToast } from '@/components/Toast';
 import { humanError } from '@/lib/humanError';
+import { phaseLabelFor } from '@/lib/dealKind';
 
 /**
  * Realtor phase-change screen — parity with the web phase-update flow.
@@ -65,7 +66,7 @@ const PHASE_OPTIONS: { id: Phase; label: string; hint: string }[] = [
   {
     id: 'closed',
     label: 'Closed',
-    hint: 'Needs the final closing amount. 🏡 Welcome home.',
+    hint: 'Needs the final closing amount.',
   },
 ];
 
@@ -252,7 +253,7 @@ export default function PhaseScreen() {
                       fontSize: 13,
                     }}
                   >
-                    {p.label}
+                    {phaseLabelFor(p.id, (search as any)?.kind)}
                     {current ? ' (now)' : ''}
                   </Text>
                 </Pressable>

@@ -16,6 +16,7 @@ import DateTimePicker, {
 } from '@react-native-community/datetimepicker';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
@@ -222,7 +223,7 @@ export default function ClientHouseDetailScreen() {
           <Image source={{ uri: house.photo_url }} style={styles.photo} contentFit="cover" />
         ) : (
           <View style={[styles.photoPlaceholder, { backgroundColor: colors.surface }]}>
-            <Text style={{ fontSize: 40 }}>🏠</Text>
+            <Ionicons name="home-outline" size={40} color={colors.textSecondary} />
           </View>
         )}
 

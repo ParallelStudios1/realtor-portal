@@ -25,6 +25,11 @@ import { EmptyState } from '@/components/EmptyState';
 import { AgreedHomeCard } from '@/components/AgreedHomeCard';
 import { supabase } from '@/lib/supabase';
 import { useQuery } from '@tanstack/react-query';
+import {
+  DEAL_PHASES,
+  phaseLabelShortFor,
+  nextStepHintFor,
+} from '@/lib/dealKind';
 
 /**
  * Pop these on the client when the realtor advances the deal phase. Shown
@@ -33,61 +38,71 @@ import { useQuery } from '@tanstack/react-query';
  */
 const CELEBRATIONS: Record<
   string,
-  { emoji: string; title: string; body: string }
+  {
+    icon: keyof typeof Ionicons.glyphMap;
+    title: string;
+    body: string;
+    seller?: { title: string; body: string };
+  }
 > = {
+  awaiting_offer: {
+    icon: 'megaphone-outline',
+    title: 'Offer prep underway',
+    body: 'You found the one — your agent is putting your offer together.',
+    seller: {
+      title: 'Your home is live!',
+      body: 'Your listing is active on the market. Your agent is coordinating showings and watching for offers.',
+    },
+  },
   offer_made: {
-    emoji: '🎯',
+    icon: 'document-text-outline',
     title: 'Offer is in!',
-    body: 'Your agent submitted your offer. Fingers crossed — we\'ll let you know the moment we hear back.',
+    body: "Your agent submitted your offer. Fingers crossed — we'll let you know the moment we hear back.",
+    seller: {
+      title: 'An offer came in',
+      body: 'A buyer made an offer on your home. Your agent will walk you through the terms.',
+    },
   },
   counter_offer: {
-    emoji: '↩️',
+    icon: 'swap-horizontal-outline',
     title: 'Counter on the table',
-    body: 'You\'re in counter-offer mode. Your agent is negotiating on your behalf.',
+    body: "You're in counter-offer mode. Your agent is negotiating on your behalf.",
+    seller: {
+      title: 'Negotiating terms',
+      body: 'Counter-offer in play. Your agent is negotiating to get you the best result.',
+    },
   },
   under_contract: {
-    emoji: '🎉',
-    title: 'You\'re under contract!',
+    icon: 'ribbon-outline',
+    title: "You're under contract!",
     body: 'Huge step. Inspection and appraisal come next — your important dates are in this app.',
+    seller: {
+      title: "You're under contract!",
+      body: "Huge step. The buyer's inspection and financing come next — key dates are in this app.",
+    },
   },
   closing: {
-    emoji: '🏁',
+    icon: 'flag-outline',
     title: 'Closing time!',
     body: 'Wire instructions and final paperwork are headed your way. Almost home.',
+    seller: {
+      title: 'Closing time!',
+      body: 'Final paperwork is in motion. Almost done — get ready to hand over the keys.',
+    },
   },
   closed: {
-    emoji: '🏡',
+    icon: 'home',
     title: 'Welcome home!',
     body: 'The house is officially yours. Congrats — your agent will be in touch about handoff details.',
+    seller: {
+      title: 'Sold!',
+      body: 'Your sale is closed. Congratulations — your agent will follow up with the final details.',
+    },
   },
 };
 
-// Seller (listing) labels for the same phase ids — most realtors are listing
-// agents, so a seller deal must read like a listing, not a buyer search.
-const SELLER_PHASE_LABELS: Record<string, string> = {
-  searching: 'Prep',
-  awaiting_offer: 'Active',
-  offer_made: 'Offer in',
-  counter_offer: 'Negotiating',
-  under_contract: 'Under contract',
-  closing: 'Closing',
-  closed: 'Sold',
-};
-
-function phaseLabel(id: string, kind: string | null | undefined, fallback: string) {
-  if (kind === 'seller') return SELLER_PHASE_LABELS[id] || fallback;
-  return fallback;
-}
-
-const PHASES = [
-  { id: 'searching', label: 'Searching' },
-  { id: 'awaiting_offer', label: 'Awaiting Offer' },
-  { id: 'offer_made', label: 'Offer' },
-  { id: 'counter_offer', label: 'Counter' },
-  { id: 'under_contract', label: 'Under contract' },
-  { id: 'closing', label: 'Closing' },
-  { id: 'closed', label: 'Closed' },
-] as const;
+// Shared kind-aware phase labels — mirror of the web app (lib/dealKind).
+const PHASES = DEAL_PHASES.map((id) => ({ id }));
 
 export default function ClientHomeScreen() {
   const { user, userProfile } = useAuth();
@@ -139,7 +154,7 @@ export default function ClientHomeScreen() {
   // after a phase change, pop a celebration modal. Persistence lives in
   // public.user_deal_views via the mark_deal_phase_seen RPC.
   const [celebration, setCelebration] = useState<null | {
-    emoji: string;
+    icon: keyof typeof Ionicons.glyphMap;
     title: string;
     body: string;
     phase: string;
@@ -162,10 +177,13 @@ export default function ClientHomeScreen() {
       if (seen !== activeSearch.phase) {
         const c = CELEBRATIONS[activeSearch.phase as string];
         if (c && activeSearch.phase !== 'searching') {
+          // Seller deals get listing-lifecycle copy instead of buyer copy.
+          const isSeller = (activeSearch as any)?.kind === 'seller';
+          const variant = isSeller && c.seller ? c.seller : c;
           setCelebration({
-            emoji: c.emoji,
-            title: c.title,
-            body: c.body,
+            icon: c.icon,
+            title: variant.title,
+            body: variant.body,
             phase: activeSearch.phase as string,
             searchId: activeSearch.id,
           });
@@ -228,9 +246,23 @@ export default function ClientHomeScreen() {
               elevation: 12,
             }}
           >
-            <Text style={{ fontSize: 56, marginBottom: 8 }}>
-              {celebration?.emoji}
-            </Text>
+            <View
+              style={{
+                width: 72,
+                height: 72,
+                borderRadius: 36,
+                marginBottom: 14,
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: '#0F172A',
+              }}
+            >
+              <Ionicons
+                name={celebration?.icon || 'checkmark'}
+                size={34}
+                color="#fff"
+              />
+            </View>
             <Text
               style={{
                 fontSize: 22,
@@ -377,10 +409,28 @@ export default function ClientHomeScreen() {
                       fontWeight: phaseIdx === i ? '700' : '500',
                     }}
                   >
-                    {phaseLabel(p.id, (activeSearch as any)?.kind, p.label)}
+                    {phaseLabelShortFor(p.id, (activeSearch as any)?.kind)}
                   </Text>
                 ))}
               </View>
+              {nextStepHintFor(
+                activeSearch.phase,
+                (activeSearch as any)?.kind,
+              ) ? (
+                <Text
+                  style={{
+                    marginTop: 10,
+                    fontSize: 12,
+                    lineHeight: 17,
+                    color: colors.textSecondary,
+                  }}
+                >
+                  {nextStepHintFor(
+                    activeSearch.phase,
+                    (activeSearch as any)?.kind,
+                  )}
+                </Text>
+              ) : null}
             </Card>
 
             {/* Agreed home — once a home is confirmed on the deal, surface it
@@ -472,7 +522,7 @@ export default function ClientHomeScreen() {
                           lineHeight: 18,
                         }}
                       >
-                        💬 {(activeSearch as any).closed_message}
+                        {(activeSearch as any).closed_message}
                       </Text>
                     </View>
                   ) : null}
@@ -548,12 +598,13 @@ export default function ClientHomeScreen() {
                       </Text>
                       {d.location ? (
                         <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 2 }}>
-                          📍 {d.location}
+                          <Ionicons name="location-outline" size={11} color={colors.textSecondary} />{' '}
+                          {d.location}
                         </Text>
                       ) : null}
                       {d.things_to_bring ? (
                         <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 2 }}>
-                          🧰 Bring: {d.things_to_bring}
+                          Bring: {d.things_to_bring}
                         </Text>
                       ) : null}
                     </View>
@@ -684,7 +735,7 @@ export default function ClientHomeScreen() {
                     style={{ paddingVertical: 8 }}
                   >
                     <Text style={{ color: colors.primary, fontSize: 14, fontWeight: '600' }}>
-                      📄 View signed contract
+                      View signed contract →
                     </Text>
                   </Pressable>
                 ) : null}

@@ -1,17 +1,18 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { DealPhase } from '@/lib/database.types';
-import { formatPhase } from '@/lib/format';
+import { DEAL_PHASES, phaseLabelShortFor, type DealKind } from '@/lib/dealKind';
 import { useTheme } from '@/lib/theme';
 
 interface PhaseStepperProps {
   currentPhase: DealPhase;
+  kind?: DealKind;
   size?: 'small' | 'large';
 }
 
-const phases: DealPhase[] = ['searching', 'awaiting_offer', 'offer_made', 'under_contract', 'closing', 'closed'];
+const phases = DEAL_PHASES as readonly DealPhase[];
 
-export function PhaseStepper({ currentPhase, size = 'large' }: PhaseStepperProps) {
+export function PhaseStepper({ currentPhase, kind, size = 'large' }: PhaseStepperProps) {
   const { colors } = useTheme();
   const currentIndex = phases.indexOf(currentPhase);
 
@@ -84,7 +85,7 @@ export function PhaseStepper({ currentPhase, size = 'large' }: PhaseStepperProps
                 },
               ]}
             >
-              {formatPhase(phase)}
+              {phaseLabelShortFor(phase, kind ?? null)}
             </Text>
           ))}
         </View>

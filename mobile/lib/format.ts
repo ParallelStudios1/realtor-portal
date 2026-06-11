@@ -1,16 +1,13 @@
 import { format, formatDistance, isToday, isTomorrow, isPast } from 'date-fns';
 import { DealPhase } from './database.types';
+import { phaseLabelFor, type DealKind } from './dealKind';
 
-export function formatPhase(phase: DealPhase): string {
-  const phaseMap: Record<DealPhase, string> = {
-    searching: 'Searching',
-    awaiting_offer: 'Awaiting Offer',
-    offer_made: 'Offer Made',
-    under_contract: 'Under Contract',
-    closing: 'Closing',
-    closed: 'Closed',
-  };
-  return phaseMap[phase];
+/**
+ * Kind-aware phase label. Pass the deal's `kind` so seller deals read like
+ * listings ("Active · Listed") instead of buyer searches ("Awaiting offer").
+ */
+export function formatPhase(phase: DealPhase, kind?: DealKind): string {
+  return phaseLabelFor(phase, kind ?? null);
 }
 
 export function formatDate(dateString: string): string {

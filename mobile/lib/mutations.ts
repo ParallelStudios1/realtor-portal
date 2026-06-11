@@ -452,11 +452,18 @@ export function useSendMessage() {
       firmId,
       body,
       senderId,
+      recipientUserId,
     }: {
       searchId: string;
       firmId: string;
       body: string;
       senderId: string;
+      /**
+       * Set for a PRIVATE 1:1 message (web's "Direct messages"); omit/null
+       * for the whole-deal GROUP chat. Previously this was never set, so the
+       * mobile Messages tab was silently posting to everyone on the deal.
+       */
+      recipientUserId?: string | null;
     }) => {
       const { data: inserted, error } = await supabase
         .from('messages')
@@ -464,6 +471,7 @@ export function useSendMessage() {
           search_id: searchId,
           firm_id: firmId,
           sender_id: senderId,
+          recipient_user_id: recipientUserId ?? null,
           body,
         })
         .select('id')
@@ -496,47 +504,60 @@ export function useSendMessage() {
       return { tempId: undefined as string | undefined, realId: inserted?.id };
     },
     onMutate: async (vars) => {
-      await queryClient.cancelQueries({ queryKey: ['messages', vars.searchId] });
-      const prev = queryClient.getQueryData<Message[]>([
-        'messages',
-        vars.searchId,
-      ]);
+      // Cache key mirrors useMessages: third segment is the DM partner id or
+      // 'group' for the whole-deal chat.
+      const key = ['messages', vars.searchId, vars.recipientUserId || 'group'];
+      await queryClient.cancelQueries({ queryKey: key });
+      const prev = queryClient.getQueryData<Message[]>(key);
       const tid = tempId('msg');
-      const optimistic: Message & { _pending?: boolean } = {
+      const optimistic: Message & {
+        _pending?: boolean;
+        recipient_user_id?: string | null;
+      } = {
         id: tid,
         firm_id: vars.firmId,
         search_id: vars.searchId,
         sender_id: vars.senderId,
+        recipient_user_id: vars.recipientUserId ?? null,
         body: vars.body,
         read_at: null,
         created_at: new Date().toISOString(),
         _pending: true,
       };
-      queryClient.setQueryData<Message[]>(
-        ['messages', vars.searchId],
-        [...(prev ?? []), optimistic]
-      );
+      queryClient.setQueryData<Message[]>(key, [...(prev ?? []), optimistic]);
       return { prev, tempId: tid };
     },
     onError: (_err, vars, ctx) => {
       if (ctx?.prev !== undefined) {
-        queryClient.setQueryData(['messages', vars.searchId], ctx.prev);
+        queryClient.setQueryData(
+          ['messages', vars.searchId, vars.recipientUserId || 'group'],
+          ctx.prev
+        );
       }
     },
     onSuccess: (data, vars, ctx) => {
       // Replace the optimistic row's id with the real one so the realtime
       // INSERT doesn't slip past our dedupe (which is keyed on id).
       if (!data?.realId || !ctx?.tempId) return;
-      queryClient.setQueryData<Message[]>(['messages', vars.searchId], (cur) => {
-        if (!cur) return cur;
-        return cur.map((m) =>
-          m.id === ctx.tempId ? { ...m, id: data.realId!, _pending: false } : m
-        );
-      });
+      queryClient.setQueryData<Message[]>(
+        ['messages', vars.searchId, vars.recipientUserId || 'group'],
+        (cur) => {
+          if (!cur) return cur;
+          return cur.map((m) =>
+            m.id === ctx.tempId
+              ? { ...m, id: data.realId!, _pending: false }
+              : m
+          );
+        }
+      );
     },
     onSettled: (_data, _err, variables) => {
       queryClient.invalidateQueries({
-        queryKey: ['messages', variables.searchId],
+        queryKey: [
+          'messages',
+          variables.searchId,
+          variables.recipientUserId || 'group',
+        ],
       });
     },
   });
