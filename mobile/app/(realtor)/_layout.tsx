@@ -34,12 +34,14 @@ export default function RealtorTabsLayout() {
           ),
         }}
       />
+      {/* This screen lists DEALS (one row per deal workspace), not people —
+          calling it "Clients" made "2 clients / 1 deal" look like a bug. */}
       <Tabs.Screen
         name="clients"
         options={{
-          title: 'Clients',
+          title: 'Deals',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="people" size={size} color={color} />
+            <Ionicons name="briefcase" size={size} color={color} />
           ),
         }}
       />
@@ -75,6 +77,10 @@ export default function RealtorTabsLayout() {
       <Tabs.Screen name="clients/[id]/alert" options={{ href: null, title: 'Send alert' }} />
       <Tabs.Screen name="clients/[id]/attorney" options={{ href: null, title: 'Attorney' }} />
       <Tabs.Screen name="clients/[id]/docusign" options={{ href: null, title: 'DocuSign' }} />
+      {/* add-party was missing here, so expo-router auto-generated a junk
+          tab for it (raw route name + placeholder icon, bottom-right). Every
+          stacked route MUST be listed with href:null to stay out of the bar. */}
+      <Tabs.Screen name="clients/[id]/add-party" options={{ href: null, title: 'Add party' }} />
     </Tabs>
   );
 }

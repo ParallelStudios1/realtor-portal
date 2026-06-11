@@ -50,6 +50,10 @@ export function AgreedHomeCard({
   // Only render once the deal actually has an agreed home.
   if (!offerHouseId || !agreedAt) return null;
 
+  // Seller deals: the "agreed home" IS the listing — label it that way and
+  // skip the buyer-flavored "agreed by" line.
+  const isSeller = search?.kind === 'seller';
+
   const whoLabel =
     agreedBy && clientId && agreedBy === clientId
       ? 'the client'
@@ -74,20 +78,22 @@ export function AgreedHomeCard({
       <View style={styles.headerRow}>
         <Ionicons name="home" size={16} color={colors.success} />
         <Text style={[styles.label, { color: colors.success }]}>
-          AGREED HOME
+          {isSeller ? 'YOUR LISTING' : 'AGREED HOME'}
         </Text>
       </View>
       <Text style={[styles.address, { color: colors.text }]} numberOfLines={2}>
-        {house?.address || 'Confirmed home'}
+        {house?.address || (isSeller ? 'Your listing' : 'Confirmed home')}
       </Text>
       {house?.list_price ? (
         <Text style={[styles.price, { color: colors.textSecondary }]}>
           ${Number(house.list_price).toLocaleString()}
         </Text>
       ) : null}
-      <Text style={[styles.meta, { color: colors.textSecondary }]}>
-        Confirmed by {whoLabel} on {formatDate(agreedAt)}
-      </Text>
+      {!isSeller && (
+        <Text style={[styles.meta, { color: colors.textSecondary }]}>
+          Confirmed by {whoLabel} on {formatDate(agreedAt)}
+        </Text>
+      )}
     </Wrapper>
   );
 }

@@ -219,7 +219,7 @@ export default function RealtorClientDetailScreen() {
             <ActionTile
               tone="#2563EB"
               icon="home"
-              label="Add house"
+              label={(search as any)?.kind === 'seller' ? 'Add listing' : 'Add house'}
               onPress={() =>
                 router.push(`/(realtor)/clients/${id}/add-house` as any)
               }
@@ -311,7 +311,7 @@ export default function RealtorClientDetailScreen() {
 
         {/* Houses */}
         <SectionCard
-          title="Houses"
+          title={(search as any)?.kind === 'seller' ? 'Listings' : 'Houses'}
           count={houses?.length}
           colors={colors}
           actionLabel="+ Add"

@@ -167,10 +167,14 @@ export default async function DealDetailPage({
       .eq('firm_id', me.firm_id)
       .in('role', ['realtor', 'firm_admin', 'owner', 'manager', 'agent'])
       .neq('id', me.user_id),
+    // PRIVATE 1:1 DMs only (recipient set) — the group Deal chat renders
+    // separately below. Without this filter the "Recent messages" rail mixed
+    // both threads together, blurring the private/group distinction.
     supabase
       .from('messages')
-      .select('id, body, sender_id, created_at')
+      .select('id, body, sender_id, recipient_user_id, created_at')
       .eq('search_id', params.id)
+      .not('recipient_user_id', 'is', null)
       .order('created_at', { ascending: false })
       .limit(5),
     // Upcoming showings (>= now), oldest first so the soonest is on top.

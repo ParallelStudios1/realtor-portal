@@ -125,6 +125,41 @@ export default async function ClientHomePage() {
         .limit(6)
     : { data: [] as any[] };
 
+  // PENDING SIGNATURES — signing links on the deal that aren't completed.
+  // The client (and on /deal, every designated party) gets a visible spot to
+  // open and sign; previously these lived only on the realtor workspace.
+  const { data: pendingEnvelopes } = active
+    ? await svc
+        .from('esign_envelopes')
+        .select('id, envelope_url, status, recipients, document_id, created_at')
+        .eq('search_id', active.id)
+        .neq('status', 'completed')
+        .order('created_at', { ascending: false })
+        .limit(5)
+    : { data: [] as any[] };
+  const myEnvelopes = (pendingEnvelopes || [])
+    .map((env: any) => {
+      const rec: any = env.recipients;
+      const signers: any[] = Array.isArray(rec)
+        ? rec.filter((r: any) => r?.key || r?.name)
+        : Array.isArray(rec?.signers)
+          ? rec.signers
+          : [];
+      const mine = signers.find(
+        (s: any) => s?.key === 'client:' + me.user_id
+      );
+      return {
+        id: env.id,
+        url: env.envelope_url as string | null,
+        label: (Array.isArray(rec) ? rec.find((r: any) => r?.label)?.label : rec?.label) || 'Document to sign',
+        amSigner: !!mine,
+        signedByMe: !!mine?.signed,
+      };
+    })
+    // Show envelopes where the client is a designated signer and hasn't
+    // signed; fall back to all open links when no signers were designated.
+    .filter((e: any) => (e.amSigner ? !e.signedByMe : true));
+
   // Recent activity feed — "Maria updated phase to under contract", etc.
   const { data: feed } = active
     ? await supabase
@@ -275,6 +310,50 @@ export default async function ClientHomePage() {
             />
           </div>
 
+          {/* NEEDS YOUR SIGNATURE — open signing links on the deal. Most
+              urgent thing on the page when present, so it sits right under
+              the timeline. */}
+          {myEnvelopes.length > 0 && (
+            <section className="mt-4 rounded-2xl border border-amber-300 bg-amber-50/70 p-5 shadow-soft">
+              <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-amber-800">
+                <svg aria-hidden viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 17c4 1 9-5 13-1 2 2 5 0 5 0" />
+                  <path d="M3 21h18" />
+                </svg>
+                Needs your signature
+              </div>
+              <ul className="mt-3 space-y-2">
+                {myEnvelopes.map((e: any) => (
+                  <li
+                    key={e.id}
+                    className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-200 bg-white px-4 py-3"
+                  >
+                    <span className="min-w-0 truncate text-sm font-semibold text-ink-900">
+                      {e.label}
+                    </span>
+                    {e.url ? (
+                      <a
+                        href={e.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="shrink-0 rounded-lg bg-ink-900 px-3.5 py-1.5 text-xs font-bold text-white transition hover:bg-ink-700"
+                      >
+                        Open &amp; sign ↗
+                      </a>
+                    ) : (
+                      <span className="text-xs text-ink-500">
+                        Link coming from your agent
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-2 text-[11px] text-amber-800/80">
+                Signing happens securely in the e-sign tool your agent set up.
+              </p>
+            </section>
+          )}
+
           {/* SELLER — your listing(s), the homes you're selling, with status. */}
           {isSeller && (
             <section className="mt-4 surface p-5">
@@ -342,8 +421,11 @@ export default async function ClientHomePage() {
             </section>
           )}
 
-          {/* Agreed home — the property you and your agent settled on (buyer). */}
-          {agreedHouse && (
+          {/* Agreed home — the property you and your agent settled on. BUYERS
+              only: a seller's agreed home IS their listing, which already has
+              its own "Your home for sale" section above — and "The home you
+              want" is buyer copy. */}
+          {agreedHouse && !isSeller && (
             <Link
               href={`/client/houses/${(agreedHouse as any).id}`}
               className="mt-4 block overflow-hidden rounded-2xl border bg-white shadow-soft transition hover:shadow-soft-md"
@@ -549,7 +631,9 @@ export default async function ClientHomePage() {
                       <span className="font-semibold">{actor}</span>
                       <span className="text-ink-600">{verb}</span>
                       {f.target && (
-                        <span className="font-medium">{prettyTarget(f.action, f.target)}</span>
+                        <span className="font-medium">
+                          {prettyTarget(f.action, f.target, (active as any)?.kind)}
+                        </span>
                       )}
                       <span className="ml-auto shrink-0 text-xs text-ink-400">
                         {timeAgo(f.created_at)}
@@ -683,17 +767,11 @@ function humanizeAction(action: string): string {
   }
 }
 
-function prettyTarget(action: string, target: string) {
+function prettyTarget(action: string, target: string, kind?: string | null) {
   if (action === 'phase_change') {
-    const map: Record<string, string> = {
-      searching: 'Searching',
-      awaiting_offer: 'Awaiting offer',
-      offer_made: 'Offer Made',
-      under_contract: 'Under Contract',
-      closing: 'Closing',
-      closed: 'Closed',
-    };
-    return map[target] || target;
+    // Kind-aware: a seller reads "moved your deal to Active · Listed",
+    // not the internal "Awaiting offer".
+    return phaseLabelFor(target, kind as any);
   }
   return target;
 }

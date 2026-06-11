@@ -1318,9 +1318,11 @@ export function DealWorkspace(props: {
             </div>
           </Card>
 
-          {/* Recent messages */}
+          {/* Direct messages — the PRIVATE 1:1 thread only. The group Deal
+              chat has its own panel; mixing them here made the two look like
+              one thread. */}
           {recentMessages.length > 0 && (
-            <Card title="Recent messages">
+            <Card title="Direct messages · private">
               <ul className="divide-y divide-ink-100">
                 {recentMessages.map((m: any) => {
                   const mine = m.sender_id === me.userId;

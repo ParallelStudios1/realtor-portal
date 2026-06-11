@@ -112,20 +112,24 @@ export default function HousesScreen() {
                       : formatHouseStatus(house.status)}
                   </Text>
                 </View>
-                <TouchableOpacity
-                  onPress={(e) => {
-                    e.stopPropagation();
-                    handleToggleFavorite(house.id, house.is_favorite);
-                  }}
-                  style={styles.favoriteButton}
-                  hitSlop={8}
-                >
-                  <Ionicons
-                    name={house.is_favorite ? 'heart' : 'heart-outline'}
-                    size={22}
-                    color={house.is_favorite ? colors.primary : colors.textSecondary}
-                  />
-                </TouchableOpacity>
+                {/* Favoriting is a buyer action — sellers don't favorite
+                    their own listings. */}
+                {!isSeller && (
+                  <TouchableOpacity
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      handleToggleFavorite(house.id, house.is_favorite);
+                    }}
+                    style={styles.favoriteButton}
+                    hitSlop={8}
+                  >
+                    <Ionicons
+                      name={house.is_favorite ? 'heart' : 'heart-outline'}
+                      size={22}
+                      color={house.is_favorite ? colors.primary : colors.textSecondary}
+                    />
+                  </TouchableOpacity>
+                )}
               </TouchableOpacity>
             ))}
           </View>

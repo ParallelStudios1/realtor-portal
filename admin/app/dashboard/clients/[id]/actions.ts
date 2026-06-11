@@ -8,6 +8,7 @@ import { emailEveryoneOnPhaseChange } from '@/lib/dealEmail';
 import { isFirmPlanActive, canUsePremiumForDeal } from '@/lib/planGate';
 import { notify, notifyDealParticipants } from '@/lib/notify';
 import { defaultPartyPermissions } from '@/lib/partyPermissions';
+import { phaseLabelFor } from '@/lib/dealKind';
 
 /**
  * Server actions called from the rich realtor client-detail page. Each one
@@ -45,7 +46,7 @@ async function authorize(idOrSearchId: string) {
   // cross-firm action.
   let { data: search } = await supabase
     .from('client_searches')
-    .select('id, firm_id, client_id, realtor_id, phase, closing_amount')
+    .select('id, firm_id, client_id, realtor_id, phase, kind, closing_amount')
     .eq('client_id', idOrSearchId)
     .order('created_at', { ascending: false })
     .limit(1)
@@ -53,7 +54,7 @@ async function authorize(idOrSearchId: string) {
   if (!search) {
     const fallback = await supabase
       .from('client_searches')
-      .select('id, firm_id, client_id, realtor_id, phase, closing_amount')
+      .select('id, firm_id, client_id, realtor_id, phase, kind, closing_amount')
       .eq('id', idOrSearchId)
       .maybeSingle();
     search = fallback.data;
@@ -96,18 +97,49 @@ async function activity(
   });
 }
 
-const PHASE_CELEBRATIONS: Record<string, string> = {
-  offer_made:
-    '🎯 Offer is in! Your agent has submitted your offer. Fingers crossed.',
-  counter_offer:
-    '↩️ Counter offer phase — your agent is negotiating. Hang tight.',
-  under_contract:
-    '🎉 Congrats — you are UNDER CONTRACT! Big step. Your agent will line up inspection and appraisal next.',
-  closing:
-    '🏁 You are in the closing phase. Wire instructions and final paperwork are coming.',
-  closed:
-    '🏡 CONGRATS! The house is officially yours. Welcome home.',
+// Kind-aware milestone copy — a SELLER must never read buyer lines like
+// "your offer is in" or "the house is officially yours". No emojis (these
+// land in deal chat, email, and SMS).
+const PHASE_CELEBRATIONS: Record<string, { buyer: string; seller: string }> = {
+  awaiting_offer: {
+    buyer:
+      'You and your agent have agreed on the home. Next step is preparing and submitting your offer.',
+    seller:
+      'Your home is live on the market. Your agent is coordinating showings and watching for offers.',
+  },
+  offer_made: {
+    buyer: 'Offer is in! Your agent has submitted your offer. Fingers crossed.',
+    seller:
+      'An offer has come in on your home. Your agent will walk you through the terms.',
+  },
+  counter_offer: {
+    buyer: 'Counter-offer phase — your agent is negotiating. Hang tight.',
+    seller:
+      'Counter-offer phase — your agent is negotiating the terms for you.',
+  },
+  under_contract: {
+    buyer:
+      'Congrats — you are under contract! Big step. Your agent will line up inspection and appraisal next.',
+    seller:
+      "Congrats — you are under contract! The buyer's inspection, appraisal, and financing come next.",
+  },
+  closing: {
+    buyer:
+      'You are in the closing phase. Wire instructions and final paperwork are coming.',
+    seller:
+      'You are in the closing phase. Final paperwork is in motion — almost done.',
+  },
+  closed: {
+    buyer: 'Congrats! The house is officially yours. Welcome home.',
+    seller: 'Congrats! Your sale is closed.',
+  },
 };
+
+function celebrationFor(phase: string, kind: string | null | undefined) {
+  const c = PHASE_CELEBRATIONS[phase];
+  if (!c) return null;
+  return kind === 'seller' ? c.seller : c.buyer;
+}
 
 export async function updatePhaseAction(
   clientId: string,
@@ -229,13 +261,14 @@ export async function updatePhaseAction(
     );
   }
 
-  // Auto-celebrate transitions to milestone phases.
-  if (phase !== previousPhase && PHASE_CELEBRATIONS[phase]) {
+  // Auto-celebrate transitions to milestone phases (kind-aware copy).
+  const celebration = celebrationFor(phase, (a.search as any).kind);
+  if (phase !== previousPhase && celebration) {
     await service.from('messages').insert({
       firm_id: a.search.firm_id,
       search_id: a.search.id,
       sender_id: a.me.user_id,
-      body: PHASE_CELEBRATIONS[phase],
+      body: celebration,
     });
     // Push to the client side (best effort).
     try {
@@ -261,13 +294,13 @@ export async function updatePhaseAction(
       const siteUrl =
         process.env.SITE_URL || 'https://realtor-portal-ten.vercel.app';
       const dealUrl = siteUrl + '/deal/' + a.search.id;
-      const phaseLabel = phase.replace(/_/g, ' ');
+      const phaseLabel = phaseLabelFor(phase, (a.search as any).kind);
       await notifyDealParticipants({
         searchId: a.search.id,
         subject: `Deal milestone: ${phaseLabel}`,
-        text: PHASE_CELEBRATIONS[phase] + '\n\nOpen the deal: ' + dealUrl,
-        html: `<p>${escapeHtml(PHASE_CELEBRATIONS[phase])}</p><p><a href="${dealUrl}">Open the deal &rarr;</a></p>`,
-        sms_text: PHASE_CELEBRATIONS[phase] + ' — ' + dealUrl,
+        text: celebration + '\n\nOpen the deal: ' + dealUrl,
+        html: `<p>${escapeHtml(celebration)}</p><p><a href="${dealUrl}">Open the deal &rarr;</a></p>`,
+        sms_text: celebration + ' — ' + dealUrl,
         excludeUserId: a.me.user_id,
       });
     } catch (e: any) {

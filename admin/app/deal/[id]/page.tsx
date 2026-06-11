@@ -630,6 +630,21 @@ export default async function DealPage({
                       'Signing link';
                     const signed = env.status === 'completed';
                     const signedCount = signers.filter((s) => s.signed).length;
+                    // Is the VIEWER one of the designated signers? Used to
+                    // turn the open link into a personal "Sign now" prompt.
+                    const myKeys = new Set(
+                      [
+                        'client:' + me.user_id,
+                        'realtor:' + me.user_id,
+                        myParticipantRow
+                          ? 'participant:' + (myParticipantRow as any).id
+                          : null,
+                      ].filter(Boolean) as string[]
+                    );
+                    const mySigner = signers.find((s: any) =>
+                      myKeys.has(s?.key)
+                    );
+                    const iMustSign = !!mySigner && !mySigner.signed && !signed;
                     return (
                       <li key={env.id} className="py-3">
                         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -660,9 +675,14 @@ export default async function DealPage({
                               href={env.envelope_url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="rounded-lg bg-amber-400 px-3 py-1.5 text-xs font-bold text-amber-950 transition hover:bg-amber-300"
+                              className={
+                                'rounded-lg px-3 py-1.5 text-xs font-bold transition ' +
+                                (iMustSign
+                                  ? 'bg-ink-900 text-white hover:bg-ink-700'
+                                  : 'bg-amber-400 text-amber-950 hover:bg-amber-300')
+                              }
                             >
-                              Open to sign ↗
+                              {iMustSign ? 'Sign now ↗' : 'Open to sign ↗'}
                             </a>
                           )}
                         </div>
@@ -693,7 +713,10 @@ export default async function DealPage({
                                     </svg>
                                   )}
                                 </span>
-                                <span className="font-medium">{s.name}</span>
+                                <span className="font-medium">
+                                  {s.name}
+                                  {myKeys.has(s?.key) ? ' (you)' : ''}
+                                </span>
                                 {s.role && <span className="text-ink-400">· {s.role}</span>}
                               </span>
                             ))}

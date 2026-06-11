@@ -17,6 +17,7 @@ import DateTimePicker, {
 import { Image } from 'expo-image';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { listingStatusLabel } from '@/lib/dealKind';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
@@ -211,7 +212,11 @@ export default function ClientHouseDetailScreen() {
     }
   };
 
-  const showRatingUI = house.status === 'toured';
+  // A seller viewing their OWN listing: no tours, no favorites, no ratings,
+  // no "this is the house I want" — those are buyer actions. They see their
+  // listing status instead.
+  const isSellerListing = (search as any)?.kind === 'seller';
+  const showRatingUI = !isSellerListing && house.status === 'toured';
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -231,9 +236,29 @@ export default function ClientHouseDetailScreen() {
           <Text style={[styles.address, { color: colors.text }]}>{house.address}</Text>
 
           <View style={styles.statusRow}>
-            <StatusChip status={house.status} />
-            {house.is_favorite && (
-              <Text style={[styles.fav, { color: colors.warning }]}>★ Favorite</Text>
+            {isSellerListing ? (
+              <View
+                style={{
+                  borderWidth: 1,
+                  borderColor: colors.primary,
+                  borderRadius: 999,
+                  paddingHorizontal: 10,
+                  paddingVertical: 3,
+                }}
+              >
+                <Text
+                  style={{ color: colors.primary, fontSize: 12, fontWeight: '600' }}
+                >
+                  {listingStatusLabel((house as any).listing_status)}
+                </Text>
+              </View>
+            ) : (
+              <>
+                <StatusChip status={house.status} />
+                {house.is_favorite && (
+                  <Text style={[styles.fav, { color: colors.warning }]}>★ Favorite</Text>
+                )}
+              </>
             )}
           </View>
 
@@ -271,9 +296,31 @@ export default function ClientHouseDetailScreen() {
             </Pressable>
           ) : null}
 
+          {/* Seller's own listing: read-only info card. Buyer actions
+              (agree-home, tours, ratings) don't apply to your own house. */}
+          {isSellerListing ? (
+            <View
+              style={[
+                styles.actionBlock,
+                {
+                  borderColor: colors.primary + '55',
+                  backgroundColor: colors.primary + '0D',
+                },
+              ]}
+            >
+              <Text style={[styles.actionTitle, { color: colors.text }]}>
+                This is your listing
+              </Text>
+              <Text style={[styles.helpText, { color: colors.textSecondary }]}>
+                Your agent manages showings and offers on it. To edit the
+                details or status, use the web portal.
+              </Text>
+            </View>
+          ) : null}
+
           {/* "This is the house I want" — confirms the agreed home for the
               whole deal via /api/deals/{searchId}/agree-house. */}
-          {isAgreedHome ? (
+          {isSellerListing ? null : isAgreedHome ? (
             <View
               style={[
                 styles.actionBlock,
@@ -329,8 +376,8 @@ export default function ClientHouseDetailScreen() {
             </View>
           )}
 
-          {/* Status-driven primary action */}
-          {house.status === 'interested' && (
+          {/* Status-driven primary action — buyers only. */}
+          {!isSellerListing && house.status === 'interested' && (
             <View style={[styles.actionBlock, { borderColor: colors.border }]}>
               <Text style={[styles.actionTitle, { color: colors.text }]}>Want to see this house?</Text>
               <Pressable
@@ -398,7 +445,7 @@ export default function ClientHouseDetailScreen() {
             </View>
           )}
 
-          {house.status === 'tour_requested' && (
+          {!isSellerListing && house.status === 'tour_requested' && (
             <View style={[styles.actionBlock, { borderColor: colors.border, alignItems: 'center' }]}>
               <Text style={[styles.tourPending, { color: colors.text }]}>
                 ✓ Tour requested — your realtor will be in touch

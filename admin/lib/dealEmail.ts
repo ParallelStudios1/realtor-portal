@@ -1,4 +1,5 @@
 import { sendEmail, escapeHtml } from './email';
+import { phaseLabelFor } from './dealKind';
 import { getSupabaseServiceRoleClient } from './supabaseServer';
 
 /**
@@ -23,7 +24,7 @@ export async function emailEveryoneOnPhaseChange(input: {
   const { data: deal } = await service
     .from('client_searches')
     .select(
-      `id, name, attorney_email, attorney_name,
+      `id, name, kind, attorney_email, attorney_name,
        firm:firms ( name, contact_email ),
        client:users!client_searches_client_id_fkey ( id, full_name, email ),
        realtor:users!client_searches_realtor_id_fkey ( id, full_name, email )`
@@ -102,12 +103,15 @@ export async function emailEveryoneOnPhaseChange(input: {
     '/deal/' +
     input.searchId;
 
-  const phasePretty = input.newPhase.replace(/_/g, ' ');
+  // Kind-aware phase label so a seller reads "Offer received", not
+  // "Offer submitted". No emojis in subjects.
+  const phasePretty = phaseLabelFor(input.newPhase, (d as any).kind);
   const celebration: Record<string, string> = {
-    offer_made: '🎯 Offer submitted',
-    under_contract: '🎉 Under contract',
-    closing: '🏁 Entering closing',
-    closed: '🏡 Closed — congrats',
+    offer_made:
+      (d as any).kind === 'seller' ? 'Offer received' : 'Offer submitted',
+    under_contract: 'Under contract',
+    closing: 'Entering closing',
+    closed: (d as any).kind === 'seller' ? 'Sold — congrats' : 'Closed — congrats',
   };
   const subject =
     (celebration[input.newPhase] || 'Deal phase updated') +

@@ -66,9 +66,9 @@ export default function RealtorClientsScreen() {
         }
         ListEmptyComponent={
           <EmptyState
-            icon="people-outline"
-            title="No clients yet"
-            body="Invite your first buyer or seller — they'll get an email and show up here right away."
+            icon="briefcase-outline"
+            title="No deals yet"
+            body="Invite your first buyer or seller — their deal will show up here right away."
             ctaLabel="Invite a client"
             ctaIcon="person-add"
             onCtaPress={() => router.push('/(realtor)/invite' as any)}

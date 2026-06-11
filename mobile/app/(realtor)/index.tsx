@@ -149,8 +149,8 @@ export default function RealtorHome() {
                 colors={colors}
               />
               <StatCard
-                icon="search-outline"
-                label="Active searches"
+                icon="briefcase-outline"
+                label="Active deals"
                 value={String(stats?.activeSearches ?? '—')}
                 colors={colors}
               />
