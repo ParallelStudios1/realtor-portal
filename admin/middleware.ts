@@ -23,6 +23,9 @@ export async function middleware(req: NextRequest) {
     path.startsWith('/participant') ||
     path.startsWith('/privacy') ||
     path.startsWith('/terms') ||
+    // Public SMS-consent documentation — Twilio's toll-free verification
+    // reviewers must reach this without auth.
+    path.startsWith('/sms-consent') ||
     // Public seller-lead AVM landing page. Lives at /value/[firmSlug] and
     // collects seller leads for whichever firm owns the slug. No auth.
     path.startsWith('/value/') ||
