@@ -2,11 +2,16 @@ import { redirect } from 'next/navigation';
 import { getMe } from '@/lib/supabaseSsr';
 import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
 import { BillingClient } from './BillingClient';
+import { DevPlanSimulator } from './DevPlanSimulator';
 import { PLANS, seatCapForTier, type PlanTier } from '@/lib/plans';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Billing · Realtor Portal' };
 
+// Only promise what the product actually does today. Everything listed here
+// is live: seats, unlimited clients/deals, firm branding (logo + colors +
+// tagline on the client portal and mobile app), e-sign tracking, deadline
+// oversight, and email support.
 const PLAN_CARDS = [
   {
     id: 'solo',
@@ -14,7 +19,12 @@ const PLAN_CARDS = [
     price: '$99',
     sub: '/month',
     who: 'For solo agents',
-    features: ['1 agent', 'Unlimited clients', 'Standard branding', 'Email support'],
+    features: [
+      '1 agent seat',
+      'Unlimited clients & deals',
+      'Branded client portal & mobile app',
+      'Email support',
+    ],
   },
   {
     id: 'team',
@@ -22,7 +32,12 @@ const PLAN_CARDS = [
     price: '$299',
     sub: '/month',
     who: 'Up to 10 agents',
-    features: ['10 agents', 'Unlimited clients', 'Full branding', 'Priority support'],
+    features: [
+      '10 agent seats',
+      'Unlimited clients & deals',
+      'Branded client portal & mobile app',
+      'Deadline oversight for the whole team',
+    ],
     popular: true,
   },
   {
@@ -31,7 +46,12 @@ const PLAN_CARDS = [
     price: '$799',
     sub: '/month',
     who: 'Up to 50 agents',
-    features: ['50 agents', 'Unlimited clients', 'Custom domain', 'Dedicated CSM'],
+    features: [
+      '50 agent seats',
+      'Unlimited clients & deals',
+      'Branded client portal & mobile app',
+      'Firm-wide analytics & broker oversight',
+    ],
   },
 ];
 
@@ -68,6 +88,9 @@ export default async function BillingPage({
   let usedSeats = 0;
   let seatCap = 1;
   let planName = 'Trial';
+  let isSimulatedSubscription = false;
+  const isDevOwner =
+    (me.email || '').toLowerCase() === 'turnerlogan@parallelstudios.co';
 
   if (me.firm_id) {
     const service = getSupabaseServiceRoleClient();
@@ -78,6 +101,9 @@ export default async function BillingPage({
       .maybeSingle();
     planTier = (firmRow?.plan_tier as PlanTier | null) ?? null;
     hasSubscription = Boolean(firmRow?.stripe_subscription_id);
+    isSimulatedSubscription = Boolean(
+      (firmRow?.stripe_subscription_id || '').startsWith('sim_')
+    );
     const effectiveTier: PlanTier | null =
       planTier ?? (hasSubscription ? null : 'solo');
     seatCap = seatCapForTier(effectiveTier);
@@ -91,7 +117,11 @@ export default async function BillingPage({
       .from('users')
       .select('id', { count: 'exact', head: true })
       .eq('firm_id', me.firm_id)
-      .in('role', ['firm_admin', 'manager', 'realtor', 'member']);
+      // NOTE: every value here must exist in the user_role ENUM. 'member'
+      // (not a real role) used to be in this list, which made PostgREST
+      // throw `invalid input value for enum` — the error was swallowed and
+      // the seat count silently rendered as 0.
+      .in('role', ['firm_admin', 'owner', 'manager', 'realtor', 'agent']);
     const { count: pendingInviteCount } = await service
       .from('firm_invites')
       .select('id', { count: 'exact', head: true })
@@ -205,16 +235,22 @@ export default async function BillingPage({
       </div>
 
       <div className="mt-8 rounded-2xl border border-ink-200 bg-white p-6 text-sm text-ink-600 shadow-soft-sm">
-        <strong className="block text-ink-900">Need an Enterprise plan?</strong>
-        For 50+ agents, custom domain, app store white-label, or SSO,{' '}
+        <strong className="block text-ink-900">Need more than 50 agents?</strong>
         <a
           href="mailto:turnerlogan@parallelstudios.co"
           className="font-semibold text-ink-900 underline underline-offset-2 hover:text-ink-700"
         >
-          email us
+          Email us
         </a>{' '}
-        and we'll set you up.
+        and we'll put together a plan that fits your brokerage.
       </div>
+
+      {isDevOwner && (
+        <DevPlanSimulator
+          currentTier={planTier}
+          simulated={isSimulatedSubscription}
+        />
+      )}
     </main>
   );
 }

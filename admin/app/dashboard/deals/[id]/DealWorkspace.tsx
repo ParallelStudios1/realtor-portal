@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useToast } from '@/components/Toast';
 import {
   ClientDetailActions,
@@ -1714,7 +1715,10 @@ function ShowingModal({
 
   const submittable = Boolean(dateTime) && (mode === 'edit' || Boolean(houseId));
 
-  return (
+  // Portal to <body> so `fixed` can't be trapped by transformed ancestors
+  // (which made modals open below the fold at the card's scroll position).
+  if (typeof document === 'undefined') return null;
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-end justify-center bg-ink-900/40 p-0 backdrop-blur-sm sm:items-center sm:p-4"
       onClick={onClose}
@@ -1900,7 +1904,8 @@ function ShowingModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

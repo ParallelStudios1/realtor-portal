@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState, useTransition } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/components/Toast';
 import {
@@ -141,7 +142,9 @@ export function ExtractReview({
     });
   }
 
-  return (
+  // Portal to <body> so transformed ancestors can't trap the fixed overlay.
+  if (typeof document === 'undefined') return null;
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-end justify-center bg-ink-900/40 p-0 backdrop-blur-sm sm:items-center sm:p-4"
       onClick={onClose}
@@ -395,7 +398,8 @@ export function ExtractReview({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

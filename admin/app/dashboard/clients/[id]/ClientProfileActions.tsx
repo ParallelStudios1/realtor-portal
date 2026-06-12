@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
+import { createPortal } from 'react-dom';
 import { useToast } from '@/components/Toast';
 import { createNewDealAction } from './actions';
 
@@ -37,7 +38,9 @@ export function ClientProfileActions({
         </button>
       </div>
 
-      {open && (
+      {open &&
+        typeof document !== 'undefined' &&
+        createPortal(
         <div
           className="fixed inset-0 z-50 flex items-end justify-center bg-ink-900/40 p-0 backdrop-blur-sm animate-fade-in sm:items-center sm:p-4"
           onClick={() => setOpen(false)}
@@ -128,7 +131,8 @@ export function ClientProfileActions({
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
+import { createPortal } from 'react-dom';
 import { useToast } from '@/components/Toast';
 import {
   addFirmContactAction,
@@ -108,7 +109,9 @@ export function ManualContactControls({ contact }: { contact: FirmContact }) {
           onClose={() => setEditing(false)}
         />
       )}
-      {confirming && (
+      {confirming &&
+        typeof document !== 'undefined' &&
+        createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/40 p-4">
           <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-soft-lg">
             <h3 className="text-base font-bold">Remove this contact?</h3>
@@ -135,7 +138,8 @@ export function ManualContactControls({ contact }: { contact: FirmContact }) {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
@@ -175,7 +179,9 @@ function ContactFormModal({
     });
   };
 
-  return (
+  // Portal so the fixed overlay can't be trapped by transformed ancestors.
+  if (typeof document === 'undefined') return null;
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-ink-900/40 p-4 sm:items-center">
       <form
         onSubmit={onSubmit}
@@ -293,7 +299,8 @@ function ContactFormModal({
           </button>
         </div>
       </form>
-    </div>
+    </div>,
+    document.body
   );
 }
 

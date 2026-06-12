@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useTransition } from 'react';
+import { createPortal } from 'react-dom';
 import {
   addHouseAction,
   addImportantDateAction,
@@ -758,7 +759,14 @@ function Modal({
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
-  return (
+  // PORTAL to <body>: rendered in place, `fixed` was being trapped by
+  // transformed/filtered ancestors (hover translate cards, backdrop-blur),
+  // so the overlay appeared at the card's position — often below the fold —
+  // instead of pinned to the viewport.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return null;
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-end justify-center bg-ink-900/40 p-0 backdrop-blur-sm animate-fade-in sm:items-center sm:p-4"
       onClick={onClose}
@@ -795,7 +803,8 @@ function Modal({
         </div>
         <div className="p-5">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

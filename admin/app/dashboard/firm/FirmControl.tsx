@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
+import { createPortal } from 'react-dom';
 import { useToast } from '@/components/Toast';
 import {
   inviteFirmMemberAction,
@@ -373,7 +374,9 @@ function InviteModal({
   // Non-owners can't create owners.
   const eligibleRoles = isOwner ? ROLES : ROLES.filter((r) => r.id !== 'owner');
 
-  return (
+  // Portal so the fixed overlay can't be trapped by transformed ancestors.
+  if (typeof document === 'undefined') return null;
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-end justify-center bg-ink-900/40 p-0 backdrop-blur-sm animate-fade-in sm:items-center sm:p-4"
       onClick={onClose}
@@ -446,7 +449,8 @@ function InviteModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
