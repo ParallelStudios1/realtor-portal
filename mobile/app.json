@@ -5,8 +5,15 @@
     "version": "0.1.3",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
     "ios": {
       "supportsTablet": true,
+      "icon": "./assets/icon.png",
       "bundleIdentifier": "com.parallelstudios.realtorportal",
       "associatedDomains": [
         "applinks:realtor-portal-ten.vercel.app"
@@ -17,6 +24,10 @@
     },
     "android": {
       "package": "com.parallelstudios.realtorportal",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
       "permissions": [
         "android.permission.RECORD_AUDIO"
       ],
@@ -41,7 +52,8 @@
       ]
     },
     "web": {
-      "bundler": "metro"
+      "bundler": "metro",
+      "favicon": "./assets/favicon.png"
     },
     "plugins": [
       "expo-router",

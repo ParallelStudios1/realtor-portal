@@ -33,7 +33,8 @@ export default function HomePage() {
       <header className="sticky top-0 z-40 border-b border-ink-200 bg-white/80 backdrop-blur">
         <nav className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
           <Link href="/" className="flex items-center gap-2 font-semibold tracking-tight">
-            <span aria-hidden className="inline-block h-6 w-6 rounded-md bg-ink-900" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="Realtor Portal" className="h-7 w-7" />
             <span>Realtor Portal</span>
           </Link>
           <div className="flex items-center gap-6 text-sm">
@@ -507,7 +508,8 @@ export default function HomePage() {
       <footer className="border-t border-ink-200">
         <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-3 px-6 py-10 text-sm text-ink-500 sm:flex-row">
           <Link href="/" className="flex items-center gap-2 font-semibold text-ink-700">
-            <span aria-hidden className="inline-block h-5 w-5 rounded-md bg-ink-900" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="Realtor Portal" className="h-6 w-6" />
             <span>Realtor Portal</span>
           </Link>
           <p className="text-xs">© {new Date().getFullYear()} Parallel Studios LLC</p>
