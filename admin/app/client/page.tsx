@@ -8,7 +8,7 @@ import { DealChat } from '@/components/DealChat';
 import { getDealChat } from '@/app/dashboard/deals/[id]/chatActions';
 import { buildCalendarFeedUrl } from '@/lib/ics';
 import { formatDateOnly } from '@/lib/dates';
-import { listingStatusLabel } from '@/lib/dealKind';
+import { listingStatusLabel, offerStatusLabel } from '@/lib/dealKind';
 import { SellerAddListing } from './SellerAddListing';
 
 export const dynamic = 'force-dynamic';
@@ -94,6 +94,20 @@ export default async function ClientHomePage() {
           .from('houses')
           .select('id, address, photo_url, list_price, listing_status, mls_number')
           .eq('search_id', active.id)
+          .order('created_at', { ascending: false })
+      : { data: [] as any[] };
+
+  // SELLER deal — offers the agent has logged on this listing. The seller can
+  // read these via the listing_offers participant-read RLS (client_id = me).
+  const { data: myOffers } =
+    isSeller && active
+      ? await supabase
+          .from('listing_offers')
+          .select(
+            'id, buyer_name, buyer_agent, amount, earnest_money, financing, status, offer_date, notes, created_at'
+          )
+          .eq('search_id', active.id)
+          .order('offer_date', { ascending: false, nullsFirst: false })
           .order('created_at', { ascending: false })
       : { data: [] as any[] };
 
@@ -418,6 +432,60 @@ export default async function ClientHomePage() {
               {(myListings || []).length > 0 && (
                 <SellerAddListing brandColor={brandColor} hasListings={true} />
               )}
+            </section>
+          )}
+
+          {/* SELLER — offers your agent has logged on your listing. */}
+          {isSeller && (myOffers || []).length > 0 && (
+            <section className="mt-4 surface p-5">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-400">
+                Offers on your home
+              </div>
+              <ul className="mt-3 space-y-3">
+                {(myOffers as any[]).map((o) => (
+                  <li
+                    key={o.id}
+                    className="rounded-xl border border-ink-200 bg-white p-4"
+                  >
+                    <div className="flex flex-wrap items-baseline justify-between gap-2">
+                      <div className="text-lg font-bold tracking-tight text-ink-900">
+                        {o.amount != null
+                          ? '$' + Number(o.amount).toLocaleString()
+                          : 'Offer'}
+                      </div>
+                      <span
+                        className="rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide"
+                        style={{
+                          backgroundColor: (brandColor || '#0F172A') + '15',
+                          color: brandColor || '#0F172A',
+                        }}
+                      >
+                        {offerStatusLabel(o.status)}
+                      </span>
+                    </div>
+                    <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-ink-600">
+                      {o.buyer_name && <span>From {o.buyer_name}</span>}
+                      {o.buyer_agent && <span>· Agent: {o.buyer_agent}</span>}
+                      {o.financing && <span>· {o.financing}</span>}
+                      {o.earnest_money != null && (
+                        <span>
+                          · ${Number(o.earnest_money).toLocaleString()} earnest
+                        </span>
+                      )}
+                      {o.offer_date && <span>· {formatDateOnly(o.offer_date)}</span>}
+                    </div>
+                    {o.notes && (
+                      <p className="mt-2 whitespace-pre-wrap text-sm text-ink-600">
+                        {o.notes}
+                      </p>
+                    )}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-3 text-xs text-ink-500">
+                Your agent manages these. Talk to them about how you&apos;d like
+                to respond.
+              </p>
             </section>
           )}
 

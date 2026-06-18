@@ -23,6 +23,7 @@ import { ShowingFeedbackPanel } from './ShowingFeedbackPanel';
 import { formatDateOnly } from '@/lib/dates';
 import { LocalDateTime } from '@/components/LocalDateTime';
 import { EsignPanel } from './EsignPanel';
+import { TerminateDealControl } from './TerminateDealControl';
 import { ExtractReview, type StagedExtraction } from './ExtractReview';
 import { DealChat } from '@/components/DealChat';
 import { SubphaseEditor } from './SubphaseEditor';
@@ -723,6 +724,13 @@ export function DealWorkspace(props: {
           houses={houses as any}
         />
       </div>
+
+      {/* Deal fell-through / terminate — only once there's a contract to undo. */}
+      {['offer_made', 'counter_offer', 'under_contract', 'closing'].includes(
+        deal.phase
+      ) && (
+        <TerminateDealControl searchId={deal.id} kind={deal.kind ?? null} />
+      )}
 
       {/* Body grid */}
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
