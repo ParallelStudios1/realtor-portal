@@ -19,10 +19,19 @@ import {
   useImportantDates,
   useActivities,
   useDealParticipants,
+  useTourRequests,
+  useListingOffers,
+  useEsignEnvelopes,
 } from '@/lib/queries';
 import { Skeleton, SkeletonRow } from '@/components/Skeleton';
 import { EmptyState } from '@/components/EmptyState';
 import { AgreedHomeCard } from '@/components/AgreedHomeCard';
+import {
+  FinancialsCard,
+  OffersCard,
+  SigningLinksCard,
+  TourRequestsCard,
+} from '@/components/DealInfo';
 import { supabase } from '@/lib/supabase';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -123,6 +132,11 @@ export default function ClientHomeScreen() {
   // Everyone else on the deal: co-realtors, attorneys, inspectors, lenders.
   // Mirror of the realtor's People card so the client sees who's involved.
   const { data: participants } = useDealParticipants(activeSearch?.id);
+  // Read-only deal info every party should see on mobile: tours, financials,
+  // offers, and signing links — mirrors the web all-parties deal view.
+  const { data: tours } = useTourRequests(activeSearch?.id);
+  const { data: offers } = useListingOffers(activeSearch?.id);
+  const { data: envelopes } = useEsignEnvelopes(activeSearch?.id);
 
   const { data: realtor } = useQuery({
     queryKey: ['realtor-for-search', activeSearch?.id],
@@ -741,6 +755,13 @@ export default function ClientHomeScreen() {
                 ) : null}
               </Card>
             )}
+
+            {/* Read-only deal info, visible to the client just like the
+                realtor sees it: tours, financials, offers, signing links. */}
+            <TourRequestsCard tours={tours ?? []} colors={colors} />
+            <FinancialsCard search={activeSearch} colors={colors} />
+            <OffersCard offers={offers ?? []} colors={colors} />
+            <SigningLinksCard envelopes={envelopes ?? []} colors={colors} />
 
             {/* Quick links */}
             <View style={s.quickRow}>

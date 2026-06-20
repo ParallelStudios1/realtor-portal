@@ -21,10 +21,22 @@ import {
   useDocuments,
   useActivities,
   useDealParticipants,
+  useTourRequests,
+  useListingOffers,
+  useEsignEnvelopes,
 } from '@/lib/queries';
+import { useUpdateTourRequest } from '@/lib/mutations';
+import { useToast } from '@/components/Toast';
+import { humanError } from '@/lib/humanError';
 import { ActivityRow } from '@/components/ActivityRow';
 import { Skeleton } from '@/components/Skeleton';
 import { AgreedHomeCard } from '@/components/AgreedHomeCard';
+import {
+  FinancialsCard,
+  OffersCard,
+  SigningLinksCard,
+  TourRequestsCard,
+} from '@/components/DealInfo';
 import type { DealPhase } from '@/lib/database.types';
 import { DEAL_PHASES, phaseLabelShortFor } from '@/lib/dealKind';
 
@@ -45,6 +57,32 @@ export default function RealtorClientDetailScreen() {
   const { data: activities, refetch: refetchActivities } = useActivities(id);
   const { data: participants, refetch: refetchParticipants } =
     useDealParticipants(id);
+  const { data: tours, refetch: refetchTours } = useTourRequests(id);
+  const { data: offers, refetch: refetchOffers } = useListingOffers(id);
+  const { data: envelopes, refetch: refetchEnvelopes } = useEsignEnvelopes(id);
+
+  const updateTour = useUpdateTourRequest();
+  const toast = useToast();
+  const [actingTour, setActingTour] = React.useState<string | null>(null);
+
+  const handleTour = async (
+    tourRequestId: string,
+    status: 'confirmed' | 'declined'
+  ) => {
+    setActingTour(tourRequestId);
+    try {
+      await updateTour.mutateAsync({ tourRequestId, status });
+      await refetchTours();
+      toast.show(
+        status === 'confirmed' ? 'Tour confirmed.' : 'Tour declined.',
+        { variant: 'success' }
+      );
+    } catch (e: any) {
+      toast.show(humanError(e), { variant: 'error' });
+    } finally {
+      setActingTour(null);
+    }
+  };
 
   const onRefresh = async () => {
     await Promise.all([
@@ -54,6 +92,9 @@ export default function RealtorClientDetailScreen() {
       refetchDocs(),
       refetchActivities(),
       refetchParticipants(),
+      refetchTours(),
+      refetchOffers(),
+      refetchEnvelopes(),
     ]);
   };
 
@@ -389,6 +430,24 @@ export default function RealtorClientDetailScreen() {
             ))
           )}
         </SectionCard>
+
+        {/* Tour requests — clickable, expand to view + respond */}
+        <TourRequestsCard
+          tours={tours ?? []}
+          colors={colors}
+          actingId={actingTour}
+          onConfirm={(tid) => handleTour(tid, 'confirmed')}
+          onDecline={(tid) => handleTour(tid, 'declined')}
+        />
+
+        {/* Financials — visible to all parties */}
+        <FinancialsCard search={search} colors={colors} />
+
+        {/* Offers received */}
+        <OffersCard offers={offers ?? []} colors={colors} />
+
+        {/* Signing links + designated signers */}
+        <SigningLinksCard envelopes={envelopes ?? []} colors={colors} />
 
         {/* Important dates */}
         <SectionCard

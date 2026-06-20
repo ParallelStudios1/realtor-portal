@@ -339,11 +339,54 @@ export function useTourRequests(searchId: string | null | undefined) {
       if (!searchId) return [];
       const { data, error } = await supabase
         .from('tour_requests')
+        .select('*, house:houses!tour_requests_house_id_fkey ( id, address )')
+        .eq('search_id', searchId)
+        .order('requested_at', { ascending: true });
+      if (error) throw error;
+      return data as any[];
+    },
+    enabled: !!searchId,
+  });
+}
+
+/**
+ * Listing offers on a (seller) deal — visible to every authorized party so
+ * the inputted numbers (offer amount, earnest, financing) are seen by all,
+ * matching the web "Offers" surface.
+ */
+export function useListingOffers(searchId: string | null | undefined) {
+  return useQuery({
+    queryKey: ['listingOffers', searchId],
+    queryFn: async () => {
+      if (!searchId) return [];
+      const { data, error } = await supabase
+        .from('listing_offers')
         .select('*')
         .eq('search_id', searchId)
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return data as TourRequest[];
+      return (data as any[]) || [];
+    },
+    enabled: !!searchId,
+  });
+}
+
+/**
+ * E-sign / signing links on a deal — the manual DocuSign-link records with
+ * their designated signers, shown read-only to every party.
+ */
+export function useEsignEnvelopes(searchId: string | null | undefined) {
+  return useQuery({
+    queryKey: ['esignEnvelopes', searchId],
+    queryFn: async () => {
+      if (!searchId) return [];
+      const { data, error } = await supabase
+        .from('esign_envelopes')
+        .select('id, envelope_url, status, recipients, document_id, created_at')
+        .eq('search_id', searchId)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return (data as any[]) || [];
     },
     enabled: !!searchId,
   });
