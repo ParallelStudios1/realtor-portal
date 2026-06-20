@@ -16,6 +16,7 @@
       "icon": "./assets/icon.png",
       "bundleIdentifier": "com.parallelstudios.realtorportal",
       "associatedDomains": [
+        "applinks:realtorportal.parallelstudios.co",
         "applinks:realtor-portal-ten.vercel.app"
       ],
       "infoPlist": {
@@ -36,6 +37,16 @@
           "action": "VIEW",
           "autoVerify": true,
           "data": [
+            {
+              "scheme": "https",
+              "host": "realtorportal.parallelstudios.co",
+              "pathPrefix": "/welcome"
+            },
+            {
+              "scheme": "https",
+              "host": "realtorportal.parallelstudios.co",
+              "pathPrefix": "/invite"
+            },
             {
               "scheme": "https",
               "host": "realtor-portal-ten.vercel.app",
