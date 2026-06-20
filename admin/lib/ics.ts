@@ -218,7 +218,7 @@ export function computeCalendarFeedToken(searchId: string, secret: string): stri
 export function buildCalendarFeedUrl(searchId: string): string | null {
   const secret = process.env.CALENDAR_FEED_SECRET;
   if (!secret) return null;
-  const base = process.env.NEXT_PUBLIC_SITE_URL || 'https://realtor-portal-ten.vercel.app';
+  const base = process.env.NEXT_PUBLIC_SITE_URL || 'https://realtorportal.parallelstudios.co';
   const token = computeCalendarFeedToken(searchId, secret);
   return `${base.replace(/\/$/, '')}/api/calendar/${searchId}?t=${token}`;
 }

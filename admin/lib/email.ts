@@ -14,7 +14,7 @@ import { Resend } from 'resend';
  */
 
 const DEFAULT_FROM =
-  'Realtor Portal <noreply@realtor-portal-ten.vercel.app>';
+  'Realtor Portal <noreply@parallelstudios.co>';
 
 export type EmailAttachment = {
   filename: string;

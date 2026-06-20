@@ -62,7 +62,7 @@ export default function UnderContractScreen() {
 
   const apiBase = (
     (process.env.EXPO_PUBLIC_API_URL as string | undefined) ||
-    'https://realtor-portal-ten.vercel.app'
+    'https://realtorportal.parallelstudios.co'
   ).replace(/\/$/, '');
 
   const canSubmit = !!searchId && !!effectiveHouseId && !submitting;

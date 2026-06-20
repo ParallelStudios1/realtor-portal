@@ -92,7 +92,7 @@ export async function POST(req: Request) {
     const service = getSupabaseServiceRoleClient();
     const baseUrl =
       process.env.NEXT_PUBLIC_SITE_URL ??
-      'https://realtor-portal-ten.vercel.app';
+      'https://realtorportal.parallelstudios.co';
 
     // Provision the auth account WITHOUT sending Supabase's magic-link email.
     // We create the user directly (random password, email pre-confirmed); the

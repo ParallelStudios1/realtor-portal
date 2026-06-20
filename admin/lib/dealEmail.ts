@@ -99,7 +99,7 @@ export async function emailEveryoneOnPhaseChange(input: {
   const replyTo = d.realtor?.email || d.firm?.contact_email || undefined;
 
   const dealUrl =
-    (process.env.SITE_URL || 'https://realtor-portal-ten.vercel.app') +
+    (process.env.SITE_URL || 'https://realtorportal.parallelstudios.co') +
     '/deal/' +
     input.searchId;
 
@@ -238,7 +238,7 @@ export async function emailEveryoneDealEvent(input: {
     `${realtorName} via ${firmName} <noreply@parallelstudios.co>`;
   const replyTo = d.realtor?.email || undefined;
   const dealUrl =
-    (process.env.SITE_URL || 'https://realtor-portal-ten.vercel.app') +
+    (process.env.SITE_URL || 'https://realtorportal.parallelstudios.co') +
     '/deal/' +
     input.searchId;
 

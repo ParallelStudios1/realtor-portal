@@ -89,7 +89,7 @@ export async function requestTourAction(
 
   // Push to the realtor side (best effort).
   try {
-    const base = process.env.SITE_URL || 'https://realtor-portal-ten.vercel.app';
+    const base = process.env.SITE_URL || 'https://realtorportal.parallelstudios.co';
     await fetch(base + '/api/notifications/send-push', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -168,7 +168,7 @@ export async function markAgreedHouseAction(houseId: string) {
           .maybeSingle()
       : { data: null };
     const siteUrl =
-      process.env.SITE_URL || 'https://realtor-portal-ten.vercel.app';
+      process.env.SITE_URL || 'https://realtorportal.parallelstudios.co';
     const dealUrl = siteUrl + '/dashboard/deals/' + (search as any).id;
     const addr = (house as any).address || 'a home';
     const clientName = me.full_name || 'Your client';
@@ -198,7 +198,7 @@ export async function markAgreedHouseAction(houseId: string) {
 
   // Push to the realtor side (best effort).
   try {
-    const base = process.env.SITE_URL || 'https://realtor-portal-ten.vercel.app';
+    const base = process.env.SITE_URL || 'https://realtorportal.parallelstudios.co';
     await fetch(base + '/api/notifications/send-push', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },

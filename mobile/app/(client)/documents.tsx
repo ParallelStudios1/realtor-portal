@@ -46,7 +46,7 @@ export default function ClientDocumentsScreen() {
 
   const apiBase =
     (process.env.EXPO_PUBLIC_API_URL as string | undefined) ||
-    'https://realtor-portal-ten.vercel.app';
+    'https://realtorportal.parallelstudios.co';
 
   const openDocument = async (doc: Document) => {
     setOpeningId(doc.id);

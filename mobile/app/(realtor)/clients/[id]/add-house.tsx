@@ -59,7 +59,7 @@ export default function AddHouseScreen() {
 
   const apiBase = (
     (process.env.EXPO_PUBLIC_API_URL as string | undefined) ||
-    'https://realtor-portal-ten.vercel.app'
+    'https://realtorportal.parallelstudios.co'
   ).replace(/\/$/, '');
 
   // -------------------------------------------------------------------------

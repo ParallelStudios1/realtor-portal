@@ -352,7 +352,7 @@ export async function POST(
       // Push (best effort).
       try {
         const base =
-          process.env.SITE_URL || 'https://realtor-portal-ten.vercel.app';
+          process.env.SITE_URL || 'https://realtorportal.parallelstudios.co';
         await fetch(base + '/api/notifications/send-push', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
@@ -369,7 +369,7 @@ export async function POST(
       // SMS milestone announcement.
       try {
         const siteUrl =
-          process.env.SITE_URL || 'https://realtor-portal-ten.vercel.app';
+          process.env.SITE_URL || 'https://realtorportal.parallelstudios.co';
         const dealUrl = siteUrl + '/deal/' + d.id;
         const phaseLabel = phaseLabelFor(phase, (d as any).kind);
         await notifyDealParticipants({

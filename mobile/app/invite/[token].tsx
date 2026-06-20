@@ -5,7 +5,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useTheme } from '@/lib/theme';
 
-const SITE = 'https://realtor-portal-ten.vercel.app';
+const SITE = 'https://realtorportal.parallelstudios.co';
 
 /**
  * Handles the "Set up your account" universal link from invite emails.

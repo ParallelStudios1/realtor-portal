@@ -23,7 +23,7 @@
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "https://epagiepzartckjqzbsxi.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVwYWdpZXB6YXJ0Y2tqcXpic3hpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4Njk2MzQsImV4cCI6MjA5MzQ0NTYzNH0.5jDiEQDh9vPP9hfrMN4zm2hnORJlxKrFTQ1uqyoP6YQ",
-        "EXPO_PUBLIC_API_URL": "https://realtor-portal-ten.vercel.app"
+        "EXPO_PUBLIC_API_URL": "https://realtorportal.parallelstudios.co"
       }
     },
     "production": {
@@ -37,7 +37,7 @@
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "https://epagiepzartckjqzbsxi.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVwYWdpZXB6YXJ0Y2tqcXpic3hpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4Njk2MzQsImV4cCI6MjA5MzQ0NTYzNH0.5jDiEQDh9vPP9hfrMN4zm2hnORJlxKrFTQ1uqyoP6YQ",
-        "EXPO_PUBLIC_API_URL": "https://realtor-portal-ten.vercel.app"
+        "EXPO_PUBLIC_API_URL": "https://realtorportal.parallelstudios.co"
       }
     }
   },

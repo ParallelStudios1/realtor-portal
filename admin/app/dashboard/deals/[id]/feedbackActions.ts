@@ -27,7 +27,7 @@ import { mintFeedbackToken } from '@/lib/feedbackTokens';
 const SITE_URL =
   process.env.SITE_URL ||
   process.env.NEXT_PUBLIC_SITE_URL ||
-  'https://realtor-portal-ten.vercel.app';
+  'https://realtorportal.parallelstudios.co';
 
 const INTERESTS = ['not_interested', 'maybe', 'interested', 'offer_likely'];
 const PRICE_OPINIONS = ['overpriced', 'about_right', 'underpriced'];

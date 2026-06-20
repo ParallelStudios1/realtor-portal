@@ -61,7 +61,7 @@ export async function POST(req: Request) {
 
     const stripe = new Stripe(stripeKey, { apiVersion: '2024-06-20' });
     const baseUrl =
-      process.env.NEXT_PUBLIC_SITE_URL ?? 'https://realtor-portal-ten.vercel.app';
+      process.env.NEXT_PUBLIC_SITE_URL ?? 'https://realtorportal.parallelstudios.co';
 
     // Look up or create a Stripe customer for this firm
     const service = getSupabaseServiceRoleClient();

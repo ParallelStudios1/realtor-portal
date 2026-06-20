@@ -155,7 +155,7 @@ export function useSendAlert() {
       try {
         const apiBase =
           (process.env.EXPO_PUBLIC_API_URL as string | undefined) ||
-          'https://realtor-portal-ten.vercel.app';
+          'https://realtorportal.parallelstudios.co';
         const { data: sess } = await supabase.auth.getSession();
         const token = sess.session?.access_token;
         await fetch(apiBase + '/api/notifications/send-push', {
@@ -486,7 +486,7 @@ export function useSendMessage() {
         const token = sess.session?.access_token;
         const apiBase =
           (process.env.EXPO_PUBLIC_API_URL as string | undefined) ||
-          'https://realtor-portal-ten.vercel.app';
+          'https://realtorportal.parallelstudios.co';
         fetch(`${apiBase}/api/notifications/send-push`, {
           method: 'POST',
           headers: {
@@ -778,7 +778,7 @@ export function useRequestTour() {
         const token = sess.session?.access_token;
         const apiBase =
           (process.env.EXPO_PUBLIC_API_URL as string | undefined) ||
-          'https://realtor-portal-ten.vercel.app';
+          'https://realtorportal.parallelstudios.co';
         fetch(`${apiBase}/api/notifications/send-push`, {
           method: 'POST',
           headers: {
@@ -956,7 +956,7 @@ export function useUpdateTourRequest() {
           const token = sess.session?.access_token;
           const apiBase =
             (process.env.EXPO_PUBLIC_API_URL as string | undefined) ||
-            'https://realtor-portal-ten.vercel.app';
+            'https://realtorportal.parallelstudios.co';
           fetch(`${apiBase}/api/notifications/send-email`, {
             method: 'POST',
             headers: {
@@ -1007,7 +1007,7 @@ export function useUpdateTourRequest() {
           const token = sess.session?.access_token;
           const apiBase =
             (process.env.EXPO_PUBLIC_API_URL as string | undefined) ||
-            'https://realtor-portal-ten.vercel.app';
+            'https://realtorportal.parallelstudios.co';
           fetch(`${apiBase}/api/notifications/send-push`, {
             method: 'POST',
             headers: {

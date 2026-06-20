@@ -116,7 +116,7 @@ export async function inviteFirmMemberAction(payload: {
   }
 
   const baseUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ?? 'https://realtor-portal-ten.vercel.app';
+    process.env.NEXT_PUBLIC_SITE_URL ?? 'https://realtorportal.parallelstudios.co';
 
   // Provision the staff account WITHOUT a Supabase magic-link email.
   // Firm staff (owner/admin/manager/realtor/member) join the EXISTING host

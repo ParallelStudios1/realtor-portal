@@ -204,7 +204,7 @@ export async function POST(
     // client agreed, ping the realtor; when staff agreed, ping the client.
     try {
       const siteUrl =
-        process.env.SITE_URL || 'https://realtor-portal-ten.vercel.app';
+        process.env.SITE_URL || 'https://realtorportal.parallelstudios.co';
       const addr = (house as any).address || 'the home';
       if (isPrincipalClient) {
         // Client agreed → notify the assigned realtor.
@@ -269,7 +269,7 @@ export async function POST(
     // Push to the client side (best effort), mirroring setAgreedHouseAction.
     try {
       const base =
-        process.env.SITE_URL || 'https://realtor-portal-ten.vercel.app';
+        process.env.SITE_URL || 'https://realtorportal.parallelstudios.co';
       await fetch(base + '/api/notifications/send-push', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },

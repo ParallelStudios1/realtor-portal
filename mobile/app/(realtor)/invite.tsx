@@ -47,7 +47,7 @@ export default function InviteClientScreen() {
       const token = sess.session?.access_token;
       const apiBase =
         (process.env.EXPO_PUBLIC_API_URL as string | undefined) ||
-        'https://realtor-portal-ten.vercel.app';
+        'https://realtorportal.parallelstudios.co';
       const r = await fetch(`${apiBase}/api/clients/invite`, {
         method: 'POST',
         headers: {

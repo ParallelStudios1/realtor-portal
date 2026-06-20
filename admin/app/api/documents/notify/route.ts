@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
       'document' + (body.names.length > 1 ? 's' : '') + ' shared',
     body: 'Your realtor just shared ' + fileList + ' on the deal.',
     ctaUrl:
-      (process.env.SITE_URL || 'https://realtor-portal-ten.vercel.app') +
+      (process.env.SITE_URL || 'https://realtorportal.parallelstudios.co') +
       '/deal/' +
       body.searchId,
     ctaLabel: 'View documents',

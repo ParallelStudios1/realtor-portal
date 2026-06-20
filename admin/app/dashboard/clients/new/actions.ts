@@ -43,7 +43,7 @@ export async function inviteClientAction(fd: FormData) {
   const service = getSupabaseServiceRoleClient();
 
   const baseUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ?? 'https://realtor-portal-ten.vercel.app';
+    process.env.NEXT_PUBLIC_SITE_URL ?? 'https://realtorportal.parallelstudios.co';
 
   // Step 1 — provision the account WITHOUT a Supabase magic-link email.
   // createUser with a random password + email_confirm. The client sets their

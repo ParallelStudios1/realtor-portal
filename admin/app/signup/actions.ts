@@ -48,7 +48,7 @@ export async function signupAction(formData: FormData) {
   // Talk to our own API. We can't relative-fetch in a server action without
   // a base URL, so use the env-configured site URL.
   const baseUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ?? 'https://realtor-portal-ten.vercel.app';
+    process.env.NEXT_PUBLIC_SITE_URL ?? 'https://realtorportal.parallelstudios.co';
   const r = await fetch(`${baseUrl}/api/auth/signup`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },

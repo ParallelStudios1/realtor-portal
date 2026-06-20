@@ -476,7 +476,7 @@ export async function POST(req: Request) {
     // failed (so the recipient still gets *something* clickable).
     let notifyResult: any = null;
     let inviteUrl: string | null = invitePath
-      ? (process.env.SITE_URL || 'https://realtor-portal-ten.vercel.app') +
+      ? (process.env.SITE_URL || 'https://realtorportal.parallelstudios.co') +
         invitePath
       : null;
     if (body.email || body.phone || userPhone) {
@@ -494,7 +494,7 @@ export async function POST(req: Request) {
           (ctx as any)?.realtor?.email ||
           'Your realtor';
         const siteUrl =
-          process.env.SITE_URL || 'https://realtor-portal-ten.vercel.app';
+          process.env.SITE_URL || 'https://realtorportal.parallelstudios.co';
         const isRealtorRole =
           body.role === 'realtor' || body.role === 'co_realtor';
         const signupUrl =

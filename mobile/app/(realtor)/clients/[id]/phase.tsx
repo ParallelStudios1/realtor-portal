@@ -73,7 +73,7 @@ const PHASE_OPTIONS: { id: Phase; label: string; hint: string }[] = [
 function apiBaseUrl() {
   return (
     (process.env.EXPO_PUBLIC_API_URL as string | undefined) ||
-    'https://realtor-portal-ten.vercel.app'
+    'https://realtorportal.parallelstudios.co'
   ).replace(/\/$/, '');
 }
 

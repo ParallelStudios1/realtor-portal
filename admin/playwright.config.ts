@@ -4,7 +4,7 @@ import { defineConfig, devices } from '@playwright/test';
  * Playwright config for the admin web app.
  *
  * Local: `BASE_URL=http://localhost:3000 npm run e2e`
- * Prod-smoke: `BASE_URL=https://realtor-portal-ten.vercel.app npm run e2e`
+ * Prod-smoke: `BASE_URL=https://realtorportal.parallelstudios.co npm run e2e`
  *
  * For tests that need an authed user, set TEST_USER_EMAIL + TEST_USER_PASSWORD
  * (a dedicated CI account; never your real one).

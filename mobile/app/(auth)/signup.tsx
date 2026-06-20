@@ -70,7 +70,7 @@ export default function SignupScreen() {
     try {
       const apiBase =
         (process.env.EXPO_PUBLIC_API_URL as string | undefined) ||
-        'https://realtor-portal-ten.vercel.app';
+        'https://realtorportal.parallelstudios.co';
 
       // Step 1 — server admin-creates the auth user (email pre-confirmed),
       // creates firm OR attaches to realtor's firm, creates starter search.

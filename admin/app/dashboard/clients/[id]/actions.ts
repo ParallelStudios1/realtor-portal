@@ -272,7 +272,7 @@ export async function updatePhaseAction(
     });
     // Push to the client side (best effort).
     try {
-      const base = process.env.SITE_URL || 'https://realtor-portal-ten.vercel.app';
+      const base = process.env.SITE_URL || 'https://realtorportal.parallelstudios.co';
       await fetch(base + '/api/notifications/send-push', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -292,7 +292,7 @@ export async function updatePhaseAction(
     // SMS milestone announcement — short, punchy, links to the deal.
     try {
       const siteUrl =
-        process.env.SITE_URL || 'https://realtor-portal-ten.vercel.app';
+        process.env.SITE_URL || 'https://realtorportal.parallelstudios.co';
       const dealUrl = siteUrl + '/deal/' + a.search.id;
       const phaseLabel = phaseLabelFor(phase, (a.search as any).kind);
       await notifyDealParticipants({
@@ -353,7 +353,7 @@ export async function addImportantDateAction(
   // Email + SMS everyone about the new date so it lands in their calendar.
   try {
     const siteUrl =
-      process.env.SITE_URL || 'https://realtor-portal-ten.vercel.app';
+      process.env.SITE_URL || 'https://realtorportal.parallelstudios.co';
     const dealUrl = siteUrl + '/deal/' + a.search.id;
     const pretty =
       payload.label +
@@ -567,7 +567,7 @@ export async function sendAlertAction(clientId: string, message: string) {
   );
   // Fire push (best-effort, server side)
   try {
-    const base = process.env.SITE_URL || 'https://realtor-portal-ten.vercel.app';
+    const base = process.env.SITE_URL || 'https://realtorportal.parallelstudios.co';
     await fetch(base + '/api/notifications/send-push', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -581,7 +581,7 @@ export async function sendAlertAction(clientId: string, message: string) {
   // Email + SMS every person on this deal.
   try {
     const siteUrl =
-      process.env.SITE_URL || 'https://realtor-portal-ten.vercel.app';
+      process.env.SITE_URL || 'https://realtorportal.parallelstudios.co';
     const dealUrl = siteUrl + '/deal/' + a.search.id;
     await notifyDealParticipants({
       searchId: a.search.id,
@@ -729,7 +729,7 @@ async function addHouseScopedSellerParty(
       (ctx as any)?.realtor?.email ||
       'The buyer\'s agent';
     const siteUrl =
-      process.env.SITE_URL || 'https://realtor-portal-ten.vercel.app';
+      process.env.SITE_URL || 'https://realtorportal.parallelstudios.co';
     const dealUrl = siteUrl + '/deal/' + opts.searchId;
     const primaryUrl = invitePath ? siteUrl + invitePath : dealUrl;
     const rolePretty =
@@ -1153,7 +1153,7 @@ export async function setAgreedHouseAction(
       .maybeSingle();
     const client = (ctx as any)?.client;
     const siteUrl =
-      process.env.SITE_URL || 'https://realtor-portal-ten.vercel.app';
+      process.env.SITE_URL || 'https://realtorportal.parallelstudios.co';
     const homeUrl = siteUrl + '/client/houses/' + houseId;
     const addr = (house as any).address || 'your home';
     if (client?.email || client?.phone) {
@@ -1178,7 +1178,7 @@ export async function setAgreedHouseAction(
 
   // Push to the client side (best effort).
   try {
-    const base = process.env.SITE_URL || 'https://realtor-portal-ten.vercel.app';
+    const base = process.env.SITE_URL || 'https://realtorportal.parallelstudios.co';
     await fetch(base + '/api/notifications/send-push', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -1476,7 +1476,7 @@ export async function addParticipantAction(
         (ctx as any)?.realtor?.email ||
         'Your realtor';
       const siteUrl =
-        process.env.SITE_URL || 'https://realtor-portal-ten.vercel.app';
+        process.env.SITE_URL || 'https://realtorportal.parallelstudios.co';
       const dealUrl = siteUrl + '/deal/' + a.search.id;
       const isRealtorRole =
         payload.role === 'realtor' || payload.role === 'co_realtor';
@@ -2070,7 +2070,7 @@ export async function sendPrivatePartyMessageAction(
   // see the DM, not just when they happen to open the deal page.
   try {
     const siteUrl =
-      process.env.SITE_URL || 'https://realtor-portal-ten.vercel.app';
+      process.env.SITE_URL || 'https://realtorportal.parallelstudios.co';
     const dealUrl = siteUrl + '/deal/' + a.search.id;
     const senderName = a.me.full_name || 'Your realtor';
     const trimmed = body.trim();
@@ -2139,7 +2139,7 @@ export async function quickMessageAction(clientId: string, body: string) {
   // takes them to the same conversation in-app.
   try {
     const siteUrl =
-      process.env.SITE_URL || 'https://realtor-portal-ten.vercel.app';
+      process.env.SITE_URL || 'https://realtorportal.parallelstudios.co';
     const dealUrl = siteUrl + '/deal/' + a.search.id;
     const senderName = a.me.full_name || 'Your realtor';
     const trimmed = body.trim();
@@ -2290,7 +2290,7 @@ export async function scheduleShowingAction(
   // Email + SMS everyone on the deal.
   try {
     const siteUrl =
-      process.env.SITE_URL || 'https://realtor-portal-ten.vercel.app';
+      process.env.SITE_URL || 'https://realtorportal.parallelstudios.co';
     const dealUrl = siteUrl + '/deal/' + a.search.id;
     const pretty =
       when.toLocaleDateString(undefined, {
@@ -2425,7 +2425,7 @@ export async function rescheduleShowingAction(
 
   try {
     const siteUrl =
-      process.env.SITE_URL || 'https://realtor-portal-ten.vercel.app';
+      process.env.SITE_URL || 'https://realtorportal.parallelstudios.co';
     const dealUrl = siteUrl + '/deal/' + a.search.id;
     const pretty =
       when.toLocaleDateString(undefined, {

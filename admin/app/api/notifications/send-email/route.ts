@@ -95,7 +95,7 @@ function formatWhen(preferred: string | null | undefined, start: Date): string {
 }
 
 const PORTAL_URL =
-  process.env.NEXT_PUBLIC_SITE_URL || 'https://realtor-portal-ten.vercel.app';
+  process.env.NEXT_PUBLIC_SITE_URL || 'https://realtorportal.parallelstudios.co';
 
 export async function POST(req: Request) {
   try {
@@ -221,7 +221,7 @@ export async function POST(req: Request) {
           .join('\n');
 
         const ics = buildTourIcsAttachment({
-          uid: `tour-${tour.id}@realtor-portal-ten.vercel.app`,
+          uid: `tour-${tour.id}@realtorportal.parallelstudios.co`,
           summary: `Tour: ${address}`,
           description: tour.notes || `Tour with ${realtorName}`,
           location: address,

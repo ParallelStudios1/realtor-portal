@@ -5,7 +5,7 @@ export const dynamic = 'force-static';
 
 /**
  * Android App Links manifest — counterpart to apple-app-site-association.
- * Lets https://realtor-portal-ten.vercel.app/welcome and /invite open the
+ * Lets https://realtorportal.parallelstudios.co/welcome and /invite open the
  * Android app directly when installed.
  *
  * Required values:

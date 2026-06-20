@@ -136,7 +136,7 @@ export default function RealtorMessagesScreen() {
     // Fire-and-forget push
     const apiBase =
       (process.env.EXPO_PUBLIC_API_URL as string | undefined) ||
-      'https://realtor-portal-ten.vercel.app';
+      'https://realtorportal.parallelstudios.co';
     const { data: sess } = await supabase.auth.getSession();
     const token = sess.session?.access_token;
     fetch(`${apiBase}/api/notifications/send-push`, {
