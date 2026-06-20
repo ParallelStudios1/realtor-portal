@@ -54,6 +54,7 @@ export async function middleware(req: NextRequest) {
   // lazily — only when we're actually in protected territory and need to
   // decide between /client and /dashboard.
   let role: string | null = null;
+  let firmId: string | null = null;
   if (
     user &&
     (path === '/login' ||
@@ -67,10 +68,48 @@ export async function middleware(req: NextRequest) {
   ) {
     const { data: row } = await supabase
       .from('users')
-      .select('role')
+      .select('role, firm_id')
       .eq('id', user.id)
       .maybeSingle();
     role = (row?.role as string) || null;
+    firmId = (row?.firm_id as string) || null;
+  }
+
+  // ---- Plan lockout ----
+  // When a firm's plan lapses (trial expired with no subscription, or a
+  // cancelled / past-due subscription) staff lose access to the working
+  // app and are routed to billing — they can pay to restore access, but
+  // can't keep using a portal they aren't paying for. Billing and settings
+  // stay reachable so they can fix it. Clients/attorneys are never gated
+  // here (they don't pay; the firm does).
+  const isStaffRole =
+    role !== null && role !== 'client' && role !== 'attorney';
+  const inDashboardArea = path === '/dashboard' || path.startsWith('/dashboard/');
+  const planExemptPath =
+    path.startsWith('/dashboard/billing') ||
+    path.startsWith('/dashboard/settings');
+  if (user && isStaffRole && inDashboardArea && !planExemptPath && firmId) {
+    const { data: firm } = await supabase
+      .from('firms')
+      .select('status, trial_ends_at, stripe_subscription_id')
+      .eq('id', firmId)
+      .maybeSingle();
+    const planActive = (() => {
+      if (!firm) return true; // fail open — never lock out on a read error
+      if (firm.stripe_subscription_id) return firm.status !== 'cancelled';
+      if (firm.status === 'active') return true;
+      if (firm.status === 'trial') {
+        if (!firm.trial_ends_at) return true; // grandfathered
+        return new Date(firm.trial_ends_at).getTime() > Date.now();
+      }
+      return false; // suspended / past_due / cancelled with no sub
+    })();
+    if (!planActive) {
+      const url = req.nextUrl.clone();
+      url.pathname = '/dashboard/billing';
+      url.search = '?locked=1';
+      return NextResponse.redirect(url);
+    }
   }
 
   const homeForRole = (r: string | null) =>

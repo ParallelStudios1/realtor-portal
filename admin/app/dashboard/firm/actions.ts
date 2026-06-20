@@ -4,7 +4,8 @@ import { revalidatePath } from 'next/cache';
 import { getMe } from '@/lib/supabaseSsr';
 import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
 import { sendEmail, escapeHtml } from '@/lib/email';
-import { PLANS, seatCapForTier, type PlanTier } from '@/lib/plans';
+import { PLANS } from '@/lib/plans';
+import { getSeatUsage } from '@/lib/seats';
 
 /**
  * Firm Control actions. Only callable by users whose role is
@@ -71,46 +72,32 @@ export async function inviteFirmMemberAction(payload: {
 
   // ---- Seat-cap enforcement ----
   // A firm's seat cap comes from its Stripe plan tier. Trial / unsubbed
-  // firms get the Solo cap (1) so they can't grow their team unbounded
-  // before paying. We count both real users and pending (unaccepted)
-  // invites — otherwise an admin could spam invites past the cap.
-  const { data: firmRow } = await service
-    .from('firms')
-    .select('plan_tier, stripe_subscription_id')
-    .eq('id', a.me.firm_id!)
-    .maybeSingle();
-
-  const planTier = (firmRow?.plan_tier as PlanTier | null) ?? null;
-  const hasSubscription = Boolean(firmRow?.stripe_subscription_id);
-  // No tier AND no subscription → still on trial; treat as Solo cap.
-  const effectiveTier: PlanTier | null =
-    planTier ?? (hasSubscription ? null : 'solo');
-  const seatCap = seatCapForTier(effectiveTier);
-
-  const { count: memberCount } = await service
-    .from('users')
-    .select('id', { count: 'exact', head: true })
-    .eq('firm_id', a.me.firm_id!)
-    .in('role', ['firm_admin', 'manager', 'realtor', 'member']);
-
-  const { count: pendingInviteCount } = await service
-    .from('firm_invites')
-    .select('id', { count: 'exact', head: true })
-    .eq('firm_id', a.me.firm_id!)
-    .is('accepted_at', null);
-
-  const usedSeats = (memberCount || 0) + (pendingInviteCount || 0);
-  if (usedSeats >= seatCap) {
-    const planName = effectiveTier ? PLANS[effectiveTier].name : 'Solo';
+  // firms get the Solo cap (1). Seat usage is computed by the shared,
+  // dedup-safe helper so the cap check and the billing display always
+  // agree, and an invited realtor is never counted twice.
+  const usage = await getSeatUsage(a.me.firm_id!);
+  // If the invitee is already a member or already a pending invite, this
+  // isn't a new seat — let it through (re-send / role update).
+  const emailIsExisting = await (async () => {
+    const { data: u } = await service
+      .from('users')
+      .select('id')
+      .eq('firm_id', a.me.firm_id!)
+      .ilike('email', email)
+      .maybeSingle();
+    return Boolean(u);
+  })();
+  if (!emailIsExisting && usage.usedSeats >= usage.seatCap) {
+    const planName = usage.effectiveTier ? PLANS[usage.effectiveTier].name : 'Solo';
     return {
       ok: false as const,
       error:
         'Your ' +
         planName +
         ' plan includes ' +
-        seatCap +
+        usage.seatCap +
         ' seat' +
-        (seatCap === 1 ? '' : 's') +
+        (usage.seatCap === 1 ? '' : 's') +
         '. Upgrade to add more team members.',
     };
   }
@@ -177,6 +164,10 @@ export async function inviteFirmMemberAction(payload: {
     );
   }
 
+  // The staff account is provisioned immediately above (temp password +
+  // branded email), so this invite is effectively accepted the moment it's
+  // created. Stamp accepted_at NOW so the person counts as one member — not
+  // a member AND a lingering "pending invite" (the old double-count bug).
   await service.from('firm_invites').upsert(
     {
       firm_id: a.me.firm_id!,
@@ -184,6 +175,7 @@ export async function inviteFirmMemberAction(payload: {
       full_name,
       role: payload.role,
       invited_by: a.me.user_id,
+      accepted_at: userId ? new Date().toISOString() : null,
     },
     { onConflict: 'firm_id,email' }
   );

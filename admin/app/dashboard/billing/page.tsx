@@ -3,7 +3,8 @@ import { getMe } from '@/lib/supabaseSsr';
 import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
 import { BillingClient } from './BillingClient';
 import { DevPlanSimulator } from './DevPlanSimulator';
-import { PLANS, seatCapForTier, type PlanTier } from '@/lib/plans';
+import { PLANS, type PlanTier } from '@/lib/plans';
+import { getSeatUsage, planNameForUsage } from '@/lib/seats';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Billing · Realtor Portal' };
@@ -12,17 +13,22 @@ export const metadata = { title: 'Billing · Realtor Portal' };
 // is live: seats, unlimited clients/deals, firm branding (logo + colors +
 // tagline on the client portal and mobile app), e-sign tracking, deadline
 // oversight, and email support.
+// Plans are cumulative and the marquee items are REAL, enforced features:
+// Team unlocks the firm-wide deadline Oversight page; Brokerage unlocks the
+// firm-wide Analytics dashboard. Lower tiers genuinely cannot open those
+// pages (gated server-side), so the upgrade buys something concrete.
 const PLAN_CARDS = [
   {
     id: 'solo',
     name: 'Solo',
     price: '$99',
     sub: '/month',
-    who: 'For solo agents',
+    who: 'For a single agent',
     features: [
       '1 agent seat',
       'Unlimited clients & deals',
       'Branded client portal & mobile app',
+      'E-signature tracking & deal timeline',
       'Email support',
     ],
   },
@@ -31,12 +37,13 @@ const PLAN_CARDS = [
     name: 'Team',
     price: '$299',
     sub: '/month',
-    who: 'Up to 10 agents',
+    who: 'For a growing team (up to 10 agents)',
     features: [
+      'Everything in Solo',
       '10 agent seats',
-      'Unlimited clients & deals',
-      'Branded client portal & mobile app',
-      'Deadline oversight for the whole team',
+      'Firm-wide deadline oversight page',
+      'At-risk & overdue deadline tracking by agent',
+      'Priority email support',
     ],
     popular: true,
   },
@@ -45,12 +52,13 @@ const PLAN_CARDS = [
     name: 'Brokerage',
     price: '$799',
     sub: '/month',
-    who: 'Up to 50 agents',
+    who: 'For a brokerage (up to 50 agents)',
     features: [
+      'Everything in Team',
       '50 agent seats',
-      'Unlimited clients & deals',
-      'Branded client portal & mobile app',
-      'Firm-wide analytics & broker oversight',
+      'Firm-wide analytics dashboard',
+      'Pipeline, conversion & production reporting',
+      'Broker oversight across every agent',
     ],
   },
 ];
@@ -58,8 +66,19 @@ const PLAN_CARDS = [
 export default async function BillingPage({
   searchParams,
 }: {
-  searchParams: { success?: string; canceled?: string };
+  searchParams: {
+    success?: string;
+    canceled?: string;
+    locked?: string;
+    upgrade?: string;
+  };
 }) {
+  const upgradeFeatureLabel =
+    searchParams.upgrade === 'analytics'
+      ? 'the firm-wide Analytics dashboard'
+      : searchParams.upgrade === 'teamOversight'
+        ? 'the firm-wide Deadline Oversight page'
+        : null;
   const me = await getMe();
   if (!me) {
     redirect('/login');
@@ -96,38 +115,20 @@ export default async function BillingPage({
     const service = getSupabaseServiceRoleClient();
     const { data: firmRow } = await service
       .from('firms')
-      .select('plan_tier, stripe_subscription_id')
+      .select('stripe_subscription_id')
       .eq('id', me.firm_id)
       .maybeSingle();
-    planTier = (firmRow?.plan_tier as PlanTier | null) ?? null;
-    hasSubscription = Boolean(firmRow?.stripe_subscription_id);
     isSimulatedSubscription = Boolean(
       (firmRow?.stripe_subscription_id || '').startsWith('sim_')
     );
-    const effectiveTier: PlanTier | null =
-      planTier ?? (hasSubscription ? null : 'solo');
-    seatCap = seatCapForTier(effectiveTier);
-    planName = effectiveTier
-      ? PLANS[effectiveTier].name
-      : hasSubscription
-        ? 'Active'
-        : 'Trial';
-
-    const { count: memberCount } = await service
-      .from('users')
-      .select('id', { count: 'exact', head: true })
-      .eq('firm_id', me.firm_id)
-      // NOTE: every value here must exist in the user_role ENUM. 'member'
-      // (not a real role) used to be in this list, which made PostgREST
-      // throw `invalid input value for enum` — the error was swallowed and
-      // the seat count silently rendered as 0.
-      .in('role', ['firm_admin', 'owner', 'manager', 'realtor', 'agent']);
-    const { count: pendingInviteCount } = await service
-      .from('firm_invites')
-      .select('id', { count: 'exact', head: true })
-      .eq('firm_id', me.firm_id)
-      .is('accepted_at', null);
-    usedSeats = (memberCount || 0) + (pendingInviteCount || 0);
+    // Single source of truth for seat usage — dedup-safe so an invited
+    // realtor is counted once, never as member + pending invite.
+    const usage = await getSeatUsage(me.firm_id);
+    planTier = usage.tier;
+    hasSubscription = usage.hasSubscription;
+    seatCap = usage.seatCap;
+    usedSeats = usage.usedSeats;
+    planName = planNameForUsage(usage);
   }
 
   const utilization = seatCap > 0 ? usedSeats / seatCap : 0;
@@ -161,6 +162,18 @@ export default async function BillingPage({
         )}
       </p>
 
+      {searchParams.locked && (
+        <div className="mt-6 rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">
+          Your plan isn't active, so the rest of the portal is paused. Choose a
+          plan below to restore access for you and your team.
+        </div>
+      )}
+      {upgradeFeatureLabel && (
+        <div className="mt-6 rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800">
+          {upgradeFeatureLabel} is included on a higher plan. Upgrade below to
+          turn it on for your firm.
+        </div>
+      )}
       {searchParams.success && (
         <div className="mt-6 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
           Subscription started — your firm is active.

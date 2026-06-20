@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getMe, getSupabaseServerClient } from '@/lib/supabaseSsr';
 import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
+import { getSeatUsage } from '@/lib/seats';
+import { tierHasFeature } from '@/lib/plans';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Analytics' };
@@ -32,6 +34,12 @@ export default async function AnalyticsPage() {
 
   if (!isAdmin && !isRealtor) {
     redirect('/dashboard');
+  }
+
+  // Brokerage-tier feature: firm-wide analytics. Lower tiers can't open it.
+  const usage = await getSeatUsage(me.firm_id);
+  if (!tierHasFeature(usage.effectiveTier, 'analytics')) {
+    redirect('/dashboard/billing?upgrade=analytics');
   }
 
   // Date math, computed server-side once.

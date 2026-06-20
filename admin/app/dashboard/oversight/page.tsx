@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getMe } from '@/lib/supabaseSsr';
 import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
+import { getSeatUsage } from '@/lib/seats';
+import { tierHasFeature } from '@/lib/plans';
 
 export const dynamic = 'force-dynamic';
 
@@ -47,6 +49,12 @@ export default async function OversightPage() {
   if (!me) redirect('/login');
   if (!me.firm_id) redirect('/login');
   if (!BROKER_ROLES.includes(me.role || '')) redirect('/dashboard');
+
+  // Team-tier feature: firm-wide deadline oversight. Solo/Trial can't use it.
+  const usage = await getSeatUsage(me.firm_id);
+  if (!tierHasFeature(usage.effectiveTier, 'teamOversight')) {
+    redirect('/dashboard/billing?upgrade=teamOversight');
+  }
 
   const service = getSupabaseServiceRoleClient();
   const today = todayUtc();

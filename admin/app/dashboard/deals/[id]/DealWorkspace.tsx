@@ -16,6 +16,7 @@ import {
   rescheduleShowingAction,
   updateShowingStatusAction,
   setAgreedHouseAction,
+  deleteImportantDateAction,
   type ShowingAttendee,
 } from '../../clients/[id]/actions';
 import { DeadlineReminderEditor } from '@/components/DeadlineReminderEditor';
@@ -1272,13 +1273,14 @@ export function DealWorkspace(props: {
                         )}
                       </div>
                     )}
-                    <div className="mt-1 text-right">
+                    <div className="mt-1 flex items-center justify-end gap-3">
                       <a
                         href={`/api/calendar/event/${d.id}`}
                         className="text-[10px] font-semibold uppercase tracking-wide text-blue-600 hover:underline"
                       >
                         Add to calendar ↗
                       </a>
+                      <DateDeleteButton clientId={clientId} dateId={d.id} label={d.label} />
                     </div>
                     <DeadlineReminderEditor
                       date={d}
@@ -1405,6 +1407,58 @@ export function DealWorkspace(props: {
         />
       )}
     </main>
+  );
+}
+
+function DateDeleteButton({
+  clientId,
+  dateId,
+  label,
+}: {
+  clientId: string;
+  dateId: string;
+  label: string;
+}) {
+  const router = useRouter();
+  const [pending, start] = useTransition();
+  const [confirming, setConfirming] = useState(false);
+  if (confirming) {
+    return (
+      <span className="inline-flex items-center gap-2 text-[10px]">
+        <span className="text-ink-500">Remove “{label}”?</span>
+        <button
+          type="button"
+          disabled={pending}
+          onClick={() =>
+            start(async () => {
+              const r = await deleteImportantDateAction(clientId, dateId);
+              if (!r.ok) alert(r.error);
+              setConfirming(false);
+              router.refresh();
+            })
+          }
+          className="font-semibold uppercase tracking-wide text-rose-600 hover:underline disabled:opacity-50"
+        >
+          {pending ? 'Removing…' : 'Yes'}
+        </button>
+        <button
+          type="button"
+          onClick={() => setConfirming(false)}
+          className="font-semibold uppercase tracking-wide text-ink-500 hover:underline"
+        >
+          No
+        </button>
+      </span>
+    );
+  }
+  return (
+    <button
+      type="button"
+      onClick={() => setConfirming(true)}
+      className="text-[10px] font-semibold uppercase tracking-wide text-ink-400 hover:text-rose-600 hover:underline"
+    >
+      Remove
+    </button>
   );
 }
 

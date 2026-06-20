@@ -314,6 +314,46 @@ export async function updatePhaseAction(
   return { ok: true as const };
 }
 
+/**
+ * Delete an important date / deadline that's no longer relevant. Staff only,
+ * scoped to the deal so a realtor can only remove dates on their own deals
+ * (or a deal they collaborate on). Logs an activity so the removal is visible.
+ */
+export async function deleteImportantDateAction(
+  clientId: string,
+  dateId: string
+) {
+  const a = await authorize(clientId);
+  if ('error' in a) return { ok: false as const, error: a.error };
+  if (!dateId) return { ok: false as const, error: 'Missing date id.' };
+  const service = getSupabaseServiceRoleClient();
+  const { data: row } = await service
+    .from('important_dates')
+    .select('id, label, search_id')
+    .eq('id', dateId)
+    .maybeSingle();
+  if (!row || (row as any).search_id !== a.search.id) {
+    return { ok: false as const, error: 'Date not found on this deal.' };
+  }
+  const { error } = await service
+    .from('important_dates')
+    .delete()
+    .eq('id', dateId);
+  if (error) return { ok: false as const, error: error.message };
+  await activity(
+    a.search.id,
+    a.search.firm_id,
+    a.me.user_id,
+    'important_date_removed',
+    (row as any).label || 'date',
+    {}
+  );
+  revalidatePath(`/dashboard/clients/${clientId}`);
+  revalidatePath('/dashboard/deals/' + a.search.id);
+  revalidatePath('/dashboard/deals');
+  return { ok: true as const };
+}
+
 export async function addImportantDateAction(
   clientId: string,
   payload: {
