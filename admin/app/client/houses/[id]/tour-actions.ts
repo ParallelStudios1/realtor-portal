@@ -21,7 +21,7 @@ export async function requestTourAction(
   if (me.role !== 'client')
     return { ok: false as const, error: 'Only clients can request tours.' };
 
-  // A concrete date AND time is required — no time, no tour request.
+  // A concrete date AND time is required - no time, no tour request.
   const requestedAt = payload.requested_at ? new Date(payload.requested_at) : null;
   if (!requestedAt || isNaN(requestedAt.getTime())) {
     return {
@@ -105,7 +105,7 @@ export async function requestTourAction(
 }
 
 /**
- * CLIENT ↔ REALTOR HOUSE AGREEMENT — client side.
+ * CLIENT ↔ REALTOR HOUSE AGREEMENT - client side.
  *
  * The principal client marks "This is the house I want" on a specific house.
  * Sets client_searches.offer_house_id = that house, house_agreed_at = now(),
@@ -176,7 +176,7 @@ export async function markAgreedHouseAction(houseId: string) {
       await notify({
         email: (realtor as any)?.email || null,
         phone: (realtor as any)?.phone || null,
-        subject: 'Action needed: ' + clientName + ' picked a home — ' + addr,
+        subject: 'Action needed: ' + clientName + ' picked a home - ' + addr,
         text:
           clientName +
           ' said this is the home they want:\n\n' +

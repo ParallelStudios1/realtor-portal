@@ -8,7 +8,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 /**
- * DEAL GROUP CHAT — Bearer/cookie JSON API for the native mobile app.
+ * DEAL GROUP CHAT - Bearer/cookie JSON API for the native mobile app.
  *
  * Mirrors the server actions in
  *   admin/app/dashboard/deals/[id]/chatActions.ts (getDealChat / postDealChatMessage)
@@ -289,7 +289,7 @@ export async function POST(
     }
 
     // Best-effort fan-out to the other parties on the deal. Never blocks the
-    // post — failures are swallowed so the message still lands.
+    // post - failures are swallowed so the message still lands.
     try {
       const preview = text.length > 140 ? text.slice(0, 140) + '…' : text;
       await notifyDealParticipants({

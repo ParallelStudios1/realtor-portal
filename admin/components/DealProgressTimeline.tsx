@@ -10,7 +10,7 @@ import { phaseLabelFor, phaseMessageFor, nextStepHintFor } from '@/lib/dealKind'
  * filled + checked, the current step is highlighted with a "what's
  * happening now" line, and future steps are muted.
  *
- * Pure presentational component — the server page (app/client/page.tsx)
+ * Pure presentational component - the server page (app/client/page.tsx)
  * is responsible for loading the deal phase + important_dates under the
  * client's own RLS context and passing them down. No data fetching here.
  */
@@ -45,7 +45,7 @@ export const DEAL_PHASES: { id: string; defaultLabel: string }[] = [
 ];
 
 // Sensible default "what's happening / what's next" copy, used when a firm
-// hasn't defined its own phase_messages. Written in plain, calm language —
+// hasn't defined its own phase_messages. Written in plain, calm language -
 // the client should always know what the current step means for them.
 const DEFAULT_MESSAGES: Record<string, string> = {
   searching:
@@ -53,15 +53,15 @@ const DEFAULT_MESSAGES: Record<string, string> = {
   awaiting_offer:
     "You've agreed on the home you want. We're preparing your offer and getting ready to submit it to the seller.",
   offer_made:
-    "Your offer is in. We're waiting to hear back from the seller — this can take anywhere from a few hours to a couple of days.",
+    "Your offer is in. We're waiting to hear back from the seller - this can take anywhere from a few hours to a couple of days.",
   counter_offer:
     "The seller responded with a counter. We're reviewing the terms together and deciding on the next move.",
   under_contract:
-    "Your offer was accepted and you're under contract. Inspections, appraisal, and paperwork happen during this stretch — keep an eye on your important dates.",
+    "Your offer was accepted and you're under contract. Inspections, appraisal, and paperwork happen during this stretch - keep an eye on your important dates.",
   closing:
     "You're in the home stretch. We're finalizing documents and coordinating with everyone to get you to the closing table.",
   closed:
-    "Congratulations — the deal is done. Everything from here is yours.",
+    "Congratulations - the deal is done. Everything from here is yours.",
 };
 
 function resolveLabel(
@@ -80,7 +80,7 @@ function resolveMessage(id: string, overrides?: Record<string, string>) {
 }
 
 function formatDate(iso: string) {
-  // important_dates.date is a DATE-ONLY value — format from its literal
+  // important_dates.date is a DATE-ONLY value - format from its literal
   // calendar day so server and client agree (no timezone shift, no hydration
   // mismatch, and no 6/5-vs-6/6 split with app/client/page.tsx).
   return formatDateOnlyLong(iso);
@@ -122,9 +122,9 @@ export function DealProgressTimeline({
   kind?: 'buyer' | 'seller' | 'both' | null;
   /** Firm brand color (hex). Used only for the active/completed accent. */
   brandColor?: string | null;
-  /** firms.phase_labels jsonb — keyed by phase id. */
+  /** firms.phase_labels jsonb - keyed by phase id. */
   phaseLabels?: Record<string, string>;
-  /** firms.phase_messages jsonb — keyed by phase id. */
+  /** firms.phase_messages jsonb - keyed by phase id. */
   phaseMessages?: Record<string, string>;
   /** Next few important_dates for this deal. */
   upcomingDates?: TimelineDate[];

@@ -39,7 +39,7 @@ export function SkeletonRow({ withChip = false }: { withChip?: boolean }) {
 }
 
 /**
- * Card-shaped skeleton — for grid items like houses that show a photo + body.
+ * Card-shaped skeleton - for grid items like houses that show a photo + body.
  */
 export function SkeletonCard() {
   return (

@@ -21,7 +21,7 @@ import { sendEmail, escapeHtml } from '@/lib/email';
  *      CTA opens /invite/<token>. No Supabase auth email is ever sent.
  *
  * The previous version inserted into a non-existent `deals` table, which
- * silently dropped step 3 — that's why messages and add-house appeared
+ * silently dropped step 3 - that's why messages and add-house appeared
  * broken from the realtor side.
  */
 export async function inviteClientAction(fd: FormData) {
@@ -45,7 +45,7 @@ export async function inviteClientAction(fd: FormData) {
   const baseUrl =
     process.env.NEXT_PUBLIC_SITE_URL ?? 'https://realtorportal.parallelstudios.co';
 
-  // Step 1 — provision the account WITHOUT a Supabase magic-link email.
+  // Step 1 - provision the account WITHOUT a Supabase magic-link email.
   // createUser with a random password + email_confirm. The client sets their
   // real password later on /invite/<token>. If they already exist, resolve id.
   let clientId: string | undefined;
@@ -89,7 +89,7 @@ export async function inviteClientAction(fd: FormData) {
     );
   }
 
-  // Step 2 — public.users row
+  // Step 2 - public.users row
   const { error: userErr } = await service.from('users').upsert(
     {
       id: clientId,
@@ -107,7 +107,7 @@ export async function inviteClientAction(fd: FormData) {
     );
   }
 
-  // Step 3 — DON'T auto-create a deal anymore. A client can have many deals
+  // Step 3 - DON'T auto-create a deal anymore. A client can have many deals
   // over time (a buyer search this year, a listing next year, an investment
   // property the year after). Auto-creating a stub deal whenever you invite
   // a client clutters the deals workspace and forces the realtor to delete
@@ -161,7 +161,7 @@ export async function inviteClientAction(fd: FormData) {
     }
   }
 
-  // Step 4 — create the deal_invites token + send OUR branded Resend email.
+  // Step 4 - create the deal_invites token + send OUR branded Resend email.
   // The CTA opens /invite/<token>, where the client sets a password and signs
   // in. No Supabase auth/magic-link email is ever sent.
   if (searchId) {
@@ -200,11 +200,11 @@ export async function inviteClientAction(fd: FormData) {
       const html = `
 <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#0f172a;">
   <p style="margin:0 0 16px;">Hi ${safeName},</p>
-  <p style="margin:0 0 16px;">${safeRealtor} at <strong>${safeFirm}</strong> invited you to your ${roleInDeal === 'seller' ? 'home sale' : 'home search'} on Realtor Portal — where you'll track listings, tours, documents, and messages in one place.</p>
+  <p style="margin:0 0 16px;">${safeRealtor} at <strong>${safeFirm}</strong> invited you to your ${roleInDeal === 'seller' ? 'home sale' : 'home search'} on Realtor Portal - where you'll track listings, tours, documents, and messages in one place.</p>
   <p style="margin:24px 0;">
     <a href="${inviteUrl}" style="display:inline-block;background:#0f172a;color:#fff;padding:10px 18px;border-radius:8px;font-weight:600;text-decoration:none;">Set up your account &rarr;</a>
   </p>
-  <p style="margin:24px 0 0;color:#475569;">— ${safeFirm}</p>
+  <p style="margin:24px 0 0;color:#475569;">- ${safeFirm}</p>
   <p style="margin:16px 0 0;color:#94a3b8;font-size:12px;">If the button above doesn't work, paste this link into your browser: ${inviteUrl}</p>
 </div>`.trim();
       const text = [
@@ -214,7 +214,7 @@ export async function inviteClientAction(fd: FormData) {
         '',
         `Set up your account: ${inviteUrl}`,
         '',
-        `— ${firmName}`,
+        `- ${firmName}`,
       ].join('\n');
       await sendEmail({
         to: email,

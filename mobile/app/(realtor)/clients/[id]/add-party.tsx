@@ -23,13 +23,13 @@ import { humanError } from '@/lib/humanError';
 /**
  * Mobile "Add party to deal" screen. Mirrors the web AddPartyModal:
  *
- *   - Phone-first (SMS is the primary channel — see /lib/notify on the web)
+ *   - Phone-first (SMS is the primary channel - see /lib/notify on the web)
  *   - Email optional (only required if they already have a Realtor Portal
  *     account that we want to link this party to)
  *   - Role picker covering every PartyRole the web supports
  *   - Visibility checkboxes
  *
- * Posts to /api/participants/add — same backend the web modal hits, so
+ * Posts to /api/participants/add - same backend the web modal hits, so
  * the SMS invite, magic-link signup, activity log, and notify-fanout are
  * the same.
  */
@@ -130,7 +130,7 @@ export default function AddPartyScreen() {
       if (json.notify?.sms?.ok) sentBits.push('Text');
       if (json.notify?.email?.ok) sentBits.push('Email');
       const sent =
-        sentBits.length > 0 ? ` — ${sentBits.join(' + ')} sent` : '';
+        sentBits.length > 0 ? ` - ${sentBits.join(' + ')} sent` : '';
       toast.show(`Added ${name || email || phone}${sent}.`, {
         variant: 'success',
       });

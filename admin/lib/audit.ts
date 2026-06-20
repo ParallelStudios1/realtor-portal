@@ -6,7 +6,7 @@ import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
  * Every compliance-relevant mutation should call logAudit() right after the
  * mutation succeeds. Writes go through the service-role client because the
  * audit_log table (migration 0035) has RLS that blocks non-service-role
- * inserts and a trigger that blocks UPDATE/DELETE — so the trail is
+ * inserts and a trigger that blocks UPDATE/DELETE - so the trail is
  * append-only and tamper-evident in practice.
  *
  * logAudit never throws: audit failures must not break the primary action.

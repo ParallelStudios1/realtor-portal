@@ -113,7 +113,7 @@ export function useHouses(searchId: string | null | undefined) {
 /**
  * Every party on the deal: principal client, assigned realtor, plus
  * deal_participants rows (co-realtors, attorneys, inspectors, lenders, etc.).
- * Mirror of the web's deal-detail participants query — selects whatever
+ * Mirror of the web's deal-detail participants query - selects whatever
  * the People section needs to render.
  */
 export function useDealParticipants(searchId: string | null | undefined) {
@@ -208,7 +208,7 @@ export function useDocuments(searchId: string | null | undefined) {
  *
  * `directWith` (a user id) switches the hook into PRIVATE-DM mode: only
  * messages with a recipient set, to/from that user, are returned. Without it
- * you get the whole-deal GROUP chat (recipient null) — matching the web app's
+ * you get the whole-deal GROUP chat (recipient null) - matching the web app's
  * Deal chat vs. Direct messages split. Previously this returned BOTH mixed
  * together, so "private" messages and group chat were indistinguishable.
  */
@@ -254,7 +254,7 @@ export function useMessages(
     enabled: !!searchId,
   });
 
-  // Realtime subscription — push new messages into the cache the moment they
+  // Realtime subscription - push new messages into the cache the moment they
   // hit Postgres, instead of waiting for the next manual refetch. The channel
   // is keyed on searchId so swapping conversations cleanly tears down the old
   // subscription.
@@ -294,7 +294,7 @@ export function useMessages(
   return query;
 }
 
-/** Ratings for one specific house (1 row max — `unique(client_id, house_id)`). */
+/** Ratings for one specific house (1 row max - `unique(client_id, house_id)`). */
 export function useHouseRating(houseId: string | null | undefined, clientId: string | null | undefined) {
   return useQuery({
     queryKey: ['houseRating', houseId, clientId],
@@ -313,7 +313,7 @@ export function useHouseRating(houseId: string | null | undefined, clientId: str
   });
 }
 
-/** All ratings on a search — used by the realtor view to see how each house landed. */
+/** All ratings on a search - used by the realtor view to see how each house landed. */
 export function useSearchRatings(searchId: string | null | undefined) {
   return useQuery({
     queryKey: ['searchRatings', searchId],
@@ -331,7 +331,7 @@ export function useSearchRatings(searchId: string | null | undefined) {
   });
 }
 
-/** Tour requests on a search — realtor sees pending ones; client sees their own. */
+/** Tour requests on a search - realtor sees pending ones; client sees their own. */
 export function useTourRequests(searchId: string | null | undefined) {
   return useQuery({
     queryKey: ['tourRequests', searchId],
@@ -350,7 +350,7 @@ export function useTourRequests(searchId: string | null | undefined) {
 }
 
 /**
- * Listing offers on a (seller) deal — visible to every authorized party so
+ * Listing offers on a (seller) deal - visible to every authorized party so
  * the inputted numbers (offer amount, earnest, financing) are seen by all,
  * matching the web "Offers" surface.
  */
@@ -372,7 +372,7 @@ export function useListingOffers(searchId: string | null | undefined) {
 }
 
 /**
- * E-sign / signing links on a deal — the manual DocuSign-link records with
+ * E-sign / signing links on a deal - the manual DocuSign-link records with
  * their designated signers, shown read-only to every party.
  */
 export function useEsignEnvelopes(searchId: string | null | undefined) {

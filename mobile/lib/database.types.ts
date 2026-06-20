@@ -81,7 +81,7 @@ export type HouseRating = {
   house_id: string;
   search_id: string;
   client_id: string;
-  stars: number;            // 1–5
+  stars: number;            // 1-5
   notes: string | null;
   requested_at: string | null;
   created_at: string;

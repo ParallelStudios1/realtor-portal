@@ -14,11 +14,11 @@ import React, {
  * Lightweight web toast.
  *
  * Wrap the app in <ToastProvider> and call `useToast().show(...)` from any
- * client component beneath. Single toast at a time — calling show() while one
+ * client component beneath. Single toast at a time - calling show() while one
  * is up replaces the message. Slides down from the top, auto-dismisses after
  * `duration` ms (default 3500). Click to dismiss early.
  *
- * No external deps — pure React + Tailwind.
+ * No external deps - pure React + Tailwind.
  */
 
 export type ToastVariant = 'success' | 'error' | 'info';
@@ -130,7 +130,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 export function useToast(): ToastContextValue {
   const ctx = useContext(ToastContext);
   if (!ctx) {
-    // Don't throw — toasts are nice-to-have. If used outside the provider
+    // Don't throw - toasts are nice-to-have. If used outside the provider
     // we no-op so a missing provider doesn't crash a page.
     return {
       show: (msg) => {

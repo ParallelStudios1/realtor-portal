@@ -25,13 +25,13 @@ import { humanError } from '@/lib/humanError';
 import { phaseLabelFor } from '@/lib/dealKind';
 
 /**
- * Realtor phase-change screen — parity with the web phase-update flow.
+ * Realtor phase-change screen - parity with the web phase-update flow.
  *
  * Staff picks a target phase and, for offer_made / counter_offer / closing /
  * closed, the screen reveals + requires the right fields. On submit we POST to
  * the deployed /api/deals/{searchId}/phase endpoint (Bearer auth, JSON).
  *
- * Validation failures come back HTTP 200 with { ok:false, error } — we check
+ * Validation failures come back HTTP 200 with { ok:false, error } - we check
  * `ok` and surface `error` via a toast. `under_contract` is intentionally
  * absent from the picker here; it uses the dedicated Under contract screen.
  *
@@ -47,7 +47,7 @@ type Phase = 'searching' | 'awaiting_offer' | 'offer_made' | 'counter_offer' | '
 
 const PHASE_OPTIONS: { id: Phase; label: string; hint: string }[] = [
   { id: 'searching', label: 'Searching', hint: 'Back to actively looking.' },
-  { id: 'awaiting_offer', label: 'Awaiting offer', hint: 'Home agreed — preparing the offer.' },
+  { id: 'awaiting_offer', label: 'Awaiting offer', hint: 'Home agreed - preparing the offer.' },
   {
     id: 'offer_made',
     label: 'Offer made',
@@ -179,7 +179,7 @@ export default function PhaseScreen() {
       try {
         json = raw ? JSON.parse(raw) : null;
       } catch {}
-      // Validation failures come back HTTP 200 with ok:false — check ok.
+      // Validation failures come back HTTP 200 with ok:false - check ok.
       if (!r.ok || !json?.ok) {
         throw new Error(json?.error || `Failed (HTTP ${r.status}).`);
       }

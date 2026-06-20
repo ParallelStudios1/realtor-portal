@@ -1,10 +1,10 @@
 /**
- * Date formatting helpers — timezone-stable for DATE-ONLY values.
+ * Date formatting helpers - timezone-stable for DATE-ONLY values.
  *
  * Postgres `date` columns (e.g. important_dates.date, client_searches.closing_date)
  * come back as "YYYY-MM-DD" strings with NO timezone. The naive
  * `new Date('2026-06-06').toLocaleDateString()` parses that as UTC midnight,
- * then shifts it into the viewer's local timezone — so in ET it renders as
+ * then shifts it into the viewer's local timezone - so in ET it renders as
  * 6/5/2026, and the SERVER (UTC) and CLIENT (local) disagree, which throws
  * React hydration errors (#418/#422/#425).
  *

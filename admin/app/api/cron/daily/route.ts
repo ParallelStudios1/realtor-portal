@@ -2,9 +2,10 @@ import { NextResponse } from 'next/server';
 import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
 import { runDeadlineCron } from '@/lib/deadlines';
 import { runShowingDigestCron } from '@/lib/showingDigest';
+import { runTrialReminderCron } from '@/lib/trialReminders';
 
 /**
- * Daily cron — runs the deadline-reminder/escalation pass and the seller-facing
+ * Daily cron - runs the deadline-reminder/escalation pass and the seller-facing
  * showing-feedback digest. Both run independently: if one throws, we capture the
  * error and still attempt the other.
  *
@@ -45,5 +46,13 @@ export async function GET(req: Request) {
     digest = { error: err?.message || 'runShowingDigestCron failed' };
   }
 
-  return NextResponse.json({ ok: true, deadline, digest });
+  let trial: any;
+  try {
+    trial = await runTrialReminderCron(service);
+  } catch (err: any) {
+    console.error('[cron/daily] runTrialReminderCron failed', err);
+    trial = { error: err?.message || 'runTrialReminderCron failed' };
+  }
+
+  return NextResponse.json({ ok: true, deadline, digest, trial });
 }

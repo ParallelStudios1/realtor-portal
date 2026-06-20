@@ -83,7 +83,7 @@ export function ShowingFeedbackPanel({
       setRequested(true);
       toast.show(
         `Feedback requested${
-          typeof r.sent === 'number' ? ` — ${r.sent} sent` : ''
+          typeof r.sent === 'number' ? ` - ${r.sent} sent` : ''
         }.`,
         { variant: 'success' }
       );

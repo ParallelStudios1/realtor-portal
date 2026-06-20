@@ -7,7 +7,7 @@ import { useAuth } from '@/lib/auth';
  *   - session, but no users row → handled by root layout's OrphanAccountScreen
  *   - session + profile        → handled by root layout's group routing
  *
- * We must NOT unconditionally redirect to /(auth)/login — that produced a
+ * We must NOT unconditionally redirect to /(auth)/login - that produced a
  * loop on sign-in: login success → router.replace('/') → this file →
  * bounce back to login.
  */
@@ -17,7 +17,7 @@ export default function RootIndex() {
   if (isLoading) return null;
   if (!session) return <Redirect href="/(auth)/login" />;
 
-  // Authenticated — route by role. The root layout also renders the
+  // Authenticated - route by role. The root layout also renders the
   // correct group, but on cold start we may land here directly, so be
   // explicit.
   if (!userProfile) {

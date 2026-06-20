@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 /**
  * Public-facing AVM seller-lead landing page.
  *
- * URL shape: /value/[firmSlug]   (no auth required — middleware exempts it)
+ * URL shape: /value/[firmSlug]   (no auth required - middleware exempts it)
  *
  * The page resolves the firm by slug, pulls its branding (name, brand color,
  * logo) and hands it off to the client component for the 3-step flow:
@@ -43,7 +43,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const firm = await loadFirm(params.firmSlug);
   if (!firm) return { title: 'Home value report' };
   return {
-    title: `What's your home worth? — ${firm.name}`,
+    title: `What's your home worth? - ${firm.name}`,
     description: `Get a free estimate of your home's value from ${firm.name}. Enter your address for an instant range based on recent comparable sales.`,
   };
 }

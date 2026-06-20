@@ -3,7 +3,7 @@ import { View, Pressable, Text, StyleSheet } from 'react-native';
 import { useTheme } from '@/lib/theme';
 
 /**
- * A 1–5 star rating row.
+ * A 1-5 star rating row.
  *
  * - `value` is the current selection (0 = none, 1..5 = stars).
  * - When `onChange` is provided, the row is interactive (used in the rating prompt).

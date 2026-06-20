@@ -3,7 +3,7 @@ import { getMe } from '@/lib/supabaseSsr';
 import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
 
 /**
- * Returns the count of "new since X" items across the firm — used to decorate
+ * Returns the count of "new since X" items across the firm - used to decorate
  * the Inbox nav tab with a red badge. X defaults to last 24h.
  */
 export async function GET(req: Request) {

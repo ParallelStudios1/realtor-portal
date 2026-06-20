@@ -2,14 +2,14 @@ import { Resend } from 'resend';
 
 /**
  * Email transport with three providers, tried in order:
- *   1. Resend (RESEND_API_KEY) — fastest path, recommended
- *   2. Generic SMTP via nodemailer (SMTP_HOST + SMTP_USER + SMTP_PASS) — for
+ *   1. Resend (RESEND_API_KEY) - fastest path, recommended
+ *   2. Generic SMTP via nodemailer (SMTP_HOST + SMTP_USER + SMTP_PASS) - for
  *      free providers like Brevo (smtp-relay.brevo.com:587, 300/day free),
  *      SendGrid (smtp.sendgrid.net:587, 100/day free), Mailgun, or Gmail SMTP.
- *   3. No-op + log warning — local dev or unconfigured deploys.
+ *   3. No-op + log warning - local dev or unconfigured deploys.
  *
  * Each provider is tried and the first success wins. If both API_KEY and
- * SMTP_* are set, Resend is preferred. Never throws — callers can treat
+ * SMTP_* are set, Resend is preferred. Never throws - callers can treat
  * sendEmail as fire-and-forget.
  */
 
@@ -47,11 +47,11 @@ function getClient(): Resend | null {
   const key = process.env.RESEND_API_KEY;
   if (!key) {
     if (!warnedNoKey) {
-      // Log once per process — this is expected in local dev where the key
+      // Log once per process - this is expected in local dev where the key
       // isn't set, and we don't want to spam every fire-and-forget call.
       // eslint-disable-next-line no-console
       console.warn(
-        '[email] RESEND_API_KEY is not set — sendEmail() will no-op. ' +
+        '[email] RESEND_API_KEY is not set - sendEmail() will no-op. ' +
           'Set RESEND_API_KEY (and optionally RESEND_FROM) in Vercel to enable.'
       );
       warnedNoKey = true;
@@ -104,7 +104,7 @@ async function sendViaSmtp(
 }
 
 /**
- * Send a transactional email. Returns a result object — never throws.
+ * Send a transactional email. Returns a result object - never throws.
  *
  * Provider priority:
  *   1. Resend (if RESEND_API_KEY set)

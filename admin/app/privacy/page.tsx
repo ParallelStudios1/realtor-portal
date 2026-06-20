@@ -41,7 +41,7 @@ export default function PrivacyPage() {
             </p>
             <p>
               <strong className="text-ink-900">We do not sell your data.</strong> We do not
-              share data between firms. Each firm is an isolated tenant — their clients&apos;
+              share data between firms. Each firm is an isolated tenant - their clients&apos;
               data is invisible to other firms.
             </p>
             <p>
@@ -64,7 +64,7 @@ export default function PrivacyPage() {
             <p>
               Realtor Portal (operated by Parallel Studios LLC) sends transactional
               text messages on behalf of the real estate firm you are working with.
-              These messages relate only to your transaction — for example: deal
+              These messages relate only to your transaction - for example: deal
               status and phase updates, tour requests and confirmations, important
               dates and deadline reminders, document and e-signature notifications,
               and direct messages from your agent or another party on your deal. We

@@ -9,7 +9,7 @@ import { isFirmPlanActive } from '@/lib/planGate';
  * Start a deal without picking a client first.
  *
  * Realtors often start tracking a deal before they know who the principal
- * client is — open house leads, listing-side conversations with a couple
+ * client is - open house leads, listing-side conversations with a couple
  * who hasn't decided whose name goes on it yet, dual-realtor handoffs.
  * Forcing them to invite a client first was creating fake-name "John
  * Smith" placeholders that cluttered the Clients menu.
@@ -59,16 +59,16 @@ export async function createBlankDealAction(payload: {
 
   const service = getSupabaseServiceRoleClient();
   // kind defaults to 'buyer' so downstream UI doesn't have to handle null
-  // — most cases are buyer-side anyway. The realtor can change it later
+  // - most cases are buyer-side anyway. The realtor can change it later
   // from the deal workspace.
   const kind = payload.kind === 'seller' ? 'seller' : 'buyer';
   const { data: created, error } = await service
     .from('client_searches')
     .insert({
       firm_id: me!.firm_id,
-      client_id: null, // explicitly blank — populated when a party is added
+      client_id: null, // explicitly blank - populated when a party is added
       realtor_id: me!.user_id,
-      // The deal admin is the creator — the person with full control over the
+      // The deal admin is the creator - the person with full control over the
       // deal. For a blank deal that's whoever started it.
       created_by: me!.user_id,
       name,

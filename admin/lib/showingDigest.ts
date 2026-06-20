@@ -280,7 +280,7 @@ export async function runShowingDigestCron(
 
     // 6. Stamp every covered showing so this feedback isn't re-sent. We stamp
     //    even if the email provider is unconfigured (skipped) only when the
-    //    send actually succeeded — otherwise we'd silently drop the digest.
+    //    send actually succeeded - otherwise we'd silently drop the digest.
     if (ok) {
       digestsSent++;
       const showingIds = Array.from(new Set(items.map((i) => i.showingId)));

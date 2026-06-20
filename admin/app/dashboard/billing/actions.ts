@@ -10,7 +10,7 @@ import { PLANS, type PlanTier } from '@/lib/plans';
  * plan tiers (and back to trial) WITHOUT a real Stripe charge, so every
  * tier's gates and seat caps can be tested end-to-end.
  *
- * Hard-gated to turnerlogan@parallelstudios.co — invisible and inert for
+ * Hard-gated to turnerlogan@parallelstudios.co - invisible and inert for
  * every other account. Simulated subscriptions are tagged with a
  * `sim_` subscription id so they can never be confused with a real
  * Stripe subscription (the webhook only ever writes `sub_…` ids).
@@ -57,7 +57,7 @@ export async function simulatePlanAction(
       return {
         ok: false,
         error:
-          'This firm has a real Stripe subscription — manage it through Stripe, not the simulator.',
+          'This firm has a real Stripe subscription - manage it through Stripe, not the simulator.',
       };
     }
     const { error } = await service

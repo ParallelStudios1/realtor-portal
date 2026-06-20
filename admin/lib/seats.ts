@@ -2,7 +2,7 @@ import { getSupabaseServiceRoleClient } from './supabaseServer';
 import { PLANS, seatCapForTier, type PlanTier } from './plans';
 
 /**
- * Roles that consume a paid seat. MUST all exist in the user_role enum —
+ * Roles that consume a paid seat. MUST all exist in the user_role enum -
  * 'member' is NOT a real role (it silently errored PostgREST and zeroed the
  * count in the past). Clients and attorneys are not seats.
  */
@@ -29,7 +29,7 @@ export type SeatUsage = {
  * Single source of truth for "how many seats is this firm using, out of how
  * many." Counts DISTINCT people: every staff member, plus any pending invite
  * whose email is NOT already a member. This is dedup-safe, so an invited
- * realtor who already has a live account (the normal case) is counted once —
+ * realtor who already has a live account (the normal case) is counted once -
  * never as both a member and a pending invite (the old double-count bug).
  */
 export async function getSeatUsage(firmId: string): Promise<SeatUsage> {

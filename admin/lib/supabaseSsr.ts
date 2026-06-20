@@ -4,7 +4,7 @@ import type { NextRequest, NextResponse } from 'next/server';
 
 /**
  * Auth-aware Supabase client for Server Components, Server Actions, and
- * route handlers. Reads the user's session from cookies — so RLS applies
+ * route handlers. Reads the user's session from cookies - so RLS applies
  * with their auth.uid().
  */
 export function getSupabaseServerClient() {
@@ -21,14 +21,14 @@ export function getSupabaseServerClient() {
           try {
             cookieStore.set({ name, value, ...options });
           } catch {
-            // Server Component context — ignore. Middleware handles writes.
+            // Server Component context - ignore. Middleware handles writes.
           }
         },
         remove(name: string, options: CookieOptions) {
           try {
             cookieStore.set({ name, value: '', ...options });
           } catch {
-            // Server Component context — ignore.
+            // Server Component context - ignore.
           }
         },
       },

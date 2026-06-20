@@ -2,7 +2,7 @@
  * Single-purpose HMAC tokens that gate the public showing-feedback form.
  *
  * Mirrors the stateless-token approach in lib/ics.ts (computeCalendarFeedToken /
- * buildCalendarFeedUrl): we never store a token row — we derive an unguessable
+ * buildCalendarFeedUrl): we never store a token row - we derive an unguessable
  * value from (showingId + email) under a server-only secret. The public
  * feedback form carries the token in its URL, and the API route re-derives and
  * compares it before accepting a write. Revocation = rotate the secret.
@@ -10,8 +10,8 @@
  *   token = base64url(HMAC_SHA256(showingId + ':' + email, SECRET))
  *
  * Secret resolution:
- *   1. FEEDBACK_TOKEN_SECRET  (preferred — scopes this feature on its own key)
- *   2. CALENDAR_FEED_SECRET   (fallback — reuse the existing stateless secret)
+ *   1. FEEDBACK_TOKEN_SECRET  (preferred - scopes this feature on its own key)
+ *   2. CALENDAR_FEED_SECRET   (fallback - reuse the existing stateless secret)
  *   3. neither set            → minting returns null, verification returns false
  *
  * Scoping the token to BOTH the showing and the attendee's email means a token

@@ -9,16 +9,16 @@ export const runtime = 'nodejs';
  * Returns: { mid, low, high, comps_count, city }
  *
  * Simulated automated valuation model (AVM). We do NOT pay for a real AVM
- * here — the math below derives a believable price from a deterministic
+ * here - the math below derives a believable price from a deterministic
  * hash of the address string, biased by detected city. Every call with the
  * same address returns the same numbers so the lead-capture step doesn't
  * show a different range when the visitor refreshes.
  *
  * TODO: replace the simulated math with a real AVM provider when we're
  * ready to pay for one. Good candidates:
- *   - Estated (estated.com) — REST, per-call pricing, US-only
- *   - ATTOM Data (attomdata.com) — broader coverage, requires contract
- *   - HouseCanary (housecanary.com) — premium accuracy, requires contract
+ *   - Estated (estated.com) - REST, per-call pricing, US-only
+ *   - ATTOM Data (attomdata.com) - broader coverage, requires contract
+ *   - HouseCanary (housecanary.com) - premium accuracy, requires contract
  * The replacement should keep the same return shape so the client doesn't
  * have to change. If the provider returns its own low/high we use theirs;
  * otherwise we wrap their point estimate with the same ±8% band.
@@ -59,7 +59,7 @@ const CITY_BASELINES: Array<{ match: RegExp; mid: number }> = [
 const DEFAULT_BASELINE = 425_000;
 
 /**
- * Deterministic 32-bit hash of a string. Cheap, stable across processes —
+ * Deterministic 32-bit hash of a string. Cheap, stable across processes -
  * we only need it to seed a believable variation per address, not for
  * security. Same address always returns the same number.
  */
@@ -100,7 +100,7 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-    // Validate firmId — must be a UUID and exist in the firms table.
+    // Validate firmId - must be a UUID and exist in the firms table.
     // Without this, anyone can POST estimates with no firm attribution,
     // which breaks per-firm rate-limiting / attribution tracking later.
     const firmId = (body.firmId || '').trim();
@@ -143,7 +143,7 @@ export async function POST(req: Request) {
     const low = roundTo(mid * 0.92, 1_000);
     const high = roundTo(mid * 1.08, 1_000);
 
-    // Believable comp count derived from the same hash — usually 6-14.
+    // Believable comp count derived from the same hash - usually 6-14.
     const comps_count = 6 + (hash % 9);
 
     return NextResponse.json({

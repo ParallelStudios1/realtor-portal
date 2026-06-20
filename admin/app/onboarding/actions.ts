@@ -7,8 +7,8 @@ import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
 /**
  * Save firm branding (onboarding "Save & continue").
  *
- * Uses the proven server-action pattern — getMe() for auth + the service-role
- * client for the write — instead of constructing a user-scoped SSR client and
+ * Uses the proven server-action pattern - getMe() for auth + the service-role
+ * client for the write - instead of constructing a user-scoped SSR client and
  * calling auth.getUser() inline. The old version stalled here during onboarding
  * (the firm was created but onboarding_completed never flipped, and the page
  * hung before reaching /dashboard). getMe() + service-role is what every other

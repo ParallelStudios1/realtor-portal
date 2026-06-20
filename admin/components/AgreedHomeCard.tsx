@@ -5,7 +5,7 @@ import { formatDateOnly } from '@/lib/dates';
  * client and realtor have agreed on a house (client_searches.house_agreed_at
  * is set and offer_house_id points at the chosen house).
  *
- * Purely presentational — the caller is responsible for deciding whether the
+ * Purely presentational - the caller is responsible for deciding whether the
  * viewer is allowed to see this house (house-scoped privacy). This component
  * NEVER fetches and NEVER widens visibility.
  */

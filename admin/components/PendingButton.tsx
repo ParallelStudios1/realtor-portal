@@ -8,7 +8,7 @@ import { useState } from 'react';
  * happening?" problem that caused duplicate submissions.
  *
  * Minimum 200ms pending state so even instant actions show a flash of
- * feedback — eliminates "did I click that?" doubt.
+ * feedback - eliminates "did I click that?" doubt.
  */
 export function PendingButton({
   onClick,

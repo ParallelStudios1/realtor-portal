@@ -1,5 +1,5 @@
 /**
- * Tiny Twilio wrapper. We don't bundle the twilio SDK — it's a 5MB
+ * Tiny Twilio wrapper. We don't bundle the twilio SDK - it's a 5MB
  * dependency and we only need one POST. The REST API is dead simple.
  *
  * Required env vars (set in Vercel project settings):

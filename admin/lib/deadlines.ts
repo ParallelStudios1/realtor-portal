@@ -1,16 +1,16 @@
 /**
- * Deadline reminders + escalation — pure helpers and the cron worker.
+ * Deadline reminders + escalation - pure helpers and the cron worker.
  *
  * This module is queue-only: it never sends anything itself. It MATERIALIZES
  * rows into public.scheduled_messages (the existing drip queue, drained by
  * admin/app/api/cron/drips/route.ts) and flips bookkeeping columns on
  * public.important_dates. The actual email/SMS/in-app dispatch happens when
- * the drips cron drains the queue — so deadline reminders ride the same
+ * the drips cron drains the queue - so deadline reminders ride the same
  * battle-tested send path as every other scheduled message.
  *
  * Two passes (see runDeadlineCron):
- *   (a) Materialize  — queue reminders whose fire date == today.
- *   (b) Escalation   — nag the broker about overdue, unacked deadlines.
+ *   (a) Materialize  - queue reminders whose fire date == today.
+ *   (b) Escalation   - nag the broker about overdue, unacked deadlines.
  *
  * DATE ASSUMPTION (important):
  *   important_dates.date is a DATE (no timezone). date_reminders.offset_days
@@ -20,7 +20,7 @@
  *   The drips cron runs once daily at 14:00 UTC (~09:00 ET), so "today" is
  *   stable for the whole run. If a firm operates far from UTC this can be
  *   off by a day at the boundary; that's an accepted simplification for v1.
- *   reminder.at_time is recorded but NOT used to delay within the day — once
+ *   reminder.at_time is recorded but NOT used to delay within the day - once
  *   the fire date is reached we queue with scheduled_for = now() so the next
  *   drip drain picks it up immediately.
  */
@@ -48,7 +48,7 @@ export function todayUtc(now: Date = new Date()): string {
 /**
  * Fire date for a reminder = the date minus the offset, as a YYYY-MM-DD
  * string. `date` may be a "YYYY-MM-DD" DATE string (what Supabase returns for
- * a DATE column) or a full ISO timestamp — we only use the calendar day.
+ * a DATE column) or a full ISO timestamp - we only use the calendar day.
  */
 export function computeFireDate(date: string, offsetDays: number): string {
   const day = String(date).slice(0, 10);
@@ -74,7 +74,7 @@ export function relativeDayLabel(days: number): string {
   return `${Math.abs(days)} days ago`;
 }
 
-/** Reminder body for a due deadline. Plain text — the queue formats HTML. */
+/** Reminder body for a due deadline. Plain text - the queue formats HTML. */
 export function buildDeadlineBody(args: {
   label: string;
   date: string;
@@ -328,7 +328,7 @@ export async function runDeadlineCron(
       .from('date_reminder_runs')
       .insert({ reminder_id: r.id, fire_on: today });
     if (runErr) {
-      // Likely a unique violation from a concurrent run — that's fine.
+      // Likely a unique violation from a concurrent run - that's fine.
       console.error('[runDeadlineCron] run ledger insert', r.id, runErr.message);
     }
   }

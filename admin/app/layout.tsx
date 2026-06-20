@@ -5,7 +5,7 @@ import { Inter } from 'next/font/google';
 import { ToastProvider } from '@/components/Toast';
 import { NavigationProgress } from '@/components/NavigationProgress';
 
-// Inter — one real font, loaded once. Variable-axis means we don't pay for
+// Inter - one real font, loaded once. Variable-axis means we don't pay for
 // extra weight files. display: 'swap' keeps the first paint readable while
 // the font streams in. preload puts the font on the critical path.
 const inter = Inter({

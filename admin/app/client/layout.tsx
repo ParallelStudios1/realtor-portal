@@ -7,7 +7,7 @@ import { logoutAction } from '../login/actions';
 export const dynamic = 'force-dynamic';
 
 /**
- * Client-side portal — what buyers/sellers see on the web. Mirrors the mobile
+ * Client-side portal - what buyers/sellers see on the web. Mirrors the mobile
  * (client) tabs: home, houses, messages, documents. Branded with the firm's
  * logo + colors so it feels like the realtor's product, not ours.
  */
@@ -15,7 +15,7 @@ export default async function ClientLayout({ children }: { children: React.React
   const me = await getMe();
   if (!me) redirect('/login');
   if (me.role !== 'client') {
-    // Belt-and-suspenders — middleware already handles this.
+    // Belt-and-suspenders - middleware already handles this.
     redirect('/dashboard');
   }
 

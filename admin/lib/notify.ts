@@ -94,7 +94,7 @@ export async function notify(target: NotifyTarget): Promise<{
 
 /**
  * Multi-target notification. Each target gets its own per-channel result.
- * Used for things like "notify everyone on this deal" — one call site,
+ * Used for things like "notify everyone on this deal" - one call site,
  * automatic fan-out.
  */
 export async function notifyMany(
@@ -127,7 +127,7 @@ function escapeMinimal(s: string): string {
  * cross-firm participant rows) + every external_email row + the principal
  * client + the assigned realtor.
  *
- * Dedupes by lower(email). Caller passes the deal id and the body — we
+ * Dedupes by lower(email). Caller passes the deal id and the body - we
  * resolve the recipient list. Excludes a single user_id (the sender) so
  * we don't notify the person who triggered the event.
  */

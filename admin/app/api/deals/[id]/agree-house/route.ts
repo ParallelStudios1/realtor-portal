@@ -9,7 +9,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 /**
- * HOUSE AGREEMENT — Bearer/cookie JSON API for the native mobile app.
+ * HOUSE AGREEMENT - Bearer/cookie JSON API for the native mobile app.
  *
  * Mirrors markAgreedHouseAction / setAgreedHouseAction in
  *   admin/app/dashboard/clients/[id]/actions.ts
@@ -221,7 +221,7 @@ export async function POST(
           await notify({
             email: realtor?.email || null,
             phone: realtor?.phone || null,
-            subject: 'Action needed: your client picked a home — ' + addr,
+            subject: 'Action needed: your client picked a home - ' + addr,
             text:
               'Your client said this is the home they want:\n\n' +
               addr +
@@ -258,7 +258,7 @@ export async function POST(
             html: `<p>Your agent confirmed the home for your deal:</p><p><strong>${escapeHtml(
               addr
             )}</strong></p><p><a href="${homeUrl}">View it &rarr;</a></p>`,
-            sms_text: 'Your agent confirmed the home: ' + addr + ' — ' + homeUrl,
+            sms_text: 'Your agent confirmed the home: ' + addr + ' - ' + homeUrl,
           });
         }
       }

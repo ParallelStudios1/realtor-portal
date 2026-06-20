@@ -5,7 +5,7 @@ import { getSupabaseServiceRoleClient } from './supabaseServer';
 /**
  * Gather every email address attached to a deal (client, realtor, attorney,
  * deal_participants) and send each of them a phase-change update. Best-effort
- * — never throws. Returns the number of addresses we attempted to send to.
+ * - never throws. Returns the number of addresses we attempted to send to.
  *
  * "from" address tries hard to look like it's from the firm:
  *    "Maria @ Logan Realty (via Realtor Portal) <noreply@parallelstudios.co>"
@@ -111,16 +111,16 @@ export async function emailEveryoneOnPhaseChange(input: {
       (d as any).kind === 'seller' ? 'Offer received' : 'Offer submitted',
     under_contract: 'Under contract',
     closing: 'Entering closing',
-    closed: (d as any).kind === 'seller' ? 'Sold — congrats' : 'Closed — congrats',
+    closed: (d as any).kind === 'seller' ? 'Sold - congrats' : 'Closed - congrats',
   };
   const subject =
     (celebration[input.newPhase] || 'Deal phase updated') +
-    ` — ${dealLabel}`;
+    ` - ${dealLabel}`;
 
   const datesHtml = (input.importantDates || [])
     .map(
       (d) =>
-        `<li><strong>${escapeHtml(d.label)}</strong> — ${escapeHtml(
+        `<li><strong>${escapeHtml(d.label)}</strong> - ${escapeHtml(
           new Date(d.date).toLocaleDateString()
         )}</li>`
     )
@@ -248,7 +248,7 @@ export async function emailEveryoneDealEvent(input: {
       to: addr,
       from: fromAddress,
       replyTo,
-      subject: input.subjectPrefix + ' — ' + (d.client?.full_name || d.client?.email || 'your deal'),
+      subject: input.subjectPrefix + ' - ' + (d.client?.full_name || d.client?.email || 'your deal'),
       text:
         'Hi ' + info.name + ',\n\n' +
         input.headline + '\n\n' +

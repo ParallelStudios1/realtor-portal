@@ -39,7 +39,7 @@ async function authorize(idOrSearchId: string) {
   // client yet). Resolve either: try client_id first, then search id.
   //
   // We don't pre-filter by firm_id here. The query runs as the caller's
-  // user, so RLS already enforces visibility — and that includes the
+  // user, so RLS already enforces visibility - and that includes the
   // cross-firm collab path (can_collab_on_search) that lets an invited
   // realtor from another firm operate on the deal they've been added to.
   // Pre-filtering by firm_id would short-circuit that and 404 every
@@ -97,7 +97,7 @@ async function activity(
   });
 }
 
-// Kind-aware milestone copy — a SELLER must never read buyer lines like
+// Kind-aware milestone copy - a SELLER must never read buyer lines like
 // "your offer is in" or "the house is officially yours". No emojis (these
 // land in deal chat, email, and SMS).
 const PHASE_CELEBRATIONS: Record<string, { buyer: string; seller: string }> = {
@@ -113,21 +113,21 @@ const PHASE_CELEBRATIONS: Record<string, { buyer: string; seller: string }> = {
       'An offer has come in on your home. Your agent will walk you through the terms.',
   },
   counter_offer: {
-    buyer: 'Counter-offer phase — your agent is negotiating. Hang tight.',
+    buyer: 'Counter-offer phase - your agent is negotiating. Hang tight.',
     seller:
-      'Counter-offer phase — your agent is negotiating the terms for you.',
+      'Counter-offer phase - your agent is negotiating the terms for you.',
   },
   under_contract: {
     buyer:
-      'Congrats — you are under contract! Big step. Your agent will line up inspection and appraisal next.',
+      'Congrats - you are under contract! Big step. Your agent will line up inspection and appraisal next.',
     seller:
-      "Congrats — you are under contract! The buyer's inspection, appraisal, and financing come next.",
+      "Congrats - you are under contract! The buyer's inspection, appraisal, and financing come next.",
   },
   closing: {
     buyer:
       'You are in the closing phase. Wire instructions and final paperwork are coming.',
     seller:
-      'You are in the closing phase. Final paperwork is in motion — almost done.',
+      'You are in the closing phase. Final paperwork is in motion - almost done.',
   },
   closed: {
     buyer: 'Congrats! The house is officially yours. Welcome home.',
@@ -201,7 +201,7 @@ export async function updatePhaseAction(
       return {
         ok: false as const,
         error:
-          'Use "Go under contract" to move into Under contract — it captures the house, dates, and seller.',
+          'Use "Go under contract" to move into Under contract - it captures the house, dates, and seller.',
       };
     }
     if (phase === 'closing') {
@@ -229,7 +229,7 @@ export async function updatePhaseAction(
     }
   }
 
-  // Build update payload — include any phase-specific extras the modal collected.
+  // Build update payload - include any phase-specific extras the modal collected.
   const updates: Record<string, any> = { phase };
   if (extras?.offer_amount != null) updates.offer_amount = extras.offer_amount;
   if (extras?.closing_amount != null) updates.closing_amount = extras.closing_amount;
@@ -289,7 +289,7 @@ export async function updatePhaseAction(
         newPhase: phase,
       });
     } catch {}
-    // SMS milestone announcement — short, punchy, links to the deal.
+    // SMS milestone announcement - short, punchy, links to the deal.
     try {
       const siteUrl =
         process.env.SITE_URL || 'https://realtorportal.parallelstudios.co';
@@ -300,7 +300,7 @@ export async function updatePhaseAction(
         subject: `Deal milestone: ${phaseLabel}`,
         text: celebration + '\n\nOpen the deal: ' + dealUrl,
         html: `<p>${escapeHtml(celebration)}</p><p><a href="${dealUrl}">Open the deal &rarr;</a></p>`,
-        sms_text: celebration + ' — ' + dealUrl,
+        sms_text: celebration + ' - ' + dealUrl,
         excludeUserId: a.me.user_id,
       });
     } catch (e: any) {
@@ -397,7 +397,7 @@ export async function addImportantDateAction(
     const dealUrl = siteUrl + '/deal/' + a.search.id;
     const pretty =
       payload.label +
-      ' — ' +
+      ' - ' +
       new Date(payload.date + 'T12:00:00').toLocaleDateString(undefined, {
         weekday: 'short',
         month: 'short',
@@ -419,7 +419,7 @@ export async function addImportantDateAction(
       }${
         payload.things_to_bring ? `<p><strong>Bring:</strong> ${escapeHtml(payload.things_to_bring)}</p>` : ''
       }<p><a href="${dealUrl}">Open the deal &rarr;</a></p>`,
-      sms_text: pretty + (payload.location ? ' @ ' + payload.location : '') + ' — ' + dealUrl,
+      sms_text: pretty + (payload.location ? ' @ ' + payload.location : '') + ' - ' + dealUrl,
       excludeUserId: a.me.user_id,
     });
   } catch (e: any) {
@@ -634,7 +634,7 @@ export async function sendAlertAction(clientId: string, message: string) {
       html: `<p><strong>Alert from your realtor:</strong></p><p>${escapeHtml(
         message.trim()
       )}</p><p><a href="${dealUrl}">Open the deal &rarr;</a></p>`,
-      sms_text: 'ALERT: ' + message.trim().slice(0, 240) + ' — ' + dealUrl,
+      sms_text: 'ALERT: ' + message.trim().slice(0, 240) + ' - ' + dealUrl,
       excludeUserId: a.me.user_id,
     });
   } catch (e: any) {
@@ -648,14 +648,14 @@ export async function sendAlertAction(clientId: string, message: string) {
 
 /**
  * Add a SELLER-SIDE, HOUSE-SCOPED participant to a deal and send them the
- * branded /invite/<token> email — mirroring addParticipantAction's invite
+ * branded /invite/<token> email - mirroring addParticipantAction's invite
  * pattern. Used by the convergence capture in goUnderContractAction.
  *
  * Idempotent: if a participant for the same email already exists on the
  * search we skip the insert (and skip re-inviting). If a user already exists
  * with that email we auto-link via user_id so login just works.
  *
- * `house_id` scopes the party to ONE house — they will only ever see that
+ * `house_id` scopes the party to ONE house - they will only ever see that
  * property on the deal read paths, never the buyer's other candidates.
  */
 async function addHouseScopedSellerParty(
@@ -711,7 +711,7 @@ async function addHouseScopedSellerParty(
       role: opts.role,
       represents: 'seller',
       // House-scoped seller parties get the same conservative default
-      // visibility as any added party — they can see docs + dates but not
+      // visibility as any added party - they can see docs + dates but not
       // financials or the buyer-side message thread by default.
       can_view_documents: true,
       can_view_financials: false,
@@ -729,7 +729,7 @@ async function addHouseScopedSellerParty(
     return;
   }
 
-  // Branded /invite/<token> — mirrors addParticipantAction. Only when we have
+  // Branded /invite/<token> - mirrors addParticipantAction. Only when we have
   // an email to send to.
   if (!email) return;
   let invitePath: string | null = null;
@@ -783,7 +783,7 @@ async function addHouseScopedSellerParty(
         <div style="font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial;font-size:15px;color:#0F172A;max-width:560px;padding:24px">
           <h2 style="font-size:20px;margin:0 0 12px">You've been added to a transaction</h2>
           <p>${safeRealtor} at <strong>${safeFirm}</strong> added you as the <strong>${escapeHtml(rolePretty)}</strong> on a deal going under contract for your property.</p>
-          <p>You'll collaborate on <em>this one property only</em> — you won't see anything else on the buyer's side.</p>
+          <p>You'll collaborate on <em>this one property only</em> - you won't see anything else on the buyer's side.</p>
           <p style="margin:24px 0">
             <a href="${primaryUrl}" style="display:inline-block;background:#0F172A;color:#fff;padding:10px 18px;border-radius:8px;font-weight:600;text-decoration:none">Open the transaction &rarr;</a>
           </p>
@@ -858,7 +858,7 @@ async function tryLinkSellerDeal(
   if ((houseRow as any).listing_search_id) return;
 
   // 1) Resolve the listing agent's firm via an in-app user with that email.
-  //    We deliberately only auto-link when the listing agent is a real user —
+  //    We deliberately only auto-link when the listing agent is a real user -
   //    that's the signal that "both sides run this in-app".
   const { data: agentUser } = await service
     .from('users')
@@ -938,7 +938,7 @@ export async function goUnderContractAction(
     closing_date?: string | null;
     contract_url?: string | null;
     message?: string;
-    // PHASE 1 — convergence capture. When the buyer-side realtor knows which
+    // PHASE 1 - convergence capture. When the buyer-side realtor knows which
     // house they're going under contract on, they pick it here and (optionally)
     // tell us who's on the SELLING side. We mark that house under contract,
     // store the seller_* info on it, and add the listing agent / seller as
@@ -955,7 +955,7 @@ export async function goUnderContractAction(
   if ('error' in a) return { ok: false as const, error: a.error };
   const service = getSupabaseServiceRoleClient();
 
-  // Phase update is the source-of-truth write — bail out on failure so we
+  // Phase update is the source-of-truth write - bail out on failure so we
   // don't create a half-state (dates inserted, message posted, parties
   // emailed) without the phase actually flipping.
   const searchUpdate: Record<string, any> = {
@@ -1031,7 +1031,7 @@ export async function goUnderContractAction(
 
       // Two-way cross-firm linking: if the listing agent also runs this same
       // property as a seller deal in-app, stamp houses.listing_search_id so the
-      // two sides converge. Best-effort, idempotent — never breaks the flip.
+      // two sides converge. Best-effort, idempotent - never breaks the flip.
       try {
         const { data: chosenHouse } = await service
           .from('houses')
@@ -1098,7 +1098,7 @@ export async function goUnderContractAction(
     search_id: a.search.id,
     sender_id: a.me.user_id,
     body:
-      'Congrats — we are UNDER CONTRACT! Key dates and contract are in the deal view.',
+      'Congrats - we are UNDER CONTRACT! Key dates and contract are in the deal view.',
   });
 
   // Email everyone the whole snapshot.
@@ -1119,7 +1119,7 @@ export async function goUnderContractAction(
 }
 
 /**
- * CLIENT ↔ REALTOR HOUSE AGREEMENT — realtor side.
+ * CLIENT ↔ REALTOR HOUSE AGREEMENT - realtor side.
  *
  * The realtor sets (or changes) the house the deal is about. Writes
  * client_searches.offer_house_id + house_agreed_at + house_agreed_by (= the
@@ -1209,7 +1209,7 @@ export async function setAgreedHouseAction(
         html: `<p>Your agent confirmed the home for your deal:</p><p><strong>${escapeHtml(
           addr
         )}</strong></p><p><a href="${homeUrl}">View it &rarr;</a></p>`,
-        sms_text: 'Your agent confirmed the home: ' + addr + ' — ' + homeUrl,
+        sms_text: 'Your agent confirmed the home: ' + addr + ' - ' + homeUrl,
       });
     }
   } catch (e: any) {
@@ -1389,7 +1389,7 @@ export async function addParticipantAction(
   }
   // RETURN the inserted row so the client can patch its local "People"
   // list directly without waiting on revalidatePath or realtime. This is
-  // the source of truth — realtime is purely a "make it nicer when other
+  // the source of truth - realtime is purely a "make it nicer when other
   // people add parties" mechanism.
   // When a visibility flag is omitted by the caller, fall back to the
   // role-based defaults (single source of truth in lib/partyPermissions).
@@ -1438,8 +1438,8 @@ export async function addParticipantAction(
   // the deal is hosted by the inviting firm (see canUsePremiumForDeal).
   //
   // Notification channels:
-  //   - email — if we have an address
-  //   - SMS   — if the inviter typed a phone number, OR the matching
+  //   - email - if we have an address
+  //   - SMS   - if the inviter typed a phone number, OR the matching
   //             firm-user has a phone on file
   let notifyResult: any = null;
   // Hoisted outside the inner try so the return value can pass the
@@ -1523,7 +1523,7 @@ export async function addParticipantAction(
       const isAttorneyRole = payload.role === 'attorney';
       // External collaborators (realtor / co_realtor / attorney) and all
       // other parties are invited through OUR branded /invite/<token>
-      // landing — never through a Supabase auth email. The token landing
+      // landing - never through a Supabase auth email. The token landing
       // is unauthenticated, branded, role-aware, and sets up the account
       // (password or sign-in) itself. We keep a /signup fallback only for
       // the rare case where the deal_invites insert failed and we have no
@@ -1544,7 +1544,7 @@ export async function addParticipantAction(
       const subject = isRealtorRole
         ? `${realtorName} invited you to co-broker a deal at ${firmName}`
         : `${realtorName} added you to a real-estate deal at ${firmName}`;
-      // The /invite/<token> landing is ALWAYS the primary URL — it works
+      // The /invite/<token> landing is ALWAYS the primary URL - it works
       // without auth, is fully branded, and routes the recipient by role
       // automatically. The /signup URL is only a fallback for the rare
       // case where the deal_invites insert failed.
@@ -1584,7 +1584,7 @@ export async function addParticipantAction(
         `${realtorName} at ${firmName} added you to a deal as ${rolePretty}.\n\n` +
         `Tap to accept and open the deal:\n${primaryUrl}\n\n` +
         `You'll see whatever ${realtorName} chose to share with you (dates, documents, financials, messages).`;
-      // Compact SMS body — Twilio cuts at 1600, but real-world deliverability
+      // Compact SMS body - Twilio cuts at 1600, but real-world deliverability
       // is much better under 320 (which fits in 2 SMS segments).
       // ALWAYS use primaryUrl (the /invite/<token> landing). The deal URL
       // requires auth and dumps un-authenticated visitors on /login.
@@ -1592,7 +1592,7 @@ export async function addParticipantAction(
         ? `${realtorName} (${firmName}) invited you to co-broker a deal on Realtor Portal. Tap to open: ${primaryUrl}`
         : `${realtorName} (${firmName}) added you to a real-estate deal as ${rolePretty}. Tap to accept: ${primaryUrl}`;
 
-      // Always send OUR branded invite email via Resend (sendEmail) — never
+      // Always send OUR branded invite email via Resend (sendEmail) - never
       // a Supabase auth/magic-link email. The CTA points at /invite/<token>.
       notifyResult = await notify({
         email: payload.email || null,
@@ -1619,7 +1619,7 @@ export async function addParticipantAction(
     // Surfaced for the realtor so they can copy/share the magic link
     // when email + SMS don't reach the recipient (e.g. Twilio still in
     // verification, Supabase free-tier SMTP throttled). The link is
-    // safe to share — Supabase auth single-uses it on click.
+    // safe to share - Supabase auth single-uses it on click.
     invite_url: outerMagicLinkUrl,
   };
 }
@@ -1666,7 +1666,7 @@ export async function updateParticipantAction(
   const a = await authorize(clientId);
   if ('error' in a) return { ok: false as const, error: a.error };
   const service = getSupabaseServiceRoleClient();
-  // Build a fresh update payload — only set keys that were provided so we
+  // Build a fresh update payload - only set keys that were provided so we
   // don't overwrite the others to undefined/null by accident.
   const update: Record<string, any> = {};
   if (patch.role !== undefined) update.role = patch.role;
@@ -1753,7 +1753,7 @@ export async function massInviteAction(
 
 /**
  * Spin up a new deal (client_searches row) for an existing client. Lets
- * a realtor track repeat business — a buyer comes back next year, a seller
+ * a realtor track repeat business - a buyer comes back next year, a seller
  * who's also looking to buy, etc.
  */
 export async function createNewDealAction(
@@ -1789,7 +1789,7 @@ export async function createNewDealAction(
       name:
         payload.name?.trim() ||
         ((client as any).full_name || 'New') +
-          (payload.kind === 'buyer' ? ' — buyer deal' : ' — listing'),
+          (payload.kind === 'buyer' ? ' - buyer deal' : ' - listing'),
       phase: 'searching',
     })
     .select('id')
@@ -1802,8 +1802,8 @@ export async function createNewDealAction(
 }
 
 /**
- * Return everyone in the firm we could add as a party — clients, realtors,
- * staff — plus the de-duplicated set of external people the realtor knows.
+ * Return everyone in the firm we could add as a party - clients, realtors,
+ * staff - plus the de-duplicated set of external people the realtor knows.
  *
  * Sources merged together:
  *   1. users in this firm  (other realtors, firm_admins, managers, clients)
@@ -1812,7 +1812,7 @@ export async function createNewDealAction(
  *   3. deal_participants   (people previously added to a deal by external_email)
  *
  * All three are dedupe-merged by lower(email). Firm users win when an email
- * collides — that gives the modal the user_id so logging in just works.
+ * collides - that gives the modal the user_id so logging in just works.
  */
 export async function searchFirmPeopleAction(clientId: string) {
   const a = await authorize(clientId);
@@ -1983,7 +1983,7 @@ export async function deleteDocumentAction(
     .from('client-docs')
     .remove([doc.storage_path]);
   if (rmErr) {
-    // Soft-continue — DB delete is still useful.
+    // Soft-continue - DB delete is still useful.
   }
   const { error } = await service.from('documents').delete().eq('id', documentId);
   if (error) return { ok: false as const, error: error.message };
@@ -2059,7 +2059,7 @@ export async function proposeAlternativeTourTimeAction(
 
 /**
  * Send a PRIVATE message to one specific party on this deal. Goes only
- * to them — group messaging on the deal stays open via quickMessageAction.
+ * to them - group messaging on the deal stays open via quickMessageAction.
  *
  * Resolves the recipient either by user_id (firm member or invited
  * realtor who has an account) or by their external_email. The new RLS
@@ -2141,7 +2141,7 @@ export async function sendPrivatePartyMessageAction(
         trimmed
       )}</p><p><a href="${dealUrl}">Reply in the deal &rarr;</a></p>`,
       sms_text:
-        senderName + ' (private): ' + trimmed.slice(0, 240) + ' — ' + dealUrl,
+        senderName + ' (private): ' + trimmed.slice(0, 240) + ' - ' + dealUrl,
     });
   } catch (e: any) {
     console.error('[sendPrivatePartyMessageAction] notify failed', e?.message || e);
@@ -2198,7 +2198,7 @@ export async function quickMessageAction(clientId: string, body: string) {
         trimmed
       )}</p><p><a href="${dealUrl}">Reply in the deal &rarr;</a></p>`,
       sms_text:
-        senderName + ': ' + trimmed.slice(0, 240) + ' — reply: ' + dealUrl,
+        senderName + ': ' + trimmed.slice(0, 240) + ' - reply: ' + dealUrl,
       excludeUserId: a.me.user_id,
     });
   } catch (e: any) {
@@ -2373,9 +2373,9 @@ export async function scheduleShowingAction(
       sms_text:
         'Showing scheduled' +
         (address ? ': ' + address : '') +
-        ' — ' +
+        ' - ' +
         pretty +
-        ' — ' +
+        ' - ' +
         dealUrl,
       excludeUserId: a.me.user_id,
     });
@@ -2390,7 +2390,7 @@ export async function scheduleShowingAction(
 }
 
 /**
- * Reschedule an existing showing — same set of fields the caller can change
+ * Reschedule an existing showing - same set of fields the caller can change
  * with a single new scheduled_at. Status flips back to 'scheduled' so the
  * "confirmed" badge gets cleared until everyone reconfirms.
  */
@@ -2497,9 +2497,9 @@ export async function rescheduleShowingAction(
       sms_text:
         'Showing moved' +
         (address ? ': ' + address : '') +
-        ' — ' +
+        ' - ' +
         pretty +
-        ' — ' +
+        ' - ' +
         dealUrl,
       excludeUserId: a.me.user_id,
     });
@@ -2513,7 +2513,7 @@ export async function rescheduleShowingAction(
 }
 
 /**
- * Mark a showing complete or canceled. Status-only update — the row stays
+ * Mark a showing complete or canceled. Status-only update - the row stays
  * around for activity / history.
  */
 export async function updateShowingStatusAction(

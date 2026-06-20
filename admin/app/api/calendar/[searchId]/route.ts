@@ -22,7 +22,7 @@ export const dynamic = 'force-dynamic';
  * revokes every outstanding subscription at once.
  *
  * The feed carries only milestone dates, showings, and tour requests plus the
- * property address — no documents, no messages.
+ * property address - no documents, no messages.
  */
 export async function GET(
   req: NextRequest,
@@ -67,7 +67,7 @@ export async function GET(
   }
 
   const firmName = (search as any).firm?.name || 'Realtor Portal';
-  const calName = (search.name ? search.name + ' — ' : '') + firmName;
+  const calName = (search.name ? search.name + ' - ' : '') + firmName;
 
   const events: IcsEvent[] = [];
 
@@ -88,7 +88,7 @@ export async function GET(
       const [hh, mm] = String(d.event_time).split(':');
       start.setUTCHours(Number(hh), Number(mm), 0, 0);
     } else {
-      // No time set — anchor mid-morning so it reads as a daytime milestone.
+      // No time set - anchor mid-morning so it reads as a daytime milestone.
       start.setUTCHours(13, 0, 0, 0);
     }
     events.push({
@@ -101,7 +101,7 @@ export async function GET(
     });
   }
 
-  // 2. Scheduled showings (migration 0030) — concrete timestamps.
+  // 2. Scheduled showings (migration 0030) - concrete timestamps.
   const { data: showings } = await service
     .from('showings')
     .select(
@@ -128,7 +128,7 @@ export async function GET(
     });
   }
 
-  // 3. Tour requests — include the house address as the location.
+  // 3. Tour requests - include the house address as the location.
   const { data: tours } = await service
     .from('tour_requests')
     .select(

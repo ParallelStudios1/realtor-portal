@@ -5,14 +5,14 @@
  * fetching errors. We show a friendly retry UI in the brand color rather
  * than the default white-screen-of-death.
  *
- * `reset()` re-runs the failed segment without a full reload — keeps form
+ * `reset()` re-runs the failed segment without a full reload - keeps form
  * state and avoids logging the user out on transient API blips.
  */
 
 import { useEffect } from 'react';
 
 /**
- * True when the error is a stale-chunk / dynamic-import failure — i.e. the
+ * True when the error is a stale-chunk / dynamic-import failure - i.e. the
  * browser is running an old build and tried to fetch a JS chunk that the new
  * deploy no longer serves. `reset()` can't fix this (it re-runs the segment
  * with the same dead webpack runtime), so the only cure is a full reload that
@@ -87,7 +87,7 @@ export default function GlobalError({
         </h1>
         <p className="mt-2 text-sm text-slate-600">
           {chunkError
-            ? 'A new version just shipped. Refreshing to load it — this only takes a second.'
+            ? 'A new version just shipped. Refreshing to load it - this only takes a second.'
             : "We hit a snag loading this page. It's almost always a quick blip."}
         </p>
         {error?.digest && (
@@ -99,7 +99,7 @@ export default function GlobalError({
           <button
             type="button"
             onClick={() => {
-              // reset() can't fix a stale-chunk error — force a full reload.
+              // reset() can't fix a stale-chunk error - force a full reload.
               if (chunkError && typeof window !== 'undefined') {
                 window.location.reload();
               } else {

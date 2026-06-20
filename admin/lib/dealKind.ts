@@ -9,7 +9,7 @@
 export type DealKind = 'buyer' | 'seller' | 'both' | null | undefined;
 
 /**
- * Canonical phase order — the single source of truth for every stepper and
+ * Canonical phase order - the single source of truth for every stepper and
  * picker. Mirrors the Postgres `deal_phase` enum exactly. Don't fork this
  * list locally: divergent copies are how /deal ended up missing
  * `counter_offer` while /client showed all seven.
@@ -58,7 +58,7 @@ const BUYER_PHASE_MESSAGES: Record<string, string> = {
     'Your offer was accepted! Inspection, appraisal, and financing happen during this stretch.',
   closing:
     'Almost home. We are finalizing the paperwork and scheduling your closing.',
-  closed: 'It is official — congratulations on your new home!',
+  closed: 'It is official - congratulations on your new home!',
 };
 
 /** One-line "what happens next" hint, shown under the current phase. */
@@ -93,7 +93,7 @@ const NEXT_STEP_HINTS: Record<string, { buyer: string; seller: string }> = {
 /** Listing-lifecycle "what's happening now" copy for a seller deal. */
 const SELLER_PHASE_MESSAGES: Record<string, string> = {
   searching:
-    'We are getting your home ready to list — pricing, photos, prep, and paperwork.',
+    'We are getting your home ready to list - pricing, photos, prep, and paperwork.',
   awaiting_offer:
     'Your home is active on the market. We are coordinating showings and watching for offers.',
   offer_made:

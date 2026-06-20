@@ -66,7 +66,7 @@ export async function signupAction(formData: FormData) {
   const json = await r.json().catch(() => ({}));
   if (!r.ok || !json?.ok) {
     // If the email already has a firm/account on file, send them to /login
-    // with a helpful pre-filled prompt — NOT back to /signup where every
+    // with a helpful pre-filled prompt - NOT back to /signup where every
     // resubmit was orphaning their data into a brand new firm.
     if ((json as any)?.existing) {
       redirect(
@@ -75,7 +75,7 @@ export async function signupAction(formData: FormData) {
           (next ? '&next=' + encodeURIComponent(next) : '') +
           '&notice=' +
           encodeURIComponent(
-            'You already have an account — sign in to reach your firm.'
+            'You already have an account - sign in to reach your firm.'
           )
       );
     }
@@ -90,7 +90,7 @@ export async function signupAction(formData: FormData) {
   });
   if (signInError) back('Account created but sign-in failed: ' + signInError.message);
 
-  // Give the auth cookie a beat to land before we redirect — otherwise the
+  // Give the auth cookie a beat to land before we redirect - otherwise the
   // next SSR render can race the cookie write, getMe() returns null, and
   // pages 404 on first hit after firm signup.
   await new Promise((r) => setTimeout(r, 300));

@@ -2,15 +2,15 @@
  * Role-based default visibility for a party added to a deal.
  *
  * When a realtor adds someone to a deal, the four can_view_* flags should
- * default sensibly by ROLE — a lender needs documents + dates + financials
+ * default sensibly by ROLE - a lender needs documents + dates + financials
  * but not the buyer-side message thread; an inspector needs only the dates;
  * a co-realtor or attorney is a full collaborator. The realtor can always
  * override the individual checkboxes; this just sets the starting point.
  *
  * Shared by:
- *   - ParticipantModal (client UI — seeds the checkboxes on role change)
- *   - addParticipantAction (server action — fallback when flags are undefined)
- *   - POST /api/participants/add (mobile route — same fallback)
+ *   - ParticipantModal (client UI - seeds the checkboxes on role change)
+ *   - addParticipantAction (server action - fallback when flags are undefined)
+ *   - POST /api/participants/add (mobile route - same fallback)
  *
  * Keep this the single source of truth so the UI and both write paths agree.
  */

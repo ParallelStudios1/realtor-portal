@@ -112,7 +112,7 @@ export default function HousesScreen() {
                       : formatHouseStatus(house.status)}
                   </Text>
                 </View>
-                {/* Favoriting is a buyer action — sellers don't favorite
+                {/* Favoriting is a buyer action - sellers don't favorite
                     their own listings. */}
                 {!isSeller && (
                   <TouchableOpacity
@@ -139,7 +139,7 @@ export default function HousesScreen() {
             title={isSeller ? 'No listings yet' : 'No houses yet'}
             body={
               isSeller
-                ? "Your listing will show up here once it's added — you or your agent can add it from the web portal."
+                ? "Your listing will show up here once it's added - you or your agent can add it from the web portal."
                 : "Your realtor will add properties to your search soon. They'll show up here."
             }
           />

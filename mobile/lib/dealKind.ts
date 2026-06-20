@@ -1,5 +1,5 @@
 /**
- * Deal-kind helpers — mobile mirror of admin/lib/dealKind.ts.
+ * Deal-kind helpers - mobile mirror of admin/lib/dealKind.ts.
  * Most realtors are LISTING agents, so a seller deal must read like a
  * listing, not a buyer search. Keep these tables in sync with the web app.
  */
@@ -7,7 +7,7 @@
 export type DealKind = 'buyer' | 'seller' | 'both' | null | undefined;
 
 /**
- * Canonical phase order — single source of truth for every stepper/picker.
+ * Canonical phase order - single source of truth for every stepper/picker.
  * Mirrors the Postgres `deal_phase` enum exactly (incl. counter_offer,
  * which several mobile steppers were missing).
  */

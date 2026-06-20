@@ -9,7 +9,7 @@ import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
  * role='attorney' linked to the inviting firm (host_firm). After this
  * they have RLS access to that firm's deals as an attorney.
  *
- * Idempotent — re-running just routes them on.
+ * Idempotent - re-running just routes them on.
  */
 export async function completeAttorneyOnboardingAction(formData: FormData) {
   const supabase = getSupabaseServerClient();

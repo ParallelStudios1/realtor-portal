@@ -3,7 +3,7 @@
 import { useState } from 'react';
 
 /**
- * Public, mobile-first showing-feedback form. No login, no app chrome — it's
+ * Public, mobile-first showing-feedback form. No login, no app chrome - it's
  * served on /feedback/[token] which sits outside the dashboard. Styling is
  * inline (flat ink palette, Inter) so it has zero dependency on the
  * dashboard's component library or Tailwind config being present on this route.

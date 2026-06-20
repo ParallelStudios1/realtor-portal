@@ -4,7 +4,7 @@ import { Database } from './database.types';
 
 /**
  * Supabase client. We do NOT throw at module-load time even if env vars are
- * missing — that would hard-crash the app on launch with no useful error.
+ * missing - that would hard-crash the app on launch with no useful error.
  * Instead we fall back to a "broken" client and expose `configError` so the
  * UI can render a clear screen explaining what went wrong.
  */
@@ -15,7 +15,7 @@ const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 export const configError: string | null =
   !supabaseUrl || !supabaseAnonKey
     ? 'Missing EXPO_PUBLIC_SUPABASE_URL or EXPO_PUBLIC_SUPABASE_ANON_KEY. ' +
-      'This build was packaged without environment variables — please notify the dev team.'
+      'This build was packaged without environment variables - please notify the dev team.'
     : null;
 
 // Use dummy values when missing so createClient does not throw. Any actual

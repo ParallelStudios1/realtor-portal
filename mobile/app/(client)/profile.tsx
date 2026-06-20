@@ -22,7 +22,7 @@ import { useToast } from '@/components/Toast';
 import { humanError } from '@/lib/humanError';
 
 /**
- * Client profile screen — same scope as realtor settings minus the firm
+ * Client profile screen - same scope as realtor settings minus the firm
  * branding (clients don't own a firm). Editable name, read-only email,
  * change-password modal, sign out.
  */
@@ -162,7 +162,7 @@ export default function ClientProfileScreen() {
         <View style={[styles.card, { borderColor: colors.border, backgroundColor: colors.surface }]}>
           <FieldLabel colors={colors}>Email</FieldLabel>
           <View style={[styles.readonly, { borderColor: colors.border, backgroundColor: colors.background }]}>
-            <Text style={[styles.readonlyText, { color: colors.text }]}>{user?.email ?? '—'}</Text>
+            <Text style={[styles.readonlyText, { color: colors.text }]}>{user?.email ?? '-'}</Text>
           </View>
           <Text style={[styles.helper, { color: colors.textSecondary }]}>
             To change your email, contact your realtor.

@@ -74,7 +74,7 @@ export default function NewClientPage({ searchParams }: { searchParams: { error?
           </select>
         </div>
 
-        {/* Default OFF — we no longer auto-create a deal when a client is
+        {/* Default OFF - we no longer auto-create a deal when a client is
             invited. A client can have many deals over time. Toggle this on
             when you're inviting them because a specific transaction is
             starting today. */}

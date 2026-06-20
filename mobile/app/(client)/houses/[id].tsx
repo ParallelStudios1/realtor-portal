@@ -82,7 +82,7 @@ export default function ClientHouseDetailScreen() {
 
   const handleRequestTour = async () => {
     if (!user?.id || !userProfile?.firm_id) return;
-    // A concrete date AND time is required — no time, no tour request.
+    // A concrete date AND time is required - no time, no tour request.
     if (!tourWhenDate) {
       toast.show('Pick a date and time for the tour.', { variant: 'error' });
       return;
@@ -113,7 +113,7 @@ export default function ClientHouseDetailScreen() {
         target: `Tour of ${house.address}`,
       });
       await refetch();
-      toast.show('Tour requested — your realtor will confirm timing.', {
+      toast.show('Tour requested - your realtor will confirm timing.', {
         variant: 'success',
       });
       setTourNotes('');
@@ -154,7 +154,7 @@ export default function ClientHouseDetailScreen() {
         metadata: { stars },
       });
       await refetch();
-      toast.show('Thanks — your realtor will see your feedback.', {
+      toast.show('Thanks - your realtor will see your feedback.', {
         variant: 'success',
       });
     } catch (e: any) {
@@ -202,7 +202,7 @@ export default function ClientHouseDetailScreen() {
       queryClient.invalidateQueries({ queryKey: ['clientSearches'] });
       queryClient.invalidateQueries({ queryKey: ['activities', house.search_id] });
       await refetchSearch();
-      toast.show('Sent to your agent — they’ll confirm to make it official.', {
+      toast.show('Sent to your agent - they’ll confirm to make it official.', {
         variant: 'success',
       });
     } catch (e: any) {
@@ -213,7 +213,7 @@ export default function ClientHouseDetailScreen() {
   };
 
   // A seller viewing their OWN listing: no tours, no favorites, no ratings,
-  // no "this is the house I want" — those are buyer actions. They see their
+  // no "this is the house I want" - those are buyer actions. They see their
   // listing status instead.
   const isSellerListing = (search as any)?.kind === 'seller';
   const showRatingUI = !isSellerListing && house.status === 'toured';
@@ -318,7 +318,7 @@ export default function ClientHouseDetailScreen() {
             </View>
           ) : null}
 
-          {/* "This is the house I want" — confirms the agreed home for the
+          {/* "This is the house I want" - confirms the agreed home for the
               whole deal via /api/deals/{searchId}/agree-house. */}
           {isSellerListing ? null : isAgreedHome ? (
             <View
@@ -376,7 +376,7 @@ export default function ClientHouseDetailScreen() {
             </View>
           )}
 
-          {/* Status-driven primary action — buyers only. */}
+          {/* Status-driven primary action - buyers only. */}
           {!isSellerListing && house.status === 'interested' && (
             <View style={[styles.actionBlock, { borderColor: colors.border }]}>
               <Text style={[styles.actionTitle, { color: colors.text }]}>Want to see this house?</Text>
@@ -448,7 +448,7 @@ export default function ClientHouseDetailScreen() {
           {!isSellerListing && house.status === 'tour_requested' && (
             <View style={[styles.actionBlock, { borderColor: colors.border, alignItems: 'center' }]}>
               <Text style={[styles.tourPending, { color: colors.text }]}>
-                ✓ Tour requested — your realtor will be in touch
+                ✓ Tour requested - your realtor will be in touch
               </Text>
             </View>
           )}

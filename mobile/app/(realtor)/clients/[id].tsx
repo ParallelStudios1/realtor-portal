@@ -43,7 +43,7 @@ import { DEAL_PHASES, phaseLabelShortFor } from '@/lib/dealKind';
 const PHASES = DEAL_PHASES as readonly DealPhase[];
 
 /**
- * Realtor's deal detail screen — polished cards + icon-grid quick actions.
+ * Realtor's deal detail screen - polished cards + icon-grid quick actions.
  */
 export default function RealtorClientDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -100,7 +100,7 @@ export default function RealtorClientDetailScreen() {
 
   if (isLoading || !search) {
     // Skeleton layout that mirrors the real screen so it doesn't feel
-    // like a stalled spinner — same header, same action-grid silhouette,
+    // like a stalled spinner - same header, same action-grid silhouette,
     // same card stack. Animation is in lib/Skeleton.tsx.
     return (
       <SafeAreaView
@@ -237,7 +237,7 @@ export default function RealtorClientDetailScreen() {
           </View>
         </View>
 
-        {/* Agreed home — shows once a home has been confirmed on the deal. */}
+        {/* Agreed home - shows once a home has been confirmed on the deal. */}
         {(search as any).offer_house_id && (search as any).house_agreed_at ? (
           <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
             <AgreedHomeCard
@@ -431,7 +431,7 @@ export default function RealtorClientDetailScreen() {
           )}
         </SectionCard>
 
-        {/* Tour requests — clickable, expand to view + respond */}
+        {/* Tour requests - clickable, expand to view + respond */}
         <TourRequestsCard
           tours={tours ?? []}
           colors={colors}
@@ -440,7 +440,7 @@ export default function RealtorClientDetailScreen() {
           onDecline={(tid) => handleTour(tid, 'declined')}
         />
 
-        {/* Financials — visible to all parties */}
+        {/* Financials - visible to all parties */}
         <FinancialsCard search={search} colors={colors} />
 
         {/* Offers received */}
@@ -518,7 +518,7 @@ export default function RealtorClientDetailScreen() {
           )}
         </SectionCard>
 
-        {/* People on this deal — mirrors web's "People" card. Shows everyone
+        {/* People on this deal - mirrors web's "People" card. Shows everyone
             we've added as a deal_participants row (co-realtors, attorneys,
             inspectors, lenders, etc.). Tapping "+ Add" opens the same
             SMS-first Add Party screen. */}

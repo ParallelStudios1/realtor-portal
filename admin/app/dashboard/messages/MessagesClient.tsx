@@ -92,7 +92,7 @@ export function MessagesClient({
         (payload) => {
           const msg = payload.new as Message;
           // Direct-messages hub: ignore group Deal-chat posts (recipient null)
-          // AND private threads with other parties — only realtor↔client DMs
+          // AND private threads with other parties - only realtor↔client DMs
           // belong here.
           if (!(msg as any).recipient_user_id) return;
           const tClient = threadsRef.current.find(
@@ -132,7 +132,7 @@ export function MessagesClient({
         // and realtime subscription. Pull any messages that arrived between
         // the latest preview we know about and now, then merge by id.
         if (status !== 'SUBSCRIBED' || cancelled) return;
-        // DIRECT messages only — without the recipient filter this catch-up
+        // DIRECT messages only - without the recipient filter this catch-up
         // merged group Deal-chat posts into the private threads.
         const { data, error: fetchErr } = await supabase
           .from('messages')
@@ -158,7 +158,7 @@ export function MessagesClient({
         }
 
         // Merge into per-thread message cache without dupes (only for threads
-        // we've already opened — closed threads will load fresh on click).
+        // we've already opened - closed threads will load fresh on click).
         setMessages((prev) => {
           const next = { ...prev };
           for (const [sid, incoming] of bySearch.entries()) {
@@ -225,7 +225,7 @@ export function MessagesClient({
     setError(null);
     const body = draft.trim();
     setDraft('');
-    // Private 1:1 with the client (recipient-scoped) — NOT the group Deal chat.
+    // Private 1:1 with the client (recipient-scoped) - NOT the group Deal chat.
     const activeClientId =
       threads.find((t) => t.searchId === activeId)?.clientId || null;
     const { data: inserted, error: e } = await supabase

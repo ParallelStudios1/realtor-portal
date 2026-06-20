@@ -204,7 +204,7 @@ function ContactFormModal({
         </div>
 
         <p className="text-xs text-ink-600">
-          Anyone you want in your address book — a co-realtor at another firm,
+          Anyone you want in your address book - a co-realtor at another firm,
           your lender, an inspector you trust, etc. They won't see the app
           unless you add them to a specific deal.
         </p>
@@ -246,7 +246,7 @@ function ContactFormModal({
                 defaultValue={initial?.role ?? ''}
                 className="input w-full"
               >
-                <option value="">—</option>
+                <option value="">-</option>
                 {ROLE_OPTIONS.map((r) => (
                   <option key={r} value={r}>
                     {r[0].toUpperCase() + r.slice(1)}

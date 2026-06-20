@@ -6,7 +6,7 @@ import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
 import { notifyDealParticipants } from '@/lib/notify';
 
 /**
- * DEAL GROUP CHAT — server actions.
+ * DEAL GROUP CHAT - server actions.
  *
  * A single group thread for the WHOLE deal that every party with message
  * access can read and post to. It is DISTINCT from the 1:1 client↔realtor DM:
@@ -17,10 +17,10 @@ import { notifyDealParticipants } from '@/lib/notify';
  * The group thread query therefore selects rows on the search where
  * `private IS NULL OR private = false`. The DM thread (the existing
  * /client/messages surface) is unaffected because it never set `private`
- * — but to keep the group thread clean we explicitly post group messages
+ * - but to keep the group thread clean we explicitly post group messages
  * with `private = false`.
  *
- * Authorization (read AND post) — a caller may participate in a deal's group
+ * Authorization (read AND post) - a caller may participate in a deal's group
  * chat if ANY of the following holds:
  *   1. They are firm staff on the deal's host firm (realtor/firm_admin/owner/
  *      manager/agent/super_admin whose firm_id matches the deal's firm_id), OR
@@ -209,7 +209,7 @@ export async function postDealChatMessage(
   if (error) return { ok: false as const, error: error.message };
 
   // Best-effort fan-out to the other parties on the deal. Never blocks the
-  // post — failures are swallowed so the message still lands.
+  // post - failures are swallowed so the message still lands.
   try {
     const preview = text.length > 140 ? text.slice(0, 140) + '…' : text;
     await notifyDealParticipants({

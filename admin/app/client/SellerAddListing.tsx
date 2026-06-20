@@ -190,7 +190,7 @@ export function SellerAddListing({
       <div>
         <span className="label">Attach related documents (optional)</span>
         <p className="mt-0.5 text-[11px] text-ink-500">
-          Disclosures, survey, HOA papers, extra photos — anything about this
+          Disclosures, survey, HOA papers, extra photos - anything about this
           home. Your agent will see them on the deal.
         </p>
         <button

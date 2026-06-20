@@ -18,7 +18,7 @@ export const runtime = 'nodejs';
  *   messagePreview?: string,  // explicit preview override
  * }
  *
- * Auth: cookie session (web) or Authorization: Bearer (mobile) — same shape
+ * Auth: cookie session (web) or Authorization: Bearer (mobile) - same shape
  * as /api/clients/invite and /api/notifications/send-push.
  *
  * Always returns JSON. If RESEND_API_KEY isn't set, sendEmail() returns
@@ -205,17 +205,17 @@ export async function POST(req: Request) {
           address
         )}</strong> for <strong>${escapeHtml(
           whenText
-        )}</strong>. We've attached a calendar invite — tap to add it to your calendar.</p>
+        )}</strong>. We've attached a calendar invite - tap to add it to your calendar.</p>
   ${notesBlock}
-  <p style="margin:24px 0 0;color:#475569;">— ${escapeHtml(firmName)}</p>
+  <p style="margin:24px 0 0;color:#475569;">- ${escapeHtml(firmName)}</p>
 </div>`.trim();
         const text = [
           `Hey ${clientFirst},`,
           '',
-          `${realtorName} confirmed your tour at ${address} for ${whenText}. We've attached a calendar invite — tap to add it to your calendar.`,
+          `${realtorName} confirmed your tour at ${address} for ${whenText}. We've attached a calendar invite - tap to add it to your calendar.`,
           tour.notes ? `\nNotes from your agent: ${tour.notes}` : '',
           '',
-          `— ${firmName}`,
+          `- ${firmName}`,
         ]
           .filter(Boolean)
           .join('\n');
@@ -255,19 +255,19 @@ export async function POST(req: Request) {
       const html = `
 <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#0f172a;">
   <p style="margin:0 0 16px;">Hi ${escapeHtml(clientFirst)},</p>
-  <p style="margin:0 0 16px;">Quick update — ${escapeHtml(
+  <p style="margin:0 0 16px;">Quick update - ${escapeHtml(
     realtorName
   )} can't make <strong>${escapeHtml(whenText)}</strong> for <strong>${escapeHtml(
         address
       )}</strong>. They'll reach out with a few alternative times shortly.</p>
-  <p style="margin:24px 0 0;color:#475569;">— ${escapeHtml(firmName)}</p>
+  <p style="margin:24px 0 0;color:#475569;">- ${escapeHtml(firmName)}</p>
 </div>`.trim();
       const text = [
         `Hi ${clientFirst},`,
         '',
-        `Quick update — ${realtorName} can't make ${whenText} for ${address}. They'll reach out with a few alternative times shortly.`,
+        `Quick update - ${realtorName} can't make ${whenText} for ${address}. They'll reach out with a few alternative times shortly.`,
         '',
-        `— ${firmName}`,
+        `- ${firmName}`,
       ].join('\n');
 
       const result = await sendEmail({
@@ -287,7 +287,7 @@ export async function POST(req: Request) {
     }
 
     if (input.kind === 'message_digest') {
-      // v1: not actually a digest — just "you have a new message". Pulls a
+      // v1: not actually a digest - just "you have a new message". Pulls a
       // preview from input.messagePreview > messages.body > generic copy.
       let preview = input.messagePreview?.trim() || '';
       if (!preview && input.messageId) {
@@ -319,7 +319,7 @@ export async function POST(req: Request) {
   <p style="margin:0 0 16px;"><a href="${escapeHtml(
     portalLink
   )}" style="color:#1f6feb;">Open the portal</a> to reply.</p>
-  <p style="margin:24px 0 0;color:#475569;">— ${escapeHtml(firmName)}</p>
+  <p style="margin:24px 0 0;color:#475569;">- ${escapeHtml(firmName)}</p>
 </div>`.trim();
       const text = [
         `Hi ${clientFirst},`,
@@ -330,7 +330,7 @@ export async function POST(req: Request) {
         '',
         `Open the portal to reply: ${portalLink}`,
         '',
-        `— ${firmName}`,
+        `- ${firmName}`,
       ].join('\n');
 
       const result = await sendEmail({

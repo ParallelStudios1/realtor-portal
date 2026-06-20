@@ -9,7 +9,7 @@ import { phaseLabelFor } from '@/lib/dealKind';
 export const dynamic = 'force-dynamic';
 
 /**
- * Client profile — a *person*, not a transaction.
+ * Client profile - a *person*, not a transaction.
  *
  * A client can have many deals over time (this year's buyer search, next
  * year's listing, the investment property after that). The profile page
@@ -17,7 +17,7 @@ export const dynamic = 'force-dynamic';
  * firms, notes, history) and lets the realtor spin up a new deal whenever
  * one materializes.
  *
- * The Deals menu lives at /dashboard/deals — this page is for "what's this
+ * The Deals menu lives at /dashboard/deals - this page is for "what's this
  * person about" not "what's happening on a specific transaction."
  */
 const PHASE_TONE: Record<string, string> = {
@@ -78,7 +78,7 @@ export default async function ClientProfilePage({
             <strong className="text-blue-900">Client invited.</strong>{' '}
             <span className="text-blue-800">
               They&apos;ll get a sign-in email. Start their first deal whenever it
-              materializes — no auto-deal anymore.
+              materializes - no auto-deal anymore.
             </span>
           </div>
         </div>

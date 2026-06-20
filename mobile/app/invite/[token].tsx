@@ -11,7 +11,7 @@ const SITE = 'https://realtorportal.parallelstudios.co';
  * Handles the "Set up your account" universal link from invite emails.
  *
  * iOS/Android intercept https://…/invite/<token> and open the APP instead of
- * the browser — and this route didn't exist, so tapping the email button
+ * the browser - and this route didn't exist, so tapping the email button
  * showed a blank screen. Account setup (token check + password) lives on the
  * web, so we forward into an in-app browser (which does NOT re-trigger the
  * universal link) and give a path back to sign-in for people who already
@@ -27,7 +27,7 @@ export default function InviteLinkScreen() {
     if (token) WebBrowser.openBrowserAsync(url).catch(() => {});
   }, [token, url]);
 
-  // Auto-open once on arrival — the screen behind stays as a fallback.
+  // Auto-open once on arrival - the screen behind stays as a fallback.
   useEffect(() => {
     openSetup();
   }, [openSetup]);
@@ -60,7 +60,7 @@ export default function InviteLinkScreen() {
           style={[s.secondaryBtn, { borderColor: colors.border }]}
         >
           <Text style={[s.secondaryBtnText, { color: colors.text }]}>
-            I already set my password — sign in
+            I already set my password - sign in
           </Text>
         </Pressable>
       </View>

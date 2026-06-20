@@ -11,7 +11,7 @@ export const metadata = { title: 'Seller net sheet · Realtor Portal' };
  * Staff-facing seller NET SHEET + OFFER COMPARISON calculator.
  *
  * All math is client-side (see NetSheetCalculator). This server component only
- * gates access and — optionally — prefills the calculator from a deal when
+ * gates access and - optionally - prefills the calculator from a deal when
  * `?searchId=<id>` is supplied. The calculator works with zero query params,
  * so the prefill path is strictly additive.
  */
@@ -37,7 +37,7 @@ export default async function NetSheetPage({
   // --- Optional prefill --------------------------------------------------
   // Pull agreed_price + commission_pct off the deal IF a searchId is given AND
   // the deal belongs to the caller's firm. Anything missing just falls through
-  // to the calculator's own defaults — never a hard error for the user.
+  // to the calculator's own defaults - never a hard error for the user.
   let prefill: Prefill | null = null;
   const searchId = searchParams.searchId?.trim();
   if (searchId) {
@@ -48,7 +48,7 @@ export default async function NetSheetPage({
         .select('id, firm_id, name, agreed_price, closing_amount, commission_pct')
         .eq('id', searchId)
         .maybeSingle();
-      // Firm-scope the prefill — never leak another firm's numbers.
+      // Firm-scope the prefill - never leak another firm's numbers.
       if (deal && (deal as { firm_id: string | null }).firm_id === me.firm_id) {
         const d = deal as {
           id: string;
@@ -96,7 +96,7 @@ export default async function NetSheetPage({
         </h1>
         <p className="mt-1 text-sm text-ink-600">
           Estimate seller proceeds and compare offers side by side. Figures are
-          estimates for discussion — not a closing statement.
+          estimates for discussion - not a closing statement.
         </p>
       </header>
 

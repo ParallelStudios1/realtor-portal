@@ -105,7 +105,7 @@ export default async function DashboardOverviewPage() {
       </div>
 
       <div className="mt-8 grid gap-6 lg:grid-cols-3">
-        {/* Recent activity (deals) — links into /dashboard/deals/[id] */}
+        {/* Recent activity (deals) - links into /dashboard/deals/[id] */}
         <section className="lg:col-span-2">
           <div className="mb-3 flex items-baseline justify-between">
             <h2 className="text-[11px] font-bold uppercase tracking-wider text-ink-500">
@@ -145,7 +145,7 @@ export default async function DashboardOverviewPage() {
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="truncate text-sm font-semibold text-ink-900">
-                          {d.client?.full_name || d.client?.email || '—'}
+                          {d.client?.full_name || d.client?.email || '-'}
                         </div>
                         <div className="truncate text-xs text-ink-500">
                           {d.name ||

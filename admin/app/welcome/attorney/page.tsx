@@ -4,16 +4,16 @@ import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
 import { AttorneyOnboardClient } from './OnboardClient';
 
 export const dynamic = 'force-dynamic';
-export const metadata = { title: 'Welcome — set up your attorney account' };
+export const metadata = { title: 'Welcome - set up your attorney account' };
 
 /**
- * Attorney onboarding landing — analogous to /welcome/realtor.
+ * Attorney onboarding landing - analogous to /welcome/realtor.
  *
  * When the realtor adds an attorney as a party, we use Supabase
  * inviteUserByEmail with metadata.role='attorney' + redirectTo this page.
  * The magic link logs them in; this page creates their public.users row
  * with role='attorney', tied to the host firm (no separate firm for
- * attorneys — they hang off whoever invited them and can be added to
+ * attorneys - they hang off whoever invited them and can be added to
  * multiple firms over time via deal_participants).
  *
  * After onboarding they're routed to /attorney/deals/<id> which is their

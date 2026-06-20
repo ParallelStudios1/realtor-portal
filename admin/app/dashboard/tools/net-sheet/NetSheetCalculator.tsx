@@ -307,7 +307,7 @@ export function NetSheetCalculator({ prefill }: { prefill: Prefill | null }) {
   }
 
   // Each offer's estimated seller net reuses the SAME deduction structure as
-  // the net sheet above — mortgage payoff, closing costs, tax proration, other
+  // the net sheet above - mortgage payoff, closing costs, tax proration, other
   // costs and both commission % carry over. Only the offer price and the
   // offer's own requested concessions vary. That keeps every offer on an
   // apples-to-apples basis against the seller's actual cost stack.
@@ -349,7 +349,7 @@ export function NetSheetCalculator({ prefill }: { prefill: Prefill | null }) {
         <div className="rounded-lg border border-ink-200 bg-ink-50 px-4 py-2 text-xs text-ink-600">
           Prefilled from deal{' '}
           <span className="font-semibold text-ink-800">{prefill.dealName}</span>.
-          Adjust any figure below — nothing is saved.
+          Adjust any figure below - nothing is saved.
         </div>
       )}
 
@@ -434,7 +434,7 @@ export function NetSheetCalculator({ prefill }: { prefill: Prefill | null }) {
             {/* Deductions */}
             <div className="border-t border-ink-100 bg-ink-50 px-5 py-2">
               <span className="text-[10px] font-bold uppercase tracking-wider text-ink-400">
-                Less — costs &amp; credits
+                Less - costs &amp; credits
               </span>
             </div>
             <div className="divide-y divide-ink-100">
@@ -515,7 +515,7 @@ export function NetSheetCalculator({ prefill }: { prefill: Prefill | null }) {
               Offer comparison
             </h2>
             <p className="text-xs text-ink-500">
-              Each offer&apos;s net reuses the seller cost stack above — only the
+              Each offer&apos;s net reuses the seller cost stack above - only the
               offer price and that offer&apos;s concessions differ.
             </p>
           </div>
@@ -706,7 +706,7 @@ export function NetSheetCalculator({ prefill }: { prefill: Prefill | null }) {
                             : 'text-ink-300')
                         }
                       >
-                        {hasPrice ? signedMoney(r.net) : '—'}
+                        {hasPrice ? signedMoney(r.net) : '-'}
                       </span>
                     </td>
                   );
@@ -738,7 +738,7 @@ export function NetSheetCalculator({ prefill }: { prefill: Prefill | null }) {
                         }
                       >
                         {isBest
-                          ? '—'
+                          ? '-'
                           : r.price > 0
                           ? signedMoney(delta)
                           : ''}

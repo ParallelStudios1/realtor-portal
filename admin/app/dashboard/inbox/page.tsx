@@ -225,19 +225,19 @@ export default async function InboxPage() {
 function humanizeAction(action: string): string {
   const map: Record<string, string> = {
     phase_change: 'moved the deal to',
-    house_added: 'added a house —',
+    house_added: 'added a house -',
     tour_confirmed: 'confirmed a tour for',
     tour_declined: 'declined a tour for',
     tour_requested: 'requested a tour for',
     document_uploaded: 'uploaded',
-    important_date_added: 'added an important date —',
-    alert: 'sent an alert —',
-    attorney_added: 'added an attorney —',
-    co_realtor_added: 'added a co-realtor —',
-    buyer_added: 'added a buyer —',
-    seller_added: 'added a seller —',
+    important_date_added: 'added an important date -',
+    alert: 'sent an alert -',
+    attorney_added: 'added an attorney -',
+    co_realtor_added: 'added a co-realtor -',
+    buyer_added: 'added a buyer -',
+    seller_added: 'added a seller -',
     docusign_linked: 'linked a DocuSign envelope',
-    deal_updated: 'updated deal details —',
+    deal_updated: 'updated deal details -',
     message: 'sent a message',
   };
   return map[action] || action.replace(/_/g, ' ');

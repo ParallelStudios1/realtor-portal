@@ -4,7 +4,7 @@ import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
 import { OnboardClient } from './OnboardClient';
 
 export const dynamic = 'force-dynamic';
-export const metadata = { title: 'Welcome — set up your account' };
+export const metadata = { title: 'Welcome - set up your account' };
 
 /**
  * Cross-firm realtor onboarding landing.
@@ -19,7 +19,7 @@ export const metadata = { title: 'Welcome — set up your account' };
  *   3. We send them onward to `?next=/deal/<id>` so they land directly on
  *      the deal they were invited to.
  *
- * If they already have a public.users row + firm, we just route them on —
+ * If they already have a public.users row + firm, we just route them on -
  * no double-onboarding.
  */
 export default async function WelcomeRealtorPage({
@@ -32,7 +32,7 @@ export default async function WelcomeRealtorPage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  // No session — magic link expired or someone hit this directly. Bounce
+  // No session - magic link expired or someone hit this directly. Bounce
   // them to /login with the original next path preserved so they can
   // password-sign-in instead.
   if (!user) {
@@ -43,7 +43,7 @@ export default async function WelcomeRealtorPage({
     redirect('/login?next=' + encodeURIComponent(next));
   }
 
-  // Sanitize `next` — only allow internal paths.
+  // Sanitize `next` - only allow internal paths.
   const next =
     typeof searchParams.next === 'string' && searchParams.next.startsWith('/')
       ? searchParams.next
@@ -63,7 +63,7 @@ export default async function WelcomeRealtorPage({
 
   // Pull a friendly first name from user_metadata (Supabase keeps whatever
   // we passed in inviteUserByEmail there) and a sensible default firm name
-  // from the email domain — they can edit before submitting.
+  // from the email domain - they can edit before submitting.
   const meta = (user.user_metadata || {}) as Record<string, any>;
   const fullName: string =
     (typeof meta.full_name === 'string' && meta.full_name) ||

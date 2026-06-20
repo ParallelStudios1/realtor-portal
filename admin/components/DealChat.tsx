@@ -10,7 +10,7 @@ import {
 } from '@/app/dashboard/deals/[id]/chatActions';
 
 /**
- * DEAL GROUP CHAT — the shared thread for the whole deal.
+ * DEAL GROUP CHAT - the shared thread for the whole deal.
  *
  * One thread per deal (search_id) that every party with message access can
  * read and post to. Distinct from the 1:1 client↔realtor DM. Renders sender
@@ -106,7 +106,7 @@ export function DealChat({
             </p>
             <p className="mt-0.5 text-xs text-ink-400">
               {canPost
-                ? 'Start the conversation — everyone on this deal can see it.'
+                ? 'Start the conversation - everyone on this deal can see it.'
                 : 'Messages on this deal will appear here.'}
             </p>
           </div>

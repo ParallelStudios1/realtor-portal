@@ -24,7 +24,7 @@ const STAFF_ROLES = ['realtor', 'firm_admin', 'super_admin', 'owner', 'manager',
 /**
  * Authorize the caller against an important_date: returns the date row (with
  * its firm_id + search_id) when the caller is staff in the date's firm.
- * Cross-firm guest collaborators are intentionally NOT covered here — date
+ * Cross-firm guest collaborators are intentionally NOT covered here - date
  * ownership/escalation is a host-firm concern.
  */
 type AuthOk = {

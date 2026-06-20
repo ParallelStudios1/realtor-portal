@@ -115,7 +115,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ url: session.url });
   } catch (err: any) {
-    // Never let an unhandled exception turn into an empty 500 body —
+    // Never let an unhandled exception turn into an empty 500 body -
     // that's what causes "JSON.parse: unexpected end of data" on the client.
     const message =
       err?.raw?.message || err?.message || 'Unexpected server error.';

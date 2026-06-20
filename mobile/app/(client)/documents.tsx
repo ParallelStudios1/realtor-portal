@@ -26,7 +26,7 @@ import { Ionicons } from '@expo/vector-icons';
  * Tapping a row hits the web /api/documents/sign-url endpoint with a Bearer
  * token, gets back a 5-minute signed URL, and opens it in the system browser
  * via expo-web-browser. We deliberately don't sign URLs from the client SDK
- * directly — the API route is the one place that enforces the firm/search
+ * directly - the API route is the one place that enforces the firm/search
  * authorization rules consistently across web + mobile.
  */
 export default function ClientDocumentsScreen() {

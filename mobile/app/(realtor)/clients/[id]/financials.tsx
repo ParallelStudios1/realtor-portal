@@ -138,7 +138,7 @@ export default function FinancialsScreen() {
         <FieldBlock
           colors={colors}
           label="Internal notes"
-          hint="Visible only to your firm — clients can't see this"
+          hint="Visible only to your firm - clients can't see this"
           value={notes}
           setValue={setNotes}
           multiline

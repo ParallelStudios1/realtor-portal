@@ -13,7 +13,7 @@ import { formatDate } from '@/lib/format';
  * resolves who agreed (client vs. realtor vs. staff) from house_agreed_by.
  *
  * `search` is the client_searches row (typed loosely because the agreed-home
- * columns aren't in the base ClientSearch type yet — same `as any` pattern the
+ * columns aren't in the base ClientSearch type yet - same `as any` pattern the
  * existing screens use for the newer deal columns).
  */
 export function AgreedHomeCard({
@@ -50,7 +50,7 @@ export function AgreedHomeCard({
   // Only render once the deal actually has an agreed home.
   if (!offerHouseId || !agreedAt) return null;
 
-  // Seller deals: the "agreed home" IS the listing — label it that way and
+  // Seller deals: the "agreed home" IS the listing - label it that way and
   // skip the buyer-flavored "agreed by" line.
   const isSeller = search?.kind === 'seller';
 

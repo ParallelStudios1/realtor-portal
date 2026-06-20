@@ -13,7 +13,7 @@ export const metadata = { title: 'Analytics' };
  *
  * Admin-tier roles (owner / firm_admin / manager / super_admin) get the full
  * firm-wide view powered by the service-role client. Realtors get a scoped
- * "limited view" that only reflects their own deals — those queries go
+ * "limited view" that only reflects their own deals - those queries go
  * through the auth-aware SSR client so RLS does the filtering.
  *
  * Everything renders from data that already exists on `client_searches`,
@@ -98,7 +98,7 @@ export default async function AnalyticsPage() {
   const deals = ((dealsRaw || []) as unknown) as DealRow[];
 
   // For pipeline value we want a list_price fallback when agreed_price is
-  // null — pull the most recent house per active search.
+  // null - pull the most recent house per active search.
   const activeIds = deals
     .filter((d) => d.phase !== 'closed')
     .map((d) => d.id);
@@ -111,7 +111,7 @@ export default async function AnalyticsPage() {
       .order('created_at', { ascending: false });
     for (const h of ((housesRaw || []) as unknown) as HouseRow[]) {
       if (!h.search_id || h.list_price == null) continue;
-      // first hit wins because we sorted desc — that's the freshest list_price
+      // first hit wins because we sorted desc - that's the freshest list_price
       if (listPriceBySearch[h.search_id] == null) {
         listPriceBySearch[h.search_id] = Number(h.list_price);
       }
@@ -277,7 +277,7 @@ export default async function AnalyticsPage() {
           <p className="mt-1 text-sm text-ink-600">
             {isAdmin
               ? `Firm-wide performance for ${me.firm_name || 'your firm'}.`
-              : 'Your personal performance — only the deals assigned to you.'}
+              : 'Your personal performance - only the deals assigned to you.'}
           </p>
         </div>
         {!isAdmin && (
@@ -309,7 +309,7 @@ export default async function AnalyticsPage() {
         />
         <Kpi
           label="Avg days to close"
-          value={avgDaysToClose != null ? `${avgDaysToClose}` : '—'}
+          value={avgDaysToClose != null ? `${avgDaysToClose}` : '-'}
           accent="amber"
           sub={`${closedThisQuarter.length} closed this quarter`}
         />
@@ -351,7 +351,7 @@ export default async function AnalyticsPage() {
                   {row.count}
                 </div>
                 <div className="col-span-2 text-right text-xs tabular-nums text-ink-500">
-                  {row.value > 0 ? formatMoney(row.value) : '—'}
+                  {row.value > 0 ? formatMoney(row.value) : '-'}
                 </div>
               </div>
             );
@@ -403,7 +403,7 @@ export default async function AnalyticsPage() {
                         {r.closed}
                       </div>
                       <div className="col-span-1 text-right text-xs tabular-nums text-ink-500">
-                        {r.total > 0 ? formatMoney(r.total) : '—'}
+                        {r.total > 0 ? formatMoney(r.total) : '-'}
                       </div>
                     </li>
                   );
@@ -449,7 +449,7 @@ export default async function AnalyticsPage() {
           </div>
           {stuckDeals.length === 0 ? (
             <div className="bg-dotted px-5 py-10 text-center text-sm text-ink-500">
-              Nothing has stalled — nice work.
+              Nothing has stalled - nice work.
             </div>
           ) : (
             <ul className="divide-y divide-ink-100">
@@ -639,26 +639,26 @@ function phaseBar(phase: string): string {
 }
 
 function prettyPhase(p: string | null | undefined): string {
-  if (!p) return '—';
+  if (!p) return '-';
   return p.replace(/_/g, ' ');
 }
 
 function humanizeAction(action: string): string {
   const map: Record<string, string> = {
     phase_change: 'moved the deal to',
-    house_added: 'added a house —',
+    house_added: 'added a house -',
     tour_confirmed: 'confirmed a tour for',
     tour_declined: 'declined a tour for',
     tour_requested: 'requested a tour for',
     document_uploaded: 'uploaded',
-    important_date_added: 'added an important date —',
-    alert: 'sent an alert —',
-    attorney_added: 'added an attorney —',
-    co_realtor_added: 'added a co-realtor —',
-    buyer_added: 'added a buyer —',
-    seller_added: 'added a seller —',
+    important_date_added: 'added an important date -',
+    alert: 'sent an alert -',
+    attorney_added: 'added an attorney -',
+    co_realtor_added: 'added a co-realtor -',
+    buyer_added: 'added a buyer -',
+    seller_added: 'added a seller -',
     docusign_linked: 'linked a DocuSign envelope',
-    deal_updated: 'updated deal details —',
+    deal_updated: 'updated deal details -',
     message: 'sent a message',
   };
   return map[action] || action.replace(/_/g, ' ');

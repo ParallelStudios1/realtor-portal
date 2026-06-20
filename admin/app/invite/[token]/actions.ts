@@ -10,7 +10,7 @@ import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
  *
  * Common contract:
  *   - token: deal_invites.token (uuid string)
- *   - password (for new accounts that need one — clients + realtors)
+ *   - password (for new accounts that need one - clients + realtors)
  *   - any role-specific fields: full_name, firm_name, etc.
  *
  * After:
@@ -84,7 +84,7 @@ export async function acceptInviteAction(formData: FormData) {
       })
       .catch(() => {});
     if (password && password.length >= 8) {
-      // They're using this form to also set a password — honor it.
+      // They're using this form to also set a password - honor it.
       await service.auth.admin
         .updateUserById(existing.id, { password })
         .catch(() => {});
@@ -115,7 +115,7 @@ export async function acceptInviteAction(formData: FormData) {
 
   // 2. Create/upsert their public.users row with the right firm_id + role.
   if (isRealtor) {
-    // Realtors get their own firm — they are NOT a member of the host firm.
+    // Realtors get their own firm - they are NOT a member of the host firm.
     // If they already have a public.users row, leave their firm alone.
     const { data: existingRow } = await service
       .from('users')
@@ -199,7 +199,7 @@ export async function acceptInviteAction(formData: FormData) {
         () => null
       );
   } else {
-    // Inspector / lender / mortgage broker / "other" — give them a
+    // Inspector / lender / mortgage broker / "other" - give them a
     // minimal user row attached to the host firm with role='client' so
     // RLS treats them as a deal participant. They primarily access via
     // the deal_participants row, not their own firm.
@@ -238,7 +238,7 @@ export async function acceptInviteAction(formData: FormData) {
     password: finalPassword,
   });
   if (signInError) {
-    // They have an account but no password — send them to /login with a
+    // They have an account but no password - send them to /login with a
     // helpful preset rather than dropping a hard error.
     redirect(
       '/login?next=' +

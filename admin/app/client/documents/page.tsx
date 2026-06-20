@@ -58,8 +58,8 @@ export default async function ClientDocumentsPage() {
           </div>
           <h3 className="mt-4 text-base font-semibold">No documents yet</h3>
           <p className="mx-auto mt-1 max-w-sm text-sm text-ink-600">
-            Anything your agent uploads — disclosures, contracts, closing
-            paperwork — will appear here.
+            Anything your agent uploads - disclosures, contracts, closing
+            paperwork - will appear here.
           </p>
         </div>
       ) : (

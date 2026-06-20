@@ -357,7 +357,7 @@ export function useAddImportantDate() {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
-      // Keep dates ordered ascending — same as the query.
+      // Keep dates ordered ascending - same as the query.
       const next = [...(prev ?? []), optimistic].sort((a, b) =>
         a.date < b.date ? -1 : a.date > b.date ? 1 : 0
       );
@@ -479,7 +479,7 @@ export function useSendMessage() {
       if (error) throw error;
 
       // Fire-and-forget push notification to the other party. We don't await
-      // the result — message is already persisted, push is a side-effect that
+      // the result - message is already persisted, push is a side-effect that
       // shouldn't block the optimistic UI.
       try {
         const { data: sess } = await supabase.auth.getSession();
@@ -772,7 +772,7 @@ export function useRequestTour() {
       // realtor's confirm flow updates the house status when they accept.
 
       // Fire-and-forget push to the realtor side. The row is already persisted
-      // — we don't want a flaky network to block the client's optimistic UI.
+      // - we don't want a flaky network to block the client's optimistic UI.
       try {
         const { data: sess } = await supabase.auth.getSession();
         const token = sess.session?.access_token;
@@ -912,7 +912,7 @@ export function useRequestTour() {
  * Realtor confirms / declines / cancels a tour request.
  * On 'confirmed': also write an `important_dates` row tied to the search so
  * the tour shows up on both home screens (the date itself is a best-guess
- * parse of preferred_when — falls back to today if we can't parse it).
+ * parse of preferred_when - falls back to today if we can't parse it).
  */
 export function useUpdateTourRequest() {
   const queryClient = useQueryClient();
@@ -948,7 +948,7 @@ export function useUpdateTourRequest() {
       if (updErr) throw updErr;
 
       // Fire-and-forget transactional email (.ics on confirm, polite note on
-      // decline). Mirrors the web ToursClient behavior — mobile only triggers
+      // decline). Mirrors the web ToursClient behavior - mobile only triggers
       // via the web API, which holds the Resend key.
       if (status === 'confirmed' || status === 'declined') {
         try {
@@ -1133,12 +1133,12 @@ export function useRequestRating() {
           search_id: searchId,
           firm_id: firmId,
           client_id: clientId,
-          stars: 0,                   // placeholder until client submits — but check constraint requires 1–5
+          stars: 0,                   // placeholder until client submits - but check constraint requires 1-5
           requested_at: new Date().toISOString(),
         },
         { onConflict: 'client_id,house_id', ignoreDuplicates: false }
       );
-      // The 1–5 check will reject stars=0; instead, fall back to noting requested_at on existing row OR
+      // The 1-5 check will reject stars=0; instead, fall back to noting requested_at on existing row OR
       // just pushing a notification without a placeholder row. Simpler: do a SELECT-then-INSERT.
       if (error) {
         // If the row doesn't exist yet, we can't insert with stars=0. Workaround: insert with stars=1
@@ -1156,7 +1156,7 @@ export function useRequestRating() {
   });
 }
 
-/** Client submits the actual rating (1–5 stars + optional notes). */
+/** Client submits the actual rating (1-5 stars + optional notes). */
 export function useSubmitRating() {
   const queryClient = useQueryClient();
 

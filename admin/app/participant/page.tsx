@@ -40,7 +40,7 @@ const ROLE_COLOR: Record<string, string> = {
  * the role they hold on each deal, with a one-line summary card.
  *
  * This is the home for inspectors / lenders / mortgage brokers / title
- * agents / appraisers / etc. — anyone who isn't the principal client and
+ * agents / appraisers / etc. - anyone who isn't the principal client and
  * isn't staff at the originating firm.
  */
 export default async function ParticipantHome() {
@@ -98,7 +98,7 @@ export default async function ParticipantHome() {
 
   const items = ((matches as any[]) || []).filter((m) => m.search);
 
-  // Resolve the property each party is tied to — their house_id if scoped to
+  // Resolve the property each party is tied to - their house_id if scoped to
   // one, else the deal's agreed home. Sellers see "the house they're selling".
   const houseIds = Array.from(
     new Set(

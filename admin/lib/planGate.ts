@@ -7,7 +7,7 @@ import { getSupabaseServiceRoleClient } from './supabaseServer';
  *   - status='trial' + trial_ends_at expired → blocked.
  *
  * Cross-firm participants (people writing to a deal they're a participant
- * on, not their own firm's data) are NOT gated here — that's enforced
+ * on, not their own firm's data) are NOT gated here - that's enforced
  * separately by can_collab_on_search RLS.
  */
 export async function isFirmPlanActive(firmId: string | null): Promise<boolean> {
@@ -34,7 +34,7 @@ export async function isFirmPlanActive(firmId: string | null): Promise<boolean> 
  * Returns true if the user is allowed to use premium / write features on
  * a specific deal. There are two ways to qualify:
  *
- *   1. The user's HOME firm has an active plan. (Standard case — they
+ *   1. The user's HOME firm has an active plan. (Standard case - they
  *      can use the product on any of their firm's deals.)
  *
  *   2. The DEAL'S HOST firm has an active plan, AND the user is a
@@ -49,7 +49,7 @@ export async function isFirmPlanActive(firmId: string | null): Promise<boolean> 
  * specific deal should switch to this so cross-firm collaborators
  * aren't unnecessarily blocked.
  *
- * If the caller doesn't know the user yet, pass null for userEmail —
+ * If the caller doesn't know the user yet, pass null for userEmail -
  * the deal-host-firm check still works for users with a matching firm_id.
  */
 export async function canUsePremiumForDeal(
@@ -71,7 +71,7 @@ export async function canUsePremiumForDeal(
   if (!hostFirmId) return false;
 
   // If the user's home firm is the deal's host firm, the standard plan
-  // check is the only gate we need — and we already failed above.
+  // check is the only gate we need - and we already failed above.
   if (hostFirmId === userHomeFirmId) return false;
 
   // Host firm is different. Check whether the host firm pays AND the user

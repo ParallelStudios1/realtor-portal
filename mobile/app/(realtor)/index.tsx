@@ -18,9 +18,10 @@ import { useUpdateTourRequest } from '@/lib/mutations';
 import { useToast } from '@/components/Toast';
 import { humanError } from '@/lib/humanError';
 import { SkeletonRow, Skeleton } from '@/components/Skeleton';
+import { TrialBanner } from '@/components/TrialBanner';
 
 /**
- * Realtor home — first screen after sign-in. Shows a snapshot of the day:
+ * Realtor home - first screen after sign-in. Shows a snapshot of the day:
  * client count, unread messages, recent activity. Quick links to common
  * actions (invite a client, view dashboard).
  */
@@ -94,7 +95,7 @@ export default function RealtorHome() {
       await refetchTours();
       toast.show(
         status === 'confirmed'
-          ? 'Tour confirmed — the client was notified.'
+          ? 'Tour confirmed - the client was notified.'
           : 'Tour declined.',
         { variant: 'success' }
       );
@@ -115,6 +116,13 @@ export default function RealtorHome() {
         <Text style={[s.sub, { color: colors.textSecondary }]}>
           Here's your day at a glance.
         </Text>
+
+        {/* Trial countdown + manage-plan link (no in-app payment). The
+            banner's own horizontal margin is cancelled here since this
+            ScrollView is already padded. */}
+        <View style={{ marginHorizontal: -20 }}>
+          <TrialBanner firmId={userProfile?.firm_id} />
+        </View>
 
         <View style={s.statRow}>
           {stats === undefined ? (
@@ -145,13 +153,13 @@ export default function RealtorHome() {
               <StatCard
                 icon="people-outline"
                 label="Clients"
-                value={String(stats?.clientCount ?? '—')}
+                value={String(stats?.clientCount ?? '-')}
                 colors={colors}
               />
               <StatCard
                 icon="briefcase-outline"
                 label="Active deals"
-                value={String(stats?.activeSearches ?? '—')}
+                value={String(stats?.activeSearches ?? '-')}
                 colors={colors}
               />
             </>

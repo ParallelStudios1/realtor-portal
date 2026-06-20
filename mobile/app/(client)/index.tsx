@@ -42,7 +42,7 @@ import {
 
 /**
  * Pop these on the client when the realtor advances the deal phase. Shown
- * exactly once per (user, search, phase) — the mark_deal_phase_seen RPC
+ * exactly once per (user, search, phase) - the mark_deal_phase_seen RPC
  * records the dismissal so we don't nag the next time the screen opens.
  */
 const CELEBRATIONS: Record<
@@ -57,7 +57,7 @@ const CELEBRATIONS: Record<
   awaiting_offer: {
     icon: 'megaphone-outline',
     title: 'Offer prep underway',
-    body: 'You found the one — your agent is putting your offer together.',
+    body: 'You found the one - your agent is putting your offer together.',
     seller: {
       title: 'Your home is live!',
       body: 'Your listing is active on the market. Your agent is coordinating showings and watching for offers.',
@@ -66,7 +66,7 @@ const CELEBRATIONS: Record<
   offer_made: {
     icon: 'document-text-outline',
     title: 'Offer is in!',
-    body: "Your agent submitted your offer. Fingers crossed — we'll let you know the moment we hear back.",
+    body: "Your agent submitted your offer. Fingers crossed - we'll let you know the moment we hear back.",
     seller: {
       title: 'An offer came in',
       body: 'A buyer made an offer on your home. Your agent will walk you through the terms.',
@@ -84,10 +84,10 @@ const CELEBRATIONS: Record<
   under_contract: {
     icon: 'ribbon-outline',
     title: "You're under contract!",
-    body: 'Huge step. Inspection and appraisal come next — your important dates are in this app.',
+    body: 'Huge step. Inspection and appraisal come next - your important dates are in this app.',
     seller: {
       title: "You're under contract!",
-      body: "Huge step. The buyer's inspection and financing come next — key dates are in this app.",
+      body: "Huge step. The buyer's inspection and financing come next - key dates are in this app.",
     },
   },
   closing: {
@@ -96,21 +96,21 @@ const CELEBRATIONS: Record<
     body: 'Wire instructions and final paperwork are headed your way. Almost home.',
     seller: {
       title: 'Closing time!',
-      body: 'Final paperwork is in motion. Almost done — get ready to hand over the keys.',
+      body: 'Final paperwork is in motion. Almost done - get ready to hand over the keys.',
     },
   },
   closed: {
     icon: 'home',
     title: 'Welcome home!',
-    body: 'The house is officially yours. Congrats — your agent will be in touch about handoff details.',
+    body: 'The house is officially yours. Congrats - your agent will be in touch about handoff details.',
     seller: {
       title: 'Sold!',
-      body: 'Your sale is closed. Congratulations — your agent will follow up with the final details.',
+      body: 'Your sale is closed. Congratulations - your agent will follow up with the final details.',
     },
   },
 };
 
-// Shared kind-aware phase labels — mirror of the web app (lib/dealKind).
+// Shared kind-aware phase labels - mirror of the web app (lib/dealKind).
 const PHASES = DEAL_PHASES.map((id) => ({ id }));
 
 export default function ClientHomeScreen() {
@@ -133,7 +133,7 @@ export default function ClientHomeScreen() {
   // Mirror of the realtor's People card so the client sees who's involved.
   const { data: participants } = useDealParticipants(activeSearch?.id);
   // Read-only deal info every party should see on mobile: tours, financials,
-  // offers, and signing links — mirrors the web all-parties deal view.
+  // offers, and signing links - mirrors the web all-parties deal view.
   const { data: tours } = useTourRequests(activeSearch?.id);
   const { data: offers } = useListingOffers(activeSearch?.id);
   const { data: envelopes } = useEsignEnvelopes(activeSearch?.id);
@@ -447,7 +447,7 @@ export default function ClientHomeScreen() {
               ) : null}
             </Card>
 
-            {/* Agreed home — once a home is confirmed on the deal, surface it
+            {/* Agreed home - once a home is confirmed on the deal, surface it
                 prominently so the client sees the house everyone agreed on. */}
             {(activeSearch as any).offer_house_id &&
             (activeSearch as any).house_agreed_at ? (
@@ -461,7 +461,7 @@ export default function ClientHomeScreen() {
               />
             ) : null}
 
-            {/* Deal milestones — surfaces whatever the realtor stamped on
+            {/* Deal milestones - surfaces whatever the realtor stamped on
                 the deal as they moved through phases. Shows up only when
                 there's something worth showing so an early-stage deal
                 doesn't waste space. */}
@@ -592,7 +592,7 @@ export default function ClientHomeScreen() {
               </Card>
             )}
 
-            {/* Important dates — full detail including the new event_time,
+            {/* Important dates - full detail including the new event_time,
                 location, and things_to_bring fields the realtor can set. */}
             <Card colors={colors}>
               <Label colors={colors}>IMPORTANT DATES</Label>
@@ -640,7 +640,7 @@ export default function ClientHomeScreen() {
               )}
             </Card>
 
-            {/* People on this deal — everyone besides the principal client
+            {/* People on this deal - everyone besides the principal client
                 and lead realtor. So the client knows who their attorney is,
                 if there's a co-realtor on the other side, etc. */}
             {(participants ?? []).length > 0 && (
@@ -687,7 +687,7 @@ export default function ClientHomeScreen() {
               </Card>
             )}
 
-            {/* Attorney + contract + DocuSign info — anything the realtor
+            {/* Attorney + contract + DocuSign info - anything the realtor
                 attached to the deal record. Hide when nothing's set. */}
             {((activeSearch as any).attorney_name ||
               (activeSearch as any).attorney_email ||
@@ -799,7 +799,7 @@ export default function ClientHomeScreen() {
                         <Text style={{ fontWeight: '600' }}>
                           {String(a.action).replace(/_/g, ' ')}
                         </Text>
-                        {a.target ? ' — ' + a.target : ''}
+                        {a.target ? ' - ' + a.target : ''}
                       </Text>
                     </View>
                     <Text style={{ fontSize: 11, color: colors.textSecondary }}>

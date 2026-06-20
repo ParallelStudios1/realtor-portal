@@ -102,7 +102,7 @@ export function ToursClient({
     if (status === 'confirmed' && tour.search_id) {
       // TIMEZONE-SAFE: read the literal date + time straight from the
       // datetime-local string. Do NOT round-trip through Date()/toISOString()
-      // — that converts local -> UTC and rolls evening times to the next day.
+      // - that converts local -> UTC and rolls evening times to the next day.
       const src = chosen || tour.preferred_when || '';
       const m = src.match(/^(\d{4}-\d{2}-\d{2})(?:[T ](\d{2}:\d{2}))?/);
       const dateStr = m ? m[1] : new Date().toLocaleDateString('en-CA'); // local YYYY-MM-DD
@@ -279,11 +279,11 @@ export function ToursClient({
                 {recent.map((t) => (
                   <tr key={t.id} className="border-b border-ink-100 last:border-0">
                     <td className="px-4 py-3 font-medium text-ink-900">
-                      {t.house_address || '—'}
+                      {t.house_address || '-'}
                     </td>
                     <td className="px-4 py-3 text-ink-600">{t.client_name}</td>
                     <td className="px-4 py-3 text-ink-600">
-                      {prettyWhen(t.preferred_when) || '—'}
+                      {prettyWhen(t.preferred_when) || '-'}
                     </td>
                     <td className="px-4 py-3">
                       <StatusPill status={t.status} />

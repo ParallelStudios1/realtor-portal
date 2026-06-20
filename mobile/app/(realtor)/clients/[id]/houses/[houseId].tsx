@@ -102,7 +102,7 @@ export default function RealtorHouseDetailScreen() {
       const json = await r.json().catch(() => null);
       if (!r.ok || !json?.ok) throw new Error(json?.error || `Failed (HTTP ${r.status}).`);
       await refetch();
-      Alert.alert('Confirmed', 'Home locked in — the deal moved to Awaiting offer.');
+      Alert.alert('Confirmed', 'Home locked in - the deal moved to Awaiting offer.');
     } catch (e: any) {
       Alert.alert('Could not confirm', e.message ?? String(e));
     } finally {
@@ -122,7 +122,7 @@ export default function RealtorHouseDetailScreen() {
     setWorking(true);
     try {
       // Just log an activity. The client UI shows a rating prompt whenever
-      // house.status === 'toured' and there's no rating yet — no DB placeholder
+      // house.status === 'toured' and there's no rating yet - no DB placeholder
       // needed. Activity row is what drives the push notification.
       await logActivity.mutateAsync({
         searchId: house.search_id,
@@ -259,7 +259,7 @@ export default function RealtorHouseDetailScreen() {
               ) : (
                 <>
                   <Text style={[styles.helpText, { color: colors.textSecondary }]}>
-                    Send your client a notification asking for a 1–5 rating on this house.
+                    Send your client a notification asking for a 1-5 rating on this house.
                   </Text>
                   <Pressable
                     onPress={requestFeedback}

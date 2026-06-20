@@ -30,7 +30,7 @@ export default function MessagesScreen() {
   );
 
   const activeSearch = searches?.[0];
-  // PRIVATE 1:1 thread with the realtor — recipient-scoped, distinct from the
+  // PRIVATE 1:1 thread with the realtor - recipient-scoped, distinct from the
   // all-parties Deal chat screen. Previously this tab read/wrote the GROUP
   // thread, so "private" messages were visible to everyone on the deal.
   const realtorId = (activeSearch as any)?.realtor_id || null;
@@ -135,7 +135,7 @@ export default function MessagesScreen() {
           <EmptyState
             icon="chatbubble-ellipses-outline"
             title="No messages yet"
-            body="Say hi to your realtor! This thread is private — just the two of you. They'll get notified right away."
+            body="Say hi to your realtor! This thread is private - just the two of you. They'll get notified right away."
           />
         )}
 

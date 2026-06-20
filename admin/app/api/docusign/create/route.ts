@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
     documentUrl: body.documentUrl,
     documentName: body.documentName,
     recipients,
-    emailSubject: 'Please sign — ' + (body.documentName || 'real-estate document'),
+    emailSubject: 'Please sign - ' + (body.documentName || 'real-estate document'),
     emailMessage: 'Sent via Realtor Portal.',
   });
 

@@ -37,10 +37,10 @@ export default async function DealDetailPage({
   // INTERMITTENT 404 FIX: rely on the SERVICE ROLE for the deal lookup,
   // then do our own access check. We were hitting a race where the
   // user-scoped query returned null when the SSR auth context was still
-  // mid-refresh — first paint = empty cookie → RLS bounces row → notFound.
+  // mid-refresh - first paint = empty cookie → RLS bounces row → notFound.
   // With service role, the deal is always findable; we just gate by
   // (firm_id match) OR (caller is a deal_participants row on this deal)
-  // — the same predicate as can_collab_on_search.
+  // - the same predicate as can_collab_on_search.
   const service = getSupabaseServiceRoleClient();
   const { data: deal } = await service
     .from('client_searches')
@@ -83,13 +83,13 @@ export default async function DealDetailPage({
       notFound();
     }
   }
-  // True when the deal belongs to a different firm than the caller's — i.e.
+  // True when the deal belongs to a different firm than the caller's - i.e.
   // they're a cross-firm guest collaborator (invited realtor from another
   // firm). UI can use this to swap chrome ("Viewing as guest" badge,
   // different action grid, etc.). All RLS checks downstream still apply.
   const dealFirmId = (deal as any).firm_id as string;
   const isGuestFirm = dealFirmId !== me.firm_id;
-  // clientId may be null — a deal can exist before there's a principal client.
+  // clientId may be null - a deal can exist before there's a principal client.
   // The Add Party flow inside the workspace covers the "who's on this deal"
   // question. We still need a non-null clientId for the legacy action paths
   // that revalidatePath /dashboard/clients/[id], so fall back to the deal's
@@ -167,7 +167,7 @@ export default async function DealDetailPage({
       .eq('firm_id', me.firm_id)
       .in('role', ['realtor', 'firm_admin', 'owner', 'manager', 'agent'])
       .neq('id', me.user_id),
-    // PRIVATE 1:1 DMs only (recipient set) — the group Deal chat renders
+    // PRIVATE 1:1 DMs only (recipient set) - the group Deal chat renders
     // separately below. Without this filter the "Recent messages" rail mixed
     // both threads together, blurring the private/group distinction.
     supabase
@@ -203,14 +203,14 @@ export default async function DealDetailPage({
       .order('created_at', { ascending: false }),
   ]);
 
-  // BUYER INTEREST (Phase 2) — only meaningful for seller (listing) deals.
+  // BUYER INTEREST (Phase 2) - only meaningful for seller (listing) deals.
   // Aggregate, read-only, from existing tables:
   //   - total showings + tour requests on this listing's houses
   //   - linked buyer transactions: any house on ANOTHER (buyer) deal whose
   //     listing_search_id back-references this seller deal. Each such house
   //     that is under contract = a buyer locked in on our listing.
   // We use the service role for the back-reference query because the linked
-  // house lives on a buyer deal hosted by a (possibly) different firm — RLS
+  // house lives on a buyer deal hosted by a (possibly) different firm - RLS
   // would (correctly) hide it from the seller, but the aggregate count is safe
   // to surface without leaking the buyer's private candidate list.
   let buyerInterest: {
@@ -246,7 +246,7 @@ export default async function DealDetailPage({
     };
   }
 
-  // CLIENT ↔ REALTOR HOUSE AGREEMENT — resolve the agreed home (address) and
+  // CLIENT ↔ REALTOR HOUSE AGREEMENT - resolve the agreed home (address) and
   // who agreed (client or realtor) for the prominent workspace banner.
   let agreedHome: {
     id: string;
@@ -290,7 +290,7 @@ export default async function DealDetailPage({
     };
   }
 
-  // PROPOSED HOME — the client said "this is the house I want" and is awaiting
+  // PROPOSED HOME - the client said "this is the house I want" and is awaiting
   // the realtor's confirmation. Surfaced as a confirm banner in the workspace.
   // Only show when there's a pending proposal that hasn't already been agreed.
   let proposedHome: { id: string; address: string | null; proposedByName: string | null } | null =
@@ -322,7 +322,7 @@ export default async function DealDetailPage({
     };
   }
 
-  // DEAL ADMIN — the deal's creator (client_searches.created_by) is the person
+  // DEAL ADMIN - the deal's creator (client_searches.created_by) is the person
   // with full control over the deal. Resolve their display name for the header.
   // Reuse the already-fetched client/realtor rows when they match, otherwise
   // do a single lookup. created_by may be null on legacy rows.
@@ -352,7 +352,7 @@ export default async function DealDetailPage({
     }
   }
 
-  // DEAL GROUP CHAT — the shared thread for the whole deal (group messages =
+  // DEAL GROUP CHAT - the shared thread for the whole deal (group messages =
   // private IS NULL OR private = false). getDealChat re-authorizes the caller;
   // staff on the host firm always pass. Distinct from the 1:1 DM thread that
   // the "Recent messages" rail / /dashboard/messages surface shows.

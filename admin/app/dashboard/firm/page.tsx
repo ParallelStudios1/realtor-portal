@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Firm control' };
 
 /**
- * Firm Control — only owners / firm_admins / super_admins land here. The
+ * Firm Control - only owners / firm_admins / super_admins land here. The
  * page lists every member of the firm with their role + last-active stat,
  * lets you invite a new realtor / manager / agent, change roles, and remove
  * people. Also shows pending firm_invites so it's clear who hasn't accepted.

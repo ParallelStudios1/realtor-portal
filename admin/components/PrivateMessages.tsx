@@ -25,7 +25,7 @@ const ROLE_LABEL: Record<string, string> = {
 
 /**
  * Private 1:1 messaging panel for a deal. Pick a party, see your private thread
- * with them, send a message. Distinct from the deal group chat — only the two
+ * with them, send a message. Distinct from the deal group chat - only the two
  * of you can read these. Used on the attorney workspace and the universal deal
  * view.
  */
@@ -146,7 +146,7 @@ export function PrivateMessages({
           ) : messages.length === 0 ? (
             <p className="py-8 text-center text-sm text-ink-400">
               No private messages with {active?.name || 'this party'} yet. Say
-              hello — only the two of you can see this.
+              hello - only the two of you can see this.
             </p>
           ) : (
             messages.map((m) => (

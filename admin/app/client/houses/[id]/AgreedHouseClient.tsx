@@ -6,7 +6,7 @@ import { useToast } from '@/components/Toast';
 import { markAgreedHouseAction } from './tour-actions';
 
 /**
- * CLIENT ↔ REALTOR HOUSE AGREEMENT — client control.
+ * CLIENT ↔ REALTOR HOUSE AGREEMENT - client control.
  *
  * Renders one of three states on a house detail page:
  *   - `agreedHere`  → this house is already the agreed home (banner, no button)
@@ -43,7 +43,7 @@ export function AgreedHouseClient({
         <div>
           <div className="font-semibold text-amber-900">Sent to your agent</div>
           <p className="mt-0.5 text-xs text-amber-800">
-            You picked this home — your agent will confirm it to make it official.
+            You picked this home - your agent will confirm it to make it official.
           </p>
         </div>
       </div>
@@ -82,7 +82,7 @@ export function AgreedHouseClient({
         toast.show(r.error || 'Failed', { variant: 'error' });
         return;
       }
-      toast.show('Sent to your agent — they’ll confirm to make it official.', {
+      toast.show('Sent to your agent - they’ll confirm to make it official.', {
         variant: 'success',
       });
       router.refresh();

@@ -4,7 +4,7 @@ import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
 import { tierFromPriceId } from '@/lib/plans';
 
 export const runtime = 'nodejs';
-// Stripe sends raw body — Next App Router needs this to skip body parsing.
+// Stripe sends raw body - Next App Router needs this to skip body parsing.
 export const dynamic = 'force-dynamic';
 
 /**

@@ -147,7 +147,7 @@ export function UploadDocumentClient({
           Drag and drop files here
         </p>
         <p className="text-xs text-ink-500">
-          or click to pick — PDF, DOC, images, anything
+          or click to pick - PDF, DOC, images, anything
         </p>
         <input
           ref={fileRef}

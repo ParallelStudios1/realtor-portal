@@ -10,7 +10,7 @@ import { getSeatUsage } from '@/lib/seats';
 /**
  * Firm Control actions. Only callable by users whose role is
  * 'owner' | 'firm_admin' | 'super_admin'. Managers can invite realtors
- * but cannot promote anyone to owner/firm_admin — enforced at the action
+ * but cannot promote anyone to owner/firm_admin - enforced at the action
  * boundary.
  */
 
@@ -77,7 +77,7 @@ export async function inviteFirmMemberAction(payload: {
   // agree, and an invited realtor is never counted twice.
   const usage = await getSeatUsage(a.me.firm_id!);
   // If the invitee is already a member or already a pending invite, this
-  // isn't a new seat — let it through (re-send / role update).
+  // isn't a new seat - let it through (re-send / role update).
   const emailIsExisting = await (async () => {
     const { data: u } = await service
       .from('users')
@@ -110,7 +110,7 @@ export async function inviteFirmMemberAction(payload: {
   // firm and sign in at /login with a password. There is no /invite/<token>
   // landing for host-firm staff roles (deal_invites only covers external
   // collaborators + clients), so we create the account with a temporary
-  // password and send it in OUR branded email. New users only — for an
+  // password and send it in OUR branded email. New users only - for an
   // existing account we never reset their password.
   let userId: string | undefined;
   let isNewAccount = false;
@@ -166,7 +166,7 @@ export async function inviteFirmMemberAction(payload: {
 
   // The staff account is provisioned immediately above (temp password +
   // branded email), so this invite is effectively accepted the moment it's
-  // created. Stamp accepted_at NOW so the person counts as one member — not
+  // created. Stamp accepted_at NOW so the person counts as one member - not
   // a member AND a lingering "pending invite" (the old double-count bug).
   await service.from('firm_invites').upsert(
     {
@@ -207,9 +207,9 @@ export async function inviteFirmMemberAction(payload: {
 </div>`.trim();
     const text =
       isNewAccount && tempPassword
-        ? `${full_name} — you've been added as ${payload.role} to your firm on Realtor Portal.\n\n` +
+        ? `${full_name} - you've been added as ${payload.role} to your firm on Realtor Portal.\n\n` +
           `Sign in here: ${loginUrl}\nTemporary password: ${tempPassword}\n\nPlease change your password after signing in.`
-        : `${full_name} — you've been added as ${payload.role} to your firm on Realtor Portal.\n\n` +
+        : `${full_name} - you've been added as ${payload.role} to your firm on Realtor Portal.\n\n` +
           `Sign in with your existing password: ${loginUrl}`;
     await sendEmail({
       to: email,
@@ -249,7 +249,7 @@ export async function changeMemberRoleAction(payload: {
     if ((count || 0) <= 1)
       return {
         ok: false as const,
-        error: 'Can\'t demote the last owner — promote someone first.',
+        error: 'Can\'t demote the last owner - promote someone first.',
       };
   }
   const { error } = await service
@@ -274,7 +274,7 @@ export async function removeMemberAction(user_id: string) {
     .maybeSingle();
   if (!target || target.firm_id !== a.me.firm_id)
     return { ok: false as const, error: 'User not in your firm.' };
-  // Detach but don't delete the auth user — owner can purge through the
+  // Detach but don't delete the auth user - owner can purge through the
   // safe-delete function if they truly want to wipe.
   const { error } = await service
     .from('users')

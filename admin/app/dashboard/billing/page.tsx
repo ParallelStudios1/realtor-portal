@@ -121,7 +121,7 @@ export default async function BillingPage({
     isSimulatedSubscription = Boolean(
       (firmRow?.stripe_subscription_id || '').startsWith('sim_')
     );
-    // Single source of truth for seat usage — dedup-safe so an invited
+    // Single source of truth for seat usage - dedup-safe so an invited
     // realtor is counted once, never as member + pending invite.
     const usage = await getSeatUsage(me.firm_id);
     planTier = usage.tier;
@@ -147,7 +147,7 @@ export default async function BillingPage({
       <p className="mt-1 text-sm text-ink-600">
         {me.firm_status === 'trial' ? (
           <>
-            You're on a free trial — <strong>{trialDisplay}</strong>.
+            You're on a free trial - <strong>{trialDisplay}</strong>.
             Pick a plan to keep your portal running after that.
           </>
         ) : me.firm_status === 'active' ? (
@@ -176,7 +176,7 @@ export default async function BillingPage({
       )}
       {searchParams.success && (
         <div className="mt-6 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
-          Subscription started — your firm is active.
+          Subscription started - your firm is active.
         </div>
       )}
       {searchParams.canceled && (

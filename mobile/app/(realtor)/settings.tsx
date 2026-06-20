@@ -12,6 +12,7 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useQueryClient } from '@tanstack/react-query';
@@ -20,11 +21,12 @@ import { useTheme } from '@/lib/theme';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/Toast';
 import { humanError } from '@/lib/humanError';
+import { MANAGE_PLAN_URL, trialDaysLeft } from '@/components/TrialBanner';
 
 const HEX_RE = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
 
 /**
- * Realtor settings — profile (full_name), account (email read-only + change
+ * Realtor settings - profile (full_name), account (email read-only + change
  * password modal), firm branding (firm_admin only), and sign out.
  *
  * Saves go straight to Supabase from the device since RLS on `users` and
@@ -180,7 +182,7 @@ export default function RealtorSettingsScreen() {
     try {
       // Re-verify current password before rotating. Supabase JS doesn't expose
       // a "verify current password" call, so we sign in again with the user's
-      // email + current password — if it succeeds the session refreshes, then
+      // email + current password - if it succeeds the session refreshes, then
       // we update.
       const { error: reauthError } = await supabase.auth.signInWithPassword({
         email: user.email,
@@ -247,7 +249,7 @@ export default function RealtorSettingsScreen() {
         <View style={[styles.card, { borderColor: colors.border, backgroundColor: colors.surface }]}>
           <FieldLabel colors={colors}>Email</FieldLabel>
           <View style={[styles.readonly, { borderColor: colors.border, backgroundColor: colors.background }]}>
-            <Text style={[styles.readonlyText, { color: colors.text }]}>{user?.email ?? '—'}</Text>
+            <Text style={[styles.readonlyText, { color: colors.text }]}>{user?.email ?? '-'}</Text>
           </View>
           <Text style={[styles.helper, { color: colors.textSecondary }]}>
             To change your email, contact support.
@@ -262,7 +264,42 @@ export default function RealtorSettingsScreen() {
           </Pressable>
         </View>
 
-        {/* Firm section — only firm admins can edit */}
+        {/* Plan & billing. Payments are NOT taken in the app (Apple) - this
+            opens the billing page on the web to manage the plan. */}
+        <SectionHeader icon="card-outline" label="Plan & billing" colors={colors} />
+        <View style={[styles.card, { borderColor: colors.border, backgroundColor: colors.surface }]}>
+          {(() => {
+            const status = (firm as any)?.status as string | undefined;
+            const hasSub = Boolean((firm as any)?.stripe_subscription_id);
+            const days = trialDaysLeft((firm as any)?.trial_ends_at);
+            let line = 'Manage your plan online.';
+            if (status === 'active' || hasSub) line = 'Your plan is active.';
+            else if (status === 'trial' && days !== null)
+              line =
+                days <= 0
+                  ? 'Your free trial has ended.'
+                  : `${days} day${days === 1 ? '' : 's'} left in your free trial.`;
+            return (
+              <Text style={[styles.readonlyText, { color: colors.text, marginBottom: 4 }]}>
+                {line}
+              </Text>
+            );
+          })()}
+          <Text style={[styles.helper, { color: colors.textSecondary }]}>
+            Plans and payment are managed on the web. This opens your billing page.
+          </Text>
+          <Pressable
+            onPress={() => Linking.openURL(MANAGE_PLAN_URL)}
+            style={[styles.secondaryBtn, { borderColor: colors.primary }]}
+          >
+            <Ionicons name="open-outline" size={16} color={colors.primary} />
+            <Text style={[styles.secondaryBtnText, { color: colors.primary }]}>
+              Manage plan online
+            </Text>
+          </Pressable>
+        </View>
+
+        {/* Firm section - only firm admins can edit */}
         {isFirmAdmin && firm && (
           <>
             <SectionHeader icon="business-outline" label="Firm" colors={colors} />

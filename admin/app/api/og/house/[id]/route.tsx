@@ -15,7 +15,7 @@ import { createClient } from '@supabase/supabase-js';
  *
  * Cached for 24h on the edge: clients pulling the OG tag for previews don't
  * need a fresh render every time. If the listing changes, the URL stays the
- * same — purge or wait out the cache.
+ * same - purge or wait out the cache.
  */
 export const runtime = 'edge';
 
@@ -50,7 +50,7 @@ type FirmRow = {
 
 /**
  * Edge-safe service-role client. We can't use the Node helper here because
- * `cookies()` and process env access patterns differ — but supabase-js works
+ * `cookies()` and process env access patterns differ - but supabase-js works
  * over fetch in the edge runtime just fine.
  */
 function edgeServiceRoleClient() {
@@ -140,7 +140,7 @@ export async function GET(
       firm = (firmRow as FirmRow) ?? null;
     }
   } catch {
-    // Fall through — render a generic image rather than 500.
+    // Fall through - render a generic image rather than 500.
   }
 
   if (!house) {

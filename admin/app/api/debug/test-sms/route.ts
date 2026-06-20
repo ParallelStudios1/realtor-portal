@@ -13,7 +13,7 @@ export const dynamic = 'force-dynamic';
  * (invalid number, geographic-permissions, etc.). Useful for proving
  * the wiring is live before doing real invites.
  *
- * Only staff users in a firm can hit this — clients shouldn't be able
+ * Only staff users in a firm can hit this - clients shouldn't be able
  * to spam phones via our Twilio number.
  */
 export async function POST(req: Request) {
@@ -59,13 +59,13 @@ export async function POST(req: Request) {
   const r = await sendSms({
     to: e164,
     body:
-      'Realtor Portal test — wiring works. From: ' +
+      'Realtor Portal test - wiring works. From: ' +
       (me.full_name || me.email || 'your firm') +
       '.',
   });
 
   // Twilio's REST returns "queued" instantly even when the carrier later
-  // drops the message (most common reason: US A2P 10DLC — the sending
+  // drops the message (most common reason: US A2P 10DLC - the sending
   // number isn't registered with The Campaign Registry, so every US
   // carrier rejects it with error_code 30034). Wait a couple seconds and
   // ask Twilio for the actual delivery status + error code so we surface
@@ -103,7 +103,7 @@ export async function POST(req: Request) {
   let hint: string | null = null;
   if (twilioStatus?.error_code === 30034) {
     hint =
-      'US carriers blocked this text because your Twilio number is not registered with The Campaign Registry (A2P 10DLC). Fastest fix: buy a toll-free number in Twilio Console + submit Toll-Free Verification (1–2 business days). Then swap TWILIO_FROM_NUMBER in Vercel.';
+      'US carriers blocked this text because your Twilio number is not registered with The Campaign Registry (A2P 10DLC). Fastest fix: buy a toll-free number in Twilio Console + submit Toll-Free Verification (1-2 business days). Then swap TWILIO_FROM_NUMBER in Vercel.';
   } else if (
     twilioStatus?.error_code &&
     Number(twilioStatus.error_code) >= 30000

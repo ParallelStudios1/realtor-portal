@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 export const metadata = { title: "You've been invited · Realtor Portal" };
 
 /**
- * /invite/[token] — the canonical "you've been invited" landing.
+ * /invite/[token] - the canonical "you've been invited" landing.
  *
  * This page does NOT require auth. It resolves the invite token via the
  * service role, fetches host-firm branding, and renders a role-aware
@@ -52,7 +52,7 @@ export default async function InvitePage({
     !!(invite as any).expires_at &&
     new Date((invite as any).expires_at).getTime() < Date.now();
 
-  // Look up whether an account already exists for this email — so the
+  // Look up whether an account already exists for this email - so the
   // client component can show "Sign in to accept" vs the role-specific
   // signup form. We don't reveal the user_id; just a boolean.
   let hasAccount = false;
@@ -66,7 +66,7 @@ export default async function InvitePage({
   }
 
   // If the visitor is already authenticated and the emails match, just
-  // route them straight to the deal — they already have the access they
+  // route them straight to the deal - they already have the access they
   // need via deal_participants + the can_collab_on_search RLS function.
   const supabase = getSupabaseServerClient();
   const {

@@ -4,7 +4,7 @@ import { sendEmail } from '@/lib/email';
 import { sendSms } from '@/lib/sms';
 
 /**
- * Scheduled cron — fires every day at 09:00 ET. Looks at
+ * Scheduled cron - fires every day at 09:00 ET. Looks at
  * public.scheduled_messages for any rows whose scheduled_for has passed
  * and sent_at IS NULL, then dispatches via the right channel.
  *
@@ -57,7 +57,7 @@ export async function GET(req: Request) {
       if (m.channel === 'email' && email) {
         const r = await sendEmail({
           to: email,
-          subject: m.subject || firmName + ' — a quick note',
+          subject: m.subject || firmName + ' - a quick note',
           text: m.body,
           html:
             '<div style="font-family:system-ui;font-size:15px;max-width:560px;padding:20px">' +
@@ -81,7 +81,7 @@ export async function GET(req: Request) {
         const r = await sendSms({ to: phone, body: m.body });
         ok = r.ok;
       } else if (m.channel === 'in_app' && m.search_id && m.recipient_user_id) {
-        // In-app channel routes through public.messages — the existing
+        // In-app channel routes through public.messages - the existing
         // realtor↔client thread surface picks it up immediately.
         const { error } = await service.from('messages').insert({
           firm_id: m.firm_id,

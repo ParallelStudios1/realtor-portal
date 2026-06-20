@@ -3,7 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/lib/theme';
 
 /**
- * Client tabs — kept tight on purpose. Three is the right number for a phone.
+ * Client tabs - kept tight on purpose. Three is the right number for a phone.
  * Activity rolls into Home; Documents lives one level deep, accessed from
  * Home or per-property.
  */

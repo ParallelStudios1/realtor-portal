@@ -1,8 +1,8 @@
 /**
  * Tiny zero-dep ICS (iCalendar) builder. Produces a single VEVENT wrapped
- * in a VCALENDAR — enough for "tap to add to calendar" on iOS/Android/macOS.
+ * in a VCALENDAR - enough for "tap to add to calendar" on iOS/Android/macOS.
  *
- * We deliberately do NOT pull in `ics` or `node-ical` — the spec is small
+ * We deliberately do NOT pull in `ics` or `node-ical` - the spec is small
  * and we only need one event shape (a tour appointment).
  */
 
@@ -44,7 +44,7 @@ function toIcsUtc(d: Date): string {
  * today (local) if the input doesn't parse to a real Date.
  *
  * The "5pm today" fallback matches what tour confirmations tend to default
- * to in the realtor's UX — it's a reasonable late-afternoon showing slot
+ * to in the realtor's UX - it's a reasonable late-afternoon showing slot
  * and keeps the .ics from being literally "right now."
  */
 export function resolveTourStart(input: Date | string | null | undefined): Date {
@@ -132,7 +132,7 @@ export function buildTourIcs(event: IcsEvent): string {
 
 /**
  * Convenience: produce an attachment-shaped object for sendEmail().
- * MIME type is application/octet-stream per the spec — keeps mail clients
+ * MIME type is application/octet-stream per the spec - keeps mail clients
  * from rendering the file inline, encourages "open with calendar."
  */
 export function buildTourIcsAttachment(event: IcsEvent): {
@@ -152,7 +152,7 @@ export function buildTourIcsAttachment(event: IcsEvent): {
  * Build a multi-event VCALENDAR feed (suitable for webcal:// subscription).
  *
  * Used for the per-deal calendar feed served at /api/calendar/[searchId].ics
- * — it contains every important_date and confirmed tour for the deal so the
+ * - it contains every important_date and confirmed tour for the deal so the
  * client can subscribe in Apple Calendar / Google Calendar and have a live
  * read-only view of every milestone.
  */
@@ -200,7 +200,7 @@ export function buildCalendarFeed(
  *
  * Calendar apps fetch the feed with no cookies, so the URL itself has to be
  * the credential. We derive an unguessable token from the searchId rather
- * than storing one — no extra table, and revocation is as simple as rotating
+ * than storing one - no extra table, and revocation is as simple as rotating
  * the secret.
  */
 export function computeCalendarFeedToken(searchId: string, secret: string): string {

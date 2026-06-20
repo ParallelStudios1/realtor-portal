@@ -20,9 +20,9 @@ type Props = {
 };
 
 /**
- * Step 1: New invitee — show "Set your password" form (post-invite).
- * Step 2: Password set — show "Open the app" deep-link with firm branding.
- * Step 3: No session, no firm — generic fallback.
+ * Step 1: New invitee - show "Set your password" form (post-invite).
+ * Step 2: Password set - show "Open the app" deep-link with firm branding.
+ * Step 3: No session, no firm - generic fallback.
  */
 export function WelcomeClient({ firm, hasSession, email, fullName }: Props) {
   const router = useRouter();
@@ -43,7 +43,7 @@ export function WelcomeClient({ firm, hasSession, email, fullName }: Props) {
     if (linkInProgress) return 'redeeming';
     return hasSession ? 'setPassword' : 'openApp';
   });
-  // Client-side mirror of hasSession — the server prop is captured at render
+  // Client-side mirror of hasSession - the server prop is captured at render
   // time and won't update after setSession runs in the browser.
   const [sessionReady, setSessionReady] = useState(hasSession);
   const [password, setPassword] = useState('');
@@ -51,11 +51,11 @@ export function WelcomeClient({ firm, hasSession, email, fullName }: Props) {
 
   // Magic-link redemption. Supabase emits two link formats:
   //
-  //   (a) #access_token=...&refresh_token=...  (implicit hash flow — works
+  //   (a) #access_token=...&refresh_token=...  (implicit hash flow - works
   //       reliably on mobile Safari + Chrome but desktop email clients
   //       sometimes strip the fragment on copy/paste or on a server-side
   //       302 redirect through an inbox-tracker domain).
-  //   (b) ?code=...                           (PKCE flow — survives any
+  //   (b) ?code=...                           (PKCE flow - survives any
   //       redirect chain because it's in the query string).
   //
   // We accept both. The hash branch runs setSession; the code branch runs
@@ -89,7 +89,7 @@ export function WelcomeClient({ firm, hasSession, email, fullName }: Props) {
       window.history.replaceState(null, '', window.location.pathname);
       setSessionReady(true);
 
-      // External-collaborator role detected — forward to the right
+      // External-collaborator role detected - forward to the right
       // onboarding flow. This is how cross-firm realtor + attorney
       // invites land on the dedicated setup screen instead of the
       // generic client "set password" flow.
@@ -126,7 +126,7 @@ export function WelcomeClient({ firm, hasSession, email, fullName }: Props) {
     }
 
     if (code) {
-      // PKCE flow — exchangeCodeForSession works for desktop & mobile.
+      // PKCE flow - exchangeCodeForSession works for desktop & mobile.
       finish('Sign-in', supabase.auth.exchangeCodeForSession(code));
       return;
     }

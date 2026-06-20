@@ -16,7 +16,7 @@ export const dynamic = 'force-dynamic';
  * DocuSign POSTs envelope status changes here. Each request is signed: the
  * HMAC-SHA256 of the *raw* request body (keyed with the account's Connect
  * HMAC secret) is sent base64-encoded in one or more `X-DocuSign-Signature-N`
- * headers (it rotates keys, so several may be present — any match passes).
+ * headers (it rotates keys, so several may be present - any match passes).
  *
  * We accept both the modern JSON Connect payload and the older XML payload,
  * but we only require enough of it to find the envelopeId + status.
@@ -187,7 +187,7 @@ export async function POST(req: NextRequest) {
     .update(update)
     .eq('id', (existing as any).id);
 
-  // Keep client_searches in sync only when it reaches a terminal-ish state —
+  // Keep client_searches in sync only when it reaches a terminal-ish state -
   // the envelope URL was already set at send time, so nothing to change here.
 
   const wasTerminal =

@@ -21,19 +21,19 @@ import { useToast } from '@/components/Toast';
 import { humanError } from '@/lib/humanError';
 
 /**
- * Mobile "Mark under contract + who's selling" screen — parity with the web
+ * Mobile "Mark under contract + who's selling" screen - parity with the web
  * goUnderContractAction convergence flow.
  *
  * The realtor:
  *   1. Picks which house the buyer is going under contract on.
- *   2. Optionally captures the SELLING side — the seller and the listing agent
+ *   2. Optionally captures the SELLING side - the seller and the listing agent
  *      (name / email / firm).
  *
  * On submit we POST to /api/participants/add with `house_id` + `seller_capture`.
  * The backend marks the chosen house under contract, flips the deal phase,
  * stamps the seller_* fields, adds the listing agent as a HOUSE-SCOPED seller
- * participant (so they only ever see that one property), and — when the listing
- * agent is an in-app user running this address as a seller deal — links the two
+ * participant (so they only ever see that one property), and - when the listing
+ * agent is an in-app user running this address as a seller deal - links the two
  * sides via houses.listing_search_id. Same single backend the web uses.
  *
  * Styling mirrors the existing mobile screens (add-house / add-party): themed
@@ -81,7 +81,7 @@ export default function UnderContractScreen() {
 
       // We always send the listing agent as the party to add (house-scoped,
       // seller-side). When no agent contact is given we still mark the house
-      // under contract — the participant insert just won't notify anyone.
+      // under contract - the participant insert just won't notify anyone.
       const hasAgent = !!(agentName.trim() || agentEmail.trim());
 
       const r = await fetch(`${apiBase}/api/participants/add`, {
@@ -165,7 +165,7 @@ export default function UnderContractScreen() {
           <Text style={[styles.intro, { color: colors.textSecondary }]}>
             Pick the house your buyer is going under contract on, then tell us
             who&apos;s selling. The listing agent is added to this one property
-            only — they never see your buyer&apos;s other houses.
+            only - they never see your buyer&apos;s other houses.
           </Text>
 
           <Text style={[styles.label, { color: colors.textSecondary }]}>

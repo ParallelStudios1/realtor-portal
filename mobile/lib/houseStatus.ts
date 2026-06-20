@@ -12,7 +12,7 @@ export function formatHouseStatus(status: HouseStatus): string {
 }
 
 /**
- * Color hint per status. Keys are tokens callers map onto theme.colors —
+ * Color hint per status. Keys are tokens callers map onto theme.colors -
  * this file stays theme-free so it's importable anywhere.
  */
 export function houseStatusTone(status: HouseStatus): 'neutral' | 'info' | 'warning' | 'success' | 'muted' {

@@ -5,7 +5,7 @@ import { SubmitStartDeal } from './SubmitStartDeal';
 export const metadata = { title: 'New deal · Realtor Portal' };
 
 /**
- * "Start a new deal" — no client required.
+ * "Start a new deal" - no client required.
  *
  * Just a name + a buyer/seller flag. The realtor lands on the deal
  * workspace right after and uses Add Party to attach whoever's actually
@@ -111,7 +111,7 @@ export default function NewDealPage({
           >
             invite a client instead
           </Link>{' '}
-          works too — same destination.
+          works too - same destination.
         </p>
       </form>
     </main>

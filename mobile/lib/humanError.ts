@@ -45,7 +45,7 @@ export function humanError(err: unknown): string {
 
   if (NETWORK_PATTERNS.some((p) => p.test(raw))) return NETWORK_DEFAULT;
 
-  // Strip leading "TypeError: " / "Error: " / "Error " prefixes — they're
+  // Strip leading "TypeError: " / "Error: " / "Error " prefixes - they're
   // not useful to a user.
   const stripped = raw
     .replace(/^[A-Z][A-Za-z]*Error:\s*/, '')
@@ -83,7 +83,7 @@ export function humanErrorFromResponse(
       const msg = json?.error || json?.message;
       if (typeof msg === 'string' && msg.trim()) return msg.trim();
     } catch {
-      // Not JSON — if it's short and human-y, show it directly.
+      // Not JSON - if it's short and human-y, show it directly.
       const trimmed = bodyText.trim();
       if (trimmed && trimmed.length < 200 && !trimmed.startsWith('<'))
         return trimmed;

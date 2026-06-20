@@ -33,7 +33,7 @@ export default async function ToursPage() {
     .or(`status.eq.pending,created_at.gte.${sinceIso}`)
     .order('created_at', { ascending: false });
 
-  // Errors here are unexpected — RLS already filters by firm. Surface a
+  // Errors here are unexpected - RLS already filters by firm. Surface a
   // friendly message but don't blow up the page.
   const tours = (rows || []).map((r: any) => ({
     id: r.id,
@@ -86,7 +86,7 @@ export default async function ToursPage() {
           </div>
           <h3 className="mt-4 text-base font-semibold text-ink-900">No tour requests yet</h3>
           <p className="mx-auto mt-1.5 max-w-md text-sm leading-relaxed text-ink-600">
-            When clients request a tour — from their portal or the mobile app —
+            When clients request a tour - from their portal or the mobile app -
             you'll see it here and can confirm or decline with one tap.
           </p>
         </div>

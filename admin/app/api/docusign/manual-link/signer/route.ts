@@ -9,9 +9,9 @@ export const runtime = 'nodejs';
  * only. When every designated signer has signed, the envelope auto-completes.
  *
  * Body: { envelopeId, signerKey, signed }
- *   envelopeId — esign_envelopes.envelope_id
- *   signerKey  — the signer's key inside recipients.signers
- *   signed     — boolean
+ *   envelopeId - esign_envelopes.envelope_id
+ *   signerKey  - the signer's key inside recipients.signers
+ *   signed     - boolean
  */
 export async function POST(req: NextRequest) {
   const me = await getMe();

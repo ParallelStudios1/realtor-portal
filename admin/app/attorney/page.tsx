@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Attorney workspace' };
 
 /**
- * Attorney-specific dashboard. Tailored for closing counsel — every column
+ * Attorney-specific dashboard. Tailored for closing counsel - every column
  * matters to them (phase, next key date, financials, signature status).
  * Unlike the generic /participant landing, this one inlines exactly what an
  * attorney needs to triage their book of deals: scan upcoming closings, see
@@ -212,7 +212,7 @@ export default async function AttorneyDashboardPage() {
         </h1>
         <p className="mt-1 max-w-2xl text-sm text-ink-600">
           Every deal you&apos;re counsel on. Open one for the contract,
-          financials, deadlines, parties, and signature status — all read-only.
+          financials, deadlines, parties, and signature status - all read-only.
         </p>
       </header>
 

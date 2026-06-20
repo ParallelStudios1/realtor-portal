@@ -8,7 +8,7 @@ import { LocalDateTime } from '@/components/LocalDateTime';
  * /api/documents/sign-url to get a 5-minute signed URL, then opens it in a new
  * tab. Cookie auth is automatic (same origin). The route authorizes the caller
  * server-side (deal_participants.can_view_documents), so if a legacy attorney
- * lacks a participant row the request 403s — we surface that inline rather than
+ * lacks a participant row the request 403s - we surface that inline rather than
  * silently failing. Purely presentational + a read-only signed-URL fetch; this
  * component NEVER mutates deal state.
  */
@@ -104,7 +104,7 @@ export function AttorneyDocList({ documents }: { documents: AttorneyDoc[] }) {
                         day: 'numeric',
                         year: 'numeric',
                       }}
-                      placeholder="—"
+                      placeholder="-"
                     />
                   </span>
                 </div>

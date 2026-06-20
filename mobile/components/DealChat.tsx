@@ -25,7 +25,7 @@ import { useToast } from '@/components/Toast';
 import { humanError } from '@/lib/humanError';
 
 /**
- * DEAL GROUP CHAT — reusable native component.
+ * DEAL GROUP CHAT - reusable native component.
  *
  * Renders the whole-deal group thread (every party on the deal) plus a
  * composer. Talks to the deployed web API exactly like the rest of the app:
@@ -42,7 +42,7 @@ import { humanError } from '@/lib/humanError';
  * use the brand color; others align left on the surface color and show the
  * sender's name.
  *
- * Drop it into a screen with a flex parent — it fills available space.
+ * Drop it into a screen with a flex parent - it fills available space.
  */
 
 type ChatMessage = {
@@ -244,7 +244,7 @@ export function DealChat({ searchId }: { searchId: string | null | undefined }) 
             color={colors.textSecondary}
           />
           <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-            No messages yet. Start the conversation — everyone on the deal will
+            No messages yet. Start the conversation - everyone on the deal will
             see it.
           </Text>
         </View>

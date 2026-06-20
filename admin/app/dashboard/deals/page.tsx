@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 
 /**
  * Top-level Deals workspace. Replaces the old per-client drill-down as the
- * primary surface for realtors — everyone wants to see "what deals are
+ * primary surface for realtors - everyone wants to see "what deals are
  * happening" not "what clients exist". Cards show phase, last activity,
  * principal, and clicking opens the canonical deal view.
  */
@@ -43,7 +43,7 @@ export default async function DealsListPage({
 
   const { data: rawDeals } = await qb;
 
-  // GUEST DEALS — cross-firm deals where I'm a participant but the deal is
+  // GUEST DEALS - cross-firm deals where I'm a participant but the deal is
   // hosted by a DIFFERENT firm. The main query above only returns own-firm
   // deals (firm_id = me.firm_id), so a realtor added to another firm's deal
   // never sees it in their own Deals list without this. We run the lookup
@@ -84,7 +84,7 @@ export default async function DealsListPage({
       const { data: rawGuests } = await gqb;
       const ownIds = new Set(((rawDeals || []) as any[]).map((d) => d.id));
       for (const g of (rawGuests || []) as any[]) {
-        if (ownIds.has(g.id)) continue; // dedupe — own-firm deals already covered
+        if (ownIds.has(g.id)) continue; // dedupe - own-firm deals already covered
         guestDeals.push({
           ...g,
           _guest: true,
@@ -93,7 +93,7 @@ export default async function DealsListPage({
       }
     }
   } catch {
-    // Guest deals are additive — never block the main list on this lookup.
+    // Guest deals are additive - never block the main list on this lookup.
   }
 
   // Merge own-firm + guest deals (own first), deduped by id.

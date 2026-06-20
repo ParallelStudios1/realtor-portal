@@ -58,7 +58,7 @@ const OFFER_STYLE: Record<string, string> = {
 };
 
 function money(n: number | null | undefined) {
-  return n == null ? '—' : '$' + Number(n).toLocaleString();
+  return n == null ? '-' : '$' + Number(n).toLocaleString();
 }
 
 export function SellerListingPanel({

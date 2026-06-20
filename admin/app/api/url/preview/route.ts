@@ -82,7 +82,7 @@ export async function POST(req: Request) {
         signal: ac.signal,
         headers: {
           // Zillow and Redfin block the obvious "bot" UA. Use a real
-          // browser UA — they still serve their listing page when one
+          // browser UA - they still serve their listing page when one
           // hits without cookies.
           'user-agent':
             'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_4) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15',
@@ -107,7 +107,7 @@ export async function POST(req: Request) {
     clearTimeout(t);
 
     if (!res.ok) {
-      // Specific message for Zillow / Redfin — they actively block server
+      // Specific message for Zillow / Redfin - they actively block server
       // IPs, especially Vercel/AWS ranges. There's no fix from our side
       // short of proxying through residential IPs (paid service). Tell
       // the user what to do instead instead of returning a vague error.
@@ -218,7 +218,7 @@ export async function POST(req: Request) {
 // HTML meta extraction (no deps).
 // We pull og:title, og:image, og:description, twitter:* fallbacks, plus the
 // <title> tag as a last resort. For listing sites we also try a few common
-// "address" hints (og:street-address etc.) — not standardized but cheap to try.
+// "address" hints (og:street-address etc.) - not standardized but cheap to try.
 // ---------------------------------------------------------------------------
 
 type Extracted = {
@@ -257,7 +257,7 @@ function extractMeta(html: string): Extracted {
 
   const description = meta('og:description', 'twitter:description', 'description');
 
-  // Address hints. Very loose — listing sites vary widely. The client only
+  // Address hints. Very loose - listing sites vary widely. The client only
   // uses this as a fallback when the user's address field is empty.
   const address =
     meta('og:street-address', 'place:location:street_address') ||
@@ -277,7 +277,7 @@ function extractMeta(html: string): Extracted {
  * quotes. Case-insensitive on the attribute name.
  */
 function matchMeta(html: string, name: string): string | undefined {
-  // Two patterns — content can come before or after name/property.
+  // Two patterns - content can come before or after name/property.
   const escaped = escapeRegex(name);
   const patterns = [
     new RegExp(
@@ -308,7 +308,7 @@ function matchTitle(html: string): string | undefined {
 function addressFromTitle(title?: string): string | undefined {
   if (!title) return undefined;
   // Split on common separators used by listing sites.
-  const head = title.split(/\s+[|–\-]\s+/)[0]?.trim();
+  const head = title.split(/\s+[|–—-]\s+/)[0]?.trim();
   if (!head) return undefined;
   // Looks like an address if it starts with digits and contains a comma.
   if (/^\d/.test(head) && head.includes(',')) return head;
@@ -320,7 +320,7 @@ function escapeRegex(s: string): string {
 }
 
 /**
- * Minimal HTML entity decode — covers the entities we'll actually hit in
+ * Minimal HTML entity decode - covers the entities we'll actually hit in
  * meta tags (&amp;, &quot;, &#39;, &apos;, &lt;, &gt;, numeric refs).
  */
 function decodeEntities(s: string): string {
@@ -385,7 +385,7 @@ function extractJsonLd(html: string): any | null {
         }
       }
     } catch {
-      // bad JSON in this block — try the next one.
+      // bad JSON in this block - try the next one.
     }
   }
   return null;

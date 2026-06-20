@@ -21,7 +21,7 @@ export const runtime = 'nodejs';
  * Returns: { ok: true, user_id, role } on success.
  *
  * The client should then call supabase.auth.signInWithPassword to get a
- * session — that succeeds because the email is already confirmed.
+ * session - that succeeds because the email is already confirmed.
  *
  * Always returns JSON. Never empty bodies.
  */
@@ -130,7 +130,7 @@ export async function POST(req: Request) {
 
     // CRITICAL: detect "this email already has a firm" BEFORE we create a
     // new one. Without this, every Create Firm attempt by an existing user
-    // spawns a duplicate firm and silently moves them off their old one —
+    // spawns a duplicate firm and silently moves them off their old one -
     // stranding all their deals, contacts, and participants in an orphaned
     // firm. This was the root cause of repeated "404 after Create Firm" reports.
     const { data: existingPublicUser } = await service
@@ -142,7 +142,7 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           error:
-            'You already have an account on Realtor Portal. Sign in instead — your firm and deals are waiting for you.',
+            'You already have an account on Realtor Portal. Sign in instead - your firm and deals are waiting for you.',
           existing: true,
         },
         { status: 409 }

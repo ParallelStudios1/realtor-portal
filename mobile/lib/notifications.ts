@@ -4,7 +4,7 @@ import { supabase } from './supabase';
 import { Platform } from 'react-native';
 
 /**
- * Push notifications require a development build (or production app) — they
+ * Push notifications require a development build (or production app) - they
  * don't work inside Expo Go on SDK 53+. We detect that environment and skip
  * the registration silently so the dev experience isn't spammed with errors.
  */
@@ -14,7 +14,7 @@ function isExpoGo() {
 
 export async function registerPushToken(userId: string) {
   if (isExpoGo()) {
-    // Silently skip in Expo Go — feature requires a real build.
+    // Silently skip in Expo Go - feature requires a real build.
     return;
   }
 
@@ -73,14 +73,14 @@ export function setupNotificationHandlers() {
     // Handle notification when app is opened from notification
     const subscription = Notifications.addNotificationResponseReceivedListener(
       (response) => {
-        // TODO(v1.1): Handle notification tap — navigate to relevant screen
+        // TODO(v1.1): Handle notification tap - navigate to relevant screen
         console.log('Notification response:', response);
       }
     );
 
     return () => subscription.remove();
   } catch (err) {
-    // Native module not available (Expo Go, web, misconfigured build) —
+    // Native module not available (Expo Go, web, misconfigured build) -
     // don't crash the whole app over notifications.
     console.warn('Notification handler setup failed:', err);
     return () => {};

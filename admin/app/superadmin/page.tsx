@@ -6,7 +6,7 @@ import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
 export const dynamic = 'force-dynamic';
 
 /**
- * Super-admin home — Parallel Studios internal view of every firm.
+ * Super-admin home - Parallel Studios internal view of every firm.
  * Gated by role check on the public.users row.
  */
 export default async function SuperAdminPage() {
@@ -85,7 +85,7 @@ export default async function SuperAdminPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-xs text-slate-500">
-                    {f.trial_ends_at ? new Date(f.trial_ends_at).toLocaleDateString() : '—'}
+                    {f.trial_ends_at ? new Date(f.trial_ends_at).toLocaleDateString() : '-'}
                   </td>
                   <td className="px-4 py-3 text-xs text-slate-500">
                     {new Date(f.created_at).toLocaleDateString()}

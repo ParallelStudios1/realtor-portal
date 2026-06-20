@@ -76,7 +76,7 @@ export default async function MessagesPage() {
           Direct messages
         </h1>
         <p className="mt-1 text-sm text-ink-600">
-          Private 1:1 threads with each client — separate from the all-parties
+          Private 1:1 threads with each client - separate from the all-parties
           Deal chat inside each deal. <span className="font-semibold text-ink-900">{threads.length}</span> client{' '}
           {threads.length === 1 ? 'thread' : 'threads'}.
         </p>

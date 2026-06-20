@@ -19,7 +19,7 @@ const REASONS = [
 /**
  * "Deal fell through" control. Reverts the deal (and any linked counterpart)
  * back to pre-contract state instead of forcing the realtor to build a whole
- * new deal — the listing goes back on the market, the buyer goes back to
+ * new deal - the listing goes back on the market, the buyer goes back to
  * searching, and everyone keeps their houses, documents, and parties.
  */
 export function TerminateDealControl({
@@ -52,8 +52,8 @@ export function TerminateDealControl({
         }
         toast.show(
           isSeller
-            ? 'Deal terminated — your listing is back on the market.'
-            : 'Deal terminated — back to searching.',
+            ? 'Deal terminated - your listing is back on the market.'
+            : 'Deal terminated - back to searching.',
           { variant: 'success' }
         );
         setOpen(false);
@@ -74,7 +74,7 @@ export function TerminateDealControl({
             If the deal falls through
           </div>
           <p className="mt-1 text-sm text-rose-900/80">
-            Reverts this deal to before it went under contract —{' '}
+            Reverts this deal to before it went under contract -{' '}
             {isSeller
               ? 'your listing goes back on the market'
               : 'back to searching'}

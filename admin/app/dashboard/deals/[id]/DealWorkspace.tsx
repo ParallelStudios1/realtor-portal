@@ -44,7 +44,7 @@ import type { DealChatMessage } from './chatActions';
  *   - Hero is a single tall card with phase progress + key actions.
  *   - Right rail shows people, dates, and recent activity at a glance.
  *
- * The existing ClientDetailActions component is re-used unchanged — it's the
+ * The existing ClientDetailActions component is re-used unchanged - it's the
  * shared mutation surface across the app. We just redress what surrounds it.
  */
 export function DealWorkspace(props: {
@@ -100,7 +100,7 @@ export function DealWorkspace(props: {
   } | null;
   // Offers received on a seller's listing (listing_offers rows).
   listingOffers?: ListingOffer[];
-  // The deal admin — the creator of the deal (client_searches.created_by),
+  // The deal admin - the creator of the deal (client_searches.created_by),
   // the person with full control. Null on legacy rows with no creator stamped.
   dealAdmin?: { id: string; name: string | null } | null;
   calendarUrl?: string | null;
@@ -153,7 +153,7 @@ export function DealWorkspace(props: {
         toast.show(r.error || 'Failed', { variant: 'error' });
         return;
       }
-      toast.show('Agreed home set — the client was notified.', {
+      toast.show('Agreed home set - the client was notified.', {
         variant: 'success',
       });
       setAgreeingHome(false);
@@ -162,7 +162,7 @@ export function DealWorkspace(props: {
   }
 
   // Confirm a client's proposed home. Routed through the deal-id API (not the
-  // client-keyed action) so it works on every deal — including seller-side /
+  // client-keyed action) so it works on every deal - including seller-side /
   // two-sided deals that have no principal client_id. The API agrees the home,
   // clears the pending proposal, and auto-advances the deal to awaiting_offer.
   function confirmProposedHouse(houseId: string) {
@@ -177,7 +177,7 @@ export function DealWorkspace(props: {
         if (!res.ok || !json?.ok) {
           throw new Error(json?.error || `Failed (${res.status})`);
         }
-        toast.show('Home confirmed — deal moved to Awaiting offer.', {
+        toast.show('Home confirmed - deal moved to Awaiting offer.', {
           variant: 'success',
         });
         router.refresh();
@@ -222,7 +222,7 @@ export function DealWorkspace(props: {
 
   const principal = deal.client;
 
-  // Everyone on the deal who could be a required signer on a document — the
+  // Everyone on the deal who could be a required signer on a document - the
   // realtor picks from these when attaching a signing link.
   const prettyRole = (r: string | null | undefined) =>
     (r || 'Party')
@@ -255,7 +255,7 @@ export function DealWorkspace(props: {
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
-      {/* "Guest on this deal" banner — appears when this deal is hosted by
+      {/* "Guest on this deal" banner - appears when this deal is hosted by
           a firm other than the viewer's own. Explains the premium-perk
           arrangement so the cross-firm collaborator understands what they
           get for free here vs. what their own firm would have to pay for. */}
@@ -448,7 +448,7 @@ export function DealWorkspace(props: {
         </div>
       </section>
 
-      {/* CLIENT PROPOSED A HOME — awaiting realtor confirmation. Confirming
+      {/* CLIENT PROPOSED A HOME - awaiting realtor confirmation. Confirming
           agrees the home + auto-advances the deal to Awaiting offer. */}
       {proposedHome && (
         <section className="mt-6 overflow-hidden rounded-2xl border-2 border-amber-400 bg-amber-50 shadow-soft-md">
@@ -481,7 +481,7 @@ export function DealWorkspace(props: {
         </section>
       )}
 
-      {/* AGREED HOME — prominent, first-class. Shows the property the client
+      {/* AGREED HOME - prominent, first-class. Shows the property the client
           and realtor settled on (set by either side), or a prompt to set it.
           Flat ink, brand accent via the ink-900 border. */}
       <section className="mt-6 overflow-hidden rounded-2xl border-2 border-ink-900 bg-white shadow-soft-md">
@@ -557,7 +557,7 @@ export function DealWorkspace(props: {
         ) : (
           <div className="px-5 py-5">
             <p className="text-sm text-ink-600">
-              No agreed home yet. Pick the property this deal is about — the
+              No agreed home yet. Pick the property this deal is about - the
               client will see it on their home, and they can also pick it
               themselves.
             </p>
@@ -569,7 +569,7 @@ export function DealWorkspace(props: {
           </div>
         )}
 
-        {/* Inline house picker — shown when setting/changing the agreed home. */}
+        {/* Inline house picker - shown when setting/changing the agreed home. */}
         {(agreeingHome || !agreedHome) && houses.length > 0 && (
           <div className="border-t border-ink-100 bg-ink-50/60 px-5 py-4">
             <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink-500">
@@ -607,7 +607,7 @@ export function DealWorkspace(props: {
         )}
       </section>
 
-      {/* Realtor assignment — owners / firm_admins / managers only, and only
+      {/* Realtor assignment - owners / firm_admins / managers only, and only
           on the HOST firm's own deals. A cross-firm guest who happens to be a
           firm_admin in their own firm must never be able to reassign the
           realtor on someone else's deal, so we also require !isGuestFirm. */}
@@ -693,7 +693,7 @@ export function DealWorkspace(props: {
         </section>
       )}
 
-      {/* Deal admin line — shown standalone when the realtor-assignment section
+      {/* Deal admin line - shown standalone when the realtor-assignment section
           above (which already surfaces it) is hidden for this viewer. The deal
           admin is the creator, the person with full control over the deal. */}
       {(!me.canAssignRealtor || isGuestFirm) && dealAdmin?.name && (
@@ -705,7 +705,7 @@ export function DealWorkspace(props: {
         </section>
       )}
 
-      {/* Action surface — the existing component already groups actions well */}
+      {/* Action surface - the existing component already groups actions well */}
       <div className="mt-6">
         <ClientDetailActions
           clientId={clientId}
@@ -726,7 +726,7 @@ export function DealWorkspace(props: {
         />
       </div>
 
-      {/* Deal fell-through / terminate — only once there's a contract to undo. */}
+      {/* Deal fell-through / terminate - only once there's a contract to undo. */}
       {['offer_made', 'counter_offer', 'under_contract', 'closing'].includes(
         deal.phase
       ) && (
@@ -736,7 +736,7 @@ export function DealWorkspace(props: {
       {/* Body grid */}
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
-          {/* Buyer interest — SELLER deals only. Read-only aggregate of the
+          {/* Buyer interest - SELLER deals only. Read-only aggregate of the
               demand on this listing: scheduled/past showings, tour requests,
               and any linked buyer who's gone under contract on our property
               (via houses.listing_search_id back-reference). Flat ink, no
@@ -745,7 +745,7 @@ export function DealWorkspace(props: {
             <BuyerInterestPanel data={buyerInterest} />
           )}
 
-          {/* SELLER LISTINGS + OFFERS — first-class listing-agent workspace:
+          {/* SELLER LISTINGS + OFFERS - first-class listing-agent workspace:
               manage each listing's status / price / MLS and track the offers
               received from buyers. */}
           {deal.kind === 'seller' && (
@@ -765,7 +765,7 @@ export function DealWorkspace(props: {
             />
           )}
 
-          {/* Houses — buyer vs seller differentiation.
+          {/* Houses - buyer vs seller differentiation.
               SELLER deal: this section leads with the single LISTING house.
               We label it "Listing" (singular) and, if there's no house yet,
               show a prominent "Add your listing" prompt.
@@ -817,7 +817,7 @@ export function DealWorkspace(props: {
                     </div>
                   ) : (
                     <p className="px-5 py-4 text-sm italic text-ink-500">
-                      No houses yet — use Add house above.
+                      No houses yet - use Add house above.
                     </p>
                   )
                 ) : (
@@ -875,7 +875,7 @@ export function DealWorkspace(props: {
                                 ? ' · ' + String(h.status).replace(/_/g, ' ')
                                 : ''}
                           </div>
-                          {/* Captured "other side" info — buyer deals only. */}
+                          {/* Captured "other side" info - buyer deals only. */}
                           {!isSeller &&
                             (h.seller_realtor_name ||
                               h.seller_realtor_firm ||
@@ -932,7 +932,7 @@ export function DealWorkspace(props: {
             );
           })()}
 
-          {/* Showings — upcoming, scheduled-ascending. */}
+          {/* Showings - upcoming, scheduled-ascending. */}
           <Card
             title={`Showings (${upcomingShowings.length})`}
             right={
@@ -952,7 +952,7 @@ export function DealWorkspace(props: {
             }
             empty={
               upcomingShowings.length === 0
-                ? 'No upcoming showings — use Schedule showing above.'
+                ? 'No upcoming showings - use Schedule showing above.'
                 : null
             }
           >
@@ -1065,7 +1065,7 @@ export function DealWorkspace(props: {
             </ul>
           </Card>
 
-          {/* Tour requests — only show if any */}
+          {/* Tour requests - only show if any */}
           {tours.length > 0 && (
             <Card title={`Tour requests (${tours.length})`}>
               <ul className="divide-y divide-ink-100">
@@ -1103,7 +1103,7 @@ export function DealWorkspace(props: {
             </Card>
           )}
 
-          {/* Documents — folder filter */}
+          {/* Documents - folder filter */}
           <Card
             title={`Documents (${documents.length})`}
             right={
@@ -1124,7 +1124,7 @@ export function DealWorkspace(props: {
             }
             empty={
               documents.length === 0
-                ? 'No documents yet — use Upload doc above.'
+                ? 'No documents yet - use Upload doc above.'
                 : null
             }
           >
@@ -1173,7 +1173,7 @@ export function DealWorkspace(props: {
           <Card title="Activity">
             {activity.length === 0 ? (
               <div className="px-5 py-6 text-center text-sm text-ink-500">
-                Nothing yet — actions you take here show up in this timeline.
+                Nothing yet - actions you take here show up in this timeline.
               </div>
             ) : (
               <ol className="divide-y divide-ink-100">
@@ -1196,7 +1196,7 @@ export function DealWorkspace(props: {
             )}
           </Card>
 
-          {/* Deal chat — the shared group thread for the whole deal. Every
+          {/* Deal chat - the shared group thread for the whole deal. Every
               party with message access reads & posts here. Distinct from the
               1:1 client↔realtor DM shown in "Recent messages". Staff can post. */}
           <DealChat
@@ -1329,7 +1329,7 @@ export function DealWorkspace(props: {
             </div>
           </Card>
 
-          {/* Direct messages — the PRIVATE 1:1 thread only. The group Deal
+          {/* Direct messages - the PRIVATE 1:1 thread only. The group Deal
               chat has its own panel; mixing them here made the two look like
               one thread. */}
           {recentMessages.length > 0 && (
@@ -1389,7 +1389,7 @@ export function DealWorkspace(props: {
                 toast.show(r.error || 'Failed', { variant: 'error' });
                 return;
               }
-              toast.show('Showing scheduled — everyone was notified.', {
+              toast.show('Showing scheduled - everyone was notified.', {
                 variant: 'success',
               });
             }
@@ -1499,7 +1499,7 @@ function Card({
 
 /**
  * Buyer interest summary for a SELLER (listing) deal. Aggregates demand on the
- * listing — showings, tour requests, and any linked buyer transaction — into a
+ * listing - showings, tour requests, and any linked buyer transaction - into a
  * flat, read-only strip of stat tiles plus a one-line headline. All numbers are
  * derived server-side from existing tables; nothing here is editable.
  */
@@ -1605,7 +1605,7 @@ function FRow({
     return (
       <>
         <dt className="text-ink-500">{label}</dt>
-        <dd className="text-right text-ink-300">—</dd>
+        <dd className="text-right text-ink-300">-</dd>
       </>
     );
   }
@@ -1650,7 +1650,7 @@ function PersonRow({
         <div className="text-[10px] font-bold uppercase tracking-wide text-ink-400">
           {label}
         </div>
-        <div className="truncate text-sm font-medium">{name || '—'}</div>
+        <div className="truncate text-sm font-medium">{name || '-'}</div>
         {email && (
           <a
             href={'mailto:' + email}
@@ -1720,7 +1720,7 @@ function Ago({ iso }: { iso: string }) {
  * the house's address once a house is picked), notes. On submit, calls the
  * server action via the parent's onSubmit.
  *
- * Also handles edit/reschedule — when initial is supplied, the form
+ * Also handles edit/reschedule - when initial is supplied, the form
  * preloads the existing values and the house picker is locked (rescheduling
  * a showing of a different house should be a new showing).
  */
@@ -1877,7 +1877,7 @@ function ShowingModal({
               className={modalInputCls}
               value={location}
               onChange={(e) => setLocation(e.target.value)}
-              placeholder="123 Main St, Unit 4 — meet at the lockbox"
+              placeholder="123 Main St, Unit 4 - meet at the lockbox"
             />
           </ModalField>
           <ModalField label="Notes (optional)">
@@ -1893,7 +1893,7 @@ function ShowingModal({
           {mode === 'new' && (
             <ModalField
               label="Extra attendees (optional)"
-              hint="Co-buyers, family, inspectors — anyone not already on the deal."
+              hint="Co-buyers, family, inspectors - anyone not already on the deal."
             >
               <div className="space-y-2">
                 {attendees.map((a, i) => (

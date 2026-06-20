@@ -191,7 +191,7 @@ export default function AddHouseScreen() {
         json = raw ? JSON.parse(raw) : null;
       } catch {}
       if (!r.ok) {
-        // Don't error-alert — preview is best-effort. Log and bail.
+        // Don't error-alert - preview is best-effort. Log and bail.
         console.warn('[add-house] preview failed', r.status, json?.error);
         return;
       }
@@ -225,7 +225,7 @@ export default function AddHouseScreen() {
   };
 
   // -------------------------------------------------------------------------
-  // AI description (existing — unchanged)
+  // AI description (existing - unchanged)
   // -------------------------------------------------------------------------
 
   const generateDescription = async () => {
@@ -521,7 +521,7 @@ export default function AddHouseScreen() {
           </Pressable>
         </ScrollView>
 
-        {/* Sticky footer — pinned to the bottom of the screen, not the scroll view. */}
+        {/* Sticky footer - pinned to the bottom of the screen, not the scroll view. */}
         <View
           style={[
             styles.footer,

@@ -100,7 +100,7 @@ export default async function ClientHousesPage() {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
           {houses.map((h: any) => {
-            // "Your home / Your offer" badges are buyer framing — a seller's
+            // "Your home / Your offer" badges are buyer framing - a seller's
             // own listing carries its listing-status pill instead.
             const badge = isSeller ? undefined : homeBadge.get(h.id);
             return (

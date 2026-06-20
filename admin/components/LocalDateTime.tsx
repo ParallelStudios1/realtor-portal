@@ -2,7 +2,7 @@
 
 /**
  * Renders a genuine `timestamptz` value (e.g. showings.scheduled_at,
- * created_at) in the VIEWER'S local timezone — without a hydration mismatch.
+ * created_at) in the VIEWER'S local timezone - without a hydration mismatch.
  *
  * The problem: a datetime formatted with toLocaleString/toLocaleDateString
  * renders in UTC on the server but in the viewer's local zone on the client,

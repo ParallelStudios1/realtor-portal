@@ -19,7 +19,7 @@ import { SkeletonRow } from '@/components/Skeleton';
 import { EmptyState } from '@/components/EmptyState';
 
 /**
- * Realtor's home screen — every active client/deal in the firm.
+ * Realtor's home screen - every active client/deal in the firm.
  * Tapping a row drills into the client's deal detail.
  */
 export default function RealtorClientsScreen() {
@@ -27,7 +27,7 @@ export default function RealtorClientsScreen() {
   const { colors } = useTheme();
   const { data: searches, isLoading, refetch, isRefetching } = useClientSearches(
     userProfile?.firm_id,
-    true, // isRealtor — fetch all firm searches, not just current user's
+    true, // isRealtor - fetch all firm searches, not just current user's
   );
 
   // First-load: render layout-stable skeleton rows.
@@ -68,7 +68,7 @@ export default function RealtorClientsScreen() {
           <EmptyState
             icon="briefcase-outline"
             title="No deals yet"
-            body="Invite your first buyer or seller — their deal will show up here right away."
+            body="Invite your first buyer or seller - their deal will show up here right away."
             ctaLabel="Invite a client"
             ctaIcon="person-add"
             onCtaPress={() => router.push('/(realtor)/invite' as any)}

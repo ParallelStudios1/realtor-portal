@@ -4,13 +4,13 @@ export const runtime = 'edge';
 export const dynamic = 'force-static';
 
 /**
- * Android App Links manifest — counterpart to apple-app-site-association.
+ * Android App Links manifest - counterpart to apple-app-site-association.
  * Lets https://realtorportal.parallelstudios.co/welcome and /invite open the
  * Android app directly when installed.
  *
  * Required values:
- *   ANDROID_PACKAGE_NAME — e.g. com.parallelstudios.realtorportal
- *   ANDROID_SHA256_FINGERPRINT — get from `eas credentials -p android`
+ *   ANDROID_PACKAGE_NAME - e.g. com.parallelstudios.realtorportal
+ *   ANDROID_SHA256_FINGERPRINT - get from `eas credentials -p android`
  *
  * Until ANDROID_SHA256_FINGERPRINT is set, the file is harmless (no app
  * link verification will succeed).

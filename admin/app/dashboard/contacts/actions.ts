@@ -21,7 +21,7 @@ function cleanString(s: FormDataEntryValue | null): string | null {
 
 /**
  * Save a standalone contact to the firm's address book. Not tied to any
- * deal — this is just "I want this person in my contacts".
+ * deal - this is just "I want this person in my contacts".
  *
  * Form fields: name, email, phone, role, company, notes.
  * The (firm_id, lower(email)) unique index will reject duplicates.
@@ -114,7 +114,7 @@ export async function updateFirmContactAction(
 }
 
 /**
- * Delete a firm_contact. Hard delete — no soft-delete on the address book.
+ * Delete a firm_contact. Hard delete - no soft-delete on the address book.
  */
 export async function deleteFirmContactAction(
   id: string

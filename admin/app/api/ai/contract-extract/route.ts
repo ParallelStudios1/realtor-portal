@@ -10,7 +10,7 @@ export const runtime = 'nodejs';
  * POST /api/ai/contract-extract
  * Body: { searchId: string, documentId: string }
  *
- * Feature 4B — staged AI contract-date extraction.
+ * Feature 4B - staged AI contract-date extraction.
  *
  * Pulls the document's PDF from the private 'client-docs' bucket, hands it to
  * Claude as a native base64 PDF document block, and asks for STRICT JSON of
@@ -18,7 +18,7 @@ export const runtime = 'nodejs';
  * `contract_extractions` row with status='proposed'.
  *
  * CRITICAL: this route writes ONLY to contract_extractions. It NEVER touches
- * important_dates — nothing reaches the deal timeline until a human confirms
+ * important_dates - nothing reaches the deal timeline until a human confirms
  * via confirmExtractionAction. This is the "mandatory human confirm" gate.
  *
  * No-key fallback: if ANTHROPIC_API_KEY is unset, we still insert an empty
@@ -84,7 +84,7 @@ async function resolveCaller(
 
 const SYSTEM_PROMPT = `You extract structured facts from a real-estate purchase contract PDF.
 
-Return ONLY a single JSON object — no prose, no markdown fences — with exactly this shape:
+Return ONLY a single JSON object - no prose, no markdown fences - with exactly this shape:
 {
   "dates": [{ "label": string, "date": string, "confidence": number, "source_snippet": string }],
   "parties": [{ "role": string, "name": string, "email": string }],
@@ -93,7 +93,7 @@ Return ONLY a single JSON object — no prose, no markdown fences — with exact
 
 Rules:
 - "date" MUST be ISO format "YYYY-MM-DD". If you cannot resolve a full calendar date, omit that entry rather than guessing.
-- "confidence" is your 0.0–1.0 certainty that the label and date are correct.
+- "confidence" is your 0.0-1.0 certainty that the label and date are correct.
 - "source_snippet" is a short verbatim quote (<= 160 chars) from the contract showing where the date came from.
 - "label" is a human title like "Closing date", "Inspection deadline", "Financing contingency", "Earnest money due".
 - For "parties": role is e.g. "buyer", "seller", "buyer_agent", "seller_agent", "title", "lender". Use "" for unknown email.
@@ -225,7 +225,7 @@ export async function POST(req: Request) {
           search_id: searchId,
           document_id: documentId,
           status: 'proposed',
-          raw: { note: 'manual entry — AI extraction unavailable (no API key)' },
+          raw: { note: 'manual entry - AI extraction unavailable (no API key)' },
           proposed_dates: empty.dates,
           proposed_parties: empty.parties,
           contingencies: empty.contingencies,

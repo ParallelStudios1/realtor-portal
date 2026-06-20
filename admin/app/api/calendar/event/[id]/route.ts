@@ -11,7 +11,7 @@ import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
  *
  * Auth: any signed-in user who can see the deal can fetch the event.
  * Falls back to public access (200 with empty body) for unauthenticated
- * requests, since calendar apps don't pass cookies — instead we rely on
+ * requests, since calendar apps don't pass cookies - instead we rely on
  * the id being a UUID, treating it as a capability token.
  */
 export const dynamic = 'force-dynamic';

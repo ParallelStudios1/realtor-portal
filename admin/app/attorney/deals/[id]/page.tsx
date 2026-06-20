@@ -15,7 +15,7 @@ export const metadata = { title: 'Deal' };
 
 const PHASES = DEAL_PHASES;
 
-// Open e-sign states (not yet finished) — these are what an attorney must chase.
+// Open e-sign states (not yet finished) - these are what an attorney must chase.
 const OPEN_SIG = new Set(['created', 'sent', 'delivered']);
 
 // Labels that signal a legally significant deadline. Used to highlight the
@@ -48,10 +48,10 @@ function isLegalDate(label: string): boolean {
  * e-signatures, and reach every party.
  *
  * Access mirrors /deal/[id] and is UNCHANGED: the caller must be attached to
- * this deal as the attorney — either via the legacy `attorney_email` column OR
+ * this deal as the attorney - either via the legacy `attorney_email` column OR
  * a deal_participants row with role='attorney'. Per-participant visibility
  * flags (financials / documents / dates) and house scoping are honored exactly.
- * Nothing here mutates state — every action is a link or a read-only signed-URL
+ * Nothing here mutates state - every action is a link or a read-only signed-URL
  * fetch.
  */
 export default async function AttorneyDealPage({
@@ -161,7 +161,7 @@ export default async function AttorneyDealPage({
         : Promise.resolve({ data: [] as any[] }),
       housesQuery.order('created_at', { ascending: false }),
       // E-signature is legal status the attorney always needs to see (it's not
-      // gated by the financials/documents flags — it's the state of execution).
+      // gated by the financials/documents flags - it's the state of execution).
       service
         .from('esign_envelopes')
         .select(
@@ -171,7 +171,7 @@ export default async function AttorneyDealPage({
         .order('created_at', { ascending: false }),
     ]);
 
-  // AGREED HOME — resolved only from houses the viewer is allowed to see.
+  // AGREED HOME - resolved only from houses the viewer is allowed to see.
   const agreedHouse =
     d.house_agreed_at && d.offer_house_id
       ? (houses || []).find((h: any) => h.id === d.offer_house_id) || null
@@ -184,7 +184,7 @@ export default async function AttorneyDealPage({
   // Other parties (excluding this attorney) for the roster.
   const otherParts = parts.filter((p) => p.id !== myAttorneyRow?.id);
 
-  // Private 1:1 messaging — the attorney messages a specific party privately
+  // Private 1:1 messaging - the attorney messages a specific party privately
   // (NOT the whole-deal group chat). Parties resolved + access re-checked
   // server-side.
   const privateRes = await getPrivateParties(params.id);
@@ -619,7 +619,7 @@ export default async function AttorneyDealPage({
 
           {/* ============== CONTRACT & DOCUMENTS ============== */}
           <Section title="Contract & documents">
-            {/* Contract links — always shown if present (the executed/working
+            {/* Contract links - always shown if present (the executed/working
                 contract is core to the attorney's review). */}
             {(d.contract_url || d.docusign_envelope_url) && (
               <div className="mb-3 flex flex-wrap gap-2 border-b border-ink-100 pb-3">
@@ -710,7 +710,7 @@ export default async function AttorneyDealPage({
                             day: 'numeric',
                             year: 'numeric',
                           }}
-                          placeholder="—"
+                          placeholder="-"
                         />
                         {recips.length > 0 && (
                           <> · {signed}/{recips.length} signed</>
@@ -725,7 +725,7 @@ export default async function AttorneyDealPage({
                                 day: 'numeric',
                                 year: 'numeric',
                               }}
-                              placeholder="—"
+                              placeholder="-"
                             />
                           </>
                         )}
@@ -755,7 +755,7 @@ export default async function AttorneyDealPage({
           {/* ============== PRIVATE MESSAGES ============== */}
           <Section title="Private messages">
             <p className="mb-3 -mt-1 text-xs text-ink-500">
-              A private 1:1 thread with a specific party — only the two of you
+              A private 1:1 thread with a specific party - only the two of you
               can see it. This is separate from any all-parties group chat.
             </p>
             <PrivateMessages
@@ -858,7 +858,7 @@ function Money({ label, value }: { label: string; value: any }) {
       </dt>
       <dd className="mt-0.5 text-lg font-bold tracking-tight text-ink-900">
         {value == null || value === ''
-          ? '—'
+          ? '-'
           : '$' + Number(value).toLocaleString()}
       </dd>
     </div>
@@ -872,7 +872,7 @@ function Field({ label, value }: { label: string; value: any }) {
         {label}
       </dt>
       <dd className="mt-0.5 text-lg font-bold tracking-tight text-ink-900">
-        {value == null || value === '' ? '—' : value}
+        {value == null || value === '' ? '-' : value}
       </dd>
     </div>
   );
@@ -922,7 +922,7 @@ function RecipientStatus({ status }: { status: any }) {
 }
 
 function CountdownChip({ date, accent }: { date: string; accent: string }) {
-  // DATE-ONLY countdown from the literal calendar day — timezone-stable to
+  // DATE-ONLY countdown from the literal calendar day - timezone-stable to
   // avoid hydration drift (mirrors lib/dates behavior).
   const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(date));
   let days = 0;
@@ -968,7 +968,7 @@ function Party({
         <div className="text-[10px] font-semibold uppercase tracking-wide text-ink-400">
           {label}
         </div>
-        <div className="truncate font-medium text-ink-900">{name || '—'}</div>
+        <div className="truncate font-medium text-ink-900">{name || '-'}</div>
         {email && (
           <a
             href={`mailto:${email}`}

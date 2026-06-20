@@ -65,7 +65,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Search not found.' }, { status: 404 });
     }
     if (search.firm_id !== me.firm_id) {
-      // Cross-firm send — block.
+      // Cross-firm send - block.
       return NextResponse.json({ error: 'Forbidden.' }, { status: 403 });
     }
 

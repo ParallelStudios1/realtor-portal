@@ -16,7 +16,7 @@ import { mintFeedbackToken } from '@/lib/feedbackTokens';
  *     link to the public /feedback/[token] form.
  *
  *   - submitShowingFeedbackAction: an in-app principal (client or staff)
- *     submits/updates feedback directly without needing a token — same upsert
+ *     submits/updates feedback directly without needing a token - same upsert
  *     the public API does, but authenticated and firm-scoped.
  *
  * These live in their own file (not the shared deals/[id]/actions.ts) so the
@@ -35,8 +35,8 @@ const PRICE_OPINIONS = ['overpriced', 'about_right', 'underpriced'];
 /**
  * Resolve the caller and confirm they can act on the given showing. Returns
  * the showing row (with denormalized firm/search/house) on success. Runs the
- * showing lookup under the caller's auth so RLS — including the cross-firm
- * collaborator path — applies, then re-reads denormalized fields via service
+ * showing lookup under the caller's auth so RLS - including the cross-firm
+ * collaborator path - applies, then re-reads denormalized fields via service
  * role for the writes.
  */
 async function authorizeShowing(showingId: string) {
@@ -166,7 +166,7 @@ export async function requestShowingFeedbackAction(
     return {
       ok: false as const,
       error:
-        'No one to ask — add an attendee email to the showing or a client to the deal first.',
+        'No one to ask - add an attendee email to the showing or a client to the deal first.',
     };
   }
 
@@ -334,7 +334,7 @@ export async function submitShowingFeedbackAction(
 }
 
 /**
- * Read all feedback for a showing — used by the in-app display under each
+ * Read all feedback for a showing - used by the in-app display under each
  * showing in the deal workspace. Firm-scoped via the caller's RLS visibility
  * of the showing.
  */

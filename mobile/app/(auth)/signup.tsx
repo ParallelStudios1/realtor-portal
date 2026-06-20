@@ -72,7 +72,7 @@ export default function SignupScreen() {
         (process.env.EXPO_PUBLIC_API_URL as string | undefined) ||
         'https://realtorportal.parallelstudios.co';
 
-      // Step 1 — server admin-creates the auth user (email pre-confirmed),
+      // Step 1 - server admin-creates the auth user (email pre-confirmed),
       // creates firm OR attaches to realtor's firm, creates starter search.
       // This bypasses Supabase's "Confirm email" requirement which otherwise
       // blocks signInWithPassword and the create_firm_and_admin RPC.
@@ -100,17 +100,17 @@ export default function SignupScreen() {
         throw new Error(json?.error || `Signup failed (HTTP ${r.status}).`);
       }
 
-      // Step 2 — sign in. Email is pre-confirmed so this works on first try.
+      // Step 2 - sign in. Email is pre-confirmed so this works on first try.
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
       });
       if (signInError) throw signInError;
 
-      // Step 3 — done. The auth listener inside AuthProvider sees the
+      // Step 3 - done. The auth listener inside AuthProvider sees the
       // SIGNED_IN event, swaps the root navigator to (realtor) or (client),
       // and that re-render is the navigation. We don't need router.replace
-      // here — calling replace('/') against the (auth) Stack throws
+      // here - calling replace('/') against the (auth) Stack throws
       // "no route named 'index'" because the route group changes underneath
       // us. Just let the listener handle it.
     } catch (err: any) {
@@ -206,13 +206,34 @@ export default function SignupScreen() {
               />
 
               {role === 'realtor' && (
-                <Field
-                  label="Firm or brokerage name"
-                  value={firmName}
-                  onChangeText={setFirmName}
-                  placeholder="Logan Realty Group"
-                  colors={colors}
-                />
+                <>
+                  <Field
+                    label="Firm or brokerage name"
+                    value={firmName}
+                    onChangeText={setFirmName}
+                    placeholder="Logan Realty Group"
+                    colors={colors}
+                  />
+                  <View
+                    style={{
+                      marginTop: 12,
+                      borderRadius: 12,
+                      borderWidth: 1,
+                      borderColor: colors.border,
+                      backgroundColor: colors.surface,
+                      padding: 14,
+                    }}
+                  >
+                    <Text style={{ color: colors.text, fontWeight: '700', fontSize: 14 }}>
+                      Starts with a free 14-day trial
+                    </Text>
+                    <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 4 }}>
+                      No card required to start. You won't be charged in the app -
+                      after the trial you pick a plan from your billing page on the
+                      web. We'll remind you how many days are left.
+                    </Text>
+                  </View>
+                </>
               )}
 
               {(role === 'buyer' || role === 'seller') && (

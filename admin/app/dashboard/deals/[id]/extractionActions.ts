@@ -1,7 +1,7 @@
 'use server';
 
 /**
- * Feature 4B — server actions for the human-confirm gate of AI contract-date
+ * Feature 4B - server actions for the human-confirm gate of AI contract-date
  * extraction. Called from ExtractReview (client component).
  *
  * The AI route (/api/ai/contract-extract) only ever STAGES proposals into
@@ -74,7 +74,7 @@ async function authorizeExtraction(extractionId: string): Promise<AuthOk | AuthE
  * important_dates, then marks the extraction confirmed.
  *
  * selectedDates is exactly the set of rows the agent checked (and possibly
- * edited) in the review UI — we never read proposed_dates off the row here, so
+ * edited) in the review UI - we never read proposed_dates off the row here, so
  * unchecked or edited-away suggestions are guaranteed not to be written.
  */
 export async function confirmExtractionAction(input: {

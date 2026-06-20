@@ -43,7 +43,7 @@ export default function SmsConsentPage() {
         start of the engagement, in person or by phone, using the verbal
         consent script below. The agent may only enter a phone number into
         Realtor Portal after the client has agreed. Providing a phone number
-        is optional — every portal feature works without SMS, and email is
+        is optional - every portal feature works without SMS, and email is
         always available as an alternative.
       </p>
 
@@ -52,8 +52,8 @@ export default function SmsConsentPage() {
       </h2>
       <blockquote className="mt-3 rounded-xl border border-ink-200 bg-ink-50 p-5 text-ink-800">
         &ldquo;Would you like to receive text-message updates about your
-        transaction — things like status changes, showing confirmations, and
-        document reminders — from our firm through Realtor Portal? Messages
+        transaction - things like status changes, showing confirmations, and
+        document reminders - from our firm through Realtor Portal? Messages
         would come from the number +1&nbsp;(855)&nbsp;765-7815. Message
         frequency varies with your deal, and message and data rates may
         apply. You can opt out at any time by replying STOP, or reply HELP
@@ -66,21 +66,21 @@ export default function SmsConsentPage() {
       <div className="mt-3 space-y-2 rounded-xl border border-ink-200 bg-white p-5 text-sm text-ink-800">
         <p>
           <strong>Agent:</strong> &ldquo;Would you like to receive
-          text-message updates about your transaction — status changes,
-          showing confirmations, and document reminders — from our firm
+          text-message updates about your transaction - status changes,
+          showing confirmations, and document reminders - from our firm
           through Realtor Portal? Messages come from
           +1&nbsp;(855)&nbsp;765-7815, frequency varies, and message and data
           rates may apply. You can reply STOP at any time to opt out, or HELP
           for help. Want me to turn that on?&rdquo;
         </p>
         <p>
-          <strong>Client:</strong> &ldquo;Yes, please — texts are easiest for
+          <strong>Client:</strong> &ldquo;Yes, please - texts are easiest for
           me.&rdquo;
         </p>
         <p>
           <strong>Agent:</strong> &ldquo;Great. I&apos;ve added your mobile
           number to your client profile. You&apos;ll get a confirmation text
-          shortly — reply STOP at any time if you change your mind.&rdquo;
+          shortly - reply STOP at any time if you change your mind.&rdquo;
         </p>
       </div>
 

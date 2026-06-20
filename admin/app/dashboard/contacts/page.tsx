@@ -7,13 +7,13 @@ export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Contacts · Realtor Portal' };
 
 /**
- * Contacts — the realtor's address book. Pulls every person they've ever
+ * Contacts - the realtor's address book. Pulls every person they've ever
  * touched in the system (firm members, clients, deal participants, attorneys)
  * AND any manually-added firm_contacts (external co-realtors, lenders,
  * inspectors that aren't on a deal yet). Dedupes by email.
  */
 type Contact = {
-  // dedup key — lowercased email when present, else a synthetic key
+  // dedup key - lowercased email when present, else a synthetic key
   // ("manual:<id>" for manual contacts with no email).
   key: string;
   email: string | null;
@@ -23,7 +23,7 @@ type Contact = {
   notes: string | null;
   roles: Set<string>;
   dealCount: number;
-  // Whichever source we saw first — purely informational.
+  // Whichever source we saw first - purely informational.
   source: 'user' | 'participant' | 'attorney' | 'manual';
   // Populated when this contact was added by hand via the Add Contact
   // modal. Gives us an id to attach edit/remove controls to.
@@ -215,7 +215,7 @@ export default async function ContactsPage({
           </div>
           <h1 className="mt-1.5 text-3xl font-bold tracking-tight text-ink-900">Contacts</h1>
           <p className="mt-1 max-w-2xl text-sm text-ink-600">
-            Every person you&apos;ve worked with — clients, co-realtors,
+            Every person you&apos;ve worked with - clients, co-realtors,
             attorneys, inspectors, lenders. Auto-built from your past deals,
             plus anyone you add by hand.
           </p>
@@ -286,8 +286,8 @@ export default async function ContactsPage({
           <h2 className="mt-4 text-base font-semibold text-ink-900">No contacts yet</h2>
           <p className="mx-auto mt-1.5 max-w-md text-sm leading-relaxed text-ink-600">
             Anyone you invite to a deal automatically lands here. You can also
-            add someone manually — a co-realtor at another firm, your usual
-            lender, an inspector — without putting them on a deal first.
+            add someone manually - a co-realtor at another firm, your usual
+            lender, an inspector - without putting them on a deal first.
           </p>
           <div className="mt-6 flex justify-center">
             <AddContactButton />

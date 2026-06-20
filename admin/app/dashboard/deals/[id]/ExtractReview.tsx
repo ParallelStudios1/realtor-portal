@@ -10,7 +10,7 @@ import {
 } from './extractionActions';
 
 /**
- * Feature 4B — review surface for a STAGED contract extraction.
+ * Feature 4B - review surface for a STAGED contract extraction.
  *
  * Renders the AI's proposed dates as an editable table (label + date picker),
  * each pre-checked, alongside read-only party and contingency read-outs. A
@@ -18,7 +18,7 @@ import {
  * the contract.
  *
  * Nothing is written to the deal until the agent presses "Confirm & add to
- * deal" — and only the checked, possibly-edited rows are sent to
+ * deal" - and only the checked, possibly-edited rows are sent to
  * confirmExtractionAction. This is the mandatory human-confirm gate.
  */
 
@@ -320,7 +320,7 @@ export function ExtractReview({
                       {p.role || 'party'}
                     </span>
                     <span className="min-w-0 flex-1 truncate font-medium text-ink-900">
-                      {p.name || '—'}
+                      {p.name || '-'}
                     </span>
                     {p.email && (
                       <span className="truncate text-xs text-blue-600">{p.email}</span>

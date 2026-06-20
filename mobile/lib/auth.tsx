@@ -108,7 +108,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
    * Mobile signUp is intentionally minimal. Realtors should sign up via the
    * web (where they pick a firm name and get billing/branding). Clients
    * should arrive via an emailed invite, which creates their users row
-   * server-side. This function only creates the auth record — the public.users
+   * server-side. This function only creates the auth record - the public.users
    * row is created either by the RPC (web realtor signup) or by the invite
    * flow (admin/app/dashboard/clients/new/actions.ts).
    *
@@ -128,7 +128,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         },
       });
       if (error) throw error;
-      // Do NOT create a users row here — it would violate the
+      // Do NOT create a users row here - it would violate the
       // users_firm_required_for_non_super_admin constraint. Users rows are
       // created via:
       //   - create_firm_and_admin RPC (web realtor signup)

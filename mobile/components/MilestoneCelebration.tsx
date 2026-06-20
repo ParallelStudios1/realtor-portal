@@ -6,8 +6,8 @@ import type { DealPhase } from '@/lib/database.types';
 const MESSAGES: Partial<Record<DealPhase, { emoji: string; title: string; sub: string }>> = {
   offer_made: { emoji: '🎯', title: 'Offer Submitted!', sub: "Now we wait. We'll keep you posted." },
   under_contract: { emoji: '🎉', title: "You're Under Contract!", sub: 'Big step. Onward to closing.' },
-  closing: { emoji: '🔑', title: 'Closing Time', sub: 'Final stretch — almost yours.' },
-  closed: { emoji: '🏡', title: 'Welcome Home!', sub: "Congrats — it's officially yours." },
+  closing: { emoji: '🔑', title: 'Closing Time', sub: 'Final stretch - almost yours.' },
+  closed: { emoji: '🏡', title: 'Welcome Home!', sub: "Congrats - it's officially yours." },
 };
 
 /**

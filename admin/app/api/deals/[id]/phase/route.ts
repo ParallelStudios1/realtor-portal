@@ -11,7 +11,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 /**
- * PHASE UPDATE — Bearer/cookie JSON API for the native mobile app.
+ * PHASE UPDATE - Bearer/cookie JSON API for the native mobile app.
  *
  * Mirrors updatePhaseAction's per-phase validation in
  *   admin/app/dashboard/clients/[id]/actions.ts
@@ -54,7 +54,7 @@ const VALID_PHASES = [
 ] as const;
 type Phase = (typeof VALID_PHASES)[number];
 
-// Kind-aware milestone copy — a SELLER must never read buyer lines like
+// Kind-aware milestone copy - a SELLER must never read buyer lines like
 // "your offer is in" or "the house is officially yours". No emojis
 // (flat-ink voice, and these land in email + SMS).
 const PHASE_CELEBRATIONS: Record<string, { buyer: string; seller: string }> = {
@@ -71,21 +71,21 @@ const PHASE_CELEBRATIONS: Record<string, { buyer: string; seller: string }> = {
       'An offer has come in on your home. Your agent will walk you through the terms.',
   },
   counter_offer: {
-    buyer: 'Counter-offer phase — your agent is negotiating. Hang tight.',
+    buyer: 'Counter-offer phase - your agent is negotiating. Hang tight.',
     seller:
-      'Counter-offer phase — your agent is negotiating the terms for you.',
+      'Counter-offer phase - your agent is negotiating the terms for you.',
   },
   under_contract: {
     buyer:
-      'Congrats — you are under contract! Big step. Your agent will line up inspection and appraisal next.',
+      'Congrats - you are under contract! Big step. Your agent will line up inspection and appraisal next.',
     seller:
-      "Congrats — you are under contract! The buyer's inspection, appraisal, and financing come next.",
+      "Congrats - you are under contract! The buyer's inspection, appraisal, and financing come next.",
   },
   closing: {
     buyer:
       'You are in the closing phase. Wire instructions and final paperwork are coming.',
     seller:
-      'You are in the closing phase. Final paperwork is in motion — almost done.',
+      'You are in the closing phase. Final paperwork is in motion - almost done.',
   },
   closed: {
     buyer: 'Congrats! The house is officially yours. Welcome home.',
@@ -270,7 +270,7 @@ export async function POST(
       }
     }
 
-    // Build the update payload — include the provided phase-specific fields.
+    // Build the update payload - include the provided phase-specific fields.
     const updates: Record<string, any> = { phase };
     if (json.offer_amount != null) updates.offer_amount = json.offer_amount;
     if (json.closing_amount != null) updates.closing_amount = json.closing_amount;
@@ -379,7 +379,7 @@ export async function POST(
           html: `<p>${escapeHtml(
             celebration
           )}</p><p><a href="${dealUrl}">Open the deal &rarr;</a></p>`,
-          sms_text: celebration + ' — ' + dealUrl,
+          sms_text: celebration + ' - ' + dealUrl,
           excludeUserId: me.user_id,
         });
       } catch (e: any) {

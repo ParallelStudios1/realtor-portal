@@ -6,7 +6,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 /**
- * POST /api/showings/feedback  — PUBLIC, no auth/cookies.
+ * POST /api/showings/feedback  - PUBLIC, no auth/cookies.
  *
  * Body: {
  *   token: string,            // HMAC token bound to (showingId, email)
@@ -22,7 +22,7 @@ export const dynamic = 'force-dynamic';
  * }
  *
  * Auth model: the token IS the credential. We re-derive HMAC(showingId+':'+email)
- * and reject on mismatch — so a visitor can only submit feedback for the exact
+ * and reject on mismatch - so a visitor can only submit feedback for the exact
  * showing + email the realtor minted a link for. We then service-role upsert
  * into showing_feedback on (showing_id, author_email) so re-submitting edits
  * the existing row instead of erroring on the unique constraint.

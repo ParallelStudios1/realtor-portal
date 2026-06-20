@@ -60,7 +60,7 @@ export function ScheduleVisitClient({
       <div className="text-sm font-semibold">Schedule a visit</div>
       <label className="mt-3 block text-sm">
         <span className="block text-xs font-medium text-ink-600">
-          Pick a date <span className="font-semibold">and time</span> — both are
+          Pick a date <span className="font-semibold">and time</span> - both are
           required
         </span>
         <input
@@ -110,7 +110,7 @@ export function ScheduleVisitClient({
               });
               if (!r.ok)
                 return toast.show(r.error || 'Failed', { variant: 'error' });
-              toast.show('Tour requested — your agent will confirm.', {
+              toast.show('Tour requested - your agent will confirm.', {
                 variant: 'success',
               });
               setOpen(false);

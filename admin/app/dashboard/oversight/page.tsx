@@ -8,7 +8,7 @@ import { tierHasFeature } from '@/lib/plans';
 export const dynamic = 'force-dynamic';
 
 /**
- * Broker oversight — firm-wide deadline health.
+ * Broker oversight - firm-wide deadline health.
  *
  * Gated to owners / firm_admins / super_admins. Lists OVERDUE deadlines
  * (date < today, not completed, not acknowledged) and AT-RISK deadlines

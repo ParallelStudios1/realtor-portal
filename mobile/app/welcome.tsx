@@ -14,7 +14,7 @@ const SITE = 'https://realtorportal.parallelstudios.co';
  * The OS opens the APP for these instead of the browser; this route used to
  * not exist → blank screen. Token redemption (hash tokens / ?code / token_hash)
  * is implemented on the web /welcome page, so we re-open the ORIGINAL full
- * URL — query string and #fragment included — in an in-app browser, which
+ * URL - query string and #fragment included - in an in-app browser, which
  * doesn't re-trigger the universal link.
  */
 export default function WelcomeLinkScreen() {

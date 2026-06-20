@@ -11,7 +11,7 @@ type Doc = {
 
 /**
  * Tapping a row hits /api/documents/sign-url, gets a 5-minute signed URL,
- * then opens it in a new tab. Cookie auth is automatic — same origin.
+ * then opens it in a new tab. Cookie auth is automatic - same origin.
  */
 export function ClientDocumentsList({ documents }: { documents: Doc[] }) {
   const [openingId, setOpeningId] = useState<string | null>(null);

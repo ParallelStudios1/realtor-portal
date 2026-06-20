@@ -20,7 +20,7 @@ import { SkeletonRow, Skeleton } from '@/components/Skeleton';
 import { EmptyState } from '@/components/EmptyState';
 
 /**
- * Realtor messaging hub — list of every active client thread on the left
+ * Realtor messaging hub - list of every active client thread on the left
  * (scrollable), conversation on the right. Realtime via Supabase.
  *
  * Mobile keeps this single-pane: tap a thread to view, back arrow returns.
@@ -48,12 +48,12 @@ export default function RealtorMessagesScreen() {
     enabled: !!userProfile?.firm_id,
   });
 
-  // The active thread's client — DMs are scoped to the realtor↔client pair.
+  // The active thread's client - DMs are scoped to the realtor↔client pair.
   const activeClientId: string | null =
     (threads || []).find((t: any) => t.id === activeId)?.client?.id || null;
 
   // PRIVATE 1:1 messages for the active thread (recipient set, client
-  // involved) — matches the web Direct-messages hub. Previously this pulled
+  // involved) - matches the web Direct-messages hub. Previously this pulled
   // the whole-deal GROUP chat too, mixing "private" and public messages.
   const { data: messages } = useQuery({
     queryKey: ['messages', activeId, activeClientId || 'group'],
@@ -122,7 +122,7 @@ export default function RealtorMessagesScreen() {
         firm_id: userProfile!.firm_id!,
         search_id: activeId,
         sender_id: user!.id,
-        // Private 1:1 with the client — NOT the group deal chat.
+        // Private 1:1 with the client - NOT the group deal chat.
         recipient_user_id: activeClientId,
         body,
       })

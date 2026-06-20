@@ -29,7 +29,7 @@ export function initSentry() {
       environment: __DEV__ ? 'development' : 'production',
     });
   } catch {
-    // Package not installed — silently skip.
+    // Package not installed - silently skip.
   }
 }
 

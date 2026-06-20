@@ -113,7 +113,7 @@ export default async function SettingsPage() {
           >
             Twilio Console → Regulatory Compliance
           </a>
-          . Toll-Free is fastest (1–2 business days).
+          . Toll-Free is fastest (1-2 business days).
         </p>
         <div className="mt-4">
           <TestSmsButton />

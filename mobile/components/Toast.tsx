@@ -28,7 +28,7 @@ import { Ionicons } from '@expo/vector-icons';
  *  - Slides down from the top.
  *  - Auto-dismisses after `duration` ms (default 3500).
  *  - Tap to dismiss early.
- *  - Only one toast at a time — calling show() while one is up replaces it.
+ *  - Only one toast at a time - calling show() while one is up replaces it.
  *
  * Deliberately tiny: no portal, no third-party deps. We mount a single
  * <Animated.View> at the top of the tree and animate translateY/opacity.
@@ -183,7 +183,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 export function useToast(): ToastContextValue {
   const ctx = useContext(ToastContext);
   if (!ctx) {
-    // Don't throw — toasts are nice-to-have. If used outside the provider
+    // Don't throw - toasts are nice-to-have. If used outside the provider
     // we no-op so a missing provider doesn't crash a screen.
     return {
       show: (msg) => {

@@ -10,7 +10,7 @@ import { usePathname, useSearchParams } from 'next/navigation';
  *
  *   1. Pointer-down on any <a> or <button data-loading>, which is the
  *      moment the user committed to navigating. We start the bar there so
- *      it feels instant — no dead time while React schedules the route.
+ *      it feels instant - no dead time while React schedules the route.
  *   2. usePathname / useSearchParams. When either changes the route has
  *      finished rendering; we finish the bar and hide it.
  *

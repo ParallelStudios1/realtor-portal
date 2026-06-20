@@ -47,7 +47,7 @@ const ROLES: { id: FirmRole; label: string; description: string }[] = [
   {
     id: 'firm_admin',
     label: 'Firm admin',
-    description: 'Manage seats, deals, branding — everything except changing owners.',
+    description: 'Manage seats, deals, branding - everything except changing owners.',
   },
   {
     id: 'manager',
@@ -62,7 +62,7 @@ const ROLES: { id: FirmRole; label: string; description: string }[] = [
   {
     id: 'agent',
     label: 'Agent / Assistant',
-    description: 'Unlicensed support — read-only on most things.',
+    description: 'Unlicensed support - read-only on most things.',
   },
 ];
 
@@ -137,7 +137,7 @@ export function FirmControl({
           )}
         </section>
 
-        {/* Phase labels editor — only owners/firm admins land on this page,
+        {/* Phase labels editor - only owners/firm admins land on this page,
             so we don't need to gate it further. */}
         <PhaseLabelsCard
           phaseLabels={phaseLabels}

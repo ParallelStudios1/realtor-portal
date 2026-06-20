@@ -46,7 +46,7 @@ async function resolveCaller(req: Request): Promise<{ id: string; firm_id: strin
  * from structured property inputs. If ANTHROPIC_API_KEY isn't set, falls back
  * to a deterministic template so the feature still works in dev.
  *
- * Always returns JSON — the client's catch path doesn't have to special-case
+ * Always returns JSON - the client's catch path doesn't have to special-case
  * empty bodies.
  */
 type Input = {
@@ -91,7 +91,7 @@ export async function POST(req: Request) {
         model: 'claude-haiku-4-5-20251001',
         max_tokens: 600,
         system:
-          'You are a real estate copywriter helping a buyer-side agent describe a property they\'re showing to a client. Write in second person ("you\'ll love…") when natural, but stay grounded — never invent features that weren\'t in the input. 2-3 short paragraphs. Avoid clichés ("nestled", "stunning"). End with a single concrete suggestion ("Worth a tour this weekend?") that the agent could send to the client.',
+          'You are a real estate copywriter helping a buyer-side agent describe a property they\'re showing to a client. Write in second person ("you\'ll love…") when natural, but stay grounded - never invent features that weren\'t in the input. 2-3 short paragraphs. Avoid clichés ("nestled", "stunning"). End with a single concrete suggestion ("Worth a tour this weekend?") that the agent could send to the client.',
         messages: [{ role: 'user', content: prompt }],
       }),
     });

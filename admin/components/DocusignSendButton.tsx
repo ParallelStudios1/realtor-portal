@@ -8,7 +8,7 @@ import { useState } from 'react';
  * envelope in DocuSign UI, then come back here and paste the envelope URL.
  *
  * No JWT integration required. This is a UX shortcut on top of the existing
- * "paste envelope URL" flow — saves a couple of clicks.
+ * "paste envelope URL" flow - saves a couple of clicks.
  *
  * If the document URL points at a Supabase signed URL, DocuSign should be
  * able to fetch it. Otherwise the realtor falls back to uploading the

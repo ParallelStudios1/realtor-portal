@@ -6,7 +6,7 @@ import { phaseLabelFor, type DealKind } from '@/lib/dealKind';
 export const dynamic = 'force-dynamic';
 
 /**
- * Clients list. Secondary to /dashboard/deals — this is the people view,
+ * Clients list. Secondary to /dashboard/deals - this is the people view,
  * deals is the work view. Clicking a row jumps to that client's most recent
  * deal workspace (or empty state if they have none yet).
  */
@@ -88,7 +88,7 @@ export default async function ClientsListPage() {
           </div>
           <h3 className="mt-4 text-base font-semibold text-ink-900">No clients yet</h3>
           <p className="mx-auto mt-1.5 max-w-md text-sm leading-relaxed text-ink-600">
-            Invite buyers and sellers — they'll get a one-tap link to your
+            Invite buyers and sellers - they'll get a one-tap link to your
             branded app.
           </p>
           <Link href="/dashboard/clients/new" className="btn-primary mt-6">
@@ -115,7 +115,7 @@ export default async function ClientsListPage() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="truncate font-semibold">
-                        {c.full_name || '—'}
+                        {c.full_name || '-'}
                       </div>
                       <div className="truncate text-xs text-ink-500">
                         {c.email}

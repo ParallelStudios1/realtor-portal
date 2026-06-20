@@ -59,7 +59,7 @@ export async function changePasswordAction(fd: FormData) {
 }
 
 /**
- * Update firm-level settings — name, branding, contact info. Only firm_admins
+ * Update firm-level settings - name, branding, contact info. Only firm_admins
  * can update their firm's row (enforced by RLS). We also pass firm_id from
  * the form so we don't depend on a join.
  */

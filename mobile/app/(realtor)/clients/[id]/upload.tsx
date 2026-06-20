@@ -24,7 +24,7 @@ import { humanError } from '@/lib/humanError';
  *  1. Pick a file via expo-document-picker (PDFs primarily, but anything goes).
  *  2. Upload bytes to the private 'client-docs' Supabase Storage bucket at
  *     `{firm_id}/{search_id}/{timestamp}-{filename}`. RLS is enforced by
- *     0005_documents_storage.sql — realtors can only write to their own firm.
+ *     0005_documents_storage.sql - realtors can only write to their own firm.
  *  3. Insert a row into public.documents pointing at storage_path.
  *  4. Log an activity so the client's feed says "Realtor uploaded {filename}".
  *  5. router.back() once done.
@@ -124,7 +124,7 @@ export default function UploadDocumentScreen() {
       <View style={styles.body}>
         <Text style={[styles.title, { color: colors.text }]}>Upload Document</Text>
         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-          Disclosures, contracts, inspection reports — anything you need the client
+          Disclosures, contracts, inspection reports - anything you need the client
           to see.
         </Text>
 

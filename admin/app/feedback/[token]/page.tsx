@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 export const metadata = { title: 'How was the showing? · Realtor Portal' };
 
 /**
- * /feedback/[token]?sid=<showingId>&em=<base64url(email)>  — PUBLIC, no login.
+ * /feedback/[token]?sid=<showingId>&em=<base64url(email)>  - PUBLIC, no login.
  *
  * URL scheme
  * ----------
@@ -21,7 +21,7 @@ export const metadata = { title: 'How was the showing? · Realtor Portal' };
  * query params can't be tampered with without invalidating the token.
  *
  * We render the form unconditionally (so a stale link still shows the
- * property context) but pass `valid` down — the form disables submit and
+ * property context) but pass `valid` down - the form disables submit and
  * shows a gentle "link expired" notice when the token doesn't check out.
  */
 export default async function FeedbackPage({

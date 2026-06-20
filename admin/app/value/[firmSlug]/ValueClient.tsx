@@ -6,11 +6,11 @@ import { useMemo, useState } from 'react';
  * Client component for the /value/[firmSlug] seller-lead landing page.
  *
  * Three steps, single column, firm-branded header.
- *   step === 'address' — big address field
- *   step === 'range'   — show low/mid/high; the bottom of the card is
+ *   step === 'address' - big address field
+ *   step === 'range'   - show low/mid/high; the bottom of the card is
  *                        blurred behind a "see your full report" overlay
  *                        that collects name/email/phone
- *   step === 'done'    — thank-you panel
+ *   step === 'done'    - thank-you panel
  *
  * Design rules (matches the rest of the product):
  *   - No gradients, no orbs, no glow. Flat color.
@@ -65,7 +65,7 @@ export function ValueClient({
   const [submittingLead, setSubmittingLead] = useState(false);
 
   // Pick a readable text color (black or white) against the firm's brand
-  // color. Cheap luminance check — good enough; we don't need WCAG AAA here.
+  // color. Cheap luminance check - good enough; we don't need WCAG AAA here.
   const headerTextColor = useMemo(
     () => readableTextColor(firmBrandColor),
     [firmBrandColor]
@@ -144,14 +144,14 @@ export function ValueClient({
 
   return (
     <main className="min-h-screen bg-ink-50 text-ink-900">
-      {/* Firm-branded header — small logo + name in the firm's brand color. */}
+      {/* Firm-branded header - small logo + name in the firm's brand color. */}
       <header
         className="border-b border-ink-200"
         style={{ backgroundColor: firmBrandColor, color: headerTextColor }}
       >
         <div className="mx-auto flex max-w-2xl items-center gap-3 px-6 py-5">
           {firmLogoUrl ? (
-            // Plain img — the page is public and we don't need next/image
+            // Plain img - the page is public and we don't need next/image
             // optimization for a tiny logo. Avoids the Image domain config.
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -253,7 +253,7 @@ export function ValueClient({
                 Low {fmtUsd(estimate.low)} &middot; High {fmtUsd(estimate.high)}
               </div>
 
-              {/* Range bar — flat, no gradient. */}
+              {/* Range bar - flat, no gradient. */}
               <div className="mt-5">
                 <div className="relative h-2 rounded-full bg-ink-100">
                   <div
@@ -298,7 +298,7 @@ export function ValueClient({
               </p>
             </div>
 
-            {/* Lead capture — sits below the range. Blurred preview of the
+            {/* Lead capture - sits below the range. Blurred preview of the
                 "full report" sits behind a clear overlay form so the visitor
                 immediately sees what they're getting in exchange. */}
             <div className="relative mt-8 overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-soft-md">
@@ -422,7 +422,7 @@ export function ValueClient({
                 {fmtUsd(estimate.mid)}
               </div>
               <div className="text-xs text-ink-500">
-                Range {fmtUsd(estimate.low)} – {fmtUsd(estimate.high)}
+                Range {fmtUsd(estimate.low)} - {fmtUsd(estimate.high)}
               </div>
             </div>
           </section>
@@ -449,7 +449,7 @@ export function ValueClient({
 }
 
 /**
- * Tiny step indicator — three dots, current one filled with the firm's
+ * Tiny step indicator - three dots, current one filled with the firm's
  * brand color. Skip on the 'done' step since the flow is over.
  */
 function StepIndicator({ step, brand }: { step: Step; brand: string }) {
@@ -480,7 +480,7 @@ function StepIndicator({ step, brand }: { step: Step; brand: string }) {
 /**
  * Pick black or white text against a given background hex so the firm name
  * stays readable regardless of whatever color they picked. Standard YIQ
- * luminance — not WCAG-perfect but fine for header text on a saturated bg.
+ * luminance - not WCAG-perfect but fine for header text on a saturated bg.
  */
 function readableTextColor(hex: string): string {
   const h = hex.replace('#', '').trim();

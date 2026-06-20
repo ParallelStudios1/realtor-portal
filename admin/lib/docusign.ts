@@ -11,7 +11,7 @@
  *   DOCUSIGN_OAUTH_BASE        e.g. https://account-d.docusign.com
  *   DOCUSIGN_INTEGRATION_KEY   (the integration key from DocuSign admin)
  *   DOCUSIGN_USER_ID           (the API user GUID)
- *   DOCUSIGN_ACCOUNT_ID        (the account GUID — different from integration key)
+ *   DOCUSIGN_ACCOUNT_ID        (the account GUID - different from integration key)
  *   DOCUSIGN_RSA_PRIVATE_KEY   (PEM, line breaks preserved or replaced with literal \n)
  */
 
@@ -106,7 +106,7 @@ export async function createDocusignEnvelope(
   const docBytes = Buffer.from(await docRes.arrayBuffer()).toString('base64');
 
   const body = {
-    emailSubject: input.emailSubject || 'Please sign — ' + (input.documentName || 'document'),
+    emailSubject: input.emailSubject || 'Please sign - ' + (input.documentName || 'document'),
     emailBlurb: input.emailMessage || 'Sent via Realtor Portal.',
     status: 'sent',
     documents: [
@@ -186,7 +186,7 @@ function normalizeStatus(raw: string | undefined | null): string {
     case 'voided':
       return s;
     case 'signed':
-      // DocuSign sometimes reports recipient-level "signed" — treat the
+      // DocuSign sometimes reports recipient-level "signed" - treat the
       // envelope as completed once it reaches us at envelope level.
       return 'completed';
     default:
@@ -207,7 +207,7 @@ export type EnvelopeStatusResult =
 /**
  * Poll a single envelope's current status directly from the DocuSign API.
  * This is the fallback path when DocuSign Connect (the push webhook) is not
- * configured — the UI can call this to refresh status on demand.
+ * configured - the UI can call this to refresh status on demand.
  *
  * Soft-skips (no_config) when DOCUSIGN_* env vars are unset, exactly like
  * createDocusignEnvelope, so callers degrade gracefully.

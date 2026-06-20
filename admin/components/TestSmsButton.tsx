@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react';
 import { useToast } from '@/components/Toast';
 
 /**
- * Visible "Send test text" button — calls /api/debug/test-sms with a
+ * Visible "Send test text" button - calls /api/debug/test-sms with a
  * phone number the realtor types in, then surfaces the FULL Twilio
  * response (status + sid + error fields) right in a toast so they can
  * see exactly what happened. Lives on Settings + at the top of Deals
@@ -32,7 +32,7 @@ export function TestSmsButton({ defaultPhone }: { defaultPhone?: string }) {
         const json = await r.json();
         setResult(json);
         if (json.ok) {
-          toast.show('Test text sent — Twilio sid ' + (json.sid || '—'), {
+          toast.show('Test text sent - Twilio sid ' + (json.sid || '-'), {
             variant: 'success',
           });
         } else {

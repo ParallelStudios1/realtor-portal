@@ -9,7 +9,7 @@ import { notify } from '@/lib/notify';
  * PRIVATE (1:1) MESSAGES on a deal.
  *
  * Distinct from the deal GROUP chat (chatActions.ts). A private message is
- * between the caller and ONE specific other party on the deal — only those two
+ * between the caller and ONE specific other party on the deal - only those two
  * can read it. Used by the attorney's "Private messages" panel and any party's
  * private DMs.
  *
@@ -90,7 +90,7 @@ async function authorize(
 
 /**
  * The set of parties on the deal the caller can privately message: the realtor,
- * the principal client, and every other participant — excluding the caller.
+ * the principal client, and every other participant - excluding the caller.
  */
 export async function getPrivateParties(
   searchId: string

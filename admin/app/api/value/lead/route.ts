@@ -13,7 +13,7 @@ export const runtime = 'nodejs';
  * know a new seller lead just submitted an address + estimate on the
  * public AVM landing page.
  *
- * Public route — no auth. Service-role client is used because the visitor
+ * Public route - no auth. Service-role client is used because the visitor
  * isn't signed in. We trust the firmId from the body only insofar as we
  * scope the inserted row to it; nothing else here is sensitive.
  */
@@ -97,7 +97,7 @@ export async function POST(req: Request) {
     if (typeof body.mid === 'number') {
       const range =
         typeof body.low === 'number' && typeof body.high === 'number'
-          ? ` (range ${fmtUsd(body.low)} – ${fmtUsd(body.high)})`
+          ? ` (range ${fmtUsd(body.low)} - ${fmtUsd(body.high)})`
           : '';
       noteParts.push(`Estimated value: ${fmtUsd(body.mid)}${range}`);
     }
@@ -105,7 +105,7 @@ export async function POST(req: Request) {
     const notes = noteParts.join('\n');
 
     // Insert the contact. firm_contacts has a (firm_id, lower(email)) unique
-    // index — if the same email already submitted a lead for this firm we
+    // index - if the same email already submitted a lead for this firm we
     // update the existing row's notes instead of failing so the realtor
     // sees the most recent address they asked about.
     const insertPayload = {
@@ -162,7 +162,7 @@ export async function POST(req: Request) {
       .limit(1)
       .maybeSingle();
 
-    // Fire-and-forget notify. Never blocks the response — the visitor
+    // Fire-and-forget notify. Never blocks the response - the visitor
     // doesn't need to know whether the realtor's email landed.
     if (primaryRealtor && (primaryRealtor.email || primaryRealtor.phone)) {
       const subject = `New seller lead: ${address}`;
@@ -170,7 +170,7 @@ export async function POST(req: Request) {
         typeof body.mid === 'number'
           ? `Estimated value: ${fmtUsd(body.mid)}` +
             (typeof body.low === 'number' && typeof body.high === 'number'
-              ? ` (range ${fmtUsd(body.low)} – ${fmtUsd(body.high)})`
+              ? ` (range ${fmtUsd(body.low)} - ${fmtUsd(body.high)})`
               : '')
           : 'Estimated value: not provided';
 
@@ -196,11 +196,11 @@ export async function POST(req: Request) {
 
       const sms_text =
         `New seller lead: ${address}` +
-        (typeof body.mid === 'number' ? ` — est. ${fmtUsd(body.mid)}` : '') +
-        (name ? ` — ${name}` : '') +
-        (phone ? ` — ${phone}` : '');
+        (typeof body.mid === 'number' ? ` - est. ${fmtUsd(body.mid)}` : '') +
+        (name ? ` - ${name}` : '') +
+        (phone ? ` - ${phone}` : '');
 
-      // Don't await — we want the response to come back fast for the
+      // Don't await - we want the response to come back fast for the
       // visitor. Errors are logged inside notify().
       void notify({
         email: primaryRealtor.email,

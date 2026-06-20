@@ -15,7 +15,7 @@ export const runtime = 'nodejs';
  * email), creates the public.users row, creates a client_searches row so
  * messages/houses/ratings have a parent, then emails the client OUR branded
  * invite whose CTA points at /invite/<token>. The token landing lets them
- * set a password and sign in — no Supabase auth email involved.
+ * set a password and sign in - no Supabase auth email involved.
  *
  * Auth: cookie session (web) or Authorization: Bearer (mobile).
  *
@@ -187,7 +187,7 @@ export async function POST(req: Request) {
       searchId = createdSearch!.id;
     }
 
-    // Branded invite via OUR /invite/<token> landing — NOT a Supabase email.
+    // Branded invite via OUR /invite/<token> landing - NOT a Supabase email.
     // Create a deal_invites token (role = buyer/seller) and send the client a
     // Resend email whose CTA opens /invite/<token>, where they set a password
     // and sign in.
@@ -234,11 +234,11 @@ export async function POST(req: Request) {
       const html = `
 <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#0f172a;">
   <p style="margin:0 0 16px;">Hi ${safeName},</p>
-  <p style="margin:0 0 16px;">${safeRealtor} at <strong>${safeFirm}</strong> invited you to your ${roleInDeal === 'seller' ? 'home sale' : 'home search'} on Realtor Portal — where you'll track listings, tours, documents, and messages in one place.</p>
+  <p style="margin:0 0 16px;">${safeRealtor} at <strong>${safeFirm}</strong> invited you to your ${roleInDeal === 'seller' ? 'home sale' : 'home search'} on Realtor Portal - where you'll track listings, tours, documents, and messages in one place.</p>
   <p style="margin:24px 0;">
     <a href="${inviteUrl}" style="display:inline-block;background:#0f172a;color:#fff;padding:10px 18px;border-radius:8px;font-weight:600;text-decoration:none;">Set up your account &rarr;</a>
   </p>
-  <p style="margin:24px 0 0;color:#475569;">— ${safeFirm}</p>
+  <p style="margin:24px 0 0;color:#475569;">- ${safeFirm}</p>
   <p style="margin:16px 0 0;color:#94a3b8;font-size:12px;">If the button above doesn't work, paste this link into your browser: ${inviteUrl}</p>
 </div>`.trim();
       const text = [
@@ -248,7 +248,7 @@ export async function POST(req: Request) {
         '',
         `Set up your account: ${inviteUrl}`,
         '',
-        `— ${firmName}`,
+        `- ${firmName}`,
       ].join('\n');
       await sendEmail({
         to: email,

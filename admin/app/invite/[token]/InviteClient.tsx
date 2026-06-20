@@ -45,13 +45,13 @@ type Invite = {
  *  3. Branches the call-to-action by role:
  *       realtor / co_realtor → "Set up your free Realtor Portal account
  *         to co-broker this deal" with firm-name field
- *       attorney             → "Set up your attorney account" — no firm
+ *       attorney             → "Set up your attorney account" - no firm
  *         field, attaches to host firm.
  *       buyer / seller       → "Set up your client account to track this
  *         deal" with just name + password
- *       other                → "Claim your access" — simple name + password
+ *       other                → "Claim your access" - simple name + password
  *  4. Branches on existing-account state:
- *       existing user        → "Welcome back — sign in to accept"
+ *       existing user        → "Welcome back - sign in to accept"
  *       new user             → role-specific signup form
  *  5. Single button completes everything: account create, sign-in,
  *     deal-participant link, redirect to the right post-accept screen.
@@ -126,7 +126,7 @@ export function InviteClient({
   }
 
   if (alreadySignedInAsRecipient) {
-    // They're already signed in as the same email — just send them to
+    // They're already signed in as the same email - just send them to
     // the right place.
     return (
       <Shell brand={brand} firm={firm}>
@@ -239,7 +239,7 @@ export function InviteClient({
             label="Your firm or brokerage"
             name="firm_name"
             placeholder="Acme Realty"
-            hint="If you don't have one, put your own name — you can change this later."
+            hint="If you don't have one, put your own name - you can change this later."
             value={firmName_}
             onChange={setFirmName}
           />
@@ -368,7 +368,7 @@ function Header({
         {search?.client?.full_name || search?.client?.email
           ? ' for ' + principal
           : ''}
-        {search?.name ? ' — ' + search.name : ''}.
+        {search?.name ? ' - ' + search.name : ''}.
       </p>
     </div>
   );
@@ -389,7 +389,7 @@ function RoleExplainer({
     title = 'How co-brokering works';
     bullets = [
       `You get a free Realtor Portal account with your OWN firm.`,
-      `On this deal, all premium features are covered by ${firmName} — no plan needed.`,
+      `On this deal, all premium features are covered by ${firmName} - no plan needed.`,
       `For your own clients and listings, your free trial starts now; pick a plan later.`,
     ];
   } else if (role === 'attorney') {
@@ -397,12 +397,12 @@ function RoleExplainer({
     bullets = [
       `You'll see this deal and any others ${firmName} adds you to.`,
       `Track key dates, contract status, and message the realtor + parties.`,
-      `No fee — you're a guest on the firm's plan.`,
+      `No fee - you're a guest on the firm's plan.`,
     ];
   } else if (role === 'buyer' || role === 'seller') {
     title = 'Your client portal';
     bullets = [
-      `Track every step of your deal — offer, contract, closing.`,
+      `Track every step of your deal - offer, contract, closing.`,
       `Message your realtor, view documents, see important dates.`,
       `Use the mobile app to get push notifications when things change.`,
     ];
@@ -410,7 +410,7 @@ function RoleExplainer({
     title = 'Your access on this deal';
     bullets = [
       `You'll see whatever the realtor shared with you on this specific deal.`,
-      `Documents, dates, messages — depending on your role.`,
+      `Documents, dates, messages - depending on your role.`,
     ];
   }
   return (

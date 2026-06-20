@@ -14,7 +14,7 @@ export const dynamic = 'force-dynamic';
  * Generate the social-share metadata for this listing. The OG image is
  * rendered on demand by /api/og/house/[id] (24h cache).
  *
- * We deliberately keep this lightweight and don't hit the DB — the OG route
+ * We deliberately keep this lightweight and don't hit the DB - the OG route
  * does that work, and that result is already cached. Title/description here
  * stay generic so we don't leak listing details to unauthenticated metadata
  * scrapers beyond what's already in the OG image they fetch anyway.
@@ -70,7 +70,7 @@ export default async function HouseDetailPage({
     .maybeSingle();
   if (!house) notFound();
 
-  // CLIENT ↔ REALTOR HOUSE AGREEMENT — resolve this client's deal for this
+  // CLIENT ↔ REALTOR HOUSE AGREEMENT - resolve this client's deal for this
   // house so we can render the "This is the house I want" control + reflect
   // whichever home is currently agreed (set by either side).
   const { data: agreementSearch } = await supabase
@@ -82,7 +82,7 @@ export default async function HouseDetailPage({
     .maybeSingle();
   const isPrincipalClient =
     (agreementSearch as any)?.client_id === me.user_id;
-  // On a SELLER deal this IS the client's own listing — the buyer actions
+  // On a SELLER deal this IS the client's own listing - the buyer actions
   // (request a tour, "this is the house I want", rate the tour) don't apply.
   const isSellerListing = (agreementSearch as any)?.kind === 'seller';
   const agreedHouseId = (agreementSearch as any)?.offer_house_id as
@@ -136,7 +136,7 @@ export default async function HouseDetailPage({
     .maybeSingle();
 
   // Look for a recently-confirmed tour on this house so we can show the
-  // "How was the tour?" banner — fires once the tour's preferred_when is
+  // "How was the tour?" banner - fires once the tour's preferred_when is
   // in the past and the client hasn't rated yet.
   const { data: recentTour } = await supabase
     .from('tour_requests')
@@ -154,11 +154,11 @@ export default async function HouseDetailPage({
     const when = recentTour.preferred_when
       ? new Date(recentTour.preferred_when)
       : null;
-    if (!when) return true; // confirmed but no datetime — prompt anyway
+    if (!when) return true; // confirmed but no datetime - prompt anyway
     return when.getTime() < Date.now();
   })();
 
-  // Any tour the client has open for this house — used to swap the button
+  // Any tour the client has open for this house - used to swap the button
   // for a "pending" badge instead of letting them double-request.
   const { data: pendingTour } = await supabase
     .from('tour_requests')
@@ -276,7 +276,7 @@ export default async function HouseDetailPage({
                   </span>
                 </div>
                 <p className="mt-0.5 text-xs text-ink-600">
-                  You and your agent can both update this — edit the details or
+                  You and your agent can both update this - edit the details or
                   status below, or remove it. Your agent also manages showings
                   and offers.
                 </p>
@@ -316,7 +316,7 @@ export default async function HouseDetailPage({
         </div>
       </div>
 
-      {/* Rating — buyer feedback on a candidate home. Not shown on a seller's
+      {/* Rating - buyer feedback on a candidate home. Not shown on a seller's
           own listing (you don't rate your own house). */}
       {!isSellerListing && (
         <section
@@ -332,7 +332,7 @@ export default async function HouseDetailPage({
           </div>
           <p className="mt-1 text-sm text-ink-600">
             {showPostTourPrompt
-              ? 'You just toured this place. Rate it 1–5 and add a note — your agent reads this to find better matches.'
+              ? 'You just toured this place. Rate it 1-5 and add a note - your agent reads this to find better matches.'
               : 'Your agent uses your feedback to filter what they show you next.'}
           </p>
           <HouseRatingClient

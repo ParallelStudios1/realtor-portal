@@ -68,7 +68,7 @@ export async function POST(req: Request) {
     }
 
     // Path is "{firm_id}/{search_id}/{timestamp}-{filename}". We need the
-    // first two segments — leading slashes shouldn't appear, but be defensive.
+    // first two segments - leading slashes shouldn't appear, but be defensive.
     const segments = path.replace(/^\/+/, '').split('/');
     const pathFirmId = segments[0];
     const pathSearchId = segments[1];

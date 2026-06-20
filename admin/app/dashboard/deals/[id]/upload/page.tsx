@@ -86,7 +86,7 @@ export default async function DealUploadPage({
         ← Back to deal
       </Link>
       <h1 className="mt-1 text-2xl font-bold tracking-tight">
-        Upload a document{d.name ? ` — ${d.name}` : ''}
+        Upload a document{d.name ? ` - ${d.name}` : ''}
       </h1>
       <p className="mt-1 text-sm text-ink-600">
         Files are stored in your firm's private bucket. Everyone on the deal

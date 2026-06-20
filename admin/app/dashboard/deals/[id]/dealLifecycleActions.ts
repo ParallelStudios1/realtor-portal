@@ -44,8 +44,8 @@ async function resetOneDeal(
   const isSeller = deal.kind === 'seller';
   const newPhase = isSeller ? 'awaiting_offer' : 'searching';
   const note = isSeller
-    ? `Back on market — last deal fell through (${REASON_LABEL[reason] || reason})`
-    : `Back to searching — deal fell through (${REASON_LABEL[reason] || reason})`;
+    ? `Back on market - last deal fell through (${REASON_LABEL[reason] || reason})`
+    : `Back to searching - deal fell through (${REASON_LABEL[reason] || reason})`;
 
   await service
     .from('client_searches')
@@ -90,8 +90,8 @@ async function resetOneDeal(
 }
 
 /**
- * Terminate / "fell through" a deal. Reverts THIS deal and — if it's a
- * two-sided (buyer↔seller) transaction — the linked counterpart too, then
+ * Terminate / "fell through" a deal. Reverts THIS deal and - if it's a
+ * two-sided (buyer↔seller) transaction - the linked counterpart too, then
  * unlinks the two sides so each is independent again. Nothing is deleted; the
  * listing goes back on the market and the buyer goes back to searching.
  *

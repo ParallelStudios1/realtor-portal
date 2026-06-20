@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Messages' };
 
 /**
- * Client-side messaging — single thread per active search, real-time updates.
+ * Client-side messaging - single thread per active search, real-time updates.
  * Web counterpart of the mobile (client)/messages tab.
  */
 export default async function ClientMessagesPage() {
@@ -58,7 +58,7 @@ export default async function ClientMessagesPage() {
     );
   }
 
-  // Initial messages — the PRIVATE 1:1 thread with the agent only (recipient
+  // Initial messages - the PRIVATE 1:1 thread with the agent only (recipient
   // set + the realtor involved), NOT the all-parties group Deal chat.
   const { data: initialMessages } = search.realtor_id
     ? await supabase
@@ -90,7 +90,7 @@ export default async function ClientMessagesPage() {
         Direct messages
       </h1>
       <p className="mb-4 mt-1 text-sm text-ink-600">
-        A private 1:1 thread with your agent — only the two of you can see it.
+        A private 1:1 thread with your agent - only the two of you can see it.
         This is separate from the all-parties Deal chat on your home screen.
       </p>
       <ClientMessagesClient

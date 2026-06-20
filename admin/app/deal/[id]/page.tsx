@@ -149,7 +149,7 @@ export default async function DealPage({
   const accent = d.firm?.accent_color || '#2563EB';
 
   // HOUSE-SCOPED VISIBILITY (the privacy core). When the caller's
-  // participant row is scoped to a single house (house_id is set — e.g. the
+  // participant row is scoped to a single house (house_id is set - e.g. the
   // seller's listing agent or the seller themselves), they must see ONLY that
   // one house, never the buyer's other candidates. Staff and the principal
   // client always have house_id NULL here, so they keep seeing everything.
@@ -181,7 +181,7 @@ export default async function DealPage({
             .order('created_at', { ascending: false })
         : Promise.resolve({ data: [] as any[] }),
       housesQuery.order('created_at', { ascending: false }),
-      // Signing links are visible to every party — it's execution status, not
+      // Signing links are visible to every party - it's execution status, not
       // gated by the documents flag.
       service
         .from('esign_envelopes')
@@ -190,10 +190,10 @@ export default async function DealPage({
         .order('created_at', { ascending: false }),
     ]);
 
-  // DEAL GROUP CHAT — the shared thread for the whole deal. Only loaded for
+  // DEAL GROUP CHAT - the shared thread for the whole deal. Only loaded for
   // parties who can see messages (staff, principal client, or a participant
   // with can_view_messages). getDealChat re-runs the same authorization on the
-  // server before returning anything. canPost mirrors canSeeMessages — if you
+  // server before returning anything. canPost mirrors canSeeMessages - if you
   // can read the group thread, you can post to it.
   let dealChatMessages: DealChatMessage[] = [];
   if (canSeeMessages) {
@@ -207,7 +207,7 @@ export default async function DealPage({
     : { ok: false as const, error: 'no access' };
   const privateParties = privateRes.ok ? privateRes.parties : [];
 
-  // AGREED HOME — surface the chosen house once client + realtor have agreed.
+  // AGREED HOME - surface the chosen house once client + realtor have agreed.
   // Privacy: we only resolve it from the `houses` array the viewer is already
   // allowed to see. For a house-scoped party that array contains at most their
   // one scoped house, so the card only appears if THAT house is the agreed one.
@@ -350,7 +350,7 @@ export default async function DealPage({
           </div>
         )}
 
-        {/* Agreed home — the house this deal is about. Respects scoping: only
+        {/* Agreed home - the house this deal is about. Respects scoping: only
             shown when the viewer is allowed to see the agreed house. */}
         {agreedHouse && (
           <div className="mt-6">
@@ -477,7 +477,7 @@ export default async function DealPage({
               )}
             </Section>
 
-            {/* Financials — gated */}
+            {/* Financials - gated */}
             {canSeeFinancials && (
               <Section title="Financials">
                 {d.agreed_price == null &&
@@ -486,7 +486,7 @@ export default async function DealPage({
                 d.commission_pct == null &&
                 !d.contract_url ? (
                   <p className="text-sm text-ink-400">
-                    Nothing here yet — financial terms appear once an offer is
+                    Nothing here yet - financial terms appear once an offer is
                     agreed.
                   </p>
                 ) : null}
@@ -518,7 +518,7 @@ export default async function DealPage({
               </Section>
             )}
 
-            {/* Important dates — gated */}
+            {/* Important dates - gated */}
             {canSeeDates && (
               <Section title={`Important dates (${dates?.length || 0})`}>
                 {!dates || dates.length === 0 ? (
@@ -597,7 +597,7 @@ export default async function DealPage({
               </Section>
             )}
 
-            {/* Documents — gated */}
+            {/* Documents - gated */}
             {canSeeDocuments && (
               <Section title={`Documents (${documents?.length || 0})`}>
                 {!documents || documents.length === 0 ? (
@@ -608,7 +608,7 @@ export default async function DealPage({
               </Section>
             )}
 
-            {/* Signing links — anything sent for signature on this deal. Every
+            {/* Signing links - anything sent for signature on this deal. Every
                 party can open the link to sign / review. */}
             {envelopes && envelopes.length > 0 && (
               <Section title={`Signing links (${envelopes.length})`}>
@@ -729,7 +729,7 @@ export default async function DealPage({
               </Section>
             )}
 
-            {/* Deal group chat — the shared thread for the whole deal. Shown to
+            {/* Deal group chat - the shared thread for the whole deal. Shown to
                 any party who can see messages; they can also post (canPost =
                 canSeeMessages). The server action re-authorizes every post. */}
             {canSeeMessages && (
@@ -741,12 +741,12 @@ export default async function DealPage({
               />
             )}
 
-            {/* Private 1:1 messages — DM a specific party; only the two of you
+            {/* Private 1:1 messages - DM a specific party; only the two of you
                 can see it. Separate from the group chat above. */}
             {canSeeMessages && privateParties.length > 0 && (
               <Section title="Private messages">
                 <p className="mb-3 -mt-1 text-xs text-ink-500">
-                  A private thread with one party — only the two of you can see
+                  A private thread with one party - only the two of you can see
                   it.
                 </p>
                 <PrivateMessages
@@ -816,7 +816,7 @@ export default async function DealPage({
   );
 }
 
-/** What each participant role is here to do — shown in the role banner. */
+/** What each participant role is here to do - shown in the role banner. */
 function rolePurpose(role: string): string {
   switch (role) {
     case 'attorney':
@@ -833,9 +833,9 @@ function rolePurpose(role: string): string {
     case 'appraiser':
       return 'See the property and the dates relevant to the appraisal.';
     case 'seller':
-      return 'Track your sale — status, showings, offers, and key dates.';
+      return 'Track your sale - status, showings, offers, and key dates.';
     case 'buyer':
-      return 'Track your purchase — the home, key dates, and documents.';
+      return 'Track your purchase - the home, key dates, and documents.';
     default:
       return 'Read-only view scoped to what the realtor shared with you.';
   }
@@ -912,7 +912,7 @@ function Party({
         <div className="text-[10px] font-semibold uppercase tracking-wide text-ink-400">
           {label}
         </div>
-        <div className="truncate font-medium">{name || '—'}</div>
+        <div className="truncate font-medium">{name || '-'}</div>
         {email && (
           <a
             href={`mailto:${email}`}

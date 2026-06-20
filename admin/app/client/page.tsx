@@ -34,7 +34,7 @@ export default async function ClientHomePage() {
   const active = searches?.[0];
   const isSeller = (active as any)?.kind === 'seller';
 
-  // DEALS YOU'RE A PARTICIPANT ON (not the principal client) — e.g. an added
+  // DEALS YOU'RE A PARTICIPANT ON (not the principal client) - e.g. an added
   // co-buyer, attorney, lender. Previously these were invisible here because we
   // only looked at deals where you ARE the principal client. Surface them with
   // a link into the full deal view (/deal/[id]) which authorizes participants.
@@ -73,7 +73,7 @@ export default async function ClientHomePage() {
   const prettyRole = (r: string | undefined) =>
     (r || 'Party').replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
-  // CLIENT ↔ REALTOR HOUSE AGREEMENT — the agreed home, shown prominently on
+  // CLIENT ↔ REALTOR HOUSE AGREEMENT - the agreed home, shown prominently on
   // the client's home when either side has set it (BUYER deals only).
   const { data: agreedHouse } =
     !isSeller &&
@@ -87,7 +87,7 @@ export default async function ClientHomePage() {
           .maybeSingle()
       : { data: null };
 
-  // SELLER deal — the client's own listing(s), shown prominently with status.
+  // SELLER deal - the client's own listing(s), shown prominently with status.
   const { data: myListings } =
     isSeller && active
       ? await supabase
@@ -97,7 +97,7 @@ export default async function ClientHomePage() {
           .order('created_at', { ascending: false })
       : { data: [] as any[] };
 
-  // SELLER deal — offers the agent has logged on this listing. The seller can
+  // SELLER deal - offers the agent has logged on this listing. The seller can
   // read these via the listing_offers participant-read RLS (client_id = me).
   const { data: myOffers } =
     isSeller && active
@@ -121,7 +121,7 @@ export default async function ClientHomePage() {
         .limit(5)
     : { data: [] as any[] };
 
-  // Upcoming tours — concrete date+time visits the client requested, with the
+  // Upcoming tours - concrete date+time visits the client requested, with the
   // house address. Shown with a countdown + time-of-day on the dashboard.
   const nowIso = new Date().toISOString();
   const { data: tours } = active
@@ -139,7 +139,7 @@ export default async function ClientHomePage() {
         .limit(6)
     : { data: [] as any[] };
 
-  // PENDING SIGNATURES — signing links on the deal that aren't completed.
+  // PENDING SIGNATURES - signing links on the deal that aren't completed.
   // The client (and on /deal, every designated party) gets a visible spot to
   // open and sign; previously these lived only on the realtor workspace.
   const { data: pendingEnvelopes } = active
@@ -174,7 +174,7 @@ export default async function ClientHomePage() {
     // signed; fall back to all open links when no signers were designated.
     .filter((e: any) => (e.amSigner ? !e.signedByMe : true));
 
-  // Recent activity feed — "Maria updated phase to under contract", etc.
+  // Recent activity feed - "Maria updated phase to under contract", etc.
   const { data: feed } = active
     ? await supabase
         .from('activities')
@@ -196,7 +196,7 @@ export default async function ClientHomePage() {
         .maybeSingle()
     : { data: null };
 
-  // DEAL GROUP CHAT — the shared thread for the whole deal (every party with
+  // DEAL GROUP CHAT - the shared thread for the whole deal (every party with
   // message access). The client is the principal on their own deal, so
   // getDealChat authorizes them. This is the GROUP thread (private = false),
   // distinct from the 1:1 DM at /client/messages.
@@ -304,14 +304,14 @@ export default async function ClientHomePage() {
             </div>
             <h3 className="mt-4 text-base font-semibold">No active search yet</h3>
             <p className="mx-auto mt-1 max-w-sm text-sm text-ink-600">
-              Your realtor will get you set up — you&apos;ll see your deal here once
+              Your realtor will get you set up - you&apos;ll see your deal here once
               they do.
             </p>
           </div>
         )
       ) : (
         <>
-          {/* Client-facing progress timeline — where the deal is + what's next */}
+          {/* Client-facing progress timeline - where the deal is + what's next */}
           <div className="mt-6">
             <DealProgressTimeline
               phase={active.phase}
@@ -324,7 +324,7 @@ export default async function ClientHomePage() {
             />
           </div>
 
-          {/* NEEDS YOUR SIGNATURE — open signing links on the deal. Most
+          {/* NEEDS YOUR SIGNATURE - open signing links on the deal. Most
               urgent thing on the page when present, so it sits right under
               the timeline. */}
           {myEnvelopes.length > 0 && (
@@ -368,7 +368,7 @@ export default async function ClientHomePage() {
             </section>
           )}
 
-          {/* SELLER — your listing(s), the homes you're selling, with status. */}
+          {/* SELLER - your listing(s), the homes you're selling, with status. */}
           {isSeller && (
             <section className="mt-4 surface p-5">
               <div className="flex items-baseline justify-between">
@@ -380,7 +380,7 @@ export default async function ClientHomePage() {
                 <>
                   <p className="mt-2 text-sm text-ink-600">
                     Add the home you&apos;re selling and your agent will take it
-                    from there — you&apos;ll see its status, showings, and offers
+                    from there - you&apos;ll see its status, showings, and offers
                     as things move. You can attach disclosures or photos now too.
                   </p>
                   <SellerAddListing brandColor={brandColor} hasListings={false} />
@@ -435,7 +435,7 @@ export default async function ClientHomePage() {
             </section>
           )}
 
-          {/* SELLER — offers your agent has logged on your listing. */}
+          {/* SELLER - offers your agent has logged on your listing. */}
           {isSeller && (myOffers || []).length > 0 && (
             <section className="mt-4 surface p-5">
               <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-400">
@@ -489,9 +489,9 @@ export default async function ClientHomePage() {
             </section>
           )}
 
-          {/* Agreed home — the property you and your agent settled on. BUYERS
+          {/* Agreed home - the property you and your agent settled on. BUYERS
               only: a seller's agreed home IS their listing, which already has
-              its own "Your home for sale" section above — and "The home you
+              its own "Your home for sale" section above - and "The home you
               want" is buyer copy. */}
           {agreedHouse && !isSeller && (
             <Link
@@ -583,7 +583,7 @@ export default async function ClientHomePage() {
             </section>
           )}
 
-          {/* Deal chat — the shared group thread for everyone on this deal.
+          {/* Deal chat - the shared group thread for everyone on this deal.
               Distinct from the 1:1 DM with your agent (the "Message" button
               above). The client is the principal, so they can post here. */}
           <div className="mt-4">
@@ -595,7 +595,7 @@ export default async function ClientHomePage() {
             />
           </div>
 
-          {/* Upcoming tours — countdown + time of day */}
+          {/* Upcoming tours - countdown + time of day */}
           {tours && tours.length > 0 && (
             <section className="mt-4 surface p-5">
               <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-400">
@@ -680,7 +680,7 @@ export default async function ClientHomePage() {
             </section>
           )}
 
-          {/* Activity feed — what's been happening */}
+          {/* Activity feed - what's been happening */}
           {feed && feed.length > 0 && (
             <section className="mt-4 surface p-5">
               <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-400">
@@ -809,7 +809,7 @@ function humanizeAction(action: string): string {
     case 'phase_change':
       return 'moved your deal to';
     case 'house_added':
-      return 'added a house —';
+      return 'added a house -';
     case 'tour_confirmed':
       return 'confirmed a tour for';
     case 'tour_declined':
@@ -817,15 +817,15 @@ function humanizeAction(action: string): string {
     case 'tour_requested':
       return 'requested a tour for';
     case 'document_uploaded':
-      return 'uploaded a document —';
+      return 'uploaded a document -';
     case 'important_date_added':
-      return 'added an important date —';
+      return 'added an important date -';
     case 'alert':
-      return 'sent an alert —';
+      return 'sent an alert -';
     case 'attorney_added':
-      return 'added an attorney —';
+      return 'added an attorney -';
     case 'co_realtor_added':
-      return 'added a co-realtor —';
+      return 'added a co-realtor -';
     case 'docusign_linked':
       return 'linked a DocuSign envelope';
     case 'message':

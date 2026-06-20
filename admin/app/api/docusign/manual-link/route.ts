@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
   const url = (body?.envelopeUrl || '').trim();
   const label = (body?.label || '').trim() || null;
   const documentId = (body?.documentId || '').trim() || null;
-  // Designated signers — who on the deal is supposed to sign this.
+  // Designated signers - who on the deal is supposed to sign this.
   const rawSigners = Array.isArray(body?.signers) ? body.signers : [];
   const signers = rawSigners
     .filter((s: any) => s && (s.key || s.name))

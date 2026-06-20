@@ -1,7 +1,7 @@
 import { createBrowserClient } from '@supabase/ssr';
 
 /**
- * Browser-side Supabase client. Uses the anon key. Subject to RLS — and the
+ * Browser-side Supabase client. Uses the anon key. Subject to RLS - and the
  * RLS policies for super_admin require the user's `role` column to be
  * 'super_admin', which is checked via current_role() in Postgres.
  *

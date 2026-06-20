@@ -14,7 +14,7 @@ export const dynamic = 'force-dynamic';
  * Resolve the caller from EITHER a web cookie session (getMe) OR a mobile
  * `Authorization: Bearer <access_token>` header. Returns the same shape the
  * route needs regardless of channel. This is why the mobile app's Add Party
- * was failing with 401 — the route previously only read the cookie session.
+ * was failing with 401 - the route previously only read the cookie session.
  */
 async function resolveCaller(req: Request): Promise<{
   user_id: string;
@@ -59,7 +59,7 @@ async function resolveCaller(req: Request): Promise<{
 }
 
 /**
- * Cross-firm linking helper (Phase 2) — the API-route twin of the server
+ * Cross-firm linking helper (Phase 2) - the API-route twin of the server
  * action's tryLinkSellerDeal(). If the listing agent (by email) is an in-app
  * user, find a seller-side deal in their firm whose listing house address
  * matches the chosen house, and stamp houses.listing_search_id so the two
@@ -163,7 +163,7 @@ async function tryLinkSellerDealFromApi(
  *
  * Why a separate route from the server action: the action lives at
  * /dashboard/clients/[id]/actions.ts and is called via React server-action
- * RPC — that doesn't work from the mobile app, which is a plain HTTPS
+ * RPC - that doesn't work from the mobile app, which is a plain HTTPS
  * client. This endpoint accepts JSON + Bearer tokens.
  */
 export async function POST(req: Request) {
@@ -195,11 +195,11 @@ export async function POST(req: Request) {
       email?: string;
       phone?: string;
       represents?: 'buyer' | 'seller';
-      // PHASE 2 — house-scoped seller capture (mobile parity with the web
+      // PHASE 2 - house-scoped seller capture (mobile parity with the web
       // goUnderContractAction convergence flow). When the caller is marking a
       // buyer deal under contract on a specific house, they can pass:
-      //   house_id          — scopes this party to ONE house (they see only it)
-      //   seller_capture    — flags + seller_* fields to stamp onto the house,
+      //   house_id          - scopes this party to ONE house (they see only it)
+      //   seller_capture    - flags + seller_* fields to stamp onto the house,
       //                       flip it under contract, and attempt cross-firm
       //                       linking to the listing agent's seller deal.
       house_id?: string;
@@ -258,7 +258,7 @@ export async function POST(req: Request) {
 
     // ACCESS: caller must be (a) staff in the deal's host firm, OR
     // (b) a participating realtor on the deal (cross-firm collab), OR
-    // (c) the deal's principal client. Otherwise reject — without this
+    // (c) the deal's principal client. Otherwise reject - without this
     // check, a knowledgeable caller could POST any search_id they once
     // had visibility to and add participants there.
     const callerIsInHostFirm = (search as any).firm_id === me.firm_id;
@@ -327,7 +327,7 @@ export async function POST(req: Request) {
         ? body.represents
         : null;
 
-    // SELLER CAPTURE (Phase 2) — runs before the participant insert. If the
+    // SELLER CAPTURE (Phase 2) - runs before the participant insert. If the
     // caller passed a seller_capture block + house_id, stamp the chosen house
     // under contract with the seller_* details, flip the deal under contract,
     // and try to link the listing agent's seller deal. All best-effort: a
@@ -367,7 +367,7 @@ export async function POST(req: Request) {
             .update(searchUpd)
             .eq('id', (search as any).id);
         }
-        // Cross-firm linking — mirror the server action's tryLinkSellerDeal.
+        // Cross-firm linking - mirror the server action's tryLinkSellerDeal.
         await tryLinkSellerDealFromApi(service, {
           buyerSearchId: (search as any).id,
           firmId: (search as any).firm_id,
@@ -424,7 +424,7 @@ export async function POST(req: Request) {
     // FIRST-CLASS INVITE TOKEN.
     // Mirrors addParticipantAction(): write a deal_invites row and use the
     // returned token to build a /invite/<token> landing URL. That URL is
-    // unauthenticated, branded, and role-aware — it replaces the fragile
+    // unauthenticated, branded, and role-aware - it replaces the fragile
     // Supabase magic-link flow that used to dump recipients on /welcome
     // (and on /login when the hash never made it server-side).
     let invitePath: string | null = null;
@@ -505,7 +505,7 @@ export async function POST(req: Request) {
           encodeURIComponent('/deal/' + (search as any).id);
 
         // The /invite/<token> landing is ALWAYS the primary URL when we
-        // have one. We never generate a Supabase magic link here — that
+        // have one. We never generate a Supabase magic link here - that
         // would send Supabase's own auth email instead of our branded one.
         // The /signup URL is only a fallback for the rare case where the
         // deal_invites insert failed.
@@ -544,7 +544,7 @@ export async function POST(req: Request) {
           `${realtorName} (${firmName}) invited you to co-broker a deal as ${rolePretty}.\n\nTap to open: ${primaryUrl}`;
         const partyText =
           `${realtorName} (${firmName}) added you to a real-estate deal as ${rolePretty}.\n\nTap to accept: ${primaryUrl}`;
-        // Compact SMS body — ALWAYS uses primaryUrl (the /invite/<token>
+        // Compact SMS body - ALWAYS uses primaryUrl (the /invite/<token>
         // landing). The deal URL requires auth and dumps un-authenticated
         // visitors on /login.
         const smsBody = isRealtorRole

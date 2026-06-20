@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { completeAttorneyOnboardingAction } from './actions';
 
 /**
- * Attorney onboarding form — minimal. We only need their name; the firm
+ * Attorney onboarding form - minimal. We only need their name; the firm
  * they're attached to comes from the invite (host_firm). No password
  * setup (they signed in via magic link).
  */

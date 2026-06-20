@@ -47,7 +47,7 @@ export type ListingUploadTarget = {
 /**
  * STEP 1 (only when the seller attaches documents): mint signed upload URLs
  * for each file. The browser then uploads the bytes DIRECTLY to Supabase
- * Storage with these tokens — which (a) bypasses RLS, since signed upload URLs
+ * Storage with these tokens - which (a) bypasses RLS, since signed upload URLs
  * are pre-authorized, and (b) avoids routing big files through the Next.js
  * Server Action, whose body is capped at ~1 MB (and Vercel's function body at
  * ~4.5 MB). Without this, attaching a real PDF/photo blew past the limit and
@@ -224,7 +224,7 @@ const ALLOWED_LISTING_STATUSES = [
 ];
 
 /**
- * SELLER self-service: update one of your own listings — address, price,
+ * SELLER self-service: update one of your own listings - address, price,
  * beds/baths/sqft, photo, notes, and listing status.
  */
 export async function updateSellerListingAction(fd: FormData) {

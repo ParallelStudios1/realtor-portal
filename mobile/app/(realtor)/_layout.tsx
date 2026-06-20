@@ -3,7 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/lib/theme';
 
 /**
- * Realtor tabs — Home (overview), Clients, Messages, Settings.
+ * Realtor tabs - Home (overview), Clients, Messages, Settings.
  * Hidden routes (clients/[id], add-house, etc.) stack inside Clients.
  */
 export default function RealtorTabsLayout() {
@@ -34,7 +34,7 @@ export default function RealtorTabsLayout() {
           ),
         }}
       />
-      {/* This screen lists DEALS (one row per deal workspace), not people —
+      {/* This screen lists DEALS (one row per deal workspace), not people -
           calling it "Clients" made "2 clients / 1 deal" look like a bug. */}
       <Tabs.Screen
         name="clients"
@@ -63,7 +63,7 @@ export default function RealtorTabsLayout() {
           ),
         }}
       />
-      {/* Stacked routes — keep them out of the tab bar */}
+      {/* Stacked routes - keep them out of the tab bar */}
       <Tabs.Screen name="invite" options={{ href: null, title: 'Invite client' }} />
       <Tabs.Screen name="clients/[id]" options={{ href: null, title: 'Deal' }} />
       <Tabs.Screen name="clients/[id]/upload" options={{ href: null, title: 'Upload document' }} />

@@ -91,7 +91,7 @@ export function ClientDetailActions({
     notes: string | null;
   };
   teammates: Teammate[];
-  // The deal's houses — used by the under-contract "which house?" picker and
+  // The deal's houses - used by the under-contract "which house?" picker and
   // the convergence capture. Optional so legacy callers keep working.
   houses?: Array<{ id: string; address: string }>;
 }) {
@@ -195,7 +195,7 @@ export function ClientDetailActions({
               }
               onClick={() => setOpen('house')}
             />
-            {/* Tour requests are the CLIENT touring candidate homes — a buyer
+            {/* Tour requests are the CLIENT touring candidate homes - a buyer
                 thing. A seller's buyer-side showings live in the Listing
                 panel below, so this card would only confuse a listing deal. */}
             {dealKind !== 'seller' && (
@@ -268,7 +268,7 @@ export function ClientDetailActions({
               tone="rose"
               icon={<IconAlert />}
               title="Send alert"
-              subtitle="Urgent — pushes notification"
+              subtitle="Urgent - pushes notification"
               onClick={() => setOpen('alert')}
             />
             <ActionCard
@@ -293,7 +293,7 @@ export function ClientDetailActions({
           onSubmit={async (phase, extras) => {
             const r = await updatePhaseAction(clientId, phase as any, extras as any);
             if (!r.ok) return toast.show(r.error || 'Failed', { variant: 'error' });
-            done('Phase updated — everyone on the deal was emailed.');
+            done('Phase updated - everyone on the deal was emailed.');
           }}
         />
       )}
@@ -344,7 +344,7 @@ export function ClientDetailActions({
         />
       )}
 
-      {/* Attorney modal removed — attorneys are now added through the
+      {/* Attorney modal removed - attorneys are now added through the
           Add Party flow with role='attorney'. That path sends them a
           magic-link signup that routes to /welcome/attorney. */}
 
@@ -396,7 +396,7 @@ export function ClientDetailActions({
                 })
               );
             }
-            // Truthful toast — tells the realtor exactly which channel went
+            // Truthful toast - tells the realtor exactly which channel went
             // out (so they don't believe an email was sent when it wasn't)
             // AND prompts them to add a phone if NOTHING went out.
             const n = (r as any).notify || {};
@@ -408,14 +408,14 @@ export function ClientDetailActions({
             else if (n.email?.error) failed.push('Email: ' + n.email.error);
 
             // If we had no channel to send via, say so explicitly.
-            // (e.g. realtor entered only a name, no phone, no email — the
+            // (e.g. realtor entered only a name, no phone, no email - the
             // participant is added but they won't hear about it yet.)
             const hadContact = Boolean(payload.email || payload.phone);
             const anySent = sent.length > 0;
             if (!hadContact) {
               // Row was already dispatched above; just toast + close.
               toast.show(
-                'Party added — but no phone or email, so no invite was sent. Tap Edit to add one.',
+                'Party added - but no phone or email, so no invite was sent. Tap Edit to add one.',
                 { variant: 'info' as any }
               );
               close();
@@ -431,12 +431,12 @@ export function ClientDetailActions({
               try {
                 await navigator.clipboard.writeText(inviteUrl);
                 toast.show(
-                  'Party added. Invite link copied to your clipboard — paste it into a text or email to send it.',
+                  'Party added. Invite link copied to your clipboard - paste it into a text or email to send it.',
                   { variant: 'success' }
                 );
               } catch {
                 toast.show(
-                  'Party added. Couldn’t auto-copy the invite link — open the Edit pane to grab it.',
+                  'Party added. Couldn’t auto-copy the invite link - open the Edit pane to grab it.',
                   { variant: 'info' as any }
                 );
               }
@@ -450,7 +450,7 @@ export function ClientDetailActions({
                 { variant: 'error' }
               );
             } else {
-              done('Party added to deal — ' + sent.join(' · ') + '.');
+              done('Party added to deal - ' + sent.join(' · ') + '.');
             }
           }}
         />
@@ -502,7 +502,7 @@ export function ClientDetailActions({
           onSubmit={async (payload) => {
             const r = await goUnderContractAction(clientId, payload);
             if (!r.ok) return toast.show(r.error || 'Failed', { variant: 'error' });
-            done('Under contract — every party was notified.');
+            done('Under contract - every party was notified.');
           }}
         />
       )}
@@ -525,7 +525,7 @@ type Tone =
 
 // Flat-ink design: action tiles share ONE calm, neutral look instead of a
 // rainbow of per-tile colors. Emphasis comes from a single accent tone (the
-// primary/destructive "Go under contract") — everything else is monochrome
+// primary/destructive "Go under contract") - everything else is monochrome
 // ink, which reads as clean and professional rather than busy.
 const ACCENT_TONES: ReadonlySet<Tone> = new Set(['rose']);
 
@@ -751,7 +751,7 @@ function Modal({
   onClose: () => void;
   children: React.ReactNode;
 }) {
-  // Close on Escape — modals were mouse-only before.
+  // Close on Escape - modals were mouse-only before.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -761,7 +761,7 @@ function Modal({
   }, [onClose]);
   // PORTAL to <body>: rendered in place, `fixed` was being trapped by
   // transformed/filtered ancestors (hover translate cards, backdrop-blur),
-  // so the overlay appeared at the card's position — often below the fold —
+  // so the overlay appeared at the card's position - often below the fold -
   // instead of pinned to the viewport.
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -901,7 +901,7 @@ function PhaseModal({
   const houseList = houses || [];
   const [phase, setPhase] = useState(currentPhase);
   // Phase-specific extras. We only read out the field(s) relevant to the
-  // chosen phase when we submit — keeping them all in state lets the user
+  // chosen phase when we submit - keeping them all in state lets the user
   // freely toggle between phases without losing typed values.
   const [offer, setOffer] = useState('');
   const [offerHouseId, setOfferHouseId] = useState<string>(
@@ -990,7 +990,7 @@ function PhaseModal({
       {phase === 'offer_made' && changed && (
         <div className="mt-4 space-y-3 rounded-lg border border-amber-200 bg-amber-50/60 p-3">
           <Field
-            label="Offer amount (USD) — required"
+            label="Offer amount (USD) - required"
             hint="Goes on the deal record and into the update everyone receives."
           >
             <input
@@ -1003,7 +1003,7 @@ function PhaseModal({
             />
           </Field>
           <Field
-            label="Which house is the offer on? — required"
+            label="Which house is the offer on? - required"
             hint={
               houseList.length === 0
                 ? 'Add a house to this deal first, then move to Offer made.'
@@ -1027,7 +1027,7 @@ function PhaseModal({
       )}
       {phase === 'counter_offer' && changed && (
         <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50/60 p-3">
-          <Field label="Counter offer amount (USD) — required">
+          <Field label="Counter offer amount (USD) - required">
             <input
               type="number"
               className={inputCls}
@@ -1043,7 +1043,7 @@ function PhaseModal({
         <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50/60 p-3 text-xs">
           <p className="text-[11px] text-blue-900">
             Under contract is handled by the full{' '}
-            <strong>Go under contract</strong> flow — it captures the house, key
+            <strong>Go under contract</strong> flow - it captures the house, key
             dates (binding, earnest, due diligence, closing), the contract, and
             the seller side, then emails everyone.
           </p>
@@ -1059,7 +1059,7 @@ function PhaseModal({
       {phase === 'closing' && changed && (
         <div className="mt-4 grid grid-cols-2 gap-3 rounded-lg border border-blue-200 bg-blue-50/60 p-3">
           <Field
-            label="Closing date — required"
+            label="Closing date - required"
             hint="Added as an Important Date for the deal."
           >
             <input
@@ -1070,7 +1070,7 @@ function PhaseModal({
               autoFocus
             />
           </Field>
-          <Field label="Closing amount (USD) — required">
+          <Field label="Closing amount (USD) - required">
             <input
               type="number"
               className={inputCls}
@@ -1084,7 +1084,7 @@ function PhaseModal({
       {phase === 'closed' && changed && (
         <div className="mt-4 space-y-3 rounded-lg border border-emerald-200 bg-emerald-50/60 p-3">
           <Field
-            label="Final closing amount (USD) — required"
+            label="Final closing amount (USD) - required"
             hint={
               currentClosingAmount != null && currentClosingAmount > 0
                 ? 'Leave blank to keep the amount already on the deal.'
@@ -1105,7 +1105,7 @@ function PhaseModal({
           </Field>
           <Field
             label="Closing wrap-up message (optional)"
-            hint="Sent to everyone on the deal — client, co-realtor, attorney, lender, etc."
+            hint="Sent to everyone on the deal - client, co-realtor, attorney, lender, etc."
           >
             <textarea
               rows={4}
@@ -1230,7 +1230,7 @@ function HouseModal({
             placeholder="123 Main St, Atlanta GA"
           />
         </Field>
-        <Field label="Listing URL" hint="Optional — paste the Zillow, Redfin, or Realtor.com link for this property">
+        <Field label="Listing URL" hint="Optional - paste the Zillow, Redfin, or Realtor.com link for this property">
           <input
             className={inputCls}
             value={listingUrl}
@@ -1436,7 +1436,7 @@ function DateModal({
         </div>
         <Field
           label="Location (optional)"
-          hint="Address, room number, Zoom link — anything participants need to find the event."
+          hint="Address, room number, Zoom link - anything participants need to find the event."
         >
           <input
             className={inputCls}
@@ -1498,7 +1498,7 @@ function DocusignModal({
   const [pending, start] = useTransition();
   return (
     <Modal title="Link a DocuSign envelope" onClose={onClose}>
-      <Field label="Envelope URL" hint="Paste from DocuSign — the link will appear at the top of this client's deal">
+      <Field label="Envelope URL" hint="Paste from DocuSign - the link will appear at the top of this client's deal">
         <input
           className={inputCls}
           value={url}
@@ -1538,7 +1538,7 @@ function AttorneyModal({
         <Field label="Name">
           <input className={inputCls} value={name} onChange={(e) => setName(e.target.value)} />
         </Field>
-        <Field label="Email — required" hint="How they get access to the deal.">
+        <Field label="Email - required" hint="How they get access to the deal.">
           <input
             type="email"
             className={inputCls}
@@ -1612,7 +1612,7 @@ function MessageModal({
 const PARTY_ROLES: { id: PartyRole; label: string; helper: string }[] = [
   { id: 'buyer', label: 'Buyer', helper: 'Second buyer (spouse, partner, co-purchaser)' },
   { id: 'seller', label: 'Seller', helper: 'For listing-side deals' },
-  { id: 'co_realtor', label: 'Co-realtor', helper: 'Another agent — your firm or a cross-firm co-op agent' },
+  { id: 'co_realtor', label: 'Co-realtor', helper: 'Another agent - your firm or a cross-firm co-op agent' },
   { id: 'attorney', label: 'Attorney', helper: 'Closing / real-estate counsel' },
   { id: 'inspector', label: 'Inspector', helper: 'Property inspector' },
   { id: 'lender', label: 'Lender', helper: 'Mortgage lender' },
@@ -1661,7 +1661,7 @@ function ParticipantModal({
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  // Visibility checkboxes — seeded from the role-based defaults for the initial
+  // Visibility checkboxes - seeded from the role-based defaults for the initial
   // role ('buyer'). Changing the Role <select> resets these to that role's
   // defaults (the realtor can then override any individual checkbox before
   // submitting).
@@ -1986,7 +1986,7 @@ function ParticipantModal({
           />
         </Field>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Email — required" hint="How they get access to the deal.">
+          <Field label="Email - required" hint="How they get access to the deal.">
             <input
               type="email"
               className={inputCls}
@@ -2031,7 +2031,7 @@ function ParticipantModal({
           (houses?.length || 0) > 0 && (
             <Field
               label="Which house is this for? (optional)"
-              hint="Scopes a seller, buyer, or co-realtor to one property — their dashboard shows exactly that home."
+              hint="Scopes a seller, buyer, or co-realtor to one property - their dashboard shows exactly that home."
             >
               <select
                 className={inputCls}
@@ -2160,7 +2160,7 @@ export function ParticipantList({
   const [live, setLive] = useState<ParticipantRow[]>(participants);
 
   // ADDITIVE merge of the server prop. We never REMOVE a row from `live`
-  // by this path — only an explicit Remove click does that. This matters
+  // by this path - only an explicit Remove click does that. This matters
   // because Next.js can serve stale `participants` during a router.refresh
   // race, and we don't want a just-added row to flash on then disappear.
   //
@@ -2180,7 +2180,7 @@ export function ParticipantList({
    * Pull the latest deal_participants for this search directly from
    * Supabase via the browser client. RLS makes sure we only see rows
    * we're allowed to. Used as the source-of-truth refresh whenever the
-   * modal triggers an add — bypasses any Next.js caching by going straight
+   * modal triggers an add - bypasses any Next.js caching by going straight
    * to the database.
    */
   async function refetchParticipants() {
@@ -2194,7 +2194,7 @@ export function ParticipantList({
       .eq('search_id', searchId)
       .order('role');
     if (error || !data) return;
-    // Additive merge — same rules as the prop-effect. NEVER drop rows
+    // Additive merge - same rules as the prop-effect. NEVER drop rows
     // locally; only the Remove button can do that. This prevents a brief
     // appear-then-vanish if the fresh fetch arrives before RLS has caught
     // up to the just-inserted row (rare but I've watched it happen).
@@ -2208,7 +2208,7 @@ export function ParticipantList({
 
   // Realtime subscription. Listens to inserts/updates/deletes for this
   // deal's participants and patches `live` directly. Means a new party
-  // shows up the moment the server INSERT commits — no caching games.
+  // shows up the moment the server INSERT commits - no caching games.
   useEffect(() => {
     if (!searchId) return;
     const sb = getSupabaseBrowserClient();
@@ -2269,7 +2269,7 @@ export function ParticipantList({
   // running on the same page. Realtime is great when the change comes from
   // a DIFFERENT browser session, but for the user adding parties themselves
   // the round-trip through Supabase Realtime is slow + can be lost. We have
-  // the row in hand the moment the server action returns — patch directly,
+  // the row in hand the moment the server action returns - patch directly,
   // then re-fetch from the DB as ground truth.
   useEffect(() => {
     const onAdded = (e: Event) => {
@@ -2312,7 +2312,7 @@ export function ParticipantList({
                   {p.represents ? ' · represents ' + p.represents : ''}
                 </span>
                 <span className="truncate text-sm font-semibold">
-                  {p.external_name || p.external_email || '—'}
+                  {p.external_name || p.external_email || '-'}
                 </span>
               </div>
               {p.external_email && (
@@ -2474,7 +2474,7 @@ function EditPartyModal({
           />
         </Field>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Email — required">
+          <Field label="Email - required">
             <input
               type="email"
               className={inputCls}
@@ -2591,7 +2591,7 @@ function PrivatePartyMessageModal({
   return (
     <Modal title={`Message ${displayName}`} onClose={onClose}>
       <p className="mb-3 text-xs text-ink-500">
-        Private — only you and {displayName} can see this thread. We&apos;ll
+        Private - only you and {displayName} can see this thread. We&apos;ll
         also text + email them so they actually catch the message.
       </p>
       <div className="mb-3 max-h-56 overflow-y-auto rounded-lg border border-ink-200 bg-ink-50/40 p-2">
@@ -2657,7 +2657,7 @@ function PrivatePartyMessageModal({
                 toast.show(r.error || 'Failed', { variant: 'error' });
                 return;
               }
-              toast.show('Sent — they were texted + emailed.', {
+              toast.show('Sent - they were texted + emailed.', {
                 variant: 'success',
               });
               // Append optimistically to the thread.
@@ -2722,7 +2722,7 @@ function NewDealModal({
   return (
     <Modal title="Start another deal" onClose={onClose}>
       <p className="mb-3 text-xs text-ink-500">
-        Use this when the same client has multiple deals — e.g. a buyer who's
+        Use this when the same client has multiple deals - e.g. a buyer who's
         also selling, or a return client a year later.
       </p>
       <Field label="Type">
@@ -2744,7 +2744,7 @@ function NewDealModal({
           ))}
         </div>
       </Field>
-      <Field label="Name (optional)" hint="e.g. '2nd home — Marietta'. Defaults to the client name.">
+      <Field label="Name (optional)" hint="e.g. '2nd home - Marietta'. Defaults to the client name.">
         <input
           className={inputCls}
           value={name}
@@ -2836,12 +2836,12 @@ function UnderContractModal({
           <input type="url" className={inputCls} value={contract} onChange={(e) => setContract(e.target.value)} />
         </Field>
 
-        {/* Convergence capture — buyer deals only. Optional / skippable. */}
+        {/* Convergence capture - buyer deals only. Optional / skippable. */}
         {showCapture && (
           <div className="rounded-lg border border-ink-200 bg-ink-50/60 p-3">
             <Field
               label="Which house?"
-              hint="Pick the property you're going under contract on — it gets marked under contract."
+              hint="Pick the property you're going under contract on - it gets marked under contract."
             >
               <select
                 className={inputCls}
@@ -2909,7 +2909,7 @@ function UnderContractModal({
                 </div>
                 <p className="text-[11px] text-ink-400">
                   We'll invite the listing agent (and seller, if given) to this
-                  one property only — they never see the buyer's other houses.
+                  one property only - they never see the buyer's other houses.
                 </p>
               </div>
             )}
@@ -2982,7 +2982,7 @@ function MassInviteModal({
     setRows((r) => r.map((x) => (x.id === id ? { ...x, ...patch } : x)));
   }
 
-  // Bulk paste — if someone pastes a list of emails into ANY email field,
+  // Bulk paste - if someone pastes a list of emails into ANY email field,
   // explode it into multiple rows so they don't have to add+paste each.
   function handlePaste(id: string, text: string) {
     const found = text
@@ -3144,7 +3144,7 @@ function FinancialsModal({
         <Field label="Contract URL" hint="Link to signed PDF or DocuSign envelope">
           <input type="url" className={inputCls} value={contractUrl} onChange={(e) => setContractUrl(e.target.value)} />
         </Field>
-        <Field label="Internal notes" hint="Visible only to your firm — clients can't see this">
+        <Field label="Internal notes" hint="Visible only to your firm - clients can't see this">
           <textarea rows={3} className={inputCls} value={notes} onChange={(e) => setNotes(e.target.value)} />
         </Field>
       </div>

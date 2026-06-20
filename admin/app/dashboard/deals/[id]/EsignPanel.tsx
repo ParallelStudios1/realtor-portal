@@ -257,7 +257,7 @@ export function EsignPanel({
                   disabled={busy}
                   className="w-full rounded-lg border border-ink-200 bg-white px-3 py-2 text-sm text-ink-900 focus:border-ink-400 focus:outline-none"
                 >
-                  <option value="">— Not tied to a document —</option>
+                  <option value="">- Not tied to a document -</option>
                   {documents.map((d) => (
                     <option key={d.id} value={d.id}>
                       {d.name}
@@ -417,7 +417,7 @@ export function EsignPanel({
                     </div>
                   </div>
 
-                  {/* Designated signers — who must sign + check them off. */}
+                  {/* Designated signers - who must sign + check them off. */}
                   {signers.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-1.5">
                       {signers.map((s) => {
