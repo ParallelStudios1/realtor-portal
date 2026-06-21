@@ -51,7 +51,7 @@ export default function OversightScreen() {
         .select(
           'id, label, date, search_id, acknowledged_at, search:client_searches!important_dates_search_id_fkey ( id, name, realtor:users!client_searches_realtor_id_fkey ( full_name, email ) )'
         )
-        .eq('firm_id', userProfile!.firm_id)
+        .eq('firm_id', userProfile!.firm_id as string)
         .is('completed_at', null)
         .lte('date', horizon.toISOString().slice(0, 10))
         .order('date', { ascending: true });

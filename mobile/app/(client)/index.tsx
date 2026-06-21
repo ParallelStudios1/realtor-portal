@@ -757,11 +757,12 @@ export default function ClientHomeScreen() {
             )}
 
             {/* Read-only deal info, visible to the client just like the
-                realtor sees it: tours, financials, offers, signing links. */}
-            <TourRequestsCard tours={tours ?? []} colors={colors} />
-            <FinancialsCard search={activeSearch} colors={colors} />
-            <OffersCard offers={offers ?? []} colors={colors} />
-            <SigningLinksCard envelopes={envelopes ?? []} colors={colors} />
+                realtor sees it: tours, financials, offers, signing links.
+                flush because this column is already padded. */}
+            <TourRequestsCard tours={tours ?? []} colors={colors} flush />
+            <FinancialsCard search={activeSearch} colors={colors} flush />
+            <OffersCard offers={offers ?? []} colors={colors} flush />
+            <SigningLinksCard envelopes={envelopes ?? []} colors={colors} flush />
 
             {/* Quick links */}
             <View style={s.quickRow}>

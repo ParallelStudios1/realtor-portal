@@ -216,9 +216,13 @@ export default function FirmControlScreen() {
         </Text>
         {(data?.members || []).map((m) => (
           <View key={m.id} style={[s.row, { borderColor: colors.border, backgroundColor: colors.surface }]}>
-            <View style={{ flex: 1 }}>
-              <Text style={{ color: colors.text, fontWeight: '700' }}>{m.full_name || m.email}</Text>
-              <Text style={{ color: colors.textSecondary, fontSize: 12 }}>{m.email}</Text>
+            <View style={{ flex: 1, minWidth: 0, marginRight: 8 }}>
+              <Text style={{ color: colors.text, fontWeight: '700' }} numberOfLines={1}>
+                {m.full_name || m.email}
+              </Text>
+              <Text style={{ color: colors.textSecondary, fontSize: 12 }} numberOfLines={1}>
+                {m.email}
+              </Text>
             </View>
             {data?.canManage && m.id !== data.meId ? (
               <>

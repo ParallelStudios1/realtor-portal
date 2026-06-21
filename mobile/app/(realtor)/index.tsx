@@ -117,12 +117,10 @@ export default function RealtorHome() {
           Here's your day at a glance.
         </Text>
 
-        {/* Trial countdown + manage-plan link (no in-app payment). The
-            banner's own horizontal margin is cancelled here since this
-            ScrollView is already padded. */}
-        <View style={{ marginHorizontal: -20 }}>
-          <TrialBanner firmId={userProfile?.firm_id} />
-        </View>
+        {/* Trial countdown + manage-plan link (no in-app payment). flush so it
+            aligns with the padded content instead of poking past it. */}
+        <TrialBanner firmId={userProfile?.firm_id} flush />
+        <View style={{ height: 16 }} />
 
         <View style={s.statRow}>
           {stats === undefined ? (
@@ -182,10 +180,9 @@ export default function RealtorHome() {
             onPress={() => router.push('/(realtor)/messages')}
             colors={colors}
           />
-          {(userProfile?.role === 'owner' ||
-            userProfile?.role === 'firm_admin' ||
-            userProfile?.role === 'manager' ||
-            userProfile?.role === 'super_admin') && (
+          {['owner', 'firm_admin', 'manager', 'super_admin'].includes(
+            (userProfile?.role as string) || ''
+          ) && (
             <>
               <Action
                 icon="people-outline"
@@ -381,7 +378,9 @@ function Action({
       ]}
     >
       <Ionicons name={icon} size={22} color={colors.primary} />
-      <Text style={[s.actionLabel, { color: colors.text }]}>{label}</Text>
+      <Text style={[s.actionLabel, { color: colors.text }]} numberOfLines={1}>
+        {label}
+      </Text>
     </Pressable>
   );
 }
@@ -401,9 +400,11 @@ const s = StyleSheet.create({
   statValue: { fontSize: 22, fontWeight: '800', marginTop: 6 },
   statLabel: { fontSize: 12, marginTop: 2 },
   sectionTitle: { fontSize: 14, fontWeight: '700', marginTop: 24, marginBottom: 10 },
-  actions: { flexDirection: 'row', gap: 12 },
+  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   action: {
-    flex: 1,
+    flexBasis: '47%',
+    flexGrow: 1,
+    minWidth: 0,
     borderRadius: 14,
     borderWidth: 1,
     padding: 14,
@@ -411,7 +412,7 @@ const s = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
   },
-  actionLabel: { fontSize: 13, fontWeight: '600' },
+  actionLabel: { fontSize: 13, fontWeight: '600', flexShrink: 1 },
   recentRow: {
     paddingVertical: 10,
     borderBottomWidth: 1,

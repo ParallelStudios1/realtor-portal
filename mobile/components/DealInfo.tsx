@@ -20,9 +20,11 @@ function money(v: any): string | null {
 export function FinancialsCard({
   search,
   colors,
+  flush = false,
 }: {
   search: any;
   colors: any;
+  flush?: boolean;
 }) {
   const rows: { label: string; value: string }[] = [];
   const push = (label: string, v: string | null) => {
@@ -48,7 +50,7 @@ export function FinancialsCard({
   if (rows.length === 0 && !search?.contract_url) return null;
 
   return (
-    <View style={styles.section}>
+    <View style={[styles.section, flush && styles.sectionFlush]}>
       <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
         FINANCIALS
       </Text>
@@ -92,13 +94,15 @@ export function FinancialsCard({
 export function OffersCard({
   offers,
   colors,
+  flush = false,
 }: {
   offers: any[];
   colors: any;
+  flush?: boolean;
 }) {
   if (!offers || offers.length === 0) return null;
   return (
-    <View style={styles.section}>
+    <View style={[styles.section, flush && styles.sectionFlush]}>
       <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
         OFFERS RECEIVED ({offers.length})
       </Text>
@@ -153,13 +157,15 @@ export function OffersCard({
 export function SigningLinksCard({
   envelopes,
   colors,
+  flush = false,
 }: {
   envelopes: any[];
   colors: any;
+  flush?: boolean;
 }) {
   if (!envelopes || envelopes.length === 0) return null;
   return (
-    <View style={styles.section}>
+    <View style={[styles.section, flush && styles.sectionFlush]}>
       <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
         SIGNING LINKS ({envelopes.length})
       </Text>
@@ -248,12 +254,14 @@ export function TourRequestsCard({
   onConfirm,
   onDecline,
   actingId,
+  flush = false,
 }: {
   tours: any[];
   colors: any;
   onConfirm?: (id: string) => void;
   onDecline?: (id: string) => void;
   actingId?: string | null;
+  flush?: boolean;
 }) {
   const [expanded, setExpanded] = useState<string | null>(null);
   const pending = (tours || []).filter(
@@ -368,7 +376,7 @@ export function TourRequestsCard({
   };
 
   return (
-    <View style={styles.section}>
+    <View style={[styles.section, flush && styles.sectionFlush]}>
       <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
         TOUR REQUESTS{pending.length ? ` · ${pending.length} pending` : ''}
       </Text>
@@ -380,6 +388,7 @@ export function TourRequestsCard({
 
 const styles = StyleSheet.create({
   section: { paddingHorizontal: 16, paddingTop: 16 },
+  sectionFlush: { paddingHorizontal: 0 },
   sectionLabel: {
     fontSize: 11,
     fontWeight: '700',

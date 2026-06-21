@@ -27,9 +27,13 @@ export function trialDaysLeft(trialEndsAt: string | null | undefined): number | 
 export function TrialBanner({
   firmId,
   compact = false,
+  flush = false,
 }: {
   firmId: string | null | undefined;
   compact?: boolean;
+  // When true, drop the built-in horizontal margin (use inside an already-
+  // padded container so the banner aligns with sibling content).
+  flush?: boolean;
 }) {
   const { colors } = useTheme();
   const { data: firm } = useFirm(firmId);
@@ -58,6 +62,7 @@ export function TrialBanner({
       style={[
         styles.wrap,
         compact && styles.wrapCompact,
+        flush && { marginHorizontal: 0 },
         { borderColor: tone, backgroundColor: colors.surface },
       ]}
     >
