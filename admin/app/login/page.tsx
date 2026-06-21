@@ -20,7 +20,7 @@ export default function LoginPage({
 
         <div className="rounded-2xl border border-ink-200 bg-white p-8 shadow-soft-lg">
           <div className="mb-1 flex items-center gap-2">
-            <span className="inline-block h-7 w-7 rounded-lg bg-ink-900" />
+            <img src="/logo.png" alt="" className="h-7 w-7 rounded-lg" />
             <span className="text-sm font-bold tracking-tight">Realtor Portal</span>
           </div>
           <h1 className="mt-4 text-3xl font-bold tracking-tight">
