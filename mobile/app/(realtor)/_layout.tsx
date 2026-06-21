@@ -64,6 +64,8 @@ export default function RealtorTabsLayout() {
         }}
       />
       {/* Stacked routes - keep them out of the tab bar */}
+      <Tabs.Screen name="firm" options={{ href: null, title: 'Firm control' }} />
+      <Tabs.Screen name="oversight" options={{ href: null, title: 'Oversight' }} />
       <Tabs.Screen name="invite" options={{ href: null, title: 'Invite client' }} />
       <Tabs.Screen name="clients/[id]" options={{ href: null, title: 'Deal' }} />
       <Tabs.Screen name="clients/[id]/upload" options={{ href: null, title: 'Upload document' }} />

@@ -182,6 +182,25 @@ export default function RealtorHome() {
             onPress={() => router.push('/(realtor)/messages')}
             colors={colors}
           />
+          {(userProfile?.role === 'owner' ||
+            userProfile?.role === 'firm_admin' ||
+            userProfile?.role === 'manager' ||
+            userProfile?.role === 'super_admin') && (
+            <>
+              <Action
+                icon="people-outline"
+                label="Firm control"
+                onPress={() => router.push('/(realtor)/firm' as any)}
+                colors={colors}
+              />
+              <Action
+                icon="trending-up-outline"
+                label="Oversight"
+                onPress={() => router.push('/(realtor)/oversight' as any)}
+                colors={colors}
+              />
+            </>
+          )}
         </View>
 
         {pendingTours && pendingTours.length > 0 && (
