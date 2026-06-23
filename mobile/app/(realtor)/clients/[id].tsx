@@ -28,6 +28,7 @@ import {
 import { useUpdateTourRequest } from '@/lib/mutations';
 import { useToast } from '@/components/Toast';
 import { humanError } from '@/lib/humanError';
+import { apiFetch } from '@/lib/api';
 import { ActivityRow } from '@/components/ActivityRow';
 import { Skeleton } from '@/components/Skeleton';
 import { AgreedHomeCard } from '@/components/AgreedHomeCard';
@@ -67,11 +68,12 @@ export default function RealtorClientDetailScreen() {
 
   const handleTour = async (
     tourRequestId: string,
-    status: 'confirmed' | 'declined'
+    status: 'confirmed' | 'declined',
+    confirmedWhen?: Date | null
   ) => {
     setActingTour(tourRequestId);
     try {
-      await updateTour.mutateAsync({ tourRequestId, status });
+      await updateTour.mutateAsync({ tourRequestId, status, confirmedWhen });
       await refetchTours();
       toast.show(
         status === 'confirmed' ? 'Tour confirmed.' : 'Tour declined.',
@@ -81,6 +83,22 @@ export default function RealtorClientDetailScreen() {
       toast.show(humanError(e), { variant: 'error' });
     } finally {
       setActingTour(null);
+    }
+  };
+
+  const [dateBusy, setDateBusy] = React.useState<string | null>(null);
+  const toggleDateDone = async (dateId: string, currentlyDone: boolean) => {
+    setDateBusy(dateId);
+    try {
+      await apiFetch('/api/dates/complete', {
+        method: 'POST',
+        body: { date_id: dateId, done: !currentlyDone },
+      });
+      await refetchDates();
+    } catch (e: any) {
+      toast.show(humanError(e), { variant: 'error' });
+    } finally {
+      setDateBusy(null);
     }
   };
 
@@ -436,7 +454,8 @@ export default function RealtorClientDetailScreen() {
           tours={tours ?? []}
           colors={colors}
           actingId={actingTour}
-          onConfirm={(tid) => handleTour(tid, 'confirmed')}
+          allowReschedule
+          onConfirm={(tid, when) => handleTour(tid, 'confirmed', when)}
           onDecline={(tid) => handleTour(tid, 'declined')}
         />
 
@@ -464,21 +483,39 @@ export default function RealtorClientDetailScreen() {
               None yet.
             </Text>
           ) : (
-            (dates ?? []).map((d: any) => (
-              <View
-                key={d.id}
-                style={[styles.dateRow, { borderBottomColor: colors.border }]}
-              >
-                <Text style={[styles.dateLabel, { color: colors.text }]}>
-                  {d.label}
-                </Text>
-                <Text
-                  style={[styles.dateValue, { color: colors.textSecondary }]}
+            (dates ?? []).map((d: any) => {
+              const done = !!d.completed_at;
+              return (
+                <Pressable
+                  key={d.id}
+                  onPress={() => toggleDateDone(d.id, done)}
+                  disabled={dateBusy === d.id}
+                  style={[styles.dateRow, { borderBottomColor: colors.border }]}
                 >
-                  {new Date(d.date).toLocaleDateString()}
-                </Text>
-              </View>
-            ))
+                  <Ionicons
+                    name={done ? 'checkmark-circle' : 'ellipse-outline'}
+                    size={20}
+                    color={done ? (colors.success || '#16a34a') : colors.textSecondary}
+                    style={{ marginRight: 10 }}
+                  />
+                  <Text
+                    style={[
+                      styles.dateLabel,
+                      {
+                        color: done ? colors.textSecondary : colors.text,
+                        textDecorationLine: done ? 'line-through' : 'none',
+                        flex: 1,
+                      },
+                    ]}
+                  >
+                    {d.label}
+                  </Text>
+                  <Text style={[styles.dateValue, { color: colors.textSecondary }]}>
+                    {new Date(d.date).toLocaleDateString()}
+                  </Text>
+                </Pressable>
+              );
+            })
           )}
         </SectionCard>
 
@@ -789,8 +826,9 @@ const styles = StyleSheet.create({
   chipText: { fontSize: 10, fontWeight: '700', textTransform: 'capitalize' },
   dateRow: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 8,
+    paddingVertical: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   dateLabel: { fontSize: 14, fontWeight: '500' },

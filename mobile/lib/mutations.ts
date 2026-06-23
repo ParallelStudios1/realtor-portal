@@ -921,9 +921,12 @@ export function useUpdateTourRequest() {
     mutationFn: async ({
       tourRequestId,
       status,
+      confirmedWhen,
     }: {
       tourRequestId: string;
       status: TourRequestStatus;
+      // Optional: the realtor sets/changes the tour time while accepting.
+      confirmedWhen?: Date | null;
     }) => {
       // Pull the row first so we can build the important_dates row off it.
       const { data: req, error: fetchErr } = await supabase
@@ -936,9 +939,13 @@ export function useUpdateTourRequest() {
       const update: {
         status: TourRequestStatus;
         handled_at?: string;
+        realtor_proposed_when?: string;
       } = { status };
       if (status === 'confirmed' || status === 'declined') {
         update.handled_at = new Date().toISOString();
+      }
+      if (status === 'confirmed' && confirmedWhen) {
+        update.realtor_proposed_when = confirmedWhen.toISOString();
       }
 
       const { error: updErr } = await supabase
@@ -980,10 +987,12 @@ export function useUpdateTourRequest() {
           .eq('id', req.house_id)
           .single();
 
-        // Try to parse preferred_when as a date; fall back to today.
-        const tryDate = req.preferred_when
-          ? new Date(req.preferred_when)
-          : new Date();
+        // Prefer the realtor's chosen time, then the client's requested time.
+        const tryDate = confirmedWhen
+          ? confirmedWhen
+          : req.preferred_when
+            ? new Date(req.preferred_when)
+            : new Date();
         const dateStr = isNaN(tryDate.getTime())
           ? new Date().toISOString().slice(0, 10)
           : tryDate.toISOString().slice(0, 10);

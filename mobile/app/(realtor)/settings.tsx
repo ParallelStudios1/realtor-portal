@@ -455,39 +455,11 @@ export default function RealtorSettingsScreen() {
                 style={[styles.input, { color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]}
               />
 
-              <View style={styles.row}>
-                <View style={{ flex: 1 }}>
-                  <FieldLabel colors={colors}>Brand color</FieldLabel>
-                  <View style={styles.colorRow}>
-                    <View style={[styles.swatch, { backgroundColor: HEX_RE.test(brandColor) ? brandColor : colors.border, borderColor: colors.border }]} />
-                    <TextInput
-                      value={brandColor}
-                      onChangeText={setBrandColor}
-                      autoCapitalize="none"
-                      autoCorrect={false}
-                      placeholder="#0F172A"
-                      placeholderTextColor={colors.textSecondary}
-                      style={[styles.input, { flex: 1, color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]}
-                    />
-                  </View>
-                </View>
-                <View style={{ width: 12 }} />
-                <View style={{ flex: 1 }}>
-                  <FieldLabel colors={colors}>Accent color</FieldLabel>
-                  <View style={styles.colorRow}>
-                    <View style={[styles.swatch, { backgroundColor: HEX_RE.test(accentColor) ? accentColor : colors.border, borderColor: colors.border }]} />
-                    <TextInput
-                      value={accentColor}
-                      onChangeText={setAccentColor}
-                      autoCapitalize="none"
-                      autoCorrect={false}
-                      placeholder="#2563EB"
-                      placeholderTextColor={colors.textSecondary}
-                      style={[styles.input, { flex: 1, color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]}
-                    />
-                  </View>
-                </View>
-              </View>
+              <FieldLabel colors={colors}>Brand color</FieldLabel>
+              <ColorPicker value={brandColor} onChange={setBrandColor} colors={colors} />
+
+              <FieldLabel colors={colors}>Accent color</FieldLabel>
+              <ColorPicker value={accentColor} onChange={setAccentColor} colors={colors} />
 
               <FieldLabel colors={colors}>Contact phone</FieldLabel>
               <TextInput
@@ -658,7 +630,73 @@ function FieldLabel({
   return <Text style={[styles.fieldLabel, { color: colors.text }]}>{children}</Text>;
 }
 
+// A tap-to-pick color palette plus a hex field for anything custom. Covers the
+// usable range without pulling in a native color-wheel dependency.
+const COLOR_SWATCHES = [
+  '#0F172A', '#1F2937', '#334155', '#0EA5E9', '#2563EB', '#1D4ED8',
+  '#4F46E5', '#7C3AED', '#9333EA', '#DB2777', '#E11D48', '#DC2626',
+  '#EA580C', '#D97706', '#CA8A04', '#16A34A', '#059669', '#0D9488',
+  '#475569', '#000000',
+];
+
+function ColorPicker({
+  value,
+  onChange,
+  colors,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  colors: ReturnType<typeof useTheme>['colors'];
+}) {
+  const valid = HEX_RE.test(value);
+  return (
+    <View style={{ marginBottom: 4 }}>
+      <View style={styles.swatchGrid}>
+        {COLOR_SWATCHES.map((c) => {
+          const selected = value?.toUpperCase() === c.toUpperCase();
+          return (
+            <Pressable
+              key={c}
+              onPress={() => onChange(c)}
+              style={[
+                styles.swatchDot,
+                {
+                  backgroundColor: c,
+                  borderColor: selected ? colors.text : 'rgba(0,0,0,0.15)',
+                  borderWidth: selected ? 3 : 1,
+                },
+              ]}
+            />
+          );
+        })}
+      </View>
+      <View style={styles.colorRow}>
+        <View
+          style={[
+            styles.swatch,
+            { backgroundColor: valid ? value : colors.border, borderColor: colors.border },
+          ]}
+        />
+        <TextInput
+          value={value}
+          onChangeText={onChange}
+          autoCapitalize="none"
+          autoCorrect={false}
+          placeholder="#0F172A"
+          placeholderTextColor={colors.textSecondary}
+          style={[
+            styles.input,
+            { flex: 1, color: colors.text, borderColor: colors.border, backgroundColor: colors.background },
+          ]}
+        />
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
+  swatchGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 10 },
+  swatchDot: { width: 30, height: 30, borderRadius: 15 },
   container: { flex: 1 },
   body: { padding: 20, paddingBottom: 60 },
   sectionHeader: {

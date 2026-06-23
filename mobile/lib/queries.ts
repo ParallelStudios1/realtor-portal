@@ -157,13 +157,14 @@ export function useActivities(searchId: string | null | undefined) {
     queryKey: ['activities', searchId],
     queryFn: async () => {
       if (!searchId) return [];
+      // Join the actor so the feed shows a real name instead of "Unknown".
       const { data, error } = await supabase
         .from('activities')
-        .select('*')
+        .select('*, actor:users!activities_actor_id_fkey ( full_name, email )')
         .eq('search_id', searchId)
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return data as Activity[];
+      return data as any[];
     },
     enabled: !!searchId,
   });

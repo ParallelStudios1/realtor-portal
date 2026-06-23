@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, Linking } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Linking, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { formatPrice } from '@/lib/format';
 
 /**
@@ -255,15 +256,19 @@ export function TourRequestsCard({
   onDecline,
   actingId,
   flush = false,
+  allowReschedule = false,
 }: {
   tours: any[];
   colors: any;
-  onConfirm?: (id: string) => void;
+  onConfirm?: (id: string, when?: Date | null) => void;
   onDecline?: (id: string) => void;
   actingId?: string | null;
   flush?: boolean;
+  allowReschedule?: boolean;
 }) {
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [chosen, setChosen] = useState<Record<string, Date>>({});
+  const [pickerFor, setPickerFor] = useState<string | null>(null);
   const pending = (tours || []).filter(
     (t) => (t.status || 'pending') === 'pending'
   );
@@ -337,6 +342,43 @@ export function TourRequestsCard({
                 No notes from the client.
               </Text>
             )}
+            {isPending && allowReschedule ? (
+              <View style={{ marginTop: 8 }}>
+                <Text style={[styles.offerMeta, { color: colors.textSecondary }]}>
+                  Tour time:{' '}
+                  <Text style={{ color: colors.text, fontWeight: '700' }}>
+                    {(chosen[t.id] || when)
+                      ? (chosen[t.id] || when)!.toLocaleString(undefined, {
+                          weekday: 'short',
+                          month: 'short',
+                          day: 'numeric',
+                          hour: 'numeric',
+                          minute: '2-digit',
+                        })
+                      : 'Set a time'}
+                  </Text>
+                </Text>
+                <Pressable
+                  onPress={() => setPickerFor(pickerFor === t.id ? null : t.id)}
+                  style={{ paddingVertical: 6 }}
+                >
+                  <Text style={{ color: colors.primary, fontWeight: '600', fontSize: 12 }}>
+                    Change date / time
+                  </Text>
+                </Pressable>
+                {pickerFor === t.id ? (
+                  <DateTimePicker
+                    mode="datetime"
+                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                    value={chosen[t.id] || when || new Date()}
+                    onChange={(_e: any, d?: Date) => {
+                      if (Platform.OS !== 'ios') setPickerFor(null);
+                      if (d) setChosen((m) => ({ ...m, [t.id]: d }));
+                    }}
+                  />
+                ) : null}
+              </View>
+            ) : null}
             {isPending && onConfirm && onDecline ? (
               <View style={styles.tourActions}>
                 <Pressable
@@ -353,7 +395,7 @@ export function TourRequestsCard({
                 </Pressable>
                 <Pressable
                   disabled={acting}
-                  onPress={() => onConfirm(t.id)}
+                  onPress={() => onConfirm(t.id, chosen[t.id] || null)}
                   style={[
                     styles.tourBtn,
                     { backgroundColor: colors.primary, borderColor: colors.primary },

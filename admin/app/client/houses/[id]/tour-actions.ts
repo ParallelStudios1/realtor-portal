@@ -35,7 +35,7 @@ export async function requestTourAction(
   // Resolve the house's search and confirm it belongs to this client.
   const { data: house } = await service
     .from('houses')
-    .select('id, firm_id, search_id')
+    .select('id, firm_id, search_id, address')
     .eq('id', houseId)
     .maybeSingle();
   if (!house) return { ok: false as const, error: 'House not found.' };
@@ -83,8 +83,8 @@ export async function requestTourAction(
     search_id: house.search_id,
     actor_id: me.user_id,
     action: 'tour_requested',
-    target: houseId,
-    metadata: { preferred_when: payload.preferred_when },
+    target: (house as any).address || 'a home',
+    metadata: { preferred_when: payload.preferred_when, house_id: houseId },
   });
 
   // Push to the realtor side (best effort).
