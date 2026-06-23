@@ -23,6 +23,7 @@ import { supabase } from '@/lib/supabase';
 import { formatRelativeTime } from '@/lib/format';
 import { useToast } from '@/components/Toast';
 import { humanError } from '@/lib/humanError';
+import { useModeration } from '@/components/Moderation';
 
 /**
  * DEAL GROUP CHAT - reusable native component.
@@ -190,11 +191,22 @@ export function DealChat({ searchId }: { searchId: string | null | undefined }) 
 
   const canSend = !!draft.trim() && !!searchId && !sending;
 
+  const { reportMessage } = useModeration();
   const renderItem = useCallback(
     ({ item }: { item: ChatMessage }) => (
-      <ChatBubble message={item} colors={colors} />
+      <ChatBubble
+        message={item}
+        colors={colors}
+        onLongPress={() =>
+          reportMessage({
+            messageId: item.id,
+            senderId: item.sender_id || undefined,
+            searchId: searchId || undefined,
+          })
+        }
+      />
     ),
-    [colors],
+    [colors, reportMessage, searchId],
   );
 
   if (!searchId) {
@@ -305,13 +317,17 @@ export function DealChat({ searchId }: { searchId: string | null | undefined }) 
 function ChatBubble({
   message,
   colors,
+  onLongPress,
 }: {
   message: ChatMessage;
   colors: ReturnType<typeof useTheme>['colors'];
+  onLongPress?: () => void;
 }) {
   const isOwn = message.senderIsYou;
   return (
-    <View
+    <Pressable
+      onLongPress={!isOwn ? onLongPress : undefined}
+      delayLongPress={350}
       style={[
         styles.bubbleWrap,
         isOwn ? styles.ownWrap : styles.otherWrap,
@@ -352,7 +368,7 @@ function ChatBubble({
             ? 'Sending…'
             : formatRelativeTime(message.created_at)}
       </Text>
-    </View>
+    </Pressable>
   );
 }
 

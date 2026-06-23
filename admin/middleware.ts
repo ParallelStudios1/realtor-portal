@@ -23,6 +23,9 @@ export async function middleware(req: NextRequest) {
     path.startsWith('/participant') ||
     path.startsWith('/privacy') ||
     path.startsWith('/terms') ||
+    // Public account/data deletion request page - linked from the app store
+    // listings (Google Play requires a reachable deletion URL).
+    path.startsWith('/delete-account') ||
     // Public SMS-consent documentation — Twilio's toll-free verification
     // reviewers must reach this without auth.
     path.startsWith('/sms-consent') ||

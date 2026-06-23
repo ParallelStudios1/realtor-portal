@@ -42,6 +42,40 @@ export default function TermsPage() {
               Subscriptions are billed monthly. You may cancel at any time; cancellations take
               effect at the end of the current billing period.
             </p>
+            <h2 className="pt-2 text-base font-semibold text-ink-900">
+              User content and acceptable use
+            </h2>
+            <p>
+              Realtor Portal lets users send messages and share content related to a
+              real-estate transaction. There is{' '}
+              <strong>zero tolerance for objectionable content or abusive behavior</strong>.
+              You agree not to post, send, or share content that is harassing, threatening,
+              hateful, defamatory, obscene, sexually explicit, or otherwise objectionable, and
+              not to impersonate others or send spam.
+            </p>
+            <p>
+              You can <strong>report</strong> objectionable content or abusive users from
+              within the app (press and hold a message, or use the report option on a person),
+              and you can <strong>block</strong> any user so you no longer see their messages.
+              We review reports and act on objectionable content and the users responsible -
+              including removing content and terminating accounts - within 24 hours. We may
+              remove content or suspend accounts that violate these terms.
+            </p>
+            <h2 className="pt-2 text-base font-semibold text-ink-900">
+              Deleting your account
+            </h2>
+            <p>
+              You can delete your account and personal data at any time from{' '}
+              <strong>Settings &rarr; Delete my account</strong> in the app, or by requesting
+              it at{' '}
+              <a
+                href="/delete-account"
+                className="font-medium text-ink-900 underline underline-offset-2"
+              >
+                realtorportal.parallelstudios.co/delete-account
+              </a>
+              .
+            </p>
             <p>
               We provide the service &quot;as is&quot; without warranty. Our maximum liability
               for any claim is limited to the amount you paid in the prior 12 months.

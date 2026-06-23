@@ -233,7 +233,17 @@ export async function GET(
       );
     }
 
-    const messages = await decorateSenders((data || []) as any[], me.user_id);
+    // Hide messages from anyone this caller has blocked (UGC requirement).
+    const { data: blocks } = await service
+      .from('user_blocks')
+      .select('blocked_id')
+      .eq('blocker_id', me.user_id);
+    const blockedIds = new Set((blocks || []).map((b: any) => b.blocked_id));
+    const visible = ((data || []) as any[]).filter(
+      (m) => !m.sender_id || !blockedIds.has(m.sender_id)
+    );
+
+    const messages = await decorateSenders(visible, me.user_id);
     return NextResponse.json({ ok: true, messages, meUserId: me.user_id });
   } catch (err: any) {
     console.error('[/api/deals/[id]/chat GET]', err);

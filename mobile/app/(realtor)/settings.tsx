@@ -25,6 +25,7 @@ import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/Toast';
 import { humanError } from '@/lib/humanError';
 import { MANAGE_PLAN_URL, trialDaysLeft } from '@/components/TrialBanner';
+import { apiFetch } from '@/lib/api';
 
 const HEX_RE = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
 
@@ -275,6 +276,36 @@ export default function RealtorSettingsScreen() {
     ]);
   };
 
+  const [deleting, setDeleting] = useState(false);
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Delete your account?',
+      'This permanently deletes your account and your personal data. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete account',
+          style: 'destructive',
+          onPress: async () => {
+            setDeleting(true);
+            try {
+              await apiFetch('/api/account/delete', {
+                method: 'POST',
+                body: { confirm: true },
+              });
+              toast.show('Your account has been deleted.', { variant: 'success' });
+              await signOut();
+            } catch (e: any) {
+              toast.show(humanError(e), { variant: 'error' });
+            } finally {
+              setDeleting(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
@@ -505,6 +536,32 @@ export default function RealtorSettingsScreen() {
           <Ionicons name="log-out-outline" size={16} color={colors.error} />
           <Text style={[styles.signOutText, { color: colors.error }]}>Sign Out</Text>
         </Pressable>
+
+        {/* Apple/Google require in-app account deletion for account-based apps. */}
+        <Pressable
+          onPress={handleDeleteAccount}
+          disabled={deleting}
+          style={{ marginTop: 14, alignItems: 'center', paddingVertical: 8 }}
+        >
+          {deleting ? (
+            <ActivityIndicator color={colors.error} />
+          ) : (
+            <Text style={{ color: colors.error, fontSize: 13, fontWeight: '600' }}>
+              Delete my account
+            </Text>
+          )}
+        </Pressable>
+        <Text
+          style={{
+            color: colors.textSecondary,
+            fontSize: 11,
+            textAlign: 'center',
+            marginTop: 4,
+            paddingHorizontal: 24,
+          }}
+        >
+          Permanently deletes your account and personal data.
+        </Text>
 
         <Text style={[styles.version, { color: colors.textSecondary }]}>Realtor Portal v0.1</Text>
       </ScrollView>
