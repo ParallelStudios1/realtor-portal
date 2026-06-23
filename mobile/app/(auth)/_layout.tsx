@@ -5,7 +5,8 @@ export default function AuthLayout() {
     <Stack
       screenOptions={{
         headerShown: false,
-        animationEnabled: true,
+        // SDK 54 native-stack uses `animation`, not the old `animationEnabled`.
+        animation: 'default',
       }}
     >
       <Stack.Screen name="login" />

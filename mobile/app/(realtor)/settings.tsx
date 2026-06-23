@@ -18,7 +18,10 @@ import { Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
-import * as FileSystem from 'expo-file-system';
+// SDK 54 moved the classic readAsStringAsync/EncodingType API to /legacy.
+// Importing the bare module gives the new File API where EncodingType is
+// undefined, which crashed image uploads ("cannot read property Base64").
+import * as FileSystem from 'expo-file-system/legacy';
 import { useAuth } from '@/lib/auth';
 import { useTheme } from '@/lib/theme';
 import { supabase } from '@/lib/supabase';
@@ -77,7 +80,7 @@ export default function RealtorSettingsScreen() {
       return;
     }
     const res = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.9,
