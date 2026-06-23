@@ -27,7 +27,12 @@ import { TrialBanner } from '@/components/TrialBanner';
  */
 export default function RealtorHome() {
   const { userProfile } = useAuth();
-  const { colors } = useTheme();
+  const { colors, firm } = useTheme();
+  const isAdmin = ['owner', 'firm_admin', 'manager', 'super_admin'].includes(
+    (userProfile?.role as string) || ''
+  );
+  const needsSetup =
+    isAdmin && firm && !(firm as any).onboarding_completed && !(firm as any).logo_url;
   const updateTour = useUpdateTourRequest();
   const toast = useToast();
   const [expandedTour, setExpandedTour] = useState<string | null>(null);
@@ -120,6 +125,35 @@ export default function RealtorHome() {
         {/* Trial countdown + manage-plan link (no in-app payment). flush so it
             aligns with the padded content instead of poking past it. */}
         <TrialBanner firmId={userProfile?.firm_id} flush />
+
+        {/* First-run firm setup prompt: upload your logo + customize branding. */}
+        {needsSetup && (
+          <Pressable
+            onPress={() => router.push('/(realtor)/settings' as any)}
+            style={{
+              marginTop: 12,
+              borderRadius: 14,
+              borderWidth: 1,
+              borderColor: colors.primary,
+              backgroundColor: colors.surface,
+              padding: 14,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 12,
+            }}
+          >
+            <Ionicons name="color-palette-outline" size={22} color={colors.primary} />
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: colors.text, fontWeight: '700', fontSize: 14 }}>
+                Finish setting up your firm
+              </Text>
+              <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 2 }}>
+                Upload your logo and set your brand colors so clients see your brand.
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+          </Pressable>
+        )}
         <View style={{ height: 16 }} />
 
         <View style={s.statRow}>

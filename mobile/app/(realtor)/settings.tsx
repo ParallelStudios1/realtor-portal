@@ -14,8 +14,11 @@ import {
   Platform,
   Linking,
 } from 'react-native';
+import { Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useQueryClient } from '@tanstack/react-query';
+import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
 import { useAuth } from '@/lib/auth';
 import { useTheme } from '@/lib/theme';
 import { supabase } from '@/lib/supabase';
@@ -56,6 +59,64 @@ export default function RealtorSettingsScreen() {
   const [contactPhone, setContactPhone] = useState(firm?.contact_phone ?? '');
   const [contactEmail, setContactEmail] = useState(firm?.contact_email ?? '');
   const [savingFirm, setSavingFirm] = useState(false);
+  const [logoUrl, setLogoUrl] = useState<string | null>(firm?.logo_url ?? null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+
+  useEffect(() => {
+    setLogoUrl(firm?.logo_url ?? null);
+  }, [firm?.logo_url]);
+
+  // Upload a firm logo to the public `firm-assets` bucket (same approach as
+  // house photos) and save it on the firm immediately.
+  const pickAndUploadLogo = async () => {
+    if (!firm?.id) return;
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      toast.show('Allow photo access to upload a logo.', { variant: 'error' });
+      return;
+    }
+    const res = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.9,
+      exif: false,
+    });
+    if (res.canceled || !res.assets?.[0]) return;
+    const asset = res.assets[0];
+    setUploadingLogo(true);
+    try {
+      const ext = (asset.fileName?.split('.').pop() || asset.uri.split('.').pop() || 'png')
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '') || 'png';
+      const path = `${firm.id}/logo-${Date.now()}.${ext}`;
+      const base64 = await FileSystem.readAsStringAsync(asset.uri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+      const contentType =
+        asset.mimeType || (ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg');
+      const { error: upErr } = await supabase.storage
+        .from('firm-assets')
+        .upload(path, bytes, { contentType, upsert: true });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from('firm-assets').getPublicUrl(path);
+      const url = pub?.publicUrl;
+      if (!url) throw new Error('Could not get the logo URL.');
+      const { error: saveErr } = await supabase
+        .from('firms')
+        .update({ logo_url: url })
+        .eq('id', firm.id);
+      if (saveErr) throw saveErr;
+      setLogoUrl(url);
+      await queryClient.invalidateQueries({ queryKey: ['firm', firm.id] });
+      toast.show('Logo updated.', { variant: 'success' });
+    } catch (e: any) {
+      toast.show(humanError(e), { variant: 'error' });
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
 
   useEffect(() => {
     setFirmName(firm?.name ?? '');
@@ -145,6 +206,9 @@ export default function RealtorSettingsScreen() {
           tagline: tagline.trim() || null,
           contact_phone: contactPhone.trim() || null,
           contact_email: contactEmail.trim() || null,
+          // Saving branding from the app counts as completing setup, so the
+          // "finish setting up your firm" prompt on Home goes away.
+          onboarding_completed: true,
         })
         .eq('id', firm.id);
       if (error) throw error;
@@ -302,8 +366,43 @@ export default function RealtorSettingsScreen() {
         {/* Firm section - only firm admins can edit */}
         {isFirmAdmin && firm && (
           <>
-            <SectionHeader icon="business-outline" label="Firm" colors={colors} />
+            <SectionHeader icon="business-outline" label="Firm branding" colors={colors} />
             <View style={[styles.card, { borderColor: colors.border, backgroundColor: colors.surface }]}>
+              <FieldLabel colors={colors}>Logo</FieldLabel>
+              <Text style={[styles.helper, { color: colors.textSecondary, marginTop: 0, marginBottom: 8 }]}>
+                Shown to your clients across the portal and app.
+              </Text>
+              <View style={styles.logoRow}>
+                <View
+                  style={[
+                    styles.logoBox,
+                    { borderColor: colors.border, backgroundColor: colors.background },
+                  ]}
+                >
+                  {logoUrl ? (
+                    <Image source={{ uri: logoUrl }} style={styles.logoImg} resizeMode="contain" />
+                  ) : (
+                    <Ionicons name="image-outline" size={26} color={colors.textSecondary} />
+                  )}
+                </View>
+                <Pressable
+                  onPress={pickAndUploadLogo}
+                  disabled={uploadingLogo}
+                  style={[styles.secondaryBtn, { borderColor: colors.primary, flex: 1, marginTop: 0 }]}
+                >
+                  {uploadingLogo ? (
+                    <ActivityIndicator color={colors.primary} />
+                  ) : (
+                    <>
+                      <Ionicons name="cloud-upload-outline" size={16} color={colors.primary} />
+                      <Text style={[styles.secondaryBtnText, { color: colors.primary }]}>
+                        {logoUrl ? 'Change logo' : 'Upload logo'}
+                      </Text>
+                    </>
+                  )}
+                </Pressable>
+              </View>
+
               <FieldLabel colors={colors}>Firm name</FieldLabel>
               <TextInput
                 value={firmName}
@@ -532,6 +631,17 @@ const styles = StyleSheet.create({
   },
   readonlyText: { fontSize: 15 },
   helper: { fontSize: 11, marginTop: 6 },
+  logoRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 4 },
+  logoBox: {
+    width: 56,
+    height: 56,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  logoImg: { width: '100%', height: '100%' },
   row: { flexDirection: 'row' },
   colorRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   swatch: { width: 28, height: 28, borderRadius: 6, borderWidth: 1 },
