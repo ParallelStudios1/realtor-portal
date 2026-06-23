@@ -333,7 +333,10 @@ export default function AddHouseScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        // Account for the navigation header so the sticky "Save House" footer
+        // is pushed above the keyboard instead of hiding under it.
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
         style={{ flex: 1 }}
       >
         <ScrollView

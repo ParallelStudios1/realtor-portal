@@ -41,7 +41,7 @@ export default function RealtorHouseDetailScreen() {
   const { colors } = useTheme();
 
   const { data: house, isLoading, refetch } = useHouse(houseId);
-  const { data: search } = useSearch(searchId);
+  const { data: search, refetch: refetchSearch } = useSearch(searchId);
   const { data: rating } = useHouseRating(houseId, search?.client_id);
 
   const updateStatus = useUpdateHouseStatus();
@@ -101,7 +101,10 @@ export default function RealtorHouseDetailScreen() {
       });
       const json = await r.json().catch(() => null);
       if (!r.ok || !json?.ok) throw new Error(json?.error || `Failed (HTTP ${r.status}).`);
-      await refetch();
+      // Refetch BOTH the house and the deal - the confirm updates the deal
+      // (offer_house_id, clears the proposal, advances phase), so without
+      // refetching the deal the "Confirm this home" banner would never clear.
+      await Promise.all([refetch(), refetchSearch()]);
       Alert.alert('Confirmed', 'Home locked in - the deal moved to Awaiting offer.');
     } catch (e: any) {
       Alert.alert('Could not confirm', e.message ?? String(e));
