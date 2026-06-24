@@ -8,6 +8,7 @@ import { DealChat } from '@/components/DealChat';
 import { getDealChat } from '@/app/dashboard/deals/[id]/chatActions';
 import { buildCalendarFeedUrl } from '@/lib/ics';
 import { formatDateOnly } from '@/lib/dates';
+import { CalendarView, type CalEvent } from '@/components/CalendarView';
 import { listingStatusLabel, offerStatusLabel } from '@/lib/dealKind';
 import { SellerAddListing } from './SellerAddListing';
 
@@ -233,6 +234,31 @@ export default async function ClientHomePage() {
     .slice(0, 3);
 
   const accent = brandColor || '#0F172A';
+
+  // Calendar events: important dates + tours, for the visual month view.
+  const calEvents: CalEvent[] = [
+    ...(((dates as any[]) || [])
+      .filter((d) => d.date)
+      .map((d) => ({
+        dateStr: String(d.date).slice(0, 10),
+        label: d.label || 'Important date',
+        kind: 'date' as const,
+        time: d.event_time || null,
+      }))),
+    ...(((tours as any[]) || [])
+      .map((t) => {
+        const w = t.requested_at || t.preferred_when;
+        const dt = w ? new Date(w) : null;
+        if (!dt || Number.isNaN(dt.getTime())) return null;
+        return {
+          dateStr: `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`,
+          label: `Tour: ${t.house?.address || 'home'}`,
+          kind: 'tour' as const,
+          time: dt.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }),
+        };
+      })
+      .filter(Boolean) as CalEvent[]),
+  ];
   const memberDealsSection =
     memberDeals.length > 0 ? (
       <section className="mt-4 surface p-5">
@@ -594,6 +620,14 @@ export default async function ClientHomePage() {
               canPost={true}
             />
           </div>
+
+          {/* Visual calendar of dates + tours */}
+          <section className="mt-4">
+            <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-400">
+              Calendar
+            </div>
+            <CalendarView events={calEvents} accent={accent} />
+          </section>
 
           {/* Upcoming tours - countdown + time of day */}
           {tours && tours.length > 0 && (

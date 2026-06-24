@@ -32,6 +32,7 @@ import {
   SigningLinksCard,
   TourRequestsCard,
 } from '@/components/DealInfo';
+import { CalendarView, type CalEvent } from '@/components/CalendarView';
 import { supabase } from '@/lib/supabase';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -153,6 +154,34 @@ export default function ClientHomeScreen() {
   });
 
   const upcoming = useMemo(() => (dates ?? []).slice(0, 4), [dates]);
+
+  // Calendar events: important dates + tours.
+  const calEvents = useMemo<CalEvent[]>(() => {
+    const out: CalEvent[] = [];
+    for (const d of dates ?? []) {
+      if ((d as any).date) {
+        out.push({
+          dateStr: String((d as any).date).slice(0, 10),
+          label: (d as any).label || 'Important date',
+          kind: 'date',
+          time: (d as any).event_time || null,
+        });
+      }
+    }
+    for (const t of (tours ?? []) as any[]) {
+      const w = t.requested_at || t.preferred_when;
+      if (!w) continue;
+      const dt = new Date(w);
+      if (isNaN(dt.getTime())) continue;
+      out.push({
+        dateStr: `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`,
+        label: `Tour: ${t.house?.address || 'home'}`,
+        kind: 'tour',
+        time: dt.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }),
+      });
+    }
+    return out;
+  }, [dates, tours]);
 
   const phaseIdx = activeSearch
     ? PHASES.findIndex((p) => p.id === activeSearch.phase)
@@ -755,6 +784,12 @@ export default function ClientHomeScreen() {
                 ) : null}
               </Card>
             )}
+
+            {/* Visual calendar of dates + tours. */}
+            <Text style={{ color: colors.text, fontSize: 15, fontWeight: '700', marginTop: 20, marginBottom: 4 }}>
+              Calendar
+            </Text>
+            <CalendarView events={calEvents} colors={colors} flush />
 
             {/* Read-only deal info, visible to the client just like the
                 realtor sees it: tours, financials, offers, signing links.

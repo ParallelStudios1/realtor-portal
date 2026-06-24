@@ -1,6 +1,6 @@
 'use client';
 
-import { useTransition } from 'react';
+import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/components/Toast';
 import { markAgreedHouseAction } from './tour-actions';
@@ -30,6 +30,8 @@ export function AgreedHouseClient({
   const router = useRouter();
   const toast = useToast();
   const accent = brandColor || '#0F172A';
+  const [asking, setAsking] = useState(false);
+  const [offer, setOffer] = useState('');
 
   if (state === 'proposedHere') {
     return (
@@ -75,18 +77,63 @@ export function AgreedHouseClient({
     );
   }
 
-  function pick() {
+  function pick(desiredOffer?: number | null) {
     start(async () => {
-      const r = await markAgreedHouseAction(houseId);
+      const r = await markAgreedHouseAction(houseId, desiredOffer ?? null);
       if (!r.ok) {
         toast.show(r.error || 'Failed', { variant: 'error' });
         return;
       }
+      setAsking(false);
       toast.show('Sent to your agent - they’ll confirm to make it official.', {
         variant: 'success',
       });
       router.refresh();
     });
+  }
+
+  // Offer-amount prompt shown after the buyer taps "This is the house I want".
+  if (asking) {
+    return (
+      <div className="mt-5 rounded-xl border border-ink-200 bg-white px-4 py-4 text-sm shadow-soft-sm">
+        <div className="font-semibold text-ink-900">
+          How much would you like to offer?
+        </div>
+        <p className="mt-1 text-xs text-ink-600">
+          Optional. This gives your agent a starting point - they’ll confirm the
+          home and prepare the real offer with you.
+        </p>
+        <input
+          inputMode="numeric"
+          value={offer}
+          onChange={(e) => setOffer(e.target.value.replace(/[^0-9]/g, ''))}
+          placeholder="$ amount (optional)"
+          className="input mt-3 w-full"
+        />
+        <div className="mt-3 flex gap-2">
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => pick(null)}
+            className="btn-secondary"
+          >
+            Skip
+          </button>
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => {
+              const n = offer ? Number(offer) : null;
+              pick(n && n > 0 ? n : null);
+            }}
+            className="rounded-lg px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+            style={{ backgroundColor: accent }}
+          >
+            {pending ? 'Sending…' : 'Send to my agent'}
+          </button>
+        </div>
+      </div>
+    );
   }
 
   if (state === 'agreedElsewhere') {
@@ -102,7 +149,7 @@ export function AgreedHouseClient({
         <button
           type="button"
           disabled={pending}
-          onClick={pick}
+          onClick={() => setAsking(true)}
           className="btn-secondary mt-3"
         >
           {pending ? 'Updating…' : 'Make this my home instead'}
@@ -115,7 +162,7 @@ export function AgreedHouseClient({
     <button
       type="button"
       disabled={pending}
-      onClick={pick}
+      onClick={() => setAsking(true)}
       className="mt-5 inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white shadow-soft-sm transition active:scale-[0.98] disabled:opacity-60"
       style={{ backgroundColor: accent }}
     >

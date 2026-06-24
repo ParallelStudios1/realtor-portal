@@ -113,7 +113,10 @@ export async function requestTourAction(
  * best-effort notifies the realtor. Guard: only the PRINCIPAL client of the
  * deal that owns this house can do this, and only on their own deal.
  */
-export async function markAgreedHouseAction(houseId: string) {
+export async function markAgreedHouseAction(
+  houseId: string,
+  desiredOffer?: number | null
+) {
   const me = await getMe();
   if (!me?.user_id) return { ok: false as const, error: 'Not authenticated.' };
   if (me.role !== 'client')
@@ -139,13 +142,18 @@ export async function markAgreedHouseAction(houseId: string) {
 
   // The client PROPOSES the home; the realtor confirms it (which then agrees
   // it + advances the deal to awaiting_offer). We record a pending proposal.
+  const proposalUpdate: Record<string, any> = {
+    house_proposed_house_id: houseId,
+    house_proposed_by: me.user_id,
+    house_proposed_at: new Date().toISOString(),
+  };
+  const off = desiredOffer != null ? Number(desiredOffer) : null;
+  if (off != null && Number.isFinite(off) && off > 0) {
+    proposalUpdate.buyer_desired_offer = off;
+  }
   const { error } = await service
     .from('client_searches')
-    .update({
-      house_proposed_house_id: houseId,
-      house_proposed_by: me.user_id,
-      house_proposed_at: new Date().toISOString(),
-    })
+    .update(proposalUpdate)
     .eq('id', (search as any).id);
   if (error) return { ok: false as const, error: error.message };
 

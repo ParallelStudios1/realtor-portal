@@ -31,6 +31,7 @@ export function FinancialsCard({
   const push = (label: string, v: string | null) => {
     if (v) rows.push({ label, value: v });
   };
+  push("Buyer's target offer", money(search?.buyer_desired_offer));
   push('Agreed price', money(search?.agreed_price));
   push('Offer amount', money(search?.offer_amount));
   push('Counter offer', money(search?.counter_offer_amount));

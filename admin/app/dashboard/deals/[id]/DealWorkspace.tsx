@@ -20,6 +20,7 @@ import {
   type ShowingAttendee,
 } from '../../clients/[id]/actions';
 import { DeadlineReminderEditor } from '@/components/DeadlineReminderEditor';
+import { CalendarView, type CalEvent } from '@/components/CalendarView';
 import { ShowingFeedbackPanel } from './ShowingFeedbackPanel';
 import { formatDateOnly } from '@/lib/dates';
 import { LocalDateTime } from '@/components/LocalDateTime';
@@ -97,6 +98,7 @@ export function DealWorkspace(props: {
     id: string;
     address: string | null;
     proposedByName: string | null;
+    desiredOffer?: number | null;
   } | null;
   // Offers received on a seller's listing (listing_offers rows).
   listingOffers?: ListingOffer[];
@@ -211,6 +213,31 @@ export function DealWorkspace(props: {
   }
 
   const upcomingShowings = (showings || []) as any[];
+
+  // Calendar events for the visual month view: important dates + tours.
+  const calEvents: CalEvent[] = [
+    ...((dates || []) as any[])
+      .filter((d) => d.date)
+      .map((d) => ({
+        dateStr: String(d.date).slice(0, 10),
+        label: d.label || 'Important date',
+        kind: 'date' as const,
+        time: d.event_time || null,
+      })),
+    ...((tours || []) as any[])
+      .map((t) => {
+        const w = t.requested_at || t.preferred_when;
+        const dt = w ? new Date(w) : null;
+        if (!dt || Number.isNaN(dt.getTime())) return null;
+        return {
+          dateStr: `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`,
+          label: `Tour: ${t.house?.address || 'home'}`,
+          kind: 'tour' as const,
+          time: dt.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }),
+        };
+      })
+      .filter(Boolean) as CalEvent[],
+  ];
 
   const folders = Array.from(
     new Set((documents || []).map((d: any) => d.folder || 'General'))
@@ -468,6 +495,12 @@ export function DealWorkspace(props: {
                 as the one they want. Confirm to lock it in and move the deal to
                 Awaiting offer.
               </p>
+              {proposedHome.desiredOffer != null && proposedHome.desiredOffer > 0 && (
+                <p className="mt-1.5 text-sm font-semibold text-amber-900">
+                  They’d like to offer $
+                  {Number(proposedHome.desiredOffer).toLocaleString()}.
+                </p>
+              )}
             </div>
             <button
               type="button"
@@ -1230,6 +1263,13 @@ export function DealWorkspace(props: {
                   Use Financials above to fill these in.
                 </p>
               )}
+          </Card>
+
+          {/* Visual calendar */}
+          <Card title="Calendar">
+            <div className="px-5 pb-5 pt-1">
+              <CalendarView events={calEvents} accent={(deal as any)?.firm?.brand_color || '#0F172A'} />
+            </div>
           </Card>
 
           {/* Important dates */}

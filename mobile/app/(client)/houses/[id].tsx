@@ -10,6 +10,7 @@ import {
   Linking,
   TextInput,
   Platform,
+  Modal,
 } from 'react-native';
 import DateTimePicker, {
   type DateTimePickerEvent,
@@ -64,6 +65,8 @@ export default function ClientHouseDetailScreen() {
   const logActivity = useLogActivity();
 
   const [agreeing, setAgreeing] = useState(false);
+  const [offerModalOpen, setOfferModalOpen] = useState(false);
+  const [offerInput, setOfferInput] = useState('');
   const [tourNotes, setTourNotes] = useState('');
   const [tourWhenDate, setTourWhenDate] = useState<Date | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -169,7 +172,7 @@ export default function ClientHouseDetailScreen() {
     (search as any).offer_house_id === house.id &&
     !!(search as any)?.house_agreed_at;
 
-  const handleAgreeHouse = async () => {
+  const handleAgreeHouse = async (desiredOffer?: number | null) => {
     setAgreeing(true);
     try {
       const { data: sess } = await supabase.auth.getSession();
@@ -186,7 +189,10 @@ export default function ClientHouseDetailScreen() {
             'content-type': 'application/json',
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
-          body: JSON.stringify({ house_id: house.id }),
+          body: JSON.stringify({
+            house_id: house.id,
+            buyer_desired_offer: desiredOffer ?? null,
+          }),
         },
       );
       const raw = await r.text();
@@ -361,7 +367,10 @@ export default function ClientHouseDetailScreen() {
                 Let your agent know this is the home you want to move on.
               </Text>
               <Pressable
-                onPress={handleAgreeHouse}
+                onPress={() => {
+                  setOfferInput('');
+                  setOfferModalOpen(true);
+                }}
                 disabled={agreeing}
                 style={[styles.primaryBtn, { backgroundColor: colors.success }]}
               >
@@ -502,6 +511,95 @@ export default function ClientHouseDetailScreen() {
           <View style={{ height: 32 }} />
         </View>
       </ScrollView>
+
+      {/* Buyer offer prompt - asked when they pick the home they want. */}
+      <Modal
+        visible={offerModalOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setOfferModalOpen(false)}
+      >
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: 'rgba(0,0,0,0.45)',
+            justifyContent: 'center',
+            padding: 24,
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: colors.background,
+              borderRadius: 16,
+              padding: 20,
+            }}
+          >
+            <Text style={{ color: colors.text, fontWeight: '800', fontSize: 18 }}>
+              How much would you like to offer?
+            </Text>
+            <Text style={{ color: colors.textSecondary, fontSize: 13, marginTop: 6 }}>
+              Optional - this gives your agent a starting point. They'll confirm
+              the home and prepare the actual offer with you.
+            </Text>
+            <TextInput
+              value={offerInput}
+              onChangeText={(t) => setOfferInput(t.replace(/[^0-9]/g, ''))}
+              placeholder="$ amount (optional)"
+              placeholderTextColor={colors.textSecondary}
+              keyboardType="number-pad"
+              style={{
+                marginTop: 14,
+                borderWidth: 1,
+                borderColor: colors.border,
+                borderRadius: 10,
+                paddingHorizontal: 12,
+                paddingVertical: 12,
+                fontSize: 16,
+                color: colors.text,
+                backgroundColor: colors.surface,
+              }}
+            />
+            <View style={{ flexDirection: 'row', gap: 10, marginTop: 16 }}>
+              <Pressable
+                onPress={() => {
+                  setOfferModalOpen(false);
+                  handleAgreeHouse(null);
+                }}
+                disabled={agreeing}
+                style={{
+                  flex: 1,
+                  paddingVertical: 12,
+                  borderRadius: 10,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  alignItems: 'center',
+                }}
+              >
+                <Text style={{ color: colors.text, fontWeight: '700' }}>Skip</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => {
+                  const amt = offerInput ? Number(offerInput) : null;
+                  setOfferModalOpen(false);
+                  handleAgreeHouse(amt && amt > 0 ? amt : null);
+                }}
+                disabled={agreeing}
+                style={{
+                  flex: 1,
+                  paddingVertical: 12,
+                  borderRadius: 10,
+                  backgroundColor: colors.success || '#16a34a',
+                  alignItems: 'center',
+                }}
+              >
+                <Text style={{ color: '#fff', fontWeight: '700' }}>
+                  {agreeing ? 'Sending…' : "Send to my agent"}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }

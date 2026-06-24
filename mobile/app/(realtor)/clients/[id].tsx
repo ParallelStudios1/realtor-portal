@@ -38,6 +38,7 @@ import {
   SigningLinksCard,
   TourRequestsCard,
 } from '@/components/DealInfo';
+import { CalendarView, type CalEvent } from '@/components/CalendarView';
 import type { DealPhase } from '@/lib/database.types';
 import { DEAL_PHASES, phaseLabelShortFor } from '@/lib/dealKind';
 
@@ -101,6 +102,32 @@ export default function RealtorClientDetailScreen() {
       setDateBusy(null);
     }
   };
+
+  const calEvents = React.useMemo<CalEvent[]>(() => {
+    const out: CalEvent[] = [];
+    for (const d of (dates ?? []) as any[]) {
+      if (d.date)
+        out.push({
+          dateStr: String(d.date).slice(0, 10),
+          label: d.label || 'Important date',
+          kind: 'date',
+          time: d.event_time || null,
+        });
+    }
+    for (const t of (tours ?? []) as any[]) {
+      const w = t.requested_at || t.preferred_when;
+      if (!w) continue;
+      const dt = new Date(w);
+      if (isNaN(dt.getTime())) continue;
+      out.push({
+        dateStr: `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`,
+        label: `Tour: ${t.house?.address || 'home'}`,
+        kind: 'tour',
+        time: dt.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }),
+      });
+    }
+    return out;
+  }, [dates, tours]);
 
   const onRefresh = async () => {
     await Promise.all([
@@ -448,6 +475,14 @@ export default function RealtorClientDetailScreen() {
             ))
           )}
         </SectionCard>
+
+        {/* Visual calendar of dates + tours */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
+            CALENDAR
+          </Text>
+        </View>
+        <CalendarView events={calEvents} colors={colors} />
 
         {/* Tour requests - clickable, expand to view + respond */}
         <TourRequestsCard

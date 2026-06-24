@@ -78,8 +78,15 @@ export async function POST(
       );
     }
 
-    const json = (await req.json().catch(() => ({}))) as { house_id?: string };
+    const json = (await req.json().catch(() => ({}))) as {
+      house_id?: string;
+      buyer_desired_offer?: number | string | null;
+    };
     const houseId = (json.house_id || '').trim();
+    const desiredOffer =
+      json.buyer_desired_offer != null && json.buyer_desired_offer !== ''
+        ? Number(json.buyer_desired_offer)
+        : null;
     if (!houseId) {
       return NextResponse.json(
         { ok: false, error: 'Pick a house.' },
@@ -144,13 +151,17 @@ export async function POST(
     const proposing = isPrincipalClient && !isStaffSameFirm;
 
     if (proposing) {
+      const proposalUpdate: Record<string, any> = {
+        house_proposed_house_id: houseId,
+        house_proposed_by: me.user_id,
+        house_proposed_at: new Date().toISOString(),
+      };
+      if (desiredOffer != null && Number.isFinite(desiredOffer) && desiredOffer > 0) {
+        proposalUpdate.buyer_desired_offer = desiredOffer;
+      }
       const { error } = await service
         .from('client_searches')
-        .update({
-          house_proposed_house_id: houseId,
-          house_proposed_by: me.user_id,
-          house_proposed_at: new Date().toISOString(),
-        })
+        .update(proposalUpdate)
         .eq('id', d.id);
       if (error) {
         return NextResponse.json(

@@ -51,6 +51,7 @@ export default async function DealDetailPage({
        contract_url, notes, offer_amount, counter_offer_amount,
        closing_date, closed_message, offer_house_id, house_agreed_at,
        house_agreed_by, house_proposed_house_id, house_proposed_by, house_proposed_at,
+       buyer_desired_offer,
        created_by, created_at, updated_at,
        client:users!client_searches_client_id_fkey ( id, full_name, email, created_at ),
        realtor:users!client_searches_realtor_id_fkey ( id, full_name, email )`
@@ -293,8 +294,12 @@ export default async function DealDetailPage({
   // PROPOSED HOME - the client said "this is the house I want" and is awaiting
   // the realtor's confirmation. Surfaced as a confirm banner in the workspace.
   // Only show when there's a pending proposal that hasn't already been agreed.
-  let proposedHome: { id: string; address: string | null; proposedByName: string | null } | null =
-    null;
+  let proposedHome: {
+    id: string;
+    address: string | null;
+    proposedByName: string | null;
+    desiredOffer: number | null;
+  } | null = null;
   if (
     (deal as any).house_proposed_house_id &&
     !(deal as any).house_agreed_at
@@ -319,6 +324,7 @@ export default async function DealDetailPage({
       id: (deal as any).house_proposed_house_id,
       address: (ph as any)?.address ?? null,
       proposedByName,
+      desiredOffer: (deal as any).buyer_desired_offer ?? null,
     };
   }
 
