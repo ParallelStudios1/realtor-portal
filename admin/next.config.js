@@ -1,6 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  experimental: {
+    // Loads instrumentation.ts on boot (Sentry server/edge init; no-op
+    // without a DSN).
+    instrumentationHook: true,
+  },
   // Allow Supabase Storage logos to render in <Image> if you adopt next/image
   images: {
     remotePatterns: [

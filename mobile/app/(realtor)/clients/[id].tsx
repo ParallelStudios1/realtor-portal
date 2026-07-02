@@ -337,6 +337,32 @@ export default function RealtorClientDetailScreen() {
               }
             />
             <ActionTile
+              tone="#0891B2"
+              icon="walk"
+              label="Showings"
+              onPress={() =>
+                router.push(`/(realtor)/clients/${id}/showings` as any)
+              }
+            />
+            {(search as any)?.kind === 'seller' && (
+              <ActionTile
+                tone="#16A34A"
+                icon="pricetag"
+                label="Listing & offers"
+                onPress={() =>
+                  router.push(`/(realtor)/clients/${id}/listing` as any)
+                }
+              />
+            )}
+            <ActionTile
+              tone="#9333EA"
+              icon="scan"
+              label="Contract dates"
+              onPress={() =>
+                router.push(`/(realtor)/clients/${id}/extract` as any)
+              }
+            />
+            <ActionTile
               tone="#D97706"
               icon="cash"
               label="Financials"
@@ -355,7 +381,7 @@ export default function RealtorClientDetailScreen() {
             <ActionTile
               tone="#EA580C"
               icon="pencil"
-              label="DocuSign"
+              label="Signing links"
               onPress={() =>
                 router.push(`/(realtor)/clients/${id}/docusign` as any)
               }
@@ -598,9 +624,9 @@ export default function RealtorClientDetailScreen() {
           title="People on this deal"
           colors={colors}
           count={participants?.length}
-          actionLabel="+ Add"
+          actionLabel="Manage"
           onActionPress={() =>
-            router.push(`/(realtor)/clients/${id}/add-party` as any)
+            router.push(`/(realtor)/clients/${id}/participants` as any)
           }
         >
           {(participants ?? []).length === 0 ? (

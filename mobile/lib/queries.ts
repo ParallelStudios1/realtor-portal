@@ -124,7 +124,7 @@ export function useDealParticipants(searchId: string | null | undefined) {
       const { data, error } = await supabase
         .from('deal_participants')
         .select(
-          'id, role, external_name, external_email, external_phone, can_view_documents, can_view_financials, can_view_messages, can_view_dates'
+          'id, user_id, role, external_name, external_email, external_phone, can_view_documents, can_view_financials, can_view_messages, can_view_dates'
         )
         .eq('search_id', searchId)
         .order('role');

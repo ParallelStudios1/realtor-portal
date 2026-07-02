@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { randomUUID } from 'crypto';
-import { getMe } from '@/lib/supabaseSsr';
+import { resolveCaller } from '@/lib/bearerAuth';
 import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
 import { logAudit } from '@/lib/audit';
 
@@ -22,7 +22,7 @@ export const runtime = 'nodejs';
  * Body: { searchId, envelopeUrl, documentId?, label? }
  */
 export async function POST(req: NextRequest) {
-  const me = await getMe();
+  const me = await resolveCaller(req);
   if (!me?.firm_id)
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   if (
