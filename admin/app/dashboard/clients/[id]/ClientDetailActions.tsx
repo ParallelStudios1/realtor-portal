@@ -1159,45 +1159,8 @@ function HouseModal({
   const [sqft, setSqft] = useState('');
   const [pending, start] = useTransition();
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
-  const [aiBusy, setAiBusy] = useState(false);
   const toast = useToast();
   const supabase = getSupabaseBrowserClient();
-
-  async function generateAIDescription() {
-    if (!address.trim()) {
-      toast.show('Add an address first.', { variant: 'error' });
-      return;
-    }
-    setAiBusy(true);
-    try {
-      const r = await fetch('/api/ai/listing-description', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          address,
-          price: listPrice || undefined,
-          bedrooms: bedrooms || undefined,
-          bathrooms: bathrooms || undefined,
-          squareFeet: sqft || undefined,
-          notes,
-          tone: 'warm',
-        }),
-      });
-      const j = await r.json();
-      if (!r.ok || !j.description) {
-        toast.show(j.error || 'Could not generate description.', {
-          variant: 'error',
-        });
-        return;
-      }
-      setNotes(j.description);
-      toast.show('Description drafted.', { variant: 'success' });
-    } catch {
-      toast.show('AI service unavailable.', { variant: 'error' });
-    } finally {
-      setAiBusy(false);
-    }
-  }
 
   async function uploadPhotoFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -1309,39 +1272,14 @@ function HouseModal({
             onChange={(e) => setListPrice(e.target.value)}
           />
         </Field>
-        <Field
-          label="Notes / description"
-          hint="Tap the sparkle to let AI draft something you can send to the client."
-        >
-          <div className="relative">
-            <textarea
-              className={inputCls + ' pr-12'}
-              rows={4}
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Why is this a fit, what to flag, etc."
-            />
-            <button
-              type="button"
-              onClick={generateAIDescription}
-              disabled={aiBusy || !address.trim()}
-              title={
-                !address.trim()
-                  ? 'Add an address first'
-                  : 'Draft a description'
-              }
-              className="absolute right-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-lg bg-ink-900 text-white shadow-soft-sm transition hover:bg-ink-700 disabled:opacity-50"
-              aria-label="Draft a description"
-            >
-              {aiBusy ? (
-                <span className="block h-3 w-3 animate-spin rounded-full border-2 border-white/70 border-t-white" />
-              ) : (
-                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
-                  <path d="M11 3l1.5 4.5L17 9l-4.5 1.5L11 15l-1.5-4.5L5 9l4.5-1.5L11 3zm7 9l.9 2.7 2.7.9-2.7.9L18 19l-.9-2.7-2.7-.9 2.7-.9L18 12z" />
-                </svg>
-              )}
-            </button>
-          </div>
+        <Field label="Notes / description">
+          <textarea
+            className={inputCls}
+            rows={4}
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Why is this a fit, what to flag, etc."
+          />
         </Field>
       </div>
       <PrimaryButton

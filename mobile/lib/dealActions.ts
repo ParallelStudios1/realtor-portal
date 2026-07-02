@@ -5,7 +5,7 @@ import { apiFetch } from './api';
 /**
  * Realtor deal-action hooks that mirror the web deal workspace:
  * showings, seller listing + offers management, participant management,
- * private party messages, and AI contract-date extraction.
+ * and private party messages.
  *
  * Reads go straight to Supabase (RLS gives firm staff full access);
  * writes go through the Bearer web API so behavior (auth rules, activity
@@ -51,14 +51,6 @@ export type PrivateMessage = {
   created_at: string;
   fromMe: boolean;
   senderName: string;
-};
-
-export type ExtractionRow = {
-  id: string;
-  document_id: string | null;
-  status: string;
-  proposed_dates: { label: string; date: string }[] | null;
-  created_at: string;
 };
 
 /* ---------------------------- Showings ---------------------------- */
@@ -388,66 +380,6 @@ export function useSendPrivateMessage() {
     onSuccess: (_d, v) => {
       const key = v.userId || v.email || '';
       qc.invalidateQueries({ queryKey: ['privateThread', v.searchId, key] });
-    },
-  });
-}
-
-/* --------------------- AI contract extraction --------------------- */
-
-export function useExtractions(searchId: string | null | undefined) {
-  return useQuery({
-    queryKey: ['extractions', searchId],
-    queryFn: async () => {
-      if (!searchId) return [];
-      const { data, error } = await supabase
-        .from('contract_extractions')
-        .select('id, document_id, status, proposed_dates, created_at')
-        .eq('search_id', searchId)
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return (data as any[]) as ExtractionRow[];
-    },
-    enabled: !!searchId,
-  });
-}
-
-export function useRunExtraction() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (input: { searchId: string; documentId: string }) =>
-      apiFetch<{ extraction?: ExtractionRow; error?: string }>(
-        '/api/ai/contract-extract',
-        {
-          method: 'POST',
-          body: { searchId: input.searchId, documentId: input.documentId },
-        }
-      ),
-    onSuccess: (_d, v) => {
-      qc.invalidateQueries({ queryKey: ['extractions', v.searchId] });
-    },
-  });
-}
-
-export function useResolveExtraction() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (input: {
-      searchId: string;
-      extractionId: string;
-      action: 'confirm' | 'discard';
-      selectedDates?: { label: string; date: string }[];
-    }) =>
-      apiFetch(`/api/extractions/${input.extractionId}`, {
-        method: 'PATCH',
-        body: {
-          action: input.action,
-          selectedDates: input.selectedDates,
-        },
-      }),
-    onSuccess: (_d, v) => {
-      qc.invalidateQueries({ queryKey: ['extractions', v.searchId] });
-      qc.invalidateQueries({ queryKey: ['importantDates', v.searchId] });
-      qc.invalidateQueries({ queryKey: ['activities', v.searchId] });
     },
   });
 }

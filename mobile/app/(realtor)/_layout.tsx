@@ -83,6 +83,10 @@ export default function RealtorTabsLayout() {
           tab for it (raw route name + placeholder icon, bottom-right). Every
           stacked route MUST be listed with href:null to stay out of the bar. */}
       <Tabs.Screen name="clients/[id]/add-party" options={{ href: null, title: 'Add party' }} />
+      <Tabs.Screen name="clients/[id]/showings" options={{ href: null, title: 'Showings' }} />
+      <Tabs.Screen name="clients/[id]/listing" options={{ href: null, title: 'Listing and offers' }} />
+      <Tabs.Screen name="clients/[id]/participants" options={{ href: null, title: 'People on this deal' }} />
+      <Tabs.Screen name="clients/[id]/private-messages" options={{ href: null, title: 'Private messages' }} />
     </Tabs>
   );
 }

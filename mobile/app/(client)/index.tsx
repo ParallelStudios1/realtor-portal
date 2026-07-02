@@ -766,7 +766,7 @@ export default function ClientHomeScreen() {
                     style={{ paddingVertical: 8 }}
                   >
                     <Text style={{ color: colors.primary, fontSize: 14, fontWeight: '600' }}>
-                      ✍️ Open DocuSign envelope
+                      Open signing link →
                     </Text>
                   </Pressable>
                 ) : null}

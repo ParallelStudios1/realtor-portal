@@ -52,7 +52,6 @@ export default function AddHouseScreen() {
   const [squareFeet, setSquareFeet] = useState('');
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
-  const [generating, setGenerating] = useState(false);
   const [pickingPhoto, setPickingPhoto] = useState(false);
   const [parsingUrl, setParsingUrl] = useState(false);
   const [pulledFromListing, setPulledFromListing] = useState(false);
@@ -221,55 +220,6 @@ export default function AddHouseScreen() {
   const handleListingUrlBlur = () => {
     if (listingUrl.trim() && !parsingUrl) {
       void fetchListingPreview(listingUrl);
-    }
-  };
-
-  // -------------------------------------------------------------------------
-  // AI description (existing - unchanged)
-  // -------------------------------------------------------------------------
-
-  const generateDescription = async () => {
-    if (!address.trim()) {
-      toast.show('Type at least the address before generating.', {
-        variant: 'error',
-      });
-      return;
-    }
-    setGenerating(true);
-    try {
-      const { data: sess } = await supabase.auth.getSession();
-      const token = sess.session?.access_token;
-      const r = await fetch(`${apiBase}/api/ai/listing-description`, {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          address: address.trim(),
-          price: price.trim(),
-          bedrooms: bedrooms.trim(),
-          bathrooms: bathrooms.trim(),
-          squareFeet: squareFeet.trim(),
-          notes: notes.trim(),
-        }),
-      });
-      const raw = await r.text();
-      let json: any = null;
-      try {
-        json = raw ? JSON.parse(raw) : null;
-      } catch {}
-      if (!r.ok || !json?.description) {
-        throw new Error(json?.error || `Generation failed (HTTP ${r.status}).`);
-      }
-      // Append (don't overwrite) so the agent's existing notes are preserved.
-      setNotes((prev) =>
-        prev.trim() ? `${prev.trim()}\n\n${json.description}` : json.description
-      );
-    } catch (e: any) {
-      toast.show(humanError(e), { variant: 'error' });
-    } finally {
-      setGenerating(false);
     }
   };
 
@@ -481,33 +431,11 @@ export default function AddHouseScreen() {
           <View style={{ marginBottom: 12 }}>
             <View style={styles.labelRow}>
               <Text style={[styles.label, { color: colors.text }]}>Notes</Text>
-              <Pressable
-                onPress={generateDescription}
-                disabled={generating || !address.trim()}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: 6,
-                  paddingHorizontal: 10,
-                  paddingVertical: 6,
-                  borderRadius: 999,
-                  backgroundColor: colors.primary,
-                  opacity: generating || !address.trim() ? 0.5 : 1,
-                }}
-              >
-                {generating ? (
-                  <ActivityIndicator color="#fff" size="small" />
-                ) : (
-                  <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>
-                    ✨ Generate with AI
-                  </Text>
-                )}
-              </Pressable>
             </View>
             <TextInput
               value={notes}
               onChangeText={setNotes}
-              placeholder="Anything to flag for the client (or tap Generate to draft)"
+              placeholder="Anything to flag for the client"
               placeholderTextColor={colors.textSecondary}
               autoCapitalize="sentences"
               multiline

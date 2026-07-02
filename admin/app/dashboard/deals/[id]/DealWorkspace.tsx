@@ -26,7 +26,6 @@ import { formatDateOnly } from '@/lib/dates';
 import { LocalDateTime } from '@/components/LocalDateTime';
 import { EsignPanel } from './EsignPanel';
 import { TerminateDealControl } from './TerminateDealControl';
-import { ExtractReview, type StagedExtraction } from './ExtractReview';
 import { DealChat } from '@/components/DealChat';
 import { SubphaseEditor } from './SubphaseEditor';
 import {
@@ -141,8 +140,6 @@ export function DealWorkspace(props: {
     | null
   >(null);
   const [, startShowingMutation] = useTransition();
-  const [review, setReview] = useState<{ ex: StagedExtraction; name: string } | null>(null);
-  const [extractingId, setExtractingId] = useState<string | null>(null);
   const [agreeingHome, setAgreeingHome] = useState(false);
   const [savingAgreedHome, startAgreedHome] = useTransition();
   const router = useRouter();
@@ -189,27 +186,6 @@ export function DealWorkspace(props: {
         });
       }
     });
-  }
-
-  async function extractDates(doc: any) {
-    setExtractingId(doc.id);
-    try {
-      const r = await fetch('/api/ai/contract-extract', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ searchId: deal.id, documentId: doc.id }),
-      });
-      const json = await r.json();
-      if (!r.ok) {
-        toast.show(json?.error || 'Could not extract dates.', { variant: 'error' });
-        return;
-      }
-      setReview({ ex: json.extraction as StagedExtraction, name: doc.name });
-    } catch (err: any) {
-      toast.show(err?.message || 'Could not extract dates.', { variant: 'error' });
-    } finally {
-      setExtractingId(null);
-    }
   }
 
   const upcomingShowings = (showings || []) as any[];
@@ -1165,18 +1141,6 @@ export function DealWorkspace(props: {
               {visibleDocs.map((d: any) => (
                 <div key={d.id}>
                   <DocumentRow clientId={clientId} doc={d as any} />
-                  <div className="px-2 pb-2 text-right">
-                    <button
-                      type="button"
-                      onClick={() => extractDates(d)}
-                      disabled={extractingId === d.id}
-                      className="text-[10px] font-semibold uppercase tracking-wide text-blue-600 transition hover:underline disabled:opacity-50"
-                    >
-                      {extractingId === d.id
-                        ? 'Extracting…'
-                        : 'Extract dates from contract'}
-                    </button>
-                  </div>
                 </div>
               ))}
             </ul>
@@ -1439,13 +1403,6 @@ export function DealWorkspace(props: {
         />
       )}
 
-      {review && (
-        <ExtractReview
-          extraction={review.ex}
-          documentName={review.name}
-          onClose={() => setReview(null)}
-        />
-      )}
     </main>
   );
 }

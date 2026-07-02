@@ -355,14 +355,6 @@ export default function RealtorClientDetailScreen() {
               />
             )}
             <ActionTile
-              tone="#9333EA"
-              icon="scan"
-              label="Contract dates"
-              onPress={() =>
-                router.push(`/(realtor)/clients/${id}/extract` as any)
-              }
-            />
-            <ActionTile
               tone="#D97706"
               icon="cash"
               label="Financials"
