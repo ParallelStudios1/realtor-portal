@@ -2039,7 +2039,7 @@ export async function proposeAlternativeTourTimeAction(
     search_id: a.search.id,
     sender_id: a.me.user_id,
     body:
-      '📅 New time proposed for your tour: ' +
+      'New time proposed for your tour: ' +
       when +
       (payload.note ? '. ' + payload.note : '. Let me know if that works.'),
   });

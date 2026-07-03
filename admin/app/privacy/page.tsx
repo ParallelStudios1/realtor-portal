@@ -34,7 +34,16 @@ export default function PrivacyPage() {
 
           <div className="mt-8 space-y-4 text-sm leading-relaxed text-ink-700">
             <p>
-              Realtor Portal is operated by Parallel Studios. We collect only the information
+              Realtor Portal is operated by{' '}
+              <a
+                href="https://parallelstudios.co"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-ink-900 underline underline-offset-2"
+              >
+                Parallel Studios
+              </a>
+              . We collect only the information
               necessary to provide a client portal experience for real estate transactions:
               name, email, phone, transaction details, documents you upload, and basic usage
               analytics.

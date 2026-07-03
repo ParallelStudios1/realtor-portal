@@ -3,6 +3,7 @@ import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
 import { runDeadlineCron } from '@/lib/deadlines';
 import { runShowingDigestCron } from '@/lib/showingDigest';
 import { runTrialReminderCron } from '@/lib/trialReminders';
+import { runOverdueDatesCron } from '@/lib/overdueDates';
 
 /**
  * Daily cron - runs the deadline-reminder/escalation pass and the seller-facing
@@ -54,5 +55,13 @@ export async function GET(req: Request) {
     trial = { error: err?.message || 'runTrialReminderCron failed' };
   }
 
-  return NextResponse.json({ ok: true, deadline, digest, trial });
+  let overdue: any;
+  try {
+    overdue = await runOverdueDatesCron(service);
+  } catch (err: any) {
+    console.error('[cron/daily] runOverdueDatesCron failed', err);
+    overdue = { error: err?.message || 'runOverdueDatesCron failed' };
+  }
+
+  return NextResponse.json({ ok: true, deadline, digest, trial, overdue });
 }

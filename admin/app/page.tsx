@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import { DemoButton } from './DemoButton';
 
 export const dynamic = 'force-static';
 export const metadata = {
@@ -30,7 +29,7 @@ export default function HomePage() {
   return (
     <main className="min-h-screen bg-white text-ink-900 antialiased leading-[1.6]">
       {/* Nav */}
-      <header className="sticky top-0 z-40 border-b border-ink-200 bg-white/80 backdrop-blur">
+      <header className="sticky top-0 z-40 border-b border-ink-200 bg-white">
         <nav className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
           <Link href="/" className="flex items-center gap-2 font-semibold tracking-tight">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -58,11 +57,7 @@ export default function HomePage() {
       <section className="border-b border-ink-200">
         <div className="mx-auto grid max-w-6xl items-center gap-16 px-6 py-24 sm:py-32 lg:grid-cols-[1.15fr_0.85fr]">
           <div className="max-w-2xl">
-            <span className="inline-flex items-center gap-2 rounded-full border border-ink-200 bg-ink-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-ink-600">
-              <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-ink-900" />
-              Branded client portal for real estate firms
-            </span>
-            <h1 className="mt-6 text-4xl font-semibold tracking-tight sm:text-[3.4rem] sm:leading-[1.05]">
+            <h1 className="text-4xl font-semibold tracking-tight sm:text-[3.4rem] sm:leading-[1.05]">
               Your buyers and sellers stop asking &ldquo;any update?&rdquo;
             </h1>
             <p className="mt-6 text-lg text-ink-700">
@@ -79,7 +74,9 @@ export default function HomePage() {
               <Link href="/signup" className="btn-primary px-5 py-3 text-base">
                 Start free trial
               </Link>
-              <DemoButton className="btn-secondary px-5 py-3 text-base" />
+              <a href="#how" className="btn-secondary px-5 py-3 text-base">
+                See how it works
+              </a>
             </div>
             <dl className="mt-12 grid max-w-lg grid-cols-3 gap-6 border-t border-ink-200 pt-8">
               {[
@@ -512,8 +509,26 @@ export default function HomePage() {
             <img src="/logo.png" alt="Realtor Portal" className="h-6 w-6" />
             <span>Realtor Portal</span>
           </Link>
-          <p className="text-xs">© {new Date().getFullYear()} Parallel Studios LLC</p>
+          <p className="text-xs">
+            © {new Date().getFullYear()}{' '}
+            <a
+              href="https://parallelstudios.co"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="transition hover:text-ink-700"
+            >
+              Parallel Studios LLC
+            </a>
+          </p>
           <div className="flex gap-6">
+            <a
+              href="https://parallelstudios.co"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="transition hover:text-ink-700"
+            >
+              Parallel Studios
+            </a>
             <Link href="/privacy" className="transition hover:text-ink-700">
               Privacy
             </Link>

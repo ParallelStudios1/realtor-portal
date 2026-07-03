@@ -22,7 +22,16 @@ export default function SmsConsentPage() {
         SMS notifications &amp; consent
       </h1>
       <p className="mt-4 text-ink-700">
-        Realtor Portal, a product of Parallel Studios LLC, sends transactional
+        Realtor Portal, a product of{' '}
+        <a
+          href="https://parallelstudios.co"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-medium text-ink-900 underline underline-offset-2"
+        >
+          Parallel Studios LLC
+        </a>
+        , sends transactional
         text messages from the toll-free number{' '}
         <strong>+1&nbsp;(855)&nbsp;765-7815</strong> to real-estate clients who
         have consented to receive them. Messages are limited to updates about

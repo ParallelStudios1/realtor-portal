@@ -538,7 +538,15 @@ export default function RealtorSettingsScreen() {
           Permanently deletes your account and personal data.
         </Text>
 
-        <Text style={[styles.version, { color: colors.textSecondary }]}>Realtor Portal v0.1</Text>
+        <Text style={[styles.version, { color: colors.textSecondary }]}>Realtor Portal 0.1.3</Text>
+        <Pressable
+          onPress={() => Linking.openURL('https://parallelstudios.co')}
+          style={{ alignItems: 'center', paddingVertical: 6 }}
+        >
+          <Text style={{ color: colors.textSecondary, fontSize: 11 }}>
+            Built by Parallel Studios
+          </Text>
+        </Pressable>
       </ScrollView>
 
       {/* Change password modal */}

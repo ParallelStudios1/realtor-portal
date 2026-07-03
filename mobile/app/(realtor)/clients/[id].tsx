@@ -538,6 +538,11 @@ export default function RealtorClientDetailScreen() {
           ) : (
             (dates ?? []).map((d: any) => {
               const done = !!d.completed_at;
+              const overdue =
+                !done &&
+                d.date &&
+                String(d.date).slice(0, 10) <
+                  new Date().toISOString().slice(0, 10);
               return (
                 <Pressable
                   key={d.id}
@@ -551,18 +556,30 @@ export default function RealtorClientDetailScreen() {
                     color={done ? (colors.success || '#16a34a') : colors.textSecondary}
                     style={{ marginRight: 10 }}
                   />
-                  <Text
-                    style={[
-                      styles.dateLabel,
-                      {
-                        color: done ? colors.textSecondary : colors.text,
-                        textDecorationLine: done ? 'line-through' : 'none',
-                        flex: 1,
-                      },
-                    ]}
-                  >
-                    {d.label}
-                  </Text>
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      style={[
+                        styles.dateLabel,
+                        {
+                          color: done ? colors.textSecondary : colors.text,
+                          textDecorationLine: done ? 'line-through' : 'none',
+                        },
+                      ]}
+                    >
+                      {d.label}
+                    </Text>
+                    {overdue ? (
+                      <Text style={{ color: '#E11D48', fontSize: 11, marginTop: 2 }}>
+                        Past due - tap to mark done, or edit the date
+                      </Text>
+                    ) : done && d.auto_completed ? (
+                      <Text
+                        style={{ color: colors.textSecondary, fontSize: 11, marginTop: 2 }}
+                      >
+                        Marked done automatically
+                      </Text>
+                    ) : null}
+                  </View>
                   <Text style={[styles.dateValue, { color: colors.textSecondary }]}>
                     {new Date(d.date).toLocaleDateString()}
                   </Text>

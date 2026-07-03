@@ -1244,10 +1244,39 @@ export function DealWorkspace(props: {
               </p>
             ) : (
               <ul className="divide-y divide-ink-100">
-                {dates.map((d: any) => (
+                {dates.map((d: any) => {
+                  const done = !!d.completed_at;
+                  const overdue =
+                    !done &&
+                    d.date &&
+                    String(d.date).slice(0, 10) <
+                      new Date().toISOString().slice(0, 10);
+                  return (
                   <li key={d.id} className="px-5 py-2.5 text-sm">
                     <div className="flex items-baseline justify-between gap-2">
-                      <span className="font-medium">{d.label}</span>
+                      <span className="flex items-center gap-2 font-medium">
+                        <DateDoneToggle
+                          dateId={d.id}
+                          done={done}
+                        />
+                        <span
+                          className={
+                            done ? 'text-ink-400 line-through' : undefined
+                          }
+                        >
+                          {d.label}
+                        </span>
+                        {overdue && (
+                          <span className="rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-rose-700">
+                            Past due
+                          </span>
+                        )}
+                        {done && d.auto_completed && (
+                          <span className="text-[10px] text-ink-400">
+                            marked done automatically
+                          </span>
+                        )}
+                      </span>
                       <span className="text-xs font-semibold text-ink-700">
                         {formatDateOnly(d.date)}
                         {d.event_time ? ' · ' + formatTime(d.event_time) : ''}
@@ -1292,7 +1321,8 @@ export function DealWorkspace(props: {
                       me={{ id: me.userId, fullName: me.fullName }}
                     />
                   </li>
-                ))}
+                  );
+                })}
               </ul>
             )}
             {props.calendarUrl && (
@@ -1455,6 +1485,48 @@ function DateDeleteButton({
       className="text-[10px] font-semibold uppercase tracking-wide text-ink-400 hover:text-rose-600 hover:underline"
     >
       Remove
+    </button>
+  );
+}
+
+/**
+ * Circle toggle for marking an important date complete - same behavior the
+ * mobile app has. Hits /api/dates/complete and refreshes the page data.
+ */
+function DateDoneToggle({ dateId, done }: { dateId: string; done: boolean }) {
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  const toggle = async () => {
+    setBusy(true);
+    try {
+      const r = await fetch('/api/dates/complete', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ date_id: dateId, done: !done }),
+      });
+      if (r.ok) router.refresh();
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      disabled={busy}
+      aria-label={done ? 'Mark not complete' : 'Mark complete'}
+      title={done ? 'Mark not complete' : 'Mark complete'}
+      className={
+        'flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full border transition disabled:opacity-50 ' +
+        (done
+          ? 'border-emerald-600 bg-emerald-600 text-white'
+          : 'border-ink-300 bg-white text-transparent hover:border-ink-500')
+      }
+      style={{ width: 18, height: 18 }}
+    >
+      <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M20 6 9 17l-5-5" />
+      </svg>
     </button>
   );
 }
