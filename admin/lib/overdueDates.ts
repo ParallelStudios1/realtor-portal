@@ -55,21 +55,30 @@ export async function runOverdueDatesCron(service: Service): Promise<{
   let prompted = 0;
   for (const row of (overdue as any[]) || []) {
     try {
+      // Claim the row FIRST (guarded so two concurrent runs can't both take
+      // it), then notify. If the stamp fails we skip notifying entirely -
+      // better one missed nudge than a duplicate one every day.
+      const { data: claimed, error: claimErr } = await service
+        .from('important_dates')
+        .update({ completion_prompt_sent_at: new Date().toISOString() })
+        .eq('id', row.id)
+        .is('completion_prompt_sent_at', null)
+        .is('completed_at', null)
+        .select('id');
+      if (claimErr) {
+        errors.push(`claim ${row.id}: ${claimErr.message}`);
+        continue;
+      }
+      if (!claimed || claimed.length === 0) continue; // someone else claimed it
+
       // Who do we ask? The creator, else the date's owner, else the deal's
-      // realtor. Skip rows on deals that no longer exist.
+      // realtor. Orphaned deals get no notification.
       const { data: deal } = await service
         .from('client_searches')
         .select('id, name, realtor_id')
         .eq('id', row.search_id)
         .maybeSingle();
-      if (!deal) {
-        // Orphaned date - nothing useful to do; stamp it so we don't retry.
-        await service
-          .from('important_dates')
-          .update({ completion_prompt_sent_at: new Date().toISOString() })
-          .eq('id', row.id);
-        continue;
-      }
+      if (!deal) continue;
       const recipientId =
         row.created_by || row.owner_user_id || (deal as any).realtor_id;
       let email: string | null = null;
@@ -113,10 +122,6 @@ export async function runOverdueDatesCron(service: Service): Promise<{
         });
       }
 
-      await service
-        .from('important_dates')
-        .update({ completion_prompt_sent_at: new Date().toISOString() })
-        .eq('id', row.id);
       prompted++;
     } catch (e: any) {
       errors.push(`prompt ${row.id}: ${e?.message || e}`);
