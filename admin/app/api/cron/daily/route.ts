@@ -21,10 +21,16 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export async function GET(req: Request) {
+  // Vercel Cron sends CRON_SECRET; STATUS_CHECK_SECRET is accepted too so
+  // the cron can be triggered manually for diagnostics.
   const expected = process.env.CRON_SECRET;
-  if (expected) {
+  const alt = process.env.STATUS_CHECK_SECRET;
+  if (expected || alt) {
     const got = req.headers.get('authorization') || '';
-    if (got !== 'Bearer ' + expected) {
+    const ok =
+      (expected && got === 'Bearer ' + expected) ||
+      (alt && got === 'Bearer ' + alt);
+    if (!ok) {
       return NextResponse.json({ error: 'forbidden' }, { status: 401 });
     }
   }
