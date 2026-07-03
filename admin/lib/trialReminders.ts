@@ -36,14 +36,26 @@ export async function runTrialReminderCron(service: SupabaseClient) {
       skipped++;
       continue;
     }
-    if (firm.trial_reminder_sent_on === today) {
+    // Claim today's reminder slot in the database BEFORE sending anything.
+    // The filter makes this idempotent even across concurrent runs - only
+    // one execution per day can flip the stamp, and nobody emails unless
+    // they won the claim. (A plain JS equality check on the selected value
+    // proved unreliable; the DB-side guard is not.)
+    const { data: claimed, error: claimErr } = await service
+      .from('firms')
+      .update({ trial_reminder_sent_on: today })
+      .eq('id', firm.id)
+      .or(`trial_reminder_sent_on.is.null,trial_reminder_sent_on.neq.${today}`)
+      .select('id');
+    if (claimErr || !claimed || claimed.length === 0) {
       skipped++;
-      continue; // already nudged today
+      continue; // already nudged today (or the claim failed - don't risk spam)
     }
     const ms = new Date(firm.trial_ends_at).getTime() - Date.now();
     const daysLeft = Math.max(0, Math.ceil(ms / 86_400_000));
 
-    // Recipients: owners + firm admins of this firm.
+    // Recipients: owners + firm admins of this firm. (The day's slot is
+    // already claimed above; a recipient-less firm just consumes it.)
     const { data: admins } = await service
       .from('users')
       .select('email, full_name, phone')
@@ -90,10 +102,6 @@ export async function runTrialReminderCron(service: SupabaseClient) {
       }
     }
 
-    await service
-      .from('firms')
-      .update({ trial_reminder_sent_on: today })
-      .eq('id', firm.id);
     sent++;
   }
 
