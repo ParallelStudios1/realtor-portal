@@ -54,7 +54,7 @@
       "android": {
         "serviceAccountKeyPath": "/Users/turnerlogan/Downloads/google-play-service-account.json",
         "track": "internal",
-        "releaseStatus": "draft"
+        "releaseStatus": "completed"
       }
     }
   }
