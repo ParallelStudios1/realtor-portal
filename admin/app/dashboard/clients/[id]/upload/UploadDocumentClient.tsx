@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSupabaseBrowserClient } from '@/lib/supabaseBrowser';
 import { useToast } from '@/components/Toast';
@@ -15,6 +15,19 @@ const FOLDERS = [
   'Closing',
   'General',
 ] as const;
+
+// Visibility modes mirror the DB CHECK on documents.visibility (migration 0059).
+type Visibility = 'everyone' | 'firm' | 'restricted';
+
+// A party on the deal who could be granted access to a restricted document.
+type Party = {
+  // Stable key for React + de-dup.
+  key: string;
+  label: string;
+  role: string;
+  userId: string | null;
+  email: string | null;
+};
 
 /**
  * Drag-and-drop multi-file uploader. Files are pushed to the client-docs
@@ -40,6 +53,80 @@ export function UploadDocumentClient({
   const [pending, setPending] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
+  const [visibility, setVisibility] = useState<Visibility>('everyone');
+  const [parties, setParties] = useState<Party[]>([]);
+  const [chosen, setChosen] = useState<Record<string, boolean>>({});
+
+  // Load the deal's parties so a restricted document can be shared with a
+  // specific subset. Firm staff RLS lets the realtor read all of these.
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const collected: Party[] = [];
+      const seen = new Set<string>();
+      const push = (p: Party) => {
+        const dedupe = (p.userId || p.email || p.label).toLowerCase();
+        if (seen.has(dedupe)) return;
+        seen.add(dedupe);
+        collected.push(p);
+      };
+
+      // Client (deal owner) + attorney live on the search row.
+      const { data: search } = await supabase
+        .from('client_searches')
+        .select('client_id, attorney_email, attorney_name')
+        .eq('id', searchId)
+        .maybeSingle();
+
+      if (search?.client_id) {
+        const { data: c } = await supabase
+          .from('users')
+          .select('id, full_name, email')
+          .eq('id', search.client_id)
+          .maybeSingle();
+        if (c)
+          push({
+            key: 'user:' + c.id,
+            label: (c.full_name || c.email || 'Client') + ' (Client)',
+            role: 'client',
+            userId: c.id,
+            email: c.email ?? null,
+          });
+      }
+      if (search?.attorney_email) {
+        push({
+          key: 'email:' + search.attorney_email.toLowerCase(),
+          label: (search.attorney_name || search.attorney_email) + ' (Attorney)',
+          role: 'attorney',
+          userId: null,
+          email: search.attorney_email,
+        });
+      }
+
+      // Any other parties added to the deal.
+      const { data: participants } = await supabase
+        .from('deal_participants')
+        .select('user_id, external_email, external_name, role')
+        .eq('search_id', searchId);
+      for (const p of participants || []) {
+        const label =
+          (p.external_name || p.external_email || 'Party') +
+          ' (' + String(p.role).replace(/_/g, ' ') + ')';
+        push({
+          key: p.user_id ? 'user:' + p.user_id : 'email:' + (p.external_email || label).toLowerCase(),
+          label,
+          role: String(p.role),
+          userId: p.user_id ?? null,
+          email: p.external_email ?? null,
+        });
+      }
+
+      if (alive) setParties(collected);
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [supabase, searchId]);
 
   function addFiles(list: FileList | File[]) {
     const arr = Array.from(list);
@@ -49,6 +136,10 @@ export function UploadDocumentClient({
   async function uploadAll() {
     if (files.length === 0) {
       toast.show('Pick at least one file.', { variant: 'error' });
+      return;
+    }
+    if (visibility === 'restricted' && !parties.some((p) => chosen[p.key])) {
+      toast.show('Pick at least one person to share with.', { variant: 'error' });
       return;
     }
     setPending(true);
@@ -63,17 +154,38 @@ export function UploadDocumentClient({
         failed++;
         continue;
       }
-      const { error: insertErr } = await supabase.from('documents').insert({
-        firm_id: firmId,
-        search_id: searchId,
-        name: file.name,
-        storage_path: path,
-        mime_type: file.type || null,
-        file_size: file.size || null,
-        folder,
-      });
-      if (insertErr) failed++;
-      else ok++;
+      const { data: inserted, error: insertErr } = await supabase
+        .from('documents')
+        .insert({
+          firm_id: firmId,
+          search_id: searchId,
+          name: file.name,
+          storage_path: path,
+          mime_type: file.type || null,
+          file_size: file.size || null,
+          folder,
+          visibility,
+        })
+        .select('id')
+        .single();
+      if (insertErr || !inserted) {
+        failed++;
+        continue;
+      }
+      // For a restricted document, record exactly who may see it.
+      if (visibility === 'restricted') {
+        const rows = parties
+          .filter((p) => chosen[p.key])
+          .map((p) => ({
+            document_id: inserted.id,
+            user_id: p.userId,
+            recipient_email: p.userId ? null : p.email,
+          }));
+        if (rows.length > 0) {
+          await supabase.from('document_recipients').insert(rows);
+        }
+      }
+      ok++;
     }
     setPending(false);
     if (ok > 0) {
@@ -95,6 +207,14 @@ export function UploadDocumentClient({
           searchId,
           folder,
           names: files.slice(0, ok).map((f) => f.name),
+          visibility,
+          // For restricted docs, only these people should be notified.
+          recipientEmails:
+            visibility === 'restricted'
+              ? parties
+                  .filter((p) => chosen[p.key] && p.email)
+                  .map((p) => p.email as string)
+              : [],
         }),
       }).catch(() => {});
       router.push(redirectTo || `/dashboard/deals/${searchId}`);
@@ -118,6 +238,69 @@ export function UploadDocumentClient({
           ))}
         </select>
       </label>
+
+      <div className="space-y-2">
+        <span className="block text-xs font-semibold uppercase tracking-wide text-ink-500">
+          Who can see this?
+        </span>
+        <div className="grid gap-1.5">
+          {[
+            { v: 'everyone' as Visibility, t: 'Everyone on the deal', d: 'Client, attorney, and any added parties' },
+            { v: 'firm' as Visibility, t: 'My team only', d: 'Private to your firm — no client or attorney' },
+            { v: 'restricted' as Visibility, t: 'Specific people', d: 'Only the people you pick below' },
+          ].map((opt) => (
+            <label
+              key={opt.v}
+              className={
+                'flex cursor-pointer items-start gap-2.5 rounded-lg border px-3 py-2 text-sm transition ' +
+                (visibility === opt.v
+                  ? 'border-ink-900 bg-ink-50'
+                  : 'border-ink-200 hover:border-ink-300')
+              }
+            >
+              <input
+                type="radio"
+                name="doc-visibility"
+                className="mt-0.5"
+                checked={visibility === opt.v}
+                onChange={() => setVisibility(opt.v)}
+              />
+              <span>
+                <span className="block font-medium text-ink-800">{opt.t}</span>
+                <span className="block text-xs text-ink-500">{opt.d}</span>
+              </span>
+            </label>
+          ))}
+        </div>
+
+        {visibility === 'restricted' && (
+          <div className="mt-1 rounded-lg border border-ink-200 bg-ink-50/40 p-3">
+            {parties.length === 0 ? (
+              <p className="text-xs text-ink-500">
+                No other parties are on this deal yet. Add a client or party
+                first, or choose a different visibility.
+              </p>
+            ) : (
+              <ul className="space-y-1.5">
+                {parties.map((p) => (
+                  <li key={p.key}>
+                    <label className="flex cursor-pointer items-center gap-2 text-sm text-ink-700">
+                      <input
+                        type="checkbox"
+                        checked={!!chosen[p.key]}
+                        onChange={(e) =>
+                          setChosen((prev) => ({ ...prev, [p.key]: e.target.checked }))
+                        }
+                      />
+                      {p.label}
+                    </label>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+      </div>
 
       <div
         onDragOver={(e) => {

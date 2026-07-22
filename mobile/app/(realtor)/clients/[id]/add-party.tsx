@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -80,6 +80,28 @@ export default function AddPartyScreen() {
   const [msgs, setMsgs] = useState(false);
   const [dates, setDates] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  // Whether the user has typed anything yet — so auto-fill never clobbers input.
+  const [touched, setTouched] = useState(false);
+
+  // Auto-populate: if the realtor picks "Attorney" and this deal already has an
+  // attorney on file, prefill their name + email instead of re-typing it.
+  useEffect(() => {
+    if (touched || role !== 'attorney' || !searchId) return;
+    let alive = true;
+    (async () => {
+      const { data } = (await supabase
+        .from('client_searches')
+        .select('attorney_name, attorney_email')
+        .eq('id', searchId)
+        .maybeSingle()) as { data: any };
+      if (!alive || !data) return;
+      if (!name && data.attorney_name) setName(data.attorney_name);
+      if (!email && data.attorney_email) setEmail(data.attorney_email);
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [role, searchId, touched, name, email]);
 
   const canSubmit =
     !!searchId && (name.trim() || phone.trim() || email.trim()) && !submitting;
@@ -198,7 +220,10 @@ export default function AddPartyScreen() {
           </Text>
           <TextInput
             value={name}
-            onChangeText={setName}
+            onChangeText={(t) => {
+              setTouched(true);
+              setName(t);
+            }}
             placeholder="Full name"
             placeholderTextColor={colors.textSecondary}
             style={[styles.input, { color: colors.text, borderColor: colors.border, backgroundColor: colors.surface }]}
@@ -225,7 +250,10 @@ export default function AddPartyScreen() {
           </Text>
           <TextInput
             value={email}
-            onChangeText={setEmail}
+            onChangeText={(t) => {
+              setTouched(true);
+              setEmail(t);
+            }}
             placeholder="jane@example.com"
             placeholderTextColor={colors.textSecondary}
             keyboardType="email-address"

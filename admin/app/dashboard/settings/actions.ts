@@ -28,6 +28,28 @@ export async function saveProfileAction(fd: FormData) {
 }
 
 /**
+ * Set the signed-in realtor's stats-recap email cadence
+ * ('off' | 'monthly' | 'annual'). RLS scopes the update to their own row.
+ */
+export async function saveStatsCadenceAction(cadence: string) {
+  if (!['off', 'monthly', 'annual'].includes(cadence)) {
+    return { error: 'Invalid choice.' };
+  }
+  const supabase = getSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: 'Not signed in.' };
+
+  const { error } = await supabase
+    .from('users')
+    .update({ stats_email_cadence: cadence })
+    .eq('id', user.id);
+  if (error) return { error: error.message };
+
+  revalidatePath('/dashboard/settings');
+  return { ok: true as const };
+}
+
+/**
  * Change the signed-in user's password. Reauthenticates with the current
  * password first so a stolen session can't silently rotate the password.
  */

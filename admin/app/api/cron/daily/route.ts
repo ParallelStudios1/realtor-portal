@@ -4,6 +4,8 @@ import { runDeadlineCron } from '@/lib/deadlines';
 import { runShowingDigestCron } from '@/lib/showingDigest';
 import { runTrialReminderCron } from '@/lib/trialReminders';
 import { runOverdueDatesCron } from '@/lib/overdueDates';
+import { runRealtorReminderCron } from '@/lib/realtorReminders';
+import { runStatsDigestCron } from '@/lib/statsDigest';
 
 /**
  * Daily cron - runs the deadline-reminder/escalation pass and the seller-facing
@@ -69,5 +71,29 @@ export async function GET(req: Request) {
     overdue = { error: err?.message || 'runOverdueDatesCron failed' };
   }
 
-  return NextResponse.json({ ok: true, deadline, digest, trial, overdue });
+  let realtorReminders: any;
+  try {
+    realtorReminders = await runRealtorReminderCron(service);
+  } catch (err: any) {
+    console.error('[cron/daily] runRealtorReminderCron failed', err);
+    realtorReminders = { error: err?.message || 'runRealtorReminderCron failed' };
+  }
+
+  let statsDigest: any;
+  try {
+    statsDigest = await runStatsDigestCron(service);
+  } catch (err: any) {
+    console.error('[cron/daily] runStatsDigestCron failed', err);
+    statsDigest = { error: err?.message || 'runStatsDigestCron failed' };
+  }
+
+  return NextResponse.json({
+    ok: true,
+    deadline,
+    digest,
+    trial,
+    overdue,
+    realtorReminders,
+    statsDigest,
+  });
 }

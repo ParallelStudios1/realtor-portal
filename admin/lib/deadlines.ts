@@ -38,7 +38,7 @@ export type DeadlineCronSummary = {
 
 /** Channels we know how to queue. Mirrors what the drips cron can dispatch. */
 export type ReminderChannel = 'email' | 'sms' | 'in_app';
-export type ReminderAudience = 'staff' | 'client' | 'all_parties';
+export type ReminderAudience = 'staff' | 'client' | 'all_parties' | 'specific';
 
 /** YYYY-MM-DD for "today" in UTC. Single source of truth for the run. */
 export function todayUtc(now: Date = new Date()): string {
@@ -233,6 +233,7 @@ export async function runDeadlineCron(
     .from('date_reminders')
     .select(
       `id, firm_id, date_id, search_id, offset_days, channels, audience, escalate,
+       custom_message, custom_label, recipient_user_id, recipient_email,
        important_date:important_dates!date_reminders_date_id_fkey (
          id, label, date, completed_at, owner_user_id,
          search:client_searches!important_dates_search_id_fkey ( id, name )
@@ -262,18 +263,35 @@ export async function runDeadlineCron(
       ? (r.channels as ReminderChannel[])
       : ['email', 'in_app'];
     const audience = (r.audience || 'staff') as ReminderAudience;
-    const body = buildDeadlineBody({
-      label: d.label,
-      date: d.date,
-      dealName: d.search?.name ?? null,
-    });
-    const subject = `Reminder: ${d.label}`;
+    // A custom message (and subject) overrides the auto-generated deadline copy.
+    const body =
+      typeof r.custom_message === 'string' && r.custom_message.trim()
+        ? r.custom_message.trim()
+        : buildDeadlineBody({
+            label: d.label,
+            date: d.date,
+            dealName: d.search?.name ?? null,
+          });
+    const subject =
+      typeof r.custom_label === 'string' && r.custom_label.trim()
+        ? r.custom_label.trim()
+        : `Reminder: ${d.label}`;
 
-    const recipients = await resolveAudienceRecipients(service, {
-      audience,
-      searchId: r.search_id,
-      ownerUserId: d.owner_user_id ?? null,
-    });
+    // 'specific' targets the one person named on the reminder row; every other
+    // audience resolves through the shared helper.
+    const recipients =
+      audience === 'specific'
+        ? [
+            {
+              user_id: (r.recipient_user_id as string | null) ?? null,
+              email: (r.recipient_email as string | null) ?? null,
+            },
+          ].filter((rec) => rec.user_id || rec.email)
+        : await resolveAudienceRecipients(service, {
+            audience,
+            searchId: r.search_id,
+            ownerUserId: d.owner_user_id ?? null,
+          });
 
     const inserts: any[] = [];
     for (const rec of recipients) {

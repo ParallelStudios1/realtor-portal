@@ -7,6 +7,7 @@ import { formatDateOnly } from '@/lib/dates';
 import { phaseLabelFor, listingStatusLabel, isSellerKind, DEAL_PHASES } from '@/lib/dealKind';
 import { AgreedHomeCard } from '@/components/AgreedHomeCard';
 import { AttorneyDocList, type AttorneyDoc } from '@/components/AttorneyDocList';
+import { AttorneyUpload, type UploadParty } from './AttorneyUpload';
 import { DealChat } from '@/components/DealChat';
 import { PrivateMessages } from '@/components/PrivateMessages';
 import { getPrivateParties } from '@/app/dashboard/deals/[id]/privateActions';
@@ -143,6 +144,65 @@ export default async function DealPage({
     isStaffSameFirm || isPrincipalClient || !!myParticipantRow?.can_view_messages;
   const canSeeDates =
     isStaffSameFirm || isPrincipalClient || !!myParticipantRow?.can_view_dates;
+
+  // Is the caller the attorney on this deal? They may upload documents and
+  // choose who sees them (rights granted in migration 0059).
+  const isAttorney =
+    myParticipantRow?.role === 'attorney' ||
+    (!!d.attorney_email && d.attorney_email.toLowerCase() === myEmail);
+
+  // Party list an uploader can share a restricted document with. Built here
+  // with the service-role read since a non-staff uploader's own RLS can't see
+  // the full participant/user set.
+  const uploadParties: UploadParty[] = (() => {
+    const out: UploadParty[] = [];
+    const seen = new Set<string>();
+    const add = (p: UploadParty) => {
+      const k = (p.userId || p.email || p.label).toLowerCase();
+      if (seen.has(k)) return;
+      seen.add(k);
+      out.push(p);
+    };
+    if (d.client?.id) {
+      add({
+        key: 'user:' + d.client.id,
+        label: (d.client.full_name || d.client.email || 'Client') + ' (Client)',
+        userId: d.client.id,
+        email: d.client.email ?? null,
+      });
+    }
+    if (d.realtor?.id) {
+      add({
+        key: 'user:' + d.realtor.id,
+        label: (d.realtor.full_name || d.realtor.email || 'Realtor') + ' (Realtor)',
+        userId: d.realtor.id,
+        email: d.realtor.email ?? null,
+      });
+    }
+    if (d.attorney_email) {
+      add({
+        key: 'email:' + String(d.attorney_email).toLowerCase(),
+        label: (d.attorney_name || d.attorney_email) + ' (Attorney)',
+        userId: null,
+        email: d.attorney_email,
+      });
+    }
+    for (const p of parts) {
+      const label =
+        (p.external_name || p.external_email || 'Party') +
+        ' (' + String(p.role).replace(/_/g, ' ') + ')';
+      add({
+        key: p.user_id ? 'user:' + p.user_id : 'email:' + String(p.external_email || label).toLowerCase(),
+        label,
+        userId: p.user_id ?? null,
+        email: p.external_email ?? null,
+      });
+    }
+    // Don't offer the uploader themselves as a recipient.
+    return out.filter(
+      (p) => p.userId !== me.user_id && (p.email || '').toLowerCase() !== myEmail
+    );
+  })();
 
   const phaseIdx = PHASES.indexOf(d.phase as any);
   const brand = d.firm?.brand_color || '#0F172A';
@@ -600,6 +660,14 @@ export default async function DealPage({
             {/* Documents - gated */}
             {canSeeDocuments && (
               <Section title={`Documents (${documents?.length || 0})`}>
+                {isAttorney && (
+                  <AttorneyUpload
+                    firmId={d.firm.id}
+                    searchId={params.id}
+                    uploaderId={me.user_id as string}
+                    parties={uploadParties}
+                  />
+                )}
                 {!documents || documents.length === 0 ? (
                   <Empty msg="No documents shared yet." />
                 ) : (

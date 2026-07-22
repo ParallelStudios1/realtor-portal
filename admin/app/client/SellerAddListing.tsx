@@ -29,6 +29,9 @@ export function SellerAddListing({
   const [sqft, setSqft] = useState('');
   const [notes, setNotes] = useState('');
   const [files, setFiles] = useState<File[]>([]);
+  // Who can see the uploaded listing documents. Sellers get the two choices
+  // that make sense for them; 'everyone' is the default intent.
+  const [docVisibility, setDocVisibility] = useState<'everyone' | 'firm'>('everyone');
   const fileRef = useRef<HTMLInputElement>(null);
   const [pending, start] = useTransition();
   const router = useRouter();
@@ -96,6 +99,7 @@ export function SellerAddListing({
         fd.set('square_feet', sqft);
         fd.set('notes', notes.trim());
         fd.set('docs_meta', JSON.stringify(docsMeta));
+        fd.set('visibility', docVisibility);
 
         const r = await addSellerListingAction(fd);
         if (!r || !r.ok) {
@@ -226,6 +230,34 @@ export function SellerAddListing({
               </li>
             ))}
           </ul>
+        )}
+
+        {files.length > 0 && (
+          <div className="mt-3">
+            <span className="label">Who can see these documents?</span>
+            <div className="mt-1 grid gap-1.5">
+              {[
+                { v: 'everyone' as const, t: 'My realtor and everyone on the deal' },
+                { v: 'firm' as const, t: 'My realtor’s team only' },
+              ].map((opt) => (
+                <label
+                  key={opt.v}
+                  className={
+                    'flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm transition ' +
+                    (docVisibility === opt.v ? 'border-ink-900 bg-ink-50' : 'border-ink-200')
+                  }
+                >
+                  <input
+                    type="radio"
+                    name="seller-doc-vis"
+                    checked={docVisibility === opt.v}
+                    onChange={() => setDocVisibility(opt.v)}
+                  />
+                  {opt.t}
+                </label>
+              ))}
+            </div>
+          </div>
         )}
       </div>
 

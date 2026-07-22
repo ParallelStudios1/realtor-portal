@@ -14,8 +14,12 @@ export const metadata = { title: 'New deal · Realtor Portal' };
 export default function NewDealPage({
   searchParams,
 }: {
-  searchParams: { error?: string };
+  // `name`/`kind` prefill the form when starting a deal from a contact/client,
+  // so the realtor doesn't retype what the app already knows.
+  searchParams: { error?: string; name?: string; kind?: string };
 }) {
+  const prefillName = searchParams.name || '';
+  const prefillKind = searchParams.kind === 'seller' ? 'seller' : 'buyer';
   return (
     <main className="mx-auto max-w-2xl px-6 py-8">
       <Link
@@ -57,6 +61,7 @@ export default function NewDealPage({
             name="name"
             type="text"
             required
+            defaultValue={prefillName}
             placeholder="e.g. Westside buyer search, 123 Main St listing"
             className="input mt-1.5"
             autoFocus
@@ -74,7 +79,7 @@ export default function NewDealPage({
                 type="radio"
                 name="kind"
                 value="buyer"
-                defaultChecked
+                defaultChecked={prefillKind === 'buyer'}
                 className="mt-0.5 h-4 w-4 accent-ink-900"
               />
               <span>
@@ -89,6 +94,7 @@ export default function NewDealPage({
                 type="radio"
                 name="kind"
                 value="seller"
+                defaultChecked={prefillKind === 'seller'}
                 className="mt-0.5 h-4 w-4 accent-ink-900"
               />
               <span>

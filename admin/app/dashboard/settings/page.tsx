@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getMe, getSupabaseServerClient } from '@/lib/supabaseSsr';
 import { SettingsForm } from './SettingsForm';
+import { StatsEmailPref } from './StatsEmailPref';
 import { TestSmsButton } from '@/components/TestSmsButton';
 
 export const dynamic = 'force-dynamic';
@@ -15,6 +16,17 @@ export default async function SettingsPage() {
   const supabase = getSupabaseServerClient();
 
   const isFirmAdmin = me.role === 'firm_admin' || me.role === 'super_admin';
+
+  // Current stats-recap email cadence for this realtor.
+  let statsCadence = 'monthly';
+  {
+    const { data: meRow } = await supabase
+      .from('users')
+      .select('stats_email_cadence')
+      .eq('id', me.user_id)
+      .maybeSingle();
+    if (meRow?.stats_email_cadence) statsCadence = meRow.stats_email_cadence;
+  }
 
   let firmRow: {
     id: string;
@@ -97,6 +109,15 @@ export default async function SettingsPage() {
           }
         />
       </div>
+
+      <section id="recap" className="mt-8 rounded-2xl border border-ink-200 bg-white p-6 shadow-soft-sm">
+        <h2 className="text-lg font-semibold text-ink-900">Your recap emails</h2>
+        <p className="mb-4 mt-1 text-sm text-ink-600">
+          Get a congrats email with what you closed. We only send it when you
+          actually closed something.
+        </p>
+        <StatsEmailPref initial={statsCadence} />
+      </section>
 
       <section id="sms" className="mt-8 rounded-2xl border border-ink-200 bg-white p-6 shadow-soft-sm">
         <h2 className="text-lg font-semibold text-ink-900">SMS</h2>

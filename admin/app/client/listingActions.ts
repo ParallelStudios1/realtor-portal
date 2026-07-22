@@ -137,6 +137,13 @@ export async function addSellerListingAction(fd: FormData) {
     .single();
   if (hErr) return { ok: false as const, error: hErr.message };
 
+  // Visibility the seller picked for their listing documents. Defaults to
+  // 'everyone' (their realtor + parties) which is the usual intent.
+  const rawVis = String(fd.get('visibility') || 'everyone');
+  const docVisibility = ['everyone', 'firm', 'restricted'].includes(rawVis)
+    ? rawVis
+    : 'everyone';
+
   // Record document rows for the files uploaded in step 1.
   let attached = 0;
   for (const d of docs) {
@@ -150,6 +157,7 @@ export async function addSellerListingAction(fd: FormData) {
       file_size: d.size || null,
       folder: 'Listing',
       uploaded_by: userId,
+      visibility: docVisibility,
     });
     if (!docErr) attached++;
   }

@@ -63,6 +63,12 @@ export async function addDateReminderAction(input: {
   channels: ReminderChannel[];
   audience: ReminderAudience;
   escalate: boolean;
+  // Optional customization (migration 0062).
+  atTime?: string | null; // 'HH:MM'
+  customMessage?: string | null;
+  customLabel?: string | null;
+  recipientUserId?: string | null;
+  recipientEmail?: string | null;
 }): Promise<ActionResult<{ id: string }>> {
   const auth = await authorizeDate(input.dateId);
   if (!auth.ok) return auth;
@@ -76,6 +82,20 @@ export async function addDateReminderAction(input: {
     ? Math.max(0, Math.min(60, Math.trunc(input.offsetDays)))
     : 3;
 
+  // A 'specific' reminder must name someone to reach.
+  if (
+    input.audience === 'specific' &&
+    !input.recipientUserId &&
+    !input.recipientEmail
+  ) {
+    return { ok: false, error: 'Pick who to remind.' };
+  }
+
+  const validTime =
+    typeof input.atTime === 'string' && /^\d{2}:\d{2}$/.test(input.atTime)
+      ? input.atTime
+      : null;
+
   const { data: inserted, error } = await service
     .from('date_reminders')
     .insert({
@@ -87,6 +107,13 @@ export async function addDateReminderAction(input: {
       audience: input.audience || 'staff',
       escalate: input.escalate !== false,
       created_by: me.user_id,
+      ...(validTime ? { at_time: validTime } : {}),
+      custom_message: input.customMessage?.trim() || null,
+      custom_label: input.customLabel?.trim() || null,
+      recipient_user_id:
+        input.audience === 'specific' ? input.recipientUserId ?? null : null,
+      recipient_email:
+        input.audience === 'specific' ? input.recipientEmail ?? null : null,
     })
     .select('id')
     .single();

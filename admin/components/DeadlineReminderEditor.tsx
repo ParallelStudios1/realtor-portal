@@ -23,7 +23,7 @@ import {
 } from '@/app/dashboard/deals/[id]/deadlineActions';
 
 type Channel = 'email' | 'sms' | 'in_app';
-type Audience = 'staff' | 'client' | 'all_parties';
+type Audience = 'staff' | 'client' | 'all_parties' | 'specific';
 
 export type DeadlineDate = {
   id: string;
@@ -53,6 +53,7 @@ const AUDIENCES: { value: Audience; label: string }[] = [
   { value: 'staff', label: 'Staff' },
   { value: 'client', label: 'Client' },
   { value: 'all_parties', label: 'All parties' },
+  { value: 'specific', label: 'Specific person' },
 ];
 
 function daysUntil(date: string): number {
@@ -229,6 +230,10 @@ function RemindersPanel({
     channels: Channel[];
     audience: Audience;
     escalate: boolean;
+    atTime?: string | null;
+    customMessage?: string | null;
+    customLabel?: string | null;
+    recipientEmail?: string | null;
   }) => void;
   onRemove: (reminderId: string) => void;
 }) {
@@ -236,6 +241,10 @@ function RemindersPanel({
   const [channels, setChannels] = useState<Channel[]>(['email', 'in_app']);
   const [audience, setAudience] = useState<Audience>('staff');
   const [escalate, setEscalate] = useState(true);
+  const [atTime, setAtTime] = useState('09:00');
+  const [customLabel, setCustomLabel] = useState('');
+  const [customMessage, setCustomMessage] = useState('');
+  const [specificEmail, setSpecificEmail] = useState('');
 
   const toggleChannel = (c: Channel) =>
     setChannels((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]));
@@ -308,6 +317,15 @@ function RemindersPanel({
             </option>
           ))}
         </select>
+        <label className="flex items-center gap-1.5">
+          <span className="font-semibold uppercase tracking-wide text-ink-500">At</span>
+          <input
+            type="time"
+            value={atTime}
+            onChange={(e) => setAtTime(e.target.value)}
+            className="rounded-md border border-ink-200 bg-white px-1.5 py-0.5 text-ink-800 transition focus:border-ink-500 focus:outline-none focus:ring-2 focus:ring-ink-200"
+          />
+        </label>
         <label className="flex items-center gap-1.5 font-medium text-ink-600">
           <input
             type="checkbox"
@@ -317,11 +335,54 @@ function RemindersPanel({
           />
           Escalate
         </label>
+      </div>
+
+      {audience === 'specific' && (
+        <input
+          type="email"
+          value={specificEmail}
+          onChange={(e) => setSpecificEmail(e.target.value)}
+          placeholder="Who to remind (email)"
+          className="mt-2 w-full rounded-md border border-ink-200 bg-white px-2 py-1 text-ink-800 transition focus:border-ink-500 focus:outline-none focus:ring-2 focus:ring-ink-200"
+        />
+      )}
+
+      <input
+        type="text"
+        value={customLabel}
+        onChange={(e) => setCustomLabel(e.target.value)}
+        placeholder="Subject (optional) — defaults to the date name"
+        className="mt-2 w-full rounded-md border border-ink-200 bg-white px-2 py-1 text-ink-800 transition focus:border-ink-500 focus:outline-none focus:ring-2 focus:ring-ink-200"
+      />
+      <textarea
+        value={customMessage}
+        onChange={(e) => setCustomMessage(e.target.value)}
+        placeholder="What the reminder should say (optional) — leave blank for the default"
+        rows={2}
+        className="mt-2 w-full rounded-md border border-ink-200 bg-white px-2 py-1 text-ink-800 transition focus:border-ink-500 focus:outline-none focus:ring-2 focus:ring-ink-200"
+      />
+
+      <div className="mt-2 flex justify-end">
         <button
           type="button"
-          disabled={pending || channels.length === 0}
-          onClick={() => onAdd({ offsetDays: offset, channels, audience, escalate })}
-          className="btn-xs-solid ml-auto"
+          disabled={
+            pending ||
+            channels.length === 0 ||
+            (audience === 'specific' && !specificEmail.includes('@'))
+          }
+          onClick={() =>
+            onAdd({
+              offsetDays: offset,
+              channels,
+              audience,
+              escalate,
+              atTime,
+              customLabel: customLabel || null,
+              customMessage: customMessage || null,
+              recipientEmail: audience === 'specific' ? specificEmail : null,
+            })
+          }
+          className="btn-xs-solid"
         >
           {pending ? 'Working…' : 'Add reminder'}
         </button>
