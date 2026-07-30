@@ -23,6 +23,7 @@ import * as ImagePicker from 'expo-image-picker';
 // undefined, which crashed image uploads ("cannot read property Base64").
 import * as FileSystem from 'expo-file-system/legacy';
 import { useAuth } from '@/lib/auth';
+import { router } from 'expo-router';
 import { useTheme } from '@/lib/theme';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/Toast';
@@ -384,15 +385,25 @@ export default function RealtorSettingsScreen() {
             );
           })()}
           <Text style={[styles.helper, { color: colors.textSecondary }]}>
-            Plans and payment are managed on the web. This opens your billing page.
+            {Platform.OS === 'ios'
+              ? 'Subscribe or restore your plan here. Manage or cancel any time in your Apple account settings.'
+              : 'Plans and payment are managed on the web. This opens your billing page.'}
           </Text>
           <Pressable
-            onPress={() => Linking.openURL(MANAGE_PLAN_URL)}
+            onPress={() =>
+              Platform.OS === 'ios'
+                ? router.push('/(realtor)/subscribe')
+                : Linking.openURL(MANAGE_PLAN_URL)
+            }
             style={[styles.secondaryBtn, { borderColor: colors.primary }]}
           >
-            <Ionicons name="open-outline" size={16} color={colors.primary} />
+            <Ionicons
+              name={Platform.OS === 'ios' ? 'card-outline' : 'open-outline'}
+              size={16}
+              color={colors.primary}
+            />
             <Text style={[styles.secondaryBtnText, { color: colors.primary }]}>
-              Manage plan online
+              {Platform.OS === 'ios' ? 'View plans' : 'Manage plan online'}
             </Text>
           </Pressable>
         </View>

@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet, Linking } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Linking, Platform } from 'react-native';
+import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useFirm } from '@/lib/queries';
 import { useTheme } from '@/lib/theme';
@@ -53,9 +54,16 @@ export function TrialBanner({
     : days === null
       ? 'You are on a free trial'
       : `${days} day${days === 1 ? '' : 's'} left in your free trial`;
+  // iOS must sell the subscription in-app (App Store guideline 3.1.1); other
+  // platforms keep using the web billing page.
+  const useIap = Platform.OS === 'ios';
   const sub = ended
-    ? 'Manage your plan to keep your portal active.'
-    : 'No payment is taken in the app. Manage your plan online.';
+    ? useIap
+      ? 'Subscribe to keep your portal active.'
+      : 'Manage your plan to keep your portal active.'
+    : useIap
+    ? 'Subscribe any time to keep going after the trial.'
+    : 'Manage your plan online.';
 
   return (
     <View
@@ -81,10 +89,14 @@ export function TrialBanner({
           )}
         </View>
         <Pressable
-          onPress={() => Linking.openURL(MANAGE_PLAN_URL)}
+          onPress={() =>
+            useIap
+              ? router.push('/(realtor)/subscribe')
+              : Linking.openURL(MANAGE_PLAN_URL)
+          }
           style={[styles.btn, { backgroundColor: tone }]}
         >
-          <Text style={styles.btnText}>Manage plan</Text>
+          <Text style={styles.btnText}>{useIap ? 'Subscribe' : 'Manage plan'}</Text>
         </Pressable>
       </View>
     </View>

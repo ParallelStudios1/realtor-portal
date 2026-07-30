@@ -20,7 +20,10 @@
         "applinks:realtor-portal-ten.vercel.app"
       ],
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSPhotoLibraryUsageDescription": "Realtor Portal needs access to your photo library so you can attach photos and documents to a deal — for example, selecting a photo of a property to add to a listing, or a scanned disclosure to share with your client.",
+        "NSCameraUsageDescription": "Realtor Portal needs access to your camera so you can photograph documents and properties directly into a deal — for example, taking a picture of a signed inspection report to upload to the file.",
+        "NSMicrophoneUsageDescription": "Realtor Portal needs access to your microphone to record audio when you capture a video walkthrough of a property to share with your client."
       }
     },
     "android": {

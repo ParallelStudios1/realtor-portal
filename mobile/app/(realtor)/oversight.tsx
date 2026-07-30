@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   Linking,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -84,7 +85,11 @@ export default function OversightScreen() {
             every agent's overdue and at-risk deadlines in one place.
           </Text>
           <Pressable
-            onPress={() => Linking.openURL(MANAGE_PLAN_URL)}
+            onPress={() =>
+              Platform.OS === 'ios'
+                ? router.push('/(realtor)/subscribe')
+                : Linking.openURL(MANAGE_PLAN_URL)
+            }
             style={[s.btn, { backgroundColor: colors.primary }]}
           >
             <Text style={s.btnText}>Upgrade plan</Text>
