@@ -13,10 +13,20 @@ import { supabase } from '@/lib/supabase';
  * signature and flips firms.status to 'active'.
  */
 
-/** Auto-renewing subscription product IDs, as configured in App Store Connect. */
+/**
+ * Auto-renewing subscription product IDs, as configured in App Store Connect
+ * (subscription group "Realtor Portal Plans").
+ *
+ * These mirror the web pricing tiers. NOTE: Apple caps a single subscription
+ * price point at $999.99 per period, so Team ($2,990/yr) and Brokerage
+ * ($7,990/yr) annual plans cannot be represented as IAP — only their monthly
+ * equivalents exist here. Annual is offered on Starter only.
+ */
 export const IAP_PRODUCT_IDS = [
-  'com.parallelstudios.realtorportal.pro.monthly',
-  'com.parallelstudios.realtorportal.pro.yearly',
+  'com.parallelstudios.realtorportal.starter.monthly', // $99.99
+  'com.parallelstudios.realtorportal.team.monthly', // $299.99
+  'com.parallelstudios.realtorportal.brokerage.monthly', // $799.99
+  'com.parallelstudios.realtorportal.starter.yearly', // $999.99
 ] as const;
 
 export type IapProduct = {
