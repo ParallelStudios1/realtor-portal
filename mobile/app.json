@@ -73,7 +73,8 @@
       "expo-router",
       "expo-notifications",
       "expo-document-picker",
-      "expo-image-picker"
+      "expo-image-picker",
+      "expo-iap"
     ],
     "scheme": "realtorportal",
     "extra": {
