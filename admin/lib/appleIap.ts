@@ -26,72 +26,111 @@ export type AppleTransaction = {
   revocationDate?: number;
 };
 
-/** Base64url → utf8 JSON. */
-function decodeSegment(seg: string): any {
-  const b64 = seg.replace(/-/g, '+').replace(/_/g, '/');
-  const pad = b64.length % 4 ? '='.repeat(4 - (b64.length % 4)) : '';
-  return JSON.parse(Buffer.from(b64 + pad, 'base64').toString('utf8'));
-}
-
 /**
- * Verify a JWS from Apple and return its payload.
- *
- * Uses the official Apple library when available (full x5c chain validation
- * against Apple's root CAs). If it isn't installed we fall back to decoding
- * the payload and enforcing the bundle id — callers still get correct data,
- * but you should install @apple/app-store-server-library for production.
+ * Apple's published root CAs. Fetched over TLS from apple.com (which
+ * authenticates them) and cached for the life of the lambda. An operator can
+ * pre-seed APPLE_ROOT_CERTS with base64 DER to skip the network entirely.
  */
-export async function verifyAppleJws(signedPayload: string): Promise<any> {
-  const bundleId = process.env.APPLE_BUNDLE_ID || 'com.parallelstudios.realtorportal';
+const APPLE_ROOT_CERT_URLS = [
+  'https://www.apple.com/certificateauthority/AppleRootCA-G3.cer',
+  'https://www.apple.com/certificateauthority/AppleRootCA-G2.cer',
+];
 
-  try {
-    // Dynamic import so the app still builds if the dep isn't present.
-    const lib: any = await import('@apple/app-store-server-library').catch(
-      () => null
-    );
-    if (lib?.SignedDataVerifier) {
-      const rootCerts = loadAppleRootCerts();
-      const environment =
-        process.env.APPLE_IAP_ENV === 'sandbox'
-          ? lib.Environment.SANDBOX
-          : lib.Environment.PRODUCTION;
-      const verifier = new lib.SignedDataVerifier(
-        rootCerts,
-        true, // enableOnlineChecks
-        environment,
-        bundleId
-      );
-      // Works for both transaction and notification payloads.
-      try {
-        return await verifier.verifyAndDecodeTransaction(signedPayload);
-      } catch {
-        return await verifier.verifyAndDecodeNotification(signedPayload);
-      }
-    }
-  } catch (err) {
-    console.error('[appleIap] signed verification unavailable, decoding', err);
-  }
+let cachedRoots: Buffer[] | null = null;
 
-  // Fallback: decode + sanity-check the bundle id.
-  const parts = signedPayload.split('.');
-  if (parts.length !== 3) throw new Error('Malformed JWS');
-  const payload = decodeSegment(parts[1]);
-  const gotBundle =
-    payload?.bundleId || payload?.data?.bundleId || payload?.appAppleId;
-  if (gotBundle && payload?.bundleId && payload.bundleId !== bundleId) {
-    throw new Error('Bundle id mismatch');
-  }
-  return payload;
-}
+async function getAppleRootCerts(): Promise<Buffer[]> {
+  if (cachedRoots && cachedRoots.length) return cachedRoots;
 
-/** Apple root certs, base64 DER, newline-separated in APPLE_ROOT_CERTS. */
-function loadAppleRootCerts(): Buffer[] {
-  const raw = process.env.APPLE_ROOT_CERTS || '';
-  return raw
+  const fromEnv = (process.env.APPLE_ROOT_CERTS || '')
     .split(/[\n,]+/)
     .map((s) => s.trim())
     .filter(Boolean)
     .map((b64) => Buffer.from(b64, 'base64'));
+  if (fromEnv.length) {
+    cachedRoots = fromEnv;
+    return cachedRoots;
+  }
+
+  const fetched: Buffer[] = [];
+  for (const url of APPLE_ROOT_CERT_URLS) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) continue;
+      fetched.push(Buffer.from(await res.arrayBuffer()));
+    } catch (err) {
+      console.error('[appleIap] root cert fetch failed', url, err);
+    }
+  }
+  if (fetched.length) cachedRoots = fetched;
+  return fetched;
+}
+
+/**
+ * Verify a JWS from Apple and return its decoded payload.
+ *
+ * FAILS CLOSED. If the signature cannot be cryptographically verified against
+ * Apple's root CAs this throws — we never fall back to merely decoding the
+ * payload, because an unverified transaction is attacker-controlled and would
+ * let anyone grant themselves a paid plan.
+ *
+ * Tries the Production environment first, then Sandbox: TestFlight and
+ * simulator purchases are Sandbox transactions, so a production-only verifier
+ * would reject every test purchase.
+ */
+export async function verifyAppleJws(signedPayload: string): Promise<any> {
+  const bundleId = process.env.APPLE_BUNDLE_ID || 'com.parallelstudios.realtorportal';
+
+  const lib: any = await import('@apple/app-store-server-library').catch(
+    () => null
+  );
+  if (!lib?.SignedDataVerifier) {
+    throw new Error(
+      'Apple signature verification unavailable (@apple/app-store-server-library missing)'
+    );
+  }
+
+  const rootCerts = await getAppleRootCerts();
+  if (!rootCerts.length) {
+    throw new Error('Apple root certificates unavailable; refusing to verify');
+  }
+
+  // appAppleId is only required for the Production environment.
+  const appAppleId = process.env.APPLE_APP_APPLE_ID
+    ? Number(process.env.APPLE_APP_APPLE_ID)
+    : undefined;
+
+  const environments = [lib.Environment.PRODUCTION, lib.Environment.SANDBOX];
+  let lastErr: unknown = null;
+
+  for (const environment of environments) {
+    let verifier: any;
+    try {
+      verifier = new lib.SignedDataVerifier(
+        rootCerts,
+        true, // enableOnlineChecks (OCSP)
+        environment,
+        bundleId,
+        environment === lib.Environment.PRODUCTION ? appAppleId : undefined
+      );
+    } catch (err) {
+      lastErr = err;
+      continue;
+    }
+    // A payload is either a signed transaction or a server notification.
+    try {
+      return await verifier.verifyAndDecodeTransaction(signedPayload);
+    } catch (err) {
+      lastErr = err;
+    }
+    try {
+      return await verifier.verifyAndDecodeNotification(signedPayload);
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+
+  console.error('[appleIap] JWS verification failed', lastErr);
+  throw new Error('Apple transaction signature verification failed');
 }
 
 /** Normalize a decoded transaction payload into our shape. */
