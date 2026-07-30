@@ -2,31 +2,30 @@ import { Platform } from 'react-native';
 import { supabase } from '@/lib/supabase';
 
 /**
- * Apple In-App Purchase (StoreKit 2) helper.
+ * Apple In-App Purchase (StoreKit 2) helper — built against expo-iap v5.
  *
  * Required by App Store guideline 3.1.1: on iOS the subscription must be
  * purchasable inside the app. Android/web continue to use the existing Stripe
  * billing page, which Google and the web both permit.
  *
- * The server is the source of truth — after StoreKit reports a purchase we
- * hand the signed transaction to /api/iap/apple/verify, which validates the
+ * v5 API surface (OpenIAP): fetchProducts / requestPurchase / finishTransaction
+ * / getAvailablePurchases / initConnection / endConnection. Older names like
+ * getSubscriptions and getProducts do NOT exist in v5.
+ *
+ * The server is the source of truth — after StoreKit reports a purchase we hand
+ * the signed transaction to /api/iap/apple/verify, which validates the
  * signature and flips firms.status to 'active'.
  */
 
 /**
  * Auto-renewing subscription product IDs, as configured in App Store Connect
- * (subscription group "Realtor Portal Plans").
- *
- * These mirror the web pricing tiers. NOTE: Apple caps a single subscription
- * price point at $999.99 per period, so Team ($2,990/yr) and Brokerage
- * ($7,990/yr) annual plans cannot be represented as IAP — only their monthly
- * equivalents exist here. Annual is offered on Starter only.
+ * (subscription group "Realtor Portal Plans"). Monthly only — annual is not
+ * offered through Apple.
  */
 export const IAP_PRODUCT_IDS = [
   'com.parallelstudios.realtorportal.starter.monthly', // $99.99
   'com.parallelstudios.realtorportal.team.monthly', // $299.99
   'com.parallelstudios.realtorportal.brokerage.monthly', // $799.99
-  'com.parallelstudios.realtorportal.starter.yearly', // $999.99
 ] as const;
 
 export type IapProduct = {
@@ -49,11 +48,15 @@ async function mod(): Promise<any | null> {
   }
 }
 
+let connected = false;
+
 export async function initIap(): Promise<boolean> {
   const m = await mod();
   if (!m) return false;
+  if (connected) return true;
   try {
-    await (m.initConnection?.() ?? Promise.resolve());
+    await m.initConnection();
+    connected = true;
     return true;
   } catch (err) {
     console.warn('[iap] initConnection failed', err);
@@ -63,31 +66,46 @@ export async function initIap(): Promise<boolean> {
 
 export async function endIap(): Promise<void> {
   const m = await mod();
+  if (!m || !connected) return;
   try {
-    await (m?.endConnection?.() ?? Promise.resolve());
+    await m.endConnection();
   } catch {}
+  connected = false;
 }
 
-/** Fetch the subscription products, with their localized App Store prices. */
+/**
+ * Fetch the subscription products with their localized App Store prices.
+ * Returns [] when StoreKit has nothing for us — which on a real device almost
+ * always means the products aren't in a fetchable state in App Store Connect
+ * yet (they must be at least "Ready to Submit"), or the bundle id/agreement
+ * doesn't match.
+ */
 export async function getProducts(): Promise<IapProduct[]> {
   const m = await mod();
   if (!m) return [];
   try {
-    const fn = m.getSubscriptions || m.requestProducts || m.getProducts;
-    const raw = await fn.call(m, {
+    await initIap();
+    const raw = await m.fetchProducts({
       skus: [...IAP_PRODUCT_IDS],
       type: 'subs',
     });
-    const list = Array.isArray(raw) ? raw : raw?.subscriptions || [];
-    return list.map((p: any) => ({
-      id: p.id || p.productId,
-      title: p.title || p.displayName || 'Realtor Portal Pro',
-      description: p.description || '',
-      displayPrice:
-        p.displayPrice || p.localizedPrice || p.price?.toString() || '',
-    }));
+    const list = Array.isArray(raw) ? raw : [];
+    if (list.length === 0) {
+      console.warn(
+        '[iap] fetchProducts returned 0 products for',
+        IAP_PRODUCT_IDS.join(', ')
+      );
+    }
+    return list
+      .filter((p: any) => p && (p.id || p.productId))
+      .map((p: any) => ({
+        id: p.id || p.productId,
+        title: p.displayName || p.title || 'Realtor Portal',
+        description: p.description || '',
+        displayPrice: p.displayPrice || '',
+      }));
   } catch (err) {
-    console.warn('[iap] getProducts failed', err);
+    console.warn('[iap] fetchProducts failed', err);
     return [];
   }
 }
@@ -111,32 +129,31 @@ async function verifyWithServer(signedTransaction: string): Promise<boolean> {
   return Boolean(json?.active);
 }
 
-/** Pull the signed JWS off whatever shape the purchase object has. */
+/** Pull the signed JWS off a purchase, whichever field carries it. */
 function signedFrom(purchase: any): string | null {
   return (
-    purchase?.jwsRepresentationIos ||
     purchase?.jwsRepresentation ||
+    purchase?.jwsRepresentationIOS ||
     purchase?.purchaseToken ||
-    purchase?.transactionReceipt ||
     null
   );
 }
 
 /**
  * Buy a subscription. Resolves true once our server confirms the entitlement.
- * Throws on user cancellation so the UI can stay quiet.
+ * Throws on StoreKit errors; the caller silences user-cancellation.
  */
 export async function purchase(productId: string): Promise<boolean> {
   const m = await mod();
   if (!m) throw new Error('In-app purchase is not available on this device.');
+  await initIap();
 
-  const req = m.requestPurchase || m.requestSubscription;
-  const result = await req.call(m, {
-    request: { ios: { sku: productId }, sku: productId },
+  const result = await m.requestPurchase({
+    request: { apple: { sku: productId } },
     type: 'subs',
   });
 
-  const purchases = Array.isArray(result) ? result : [result];
+  const purchases = Array.isArray(result) ? result : result ? [result] : [];
   for (const p of purchases) {
     const signed = signedFrom(p);
     if (!signed) continue;
@@ -144,8 +161,7 @@ export async function purchase(productId: string): Promise<boolean> {
     if (ok) {
       // Tell StoreKit we delivered the content, or Apple re-prompts forever.
       try {
-        await (m.finishTransaction?.({ purchase: p, isConsumable: false }) ??
-          Promise.resolve());
+        await m.finishTransaction({ purchase: p, isConsumable: false });
       } catch {}
       return true;
     }
@@ -161,8 +177,10 @@ export async function restore(): Promise<boolean> {
   const m = await mod();
   if (!m) return false;
   try {
-    const fn = m.getAvailablePurchases || m.getPurchaseHistories;
-    const purchases = (await fn.call(m, { onlyIncludeActiveItems: true })) || [];
+    await initIap();
+    const purchases = await m.getAvailablePurchases({
+      onlyIncludeActiveItemsIOS: true,
+    });
     for (const p of Array.isArray(purchases) ? purchases : []) {
       const signed = signedFrom(p);
       if (!signed) continue;
