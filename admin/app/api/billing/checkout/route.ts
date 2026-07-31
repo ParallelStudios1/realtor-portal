@@ -67,7 +67,9 @@ export async function POST(req: Request) {
     const service = getSupabaseServiceRoleClient();
     const { data: firm, error: firmErr } = await service
       .from('firms')
-      .select('id, name, contact_email, stripe_customer_id')
+      .select(
+        'id, name, contact_email, stripe_customer_id, status, billing_source, iap_original_transaction_id'
+      )
       .eq('id', me.firm_id)
       .single();
 
@@ -75,6 +77,24 @@ export async function POST(req: Request) {
       return NextResponse.json(
         { error: 'Could not find your firm record. Please sign out and back in.' },
         { status: 404 }
+      );
+    }
+
+    // Never sell a Stripe plan to a firm that already pays through Apple —
+    // they'd be charged twice for the same thing, and Apple's subscription
+    // can only be changed or cancelled on the device. The iOS paywall has the
+    // mirror image of this guard for Stripe-billed firms.
+    if (
+      (firm as any).billing_source === 'apple' &&
+      (firm as any).status === 'active' &&
+      (firm as any).iap_original_transaction_id
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            'Your plan is billed through Apple. To change or cancel it, open Realtor Portal on your iPhone and go to Settings → Change or cancel plan.',
+        },
+        { status: 409 }
       );
     }
 

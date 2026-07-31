@@ -108,6 +108,7 @@ export default async function BillingPage({
   let seatCap = 1;
   let planName = 'Trial';
   let isSimulatedSubscription = false;
+  let billingSource: string | null = null;
   const isDevOwner =
     (me.email || '').toLowerCase() === 'turnerlogan@parallelstudios.co';
 
@@ -115,12 +116,19 @@ export default async function BillingPage({
     const service = getSupabaseServiceRoleClient();
     const { data: firmRow } = await service
       .from('firms')
-      .select('stripe_subscription_id')
+      .select('stripe_subscription_id, billing_source, iap_original_transaction_id')
       .eq('id', me.firm_id)
       .maybeSingle();
     isSimulatedSubscription = Boolean(
       (firmRow?.stripe_subscription_id || '').startsWith('sim_')
     );
+    // Only treat this as Apple-billed if there's a real Apple subscription
+    // behind it, not just a leftover column value.
+    billingSource =
+      (firmRow as any)?.billing_source === 'apple' &&
+      (firmRow as any)?.iap_original_transaction_id
+        ? 'apple'
+        : ((firmRow as any)?.billing_source ?? null);
     // Single source of truth for seat usage - dedup-safe so an invited
     // realtor is counted once, never as member + pending invite.
     const usage = await getSeatUsage(me.firm_id);
@@ -207,6 +215,11 @@ export default async function BillingPage({
                 <strong className="text-ink-900">{seatCap}</strong>{' '}
                 seat{seatCap === 1 ? '' : 's'} used
               </div>
+              {hasSubscription && (
+                <div className="mt-1 text-xs text-ink-500">
+                  Billed through {billingSource === 'apple' ? 'Apple' : 'the web'}
+                </div>
+              )}
             </div>
             {(nearCap || atCap) && upgradeTarget && (
               <a href="#plans" className="btn-primary">
@@ -244,7 +257,12 @@ export default async function BillingPage({
       )}
 
       <div id="plans">
-        <BillingClient plans={PLAN_CARDS} currentStatus={me.firm_status} />
+        <BillingClient
+          plans={PLAN_CARDS}
+          currentStatus={me.firm_status}
+          billingSource={billingSource}
+          currentTier={planTier}
+        />
       </div>
 
       <div className="mt-8 rounded-2xl border border-ink-200 bg-white p-6 text-sm text-ink-600 shadow-soft-sm">

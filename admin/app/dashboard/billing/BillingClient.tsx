@@ -17,10 +17,19 @@ type Plan = {
 export function BillingClient({
   plans,
   currentStatus,
+  billingSource,
+  currentTier,
 }: {
   plans: Plan[];
   currentStatus: string | null;
+  /** 'apple' when the firm subscribed on iOS, 'stripe' for web checkout. */
+  billingSource?: string | null;
+  /** The tier the firm is actually on, so we can mark it and disable re-buying. */
+  currentTier?: string | null;
 }) {
+  // An Apple-billed firm must manage its plan on the device — Apple owns that
+  // subscription. Offering Stripe checkout here would double-bill them.
+  const appleManaged = currentStatus === 'active' && billingSource === 'apple';
   const [pendingPlan, setPendingPlan] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const toast = useToast();
@@ -64,9 +73,21 @@ export function BillingClient({
           {error}
         </div>
       )}
+      {appleManaged && (
+        <div className="mt-6 rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800">
+          <strong className="block text-blue-900">
+            Your plan is billed through Apple.
+          </strong>
+          Everything you paid for works here on the web too. To switch plans or
+          cancel, open Realtor Portal on your iPhone and go to Settings →
+          Change or cancel plan. Buying here would charge you a second time.
+        </div>
+      )}
       <div className="mt-8 grid items-start gap-6 md:grid-cols-3">
         {plans.map((p) => {
           const pending = pendingPlan === p.id;
+          const isCurrent = currentStatus === 'active' && currentTier === p.id;
+          const disabled = pending || appleManaged || isCurrent;
           return (
             <div
               key={p.id}
@@ -77,10 +98,16 @@ export function BillingClient({
                   : 'border-ink-200 shadow-soft-sm hover:border-ink-300 hover:shadow-soft-md')
               }
             >
-              {p.popular && (
-                <div className="absolute -top-3 left-6 inline-flex items-center rounded-full bg-ink-900 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white shadow-soft-sm">
-                  Most popular
+              {isCurrent ? (
+                <div className="absolute -top-3 left-6 inline-flex items-center rounded-full bg-emerald-600 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white shadow-soft-sm">
+                  Your plan
                 </div>
+              ) : (
+                p.popular && (
+                  <div className="absolute -top-3 left-6 inline-flex items-center rounded-full bg-ink-900 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white shadow-soft-sm">
+                    Most popular
+                  </div>
+                )
               )}
               <h3 className="text-sm font-bold uppercase tracking-wide text-ink-700">
                 {p.name}
@@ -104,21 +131,27 @@ export function BillingClient({
               </ul>
               <button
                 type="button"
-                disabled={pending}
+                disabled={disabled}
                 onClick={() => startCheckout(p.id)}
                 data-loading={pending ? 'true' : undefined}
                 className={
                   'mt-6 block w-full rounded-lg px-4 py-2.5 text-center text-sm font-semibold transition active:scale-[0.98] disabled:opacity-60 disabled:pointer-events-none ' +
-                  (p.popular
-                    ? 'bg-ink-900 text-white shadow-soft-sm hover:bg-ink-700'
-                    : 'border border-ink-300 bg-white text-ink-800 hover:bg-ink-50')
+                  (isCurrent
+                    ? 'border border-emerald-300 bg-emerald-50 text-emerald-800'
+                    : p.popular
+                      ? 'bg-ink-900 text-white shadow-soft-sm hover:bg-ink-700'
+                      : 'border border-ink-300 bg-white text-ink-800 hover:bg-ink-50')
                 }
               >
                 {pending
                   ? 'Redirecting…'
-                  : currentStatus === 'active'
-                    ? 'Switch plan'
-                    : 'Subscribe'}
+                  : isCurrent
+                    ? 'Current plan'
+                    : appleManaged
+                      ? 'Managed on iPhone'
+                      : currentStatus === 'active'
+                        ? 'Switch plan'
+                        : 'Subscribe'}
               </button>
             </div>
           );
