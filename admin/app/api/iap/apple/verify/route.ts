@@ -7,6 +7,7 @@ import {
   normalizeTransaction,
   applyTransactionToFirm,
 } from '@/lib/appleIap';
+import { tierFromAppleProductId } from '@/lib/plans';
 
 /**
  * Resolve the caller from either a cookie session (web) or an
@@ -94,6 +95,28 @@ export async function POST(req: Request) {
     );
   }
 
+  // The client tells us which plan the user tapped. Apple's signed transaction
+  // is the source of truth, so a mismatch means the wrong transaction was sent
+  // (e.g. a stale one replayed from the queue). Refuse it rather than silently
+  // granting a plan the user didn't buy.
+  const expected = body?.expectedProductId;
+  if (typeof expected === 'string' && expected && expected !== txn.productId) {
+    console.error(
+      '[iap/verify] product mismatch — expected',
+      expected,
+      'but transaction is',
+      txn.productId
+    );
+    return NextResponse.json(
+      {
+        error: 'product_mismatch',
+        expected,
+        got: txn.productId,
+      },
+      { status: 409 }
+    );
+  }
+
   const result = await applyTransactionToFirm(service, {
     firmId: me.firm_id,
     txn,
@@ -101,9 +124,19 @@ export async function POST(req: Request) {
     raw: decoded,
   });
 
+  // 'duplicate' = we already recorded it; 'stale' = the firm already holds a
+  // longer-running entitlement. Both mean the firm IS subscribed, so neither
+  // should surface as "purchase could not be confirmed".
+  const entitled =
+    result.applied || result.reason === 'duplicate' || result.reason === 'stale';
+
   return NextResponse.json({
     ok: true,
-    active: result.applied || result.reason === 'duplicate',
+    active: entitled,
+    // Report back exactly what was granted so the app can show the truth
+    // instead of assuming the purchase matched the tapped plan.
+    productId: txn.productId,
+    planTier: tierFromAppleProductId(txn.productId),
     expiresAt: txn.expiresDate ? new Date(txn.expiresDate).toISOString() : null,
   });
 }

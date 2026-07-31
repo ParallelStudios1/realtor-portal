@@ -65,7 +65,14 @@ export default function SubscribeScreen() {
     firmStatus === 'active' && billingSource === 'apple'
       ? ((firm as any)?.iap_product_id as string | null)
       : null;
-  const stripeManaged = firmStatus === 'active' && billingSource !== 'apple';
+  // billing_source is NOT NULL and defaults to 'stripe', so "not apple" is not
+  // proof of a web subscription. Require an actual Stripe subscription id —
+  // otherwise a firm marked active by any other means would be locked out of
+  // buying a plan at all, with no way to fix it from the phone.
+  const stripeManaged =
+    firmStatus === 'active' &&
+    billingSource !== 'apple' &&
+    Boolean((firm as any)?.stripe_subscription_id);
 
   /** Pull fresh firm state so the trial banner + settings stop showing stale info. */
   const refreshFirm = async () => {

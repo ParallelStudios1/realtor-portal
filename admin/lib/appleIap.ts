@@ -210,6 +210,45 @@ export async function applyTransactionToFirm(
 
   if (!firmId) return { applied: false, reason: 'no_firm' };
 
+  // Staleness guard. Transactions do not arrive in order: StoreKit re-delivers
+  // unfinished ones, and notifications can land late. Without this, an old
+  // Starter transaction showing up after a Team purchase would silently
+  // downgrade a paying customer. If the firm already holds an Apple
+  // entitlement that outlasts this transaction, this one is history — record
+  // it for audit, but don't let it rewrite the current plan.
+  {
+    const { data: current } = await service
+      .from('firms')
+      .select('iap_expires_at, iap_original_transaction_id, iap_product_id')
+      .eq('id', firmId)
+      .maybeSingle();
+    const currentExpiry = (current as any)?.iap_expires_at
+      ? new Date((current as any).iap_expires_at).getTime()
+      : null;
+    const incomingExpiry = expiresAt ? expiresAt.getTime() : null;
+    const sameSubscription =
+      (current as any)?.iap_original_transaction_id ===
+      txn.originalTransactionId;
+
+    if (
+      currentExpiry !== null &&
+      incomingExpiry !== null &&
+      incomingExpiry < currentExpiry &&
+      currentExpiry > Date.now() &&
+      !(sameSubscription && revoked)
+    ) {
+      console.warn(
+        '[appleIap] ignoring stale transaction',
+        txn.productId,
+        'expires',
+        expiresAt?.toISOString(),
+        '— firm already entitled through',
+        (current as any).iap_expires_at
+      );
+      return { applied: false, reason: 'stale' };
+    }
+  }
+
   // Map the purchased product to a plan tier. This is what actually grants the
   // seat cap and feature flags the subscription advertises — without it a
   // Brokerage buyer would stay on the Starter seat limit.

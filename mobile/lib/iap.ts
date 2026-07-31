@@ -122,7 +122,10 @@ export function getLastVerifyError(): string | null {
  * Records why it failed so the paywall can say something more useful than
  * "could not be confirmed".
  */
-async function verifyWithServer(signedTransaction: string): Promise<boolean> {
+async function verifyWithServer(
+  signedTransaction: string,
+  expectedProductId?: string
+): Promise<boolean> {
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
   if (!token) {
@@ -138,11 +141,16 @@ async function verifyWithServer(signedTransaction: string): Promise<boolean> {
         'content-type': 'application/json',
         authorization: 'Bearer ' + token,
       },
-      body: JSON.stringify({ signedTransaction }),
+      // Declaring the plan the user tapped lets the server reject a mismatched
+      // transaction instead of quietly granting the wrong plan.
+      body: JSON.stringify({ signedTransaction, expectedProductId }),
     });
     const body = await res.text();
     if (!res.ok) {
-      lastVerifyError = `Server ${res.status}: ${body.slice(0, 140)}`;
+      lastVerifyError =
+        res.status === 409 && body.includes('product_mismatch')
+          ? 'Apple returned a different plan than the one you selected. Nothing was changed — please try again.'
+          : `Server ${res.status}: ${body.slice(0, 140)}`;
       console.warn('[iap] verify rejected', res.status, body);
       return false;
     }
@@ -171,6 +179,15 @@ function signedFrom(purchase: any): string | null {
 }
 
 /**
+ * The SKU a purchase refers to. expo-iap is inconsistent about the field name
+ * across platforms and shapes, so check every one it uses — reading only
+ * `productId` would make the matching below silently fail.
+ */
+function skuOf(purchase: any): string | null {
+  return purchase?.productId || purchase?.id || purchase?.sku || null;
+}
+
+/**
  * Buy a subscription. Resolves true once our server confirms the entitlement.
  * Throws on StoreKit errors; the caller silences user-cancellation.
  */
@@ -179,16 +196,39 @@ export async function purchase(productId: string): Promise<boolean> {
   if (!m) throw new Error('In-app purchase is not available on this device.');
   await initIap();
 
+  // Clear anything stranded in the queue first. StoreKit re-delivers unfinished
+  // transactions alongside new ones, so a purchase that previously failed
+  // server verification would otherwise come back and be mistaken for this one.
+  await flushStaleTransactions(m, productId);
+
   const result = await m.requestPurchase({
     request: { apple: { sku: productId } },
     type: 'subs',
   });
 
   const purchases = Array.isArray(result) ? result : result ? [result] : [];
-  for (const p of purchases) {
+
+  // Only ever act on the transaction for the product the user actually chose.
+  // Verifying "the first one with a signature" is how buying Team could grant
+  // Starter: a stale Starter transaction was still queued and arrived first.
+  const candidates = purchases.filter((p: any) => skuOf(p) === productId);
+
+  if (candidates.length === 0) {
+    console.warn(
+      '[iap] no transaction returned for',
+      productId,
+      'got:',
+      purchases.map((p: any) => skuOf(p)).join(', ') || 'none'
+    );
+    lastVerifyError =
+      'Apple did not return a purchase for the plan you selected. Tap Restore Purchases.';
+    return false;
+  }
+
+  for (const p of candidates) {
     const signed = signedFrom(p);
     if (!signed) continue;
-    const ok = await verifyWithServer(signed);
+    const ok = await verifyWithServer(signed, productId);
     if (ok) {
       // Tell StoreKit we delivered the content, or Apple re-prompts forever.
       try {
@@ -198,6 +238,36 @@ export async function purchase(productId: string): Promise<boolean> {
     }
   }
   return false;
+}
+
+/**
+ * Verify-and-finish any unfinished transactions still sitting in the queue.
+ *
+ * These accumulate whenever a purchase succeeded at Apple but failed our
+ * server verification. Left alone they get re-delivered on every subsequent
+ * purchase and can be mistaken for the new one. We skip the product being
+ * bought right now so we never race the live purchase.
+ */
+async function flushStaleTransactions(m: any, skipProductId?: string): Promise<void> {
+  try {
+    const pending = await m.getAvailablePurchases({
+      onlyIncludeActiveItemsIOS: false,
+    });
+    for (const p of Array.isArray(pending) ? pending : []) {
+      if (skipProductId && skuOf(p) === skipProductId) continue;
+      if (!signedFrom(p)) continue;
+      // Deliberately NOT verified here. Sending these to the server would let a
+      // months-old Starter transaction overwrite the plan the user is buying
+      // right now. Just clear them from the queue — getAvailablePurchases still
+      // reports live entitlements afterwards, so Restore Purchases can recover
+      // anything that genuinely never got applied.
+      try {
+        await m.finishTransaction({ purchase: p, isConsumable: false });
+      } catch {}
+    }
+  } catch (err) {
+    console.warn('[iap] flushStaleTransactions failed', err);
+  }
 }
 
 /**
@@ -227,15 +297,41 @@ export async function restore(): Promise<boolean> {
   if (!m) return false;
   try {
     await initIap();
-    const purchases = await m.getAvailablePurchases({
+    const raw = await m.getAvailablePurchases({
       onlyIncludeActiveItemsIOS: true,
     });
-    for (const p of Array.isArray(purchases) ? purchases : []) {
+    const purchases = (Array.isArray(raw) ? raw : []).filter((p: any) =>
+      signedFrom(p)
+    );
+    if (purchases.length === 0) return false;
+
+    // Restore the CURRENT subscription, not whichever happens to be first.
+    // Someone who upgraded Starter -> Team has both in history; sorting by
+    // transaction date means the newest (their real plan) wins.
+    purchases.sort(
+      (a: any, b: any) => (b?.transactionDate ?? 0) - (a?.transactionDate ?? 0)
+    );
+
+    let restored = false;
+    for (const p of purchases) {
       const signed = signedFrom(p);
       if (!signed) continue;
-      if (await verifyWithServer(signed)) return true;
+      if (!restored) {
+        // Newest first: this one defines the active plan.
+        restored = await verifyWithServer(signed);
+        if (restored) {
+          try {
+            await m.finishTransaction({ purchase: p, isConsumable: false });
+          } catch {}
+          continue;
+        }
+      }
+      // Clear the older ones so they can't be replayed as the "current" plan.
+      try {
+        await m.finishTransaction({ purchase: p, isConsumable: false });
+      } catch {}
     }
-    return false;
+    return restored;
   } catch (err) {
     console.warn('[iap] restore failed', err);
     return false;
