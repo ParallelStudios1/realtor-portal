@@ -24,7 +24,7 @@ import { supabase } from '@/lib/supabase';
  */
 export const IAP_PRODUCT_IDS = [
   'com.parallelstudios.realtorportal.starter.monthly', // $99.99
-  'com.parallelstudios.realtorportal.team.monthly', // $299.99
+  'com.parallelstudios.realtorportal.teamplan.monthly', // $299.99
   'com.parallelstudios.realtorportal.brokerage.monthly', // $799.99
 ] as const;
 

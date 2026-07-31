@@ -30,7 +30,7 @@ export const PLANS = {
     price: 299,
     seatCap: 15,
     priceId: 'price_1TUXB8E4f1D9W7YWhmNaJize',
-    appleProductId: 'com.parallelstudios.realtorportal.team.monthly',
+    appleProductId: 'com.parallelstudios.realtorportal.teamplan.monthly',
     features: ['customBranding', 'teamOversight'] as PlanFeature[],
   },
   brokerage: {
