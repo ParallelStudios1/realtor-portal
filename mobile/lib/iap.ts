@@ -24,12 +24,7 @@ import { supabase } from '@/lib/supabase';
  */
 export const IAP_PRODUCT_IDS = [
   'com.parallelstudios.realtorportal.starter.monthly', // $99.99
-  // Two Team ids on purpose: the original record hit an App Store Connect
-  // validation defect and was rebuilt under a new id. We request both so the
-  // paywall works with whichever one Apple ends up approving. StoreKit simply
-  // omits ids it doesn't recognise, so the unused one costs nothing.
-  'com.parallelstudios.realtorportal.teamplan.monthly', // $299.99 (current)
-  'com.parallelstudios.realtorportal.team.monthly', // $299.99 (legacy)
+  'com.parallelstudios.realtorportal.teamplan.monthly', // $299.99
   'com.parallelstudios.realtorportal.brokerage.monthly', // $799.99
 ] as const;
 

@@ -41,7 +41,15 @@ export async function getSeatUsage(firmId: string): Promise<SeatUsage> {
     .eq('id', firmId)
     .maybeSingle();
 
-  const tier = (firmRow?.plan_tier as PlanTier | null) ?? null;
+  // A paid tier only counts while the plan is actually live. Both billing
+  // webhooks clear plan_tier on cancellation, but this guard means a stale or
+  // half-written row can never hand out seats the firm isn't paying for.
+  const firmStatus = (firmRow as any)?.status as string | undefined;
+  const planIsLive = firmStatus === 'active' || firmStatus === 'trial';
+  const tier = planIsLive
+    ? ((firmRow?.plan_tier as PlanTier | null) ?? null)
+    : null;
+
   // A paid plan can come from Stripe (web) or Apple IAP (iOS). Either counts.
   const hasSubscription =
     Boolean(firmRow?.stripe_subscription_id) ||

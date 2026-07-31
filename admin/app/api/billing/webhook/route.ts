@@ -73,6 +73,10 @@ export async function POST(req: Request) {
             status: 'active',
             stripe_subscription_id: subscriptionId,
             stripe_customer_id: customerId,
+            // Claim billing for Stripe. Without this a firm that previously
+            // subscribed through Apple would keep billing_source='apple', and
+            // the iOS paywall would offer an Apple plan on top of the web one.
+            billing_source: 'stripe',
           };
           if (planTier) update.plan_tier = planTier;
 
@@ -104,8 +108,13 @@ export async function POST(req: Request) {
         const update: Record<string, any> = {
           status,
           stripe_subscription_id: sub.id,
+          billing_source: 'stripe',
         };
         if (planTier) update.plan_tier = planTier;
+        // Losing the subscription must also drop the tier, or a cancelled firm
+        // keeps the seat cap and features it no longer pays for. Mirrors the
+        // Apple path in lib/appleIap.ts.
+        if (status === 'cancelled') update.plan_tier = null;
 
         await service
           .from('firms')
@@ -118,7 +127,9 @@ export async function POST(req: Request) {
         const sub = event.data.object as Stripe.Subscription;
         await service
           .from('firms')
-          .update({ status: 'cancelled' })
+          // Clear the tier too: entitlements fall back to trial limits rather
+          // than leaving a cancelled firm on a paid seat cap.
+          .update({ status: 'cancelled', plan_tier: null })
           .eq('stripe_customer_id', sub.customer as string);
         break;
       }
