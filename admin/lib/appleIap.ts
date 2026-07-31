@@ -134,6 +134,43 @@ export async function verifyAppleJws(signedPayload: string): Promise<any> {
   throw new Error('Apple transaction signature verification failed');
 }
 
+/**
+ * Decode the renewal info that rides along with a server notification.
+ *
+ * This is where Apple tells us about a SCHEDULED plan change. When someone
+ * switches to a cheaper plan, Apple keeps them on what they paid for until the
+ * period ends, so the transaction still says "Brokerage" while
+ * autoRenewProductId already says "Team". Without reading this, the app can
+ * only ever show the current plan and a user who just requested a switch is
+ * told, wrongly, that nothing happened.
+ *
+ * Returns null when the payload carries no renewal info (plain transactions).
+ */
+export async function decodeRenewalInfo(
+  decodedNotification: any
+): Promise<{ autoRenewProductId?: string; renewalDate?: number; autoRenewStatus?: number } | null> {
+  const signed = decodedNotification?.data?.signedRenewalInfo;
+  if (!signed || typeof signed !== 'string') return null;
+  try {
+    // The renewal info is itself a JWS. Its payload is the middle segment;
+    // it arrived inside a notification we already verified against Apple's
+    // root CAs, so the envelope is authenticated.
+    const [, payload] = signed.split('.');
+    if (!payload) return null;
+    const json = JSON.parse(
+      Buffer.from(payload.replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8')
+    );
+    return {
+      autoRenewProductId: json?.autoRenewProductId,
+      renewalDate: json?.renewalDate,
+      autoRenewStatus: json?.autoRenewStatus,
+    };
+  } catch (err) {
+    console.error('[appleIap] could not decode renewal info', err);
+    return null;
+  }
+}
+
 /** Normalize a decoded transaction payload into our shape. */
 export function normalizeTransaction(decoded: any): AppleTransaction | null {
   const t = decoded?.data?.signedTransactionInfo
@@ -168,6 +205,12 @@ export async function applyTransactionToFirm(
     notificationType?: string | null;
     externalId: string;
     raw?: any;
+    /** Apple's scheduled next plan, when it differs from the active one. */
+    renewal?: {
+      autoRenewProductId?: string;
+      renewalDate?: number;
+      autoRenewStatus?: number;
+    } | null;
   }
 ): Promise<{ applied: boolean; reason?: string }> {
   const { txn, externalId } = args;
@@ -266,6 +309,36 @@ export async function applyTransactionToFirm(
   }
   // On lapse/refund, drop the tier so entitlements fall back to trial limits.
   if (!active) update.plan_tier = null;
+
+  // Scheduled plan change. Apple applies upgrades immediately but defers
+  // downgrades and crossgrades to the end of the paid period, so
+  // autoRenewProductId can differ from what the customer is entitled to right
+  // now. Record it so the app can say "switching to Team on Aug 1" instead of
+  // looking like the change silently failed.
+  const pendingProductId = args.renewal?.autoRenewProductId;
+  if (pendingProductId && pendingProductId !== txn.productId) {
+    update.iap_pending_product_id = pendingProductId;
+    update.iap_pending_starts_at = args.renewal?.renewalDate
+      ? new Date(args.renewal.renewalDate).toISOString()
+      : expiresAt
+        ? expiresAt.toISOString()
+        : null;
+  } else if (args.renewal) {
+    // Same product (or the change was reverted) → nothing pending.
+    update.iap_pending_product_id = null;
+    update.iap_pending_starts_at = null;
+  }
+  if (args.renewal?.autoRenewStatus === 0) {
+    // Auto-renew off: there is no next plan, it just ends.
+    update.iap_auto_renew = false;
+    update.iap_pending_product_id = null;
+    update.iap_pending_starts_at = null;
+  } else if (args.renewal?.autoRenewStatus === 1) {
+    update.iap_auto_renew = true;
+  }
+  // Note: a transaction with no renewal info (the direct verify path) must
+  // leave the pending columns alone. Clearing them there would wipe a
+  // scheduled change that a notification legitimately recorded.
 
   const { error } = await service.from('firms').update(update).eq('id', firmId);
 

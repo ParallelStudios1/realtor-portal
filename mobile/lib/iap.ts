@@ -187,11 +187,55 @@ function skuOf(purchase: any): string | null {
   return purchase?.productId || purchase?.id || purchase?.sku || null;
 }
 
+export type PurchaseResult =
+  /** Entitlement is live now — server confirmed it. */
+  | { status: 'active' }
+  /**
+   * Apple accepted the change but it starts at the next renewal. This is the
+   * normal, correct outcome when moving to a cheaper plan; the customer keeps
+   * what they paid for until then.
+   */
+  | { status: 'scheduled'; currentProductId: string | null; startsAt: Date | null }
+  /** Nothing happened — surface getLastVerifyError(). */
+  | { status: 'failed' };
+
 /**
- * Buy a subscription. Resolves true once our server confirms the entitlement.
+ * Look for a plan change that Apple scheduled instead of applying now.
+ *
+ * After a deferred switch, getAvailablePurchases still reports the CURRENT
+ * entitlement (the plan they paid for), and the requested product simply has no
+ * transaction yet. Seeing an active subscription for a *different* product in
+ * the same group is how we know the switch was accepted rather than lost.
+ */
+async function detectScheduledChange(
+  m: any,
+  requestedProductId: string
+): Promise<{ currentProductId: string | null; startsAt: Date | null } | null> {
+  try {
+    const raw = await m.getAvailablePurchases({ onlyIncludeActiveItemsIOS: true });
+    const active = (Array.isArray(raw) ? raw : []).filter((p: any) =>
+      (IAP_PRODUCT_IDS as readonly string[]).includes(skuOf(p) || '')
+    );
+    if (active.length === 0) return null;
+    const current = active.find((p: any) => skuOf(p) !== requestedProductId);
+    if (!current) return null;
+    const expiry =
+      current?.expirationDateIOS ?? current?.expirationDate ?? null;
+    return {
+      currentProductId: skuOf(current),
+      startsAt: expiry ? new Date(Number(expiry)) : null,
+    };
+  } catch (err) {
+    console.warn('[iap] detectScheduledChange failed', err);
+    return null;
+  }
+}
+
+/**
+ * Buy a subscription. Resolves once StoreKit and our server have settled.
  * Throws on StoreKit errors; the caller silences user-cancellation.
  */
-export async function purchase(productId: string): Promise<boolean> {
+export async function purchase(productId: string): Promise<PurchaseResult> {
   const m = await mod();
   if (!m) throw new Error('In-app purchase is not available on this device.');
   await initIap();
@@ -214,6 +258,15 @@ export async function purchase(productId: string): Promise<boolean> {
   const candidates = purchases.filter((p: any) => skuOf(p) === productId);
 
   if (candidates.length === 0) {
+    // NOT necessarily a failure. Apple applies upgrades immediately but defers
+    // downgrades and crossgrades to the end of the period already paid for, and
+    // issues no new transaction now. Telling the user this failed — and to tap
+    // Restore, which can never help — is wrong and confusing.
+    const scheduled = await detectScheduledChange(m, productId);
+    if (scheduled) {
+      lastVerifyError = null;
+      return { status: 'scheduled', ...scheduled };
+    }
     console.warn(
       '[iap] no transaction returned for',
       productId,
@@ -221,8 +274,8 @@ export async function purchase(productId: string): Promise<boolean> {
       purchases.map((p: any) => skuOf(p)).join(', ') || 'none'
     );
     lastVerifyError =
-      'Apple did not return a purchase for the plan you selected. Tap Restore Purchases.';
-    return false;
+      'Apple did not confirm the purchase. If you were charged, tap Restore Purchases.';
+    return { status: 'failed' };
   }
 
   for (const p of candidates) {
@@ -234,10 +287,10 @@ export async function purchase(productId: string): Promise<boolean> {
       try {
         await m.finishTransaction({ purchase: p, isConsumable: false });
       } catch {}
-      return true;
+      return { status: 'active' };
     }
   }
-  return false;
+  return { status: 'failed' };
 }
 
 /**

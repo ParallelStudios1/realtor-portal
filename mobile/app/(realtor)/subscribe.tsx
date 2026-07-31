@@ -29,6 +29,25 @@ import {
   type IapProduct,
 } from '@/lib/iap';
 
+/** Product id → the name we show people. Keeps toasts readable. */
+const PLAN_NAME_BY_PRODUCT: Record<string, string> = {
+  'com.parallelstudios.realtorportal.starter.monthly': 'Starter',
+  'com.parallelstudios.realtorportal.teamplan.monthly': 'Team',
+  'com.parallelstudios.realtorportal.brokerage.monthly': 'Brokerage',
+};
+
+function planNameFor(productId: string | null | undefined): string | null {
+  if (!productId) return null;
+  return PLAN_NAME_BY_PRODUCT[productId] ?? null;
+}
+
+function formatWhen(value: string | Date | null | undefined): string {
+  if (!value) return 'your next renewal';
+  const d = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(d.getTime())) return 'your next renewal';
+  return d.toLocaleDateString(undefined, { month: 'long', day: 'numeric' });
+}
+
 /**
  * Subscription paywall (App Store guideline 3.1.1).
  *
@@ -74,6 +93,11 @@ export default function SubscribeScreen() {
     billingSource !== 'apple' &&
     Boolean((firm as any)?.stripe_subscription_id);
 
+  // A plan change Apple accepted but hasn't applied yet (moving to a cheaper
+  // plan keeps you on what you paid for until the period ends).
+  const pendingProductId = (firm as any)?.iap_pending_product_id as string | null;
+  const pendingStartsAt = (firm as any)?.iap_pending_starts_at as string | null;
+
   /** Pull fresh firm state so the trial banner + settings stop showing stale info. */
   const refreshFirm = async () => {
     await queryClient.invalidateQueries({ queryKey: ['firm'] });
@@ -106,10 +130,24 @@ export default function SubscribeScreen() {
     if (!selected) return;
     setBusy(true);
     try {
-      const ok = await purchase(selected);
-      if (ok) {
+      const result = await purchase(selected);
+      if (result.status === 'active') {
         await refreshFirm();
         toast.show('You’re all set — your plan is active.', { variant: 'success' });
+        router.back();
+      } else if (result.status === 'scheduled') {
+        // Apple defers a move to a cheaper plan until the paid period ends.
+        // That's not an error — say plainly what happens and when.
+        await refreshFirm();
+        const name = planNameFor(selected);
+        const keeping = planNameFor(result.currentProductId);
+        const when = formatWhen(result.startsAt);
+        toast.show(
+          keeping
+            ? `You'll switch to ${name} on ${when}. You keep ${keeping} until then — you already paid for it.`
+            : `You'll switch to ${name} on ${when}.`,
+          { variant: 'success' }
+        );
         router.back();
       } else {
         // Apple took the purchase but our server didn't activate it. Say why,
@@ -259,10 +297,20 @@ export default function SubscribeScreen() {
               );
             })}
 
+            {pendingProductId && pendingProductId !== activeProductId ? (
+              <Text style={[styles.switchNote, { color: colors.textSecondary }]}>
+                Switching to {planNameFor(pendingProductId) ?? 'your new plan'} on{' '}
+                {formatWhen(pendingStartsAt)}. You keep{' '}
+                {planNameFor(activeProductId) ?? 'your current plan'} until then —
+                you already paid for it.
+              </Text>
+            ) : null}
+
             {activeProductId ? (
               <Text style={[styles.switchNote, { color: colors.textSecondary }]}>
-                Choosing a different plan switches your subscription. Apple
-                prorates the change — you are never billed for two plans.
+                Moving to a higher plan starts right away. Moving to a lower one
+                starts at your next renewal, so you keep what you already paid
+                for. You are never billed for two plans.
               </Text>
             ) : null}
 

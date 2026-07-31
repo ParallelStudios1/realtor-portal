@@ -4,6 +4,7 @@ import {
   verifyAppleJws,
   normalizeTransaction,
   applyTransactionToFirm,
+  decodeRenewalInfo,
 } from '@/lib/appleIap';
 
 /**
@@ -68,6 +69,11 @@ export async function POST(req: Request) {
 
   const service = getSupabaseServiceRoleClient();
 
+  // DID_CHANGE_RENEWAL_PREF with subtype DOWNGRADE is how Apple tells us a
+  // customer asked to switch to a cheaper plan. The switch takes effect at the
+  // next renewal, not now, so this is the only place we learn about it.
+  const renewal = await decodeRenewalInfo(decoded);
+
   try {
     const result = await applyTransactionToFirm(service, {
       firmId: null, // resolved from originalTransactionId
@@ -77,6 +83,7 @@ export async function POST(req: Request) {
         ? 'notif:' + notificationUUID
         : 'txn:' + txn.transactionId,
       raw: decoded,
+      renewal,
     });
     return NextResponse.json({ ok: true, type: notificationType, ...result });
   } catch (err: any) {
