@@ -10,19 +10,27 @@ export type PlanTier = 'solo' | 'team' | 'brokerage';
  */
 export type PlanFeature = 'customBranding' | 'teamOversight' | 'analytics';
 
+/**
+ * Seat caps MUST match what we advertise on the App Store product pages
+ * ("up to 3 / 15 / 50 agents"). Apple reviews against the described offering,
+ * and more importantly a customer who pays for 50 seats has to actually get
+ * 50 seats.
+ */
 export const PLANS = {
   solo: {
-    name: 'Solo',
+    name: 'Starter',
     price: 99,
-    seatCap: 1,
+    seatCap: 3,
     priceId: 'price_1TUXB4E4f1D9W7YWV6x21nCU',
+    appleProductId: 'com.parallelstudios.realtorportal.starter.monthly',
     features: ['customBranding'] as PlanFeature[],
   },
   team: {
     name: 'Team',
     price: 299,
-    seatCap: 10,
+    seatCap: 15,
     priceId: 'price_1TUXB8E4f1D9W7YWhmNaJize',
+    appleProductId: 'com.parallelstudios.realtorportal.team.monthly',
     features: ['customBranding', 'teamOversight'] as PlanFeature[],
   },
   brokerage: {
@@ -30,6 +38,7 @@ export const PLANS = {
     price: 799,
     seatCap: 50,
     priceId: 'price_1TUFlsE4f1D9W7YWXviZUzol',
+    appleProductId: 'com.parallelstudios.realtorportal.brokerage.monthly',
     features: ['customBranding', 'teamOversight', 'analytics'] as PlanFeature[],
   },
 } as const;
@@ -59,5 +68,16 @@ export function tierFromPriceId(priceId: string | null | undefined): PlanTier | 
 }
 
 export function seatCapForTier(t: PlanTier | null | undefined): number {
-  return t ? PLANS[t].seatCap : 1; // trial / unknown = solo cap
+  return t ? PLANS[t].seatCap : PLANS.solo.seatCap; // trial / unknown = Starter cap
+}
+
+/** Map an Apple auto-renewable product id back to the plan tier it grants. */
+export function tierFromAppleProductId(
+  productId: string | null | undefined
+): PlanTier | null {
+  if (!productId) return null;
+  for (const [tier, cfg] of Object.entries(PLANS)) {
+    if ((cfg as any).appleProductId === productId) return tier as PlanTier;
+  }
+  return null;
 }

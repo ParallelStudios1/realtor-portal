@@ -37,12 +37,15 @@ export async function getSeatUsage(firmId: string): Promise<SeatUsage> {
 
   const { data: firmRow } = await service
     .from('firms')
-    .select('plan_tier, stripe_subscription_id')
+    .select('plan_tier, stripe_subscription_id, iap_original_transaction_id, status')
     .eq('id', firmId)
     .maybeSingle();
 
   const tier = (firmRow?.plan_tier as PlanTier | null) ?? null;
-  const hasSubscription = Boolean(firmRow?.stripe_subscription_id);
+  // A paid plan can come from Stripe (web) or Apple IAP (iOS). Either counts.
+  const hasSubscription =
+    Boolean(firmRow?.stripe_subscription_id) ||
+    Boolean((firmRow as any)?.iap_original_transaction_id);
   // No tier and no subscription → still on trial; treat as Solo cap.
   const effectiveTier: PlanTier | null = tier ?? (hasSubscription ? null : 'solo');
   const seatCap = seatCapForTier(effectiveTier);

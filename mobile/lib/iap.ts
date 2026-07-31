@@ -201,6 +201,24 @@ export async function purchase(productId: string): Promise<boolean> {
 }
 
 /**
+ * Open Apple's subscription management screen, where the user can upgrade,
+ * downgrade, or cancel. Apple does not allow an app to cancel a subscription
+ * directly — deep-linking here is the sanctioned (and required) path.
+ */
+export async function manageSubscriptions(): Promise<boolean> {
+  const m = await mod();
+  if (!m?.deepLinkToSubscriptions) return false;
+  try {
+    await initIap();
+    await m.deepLinkToSubscriptions();
+    return true;
+  } catch (err) {
+    console.warn('[iap] deepLinkToSubscriptions failed', err);
+    return false;
+  }
+}
+
+/**
  * Restore purchases — required by Apple for any app with a subscription.
  * Re-verifies every active entitlement against our server.
  */

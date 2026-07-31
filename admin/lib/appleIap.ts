@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { tierFromAppleProductId } from './plans';
 
 /**
  * Apple In-App Purchase verification + entitlement sync.
@@ -209,16 +210,25 @@ export async function applyTransactionToFirm(
 
   if (!firmId) return { applied: false, reason: 'no_firm' };
 
-  const { error } = await service
-    .from('firms')
-    .update({
-      status: active ? 'active' : 'cancelled',
-      billing_source: 'apple',
-      iap_original_transaction_id: txn.originalTransactionId,
-      iap_product_id: txn.productId,
-      iap_expires_at: expiresAt ? expiresAt.toISOString() : null,
-    })
-    .eq('id', firmId);
+  // Map the purchased product to a plan tier. This is what actually grants the
+  // seat cap and feature flags the subscription advertises — without it a
+  // Brokerage buyer would stay on the Starter seat limit.
+  const tier = tierFromAppleProductId(txn.productId);
+
+  const update: Record<string, unknown> = {
+    status: active ? 'active' : 'cancelled',
+    billing_source: 'apple',
+    iap_original_transaction_id: txn.originalTransactionId,
+    iap_product_id: txn.productId,
+    iap_expires_at: expiresAt ? expiresAt.toISOString() : null,
+  };
+  if (active && tier) {
+    update.plan_tier = tier;
+  }
+  // On lapse/refund, drop the tier so entitlements fall back to trial limits.
+  if (!active) update.plan_tier = null;
+
+  const { error } = await service.from('firms').update(update).eq('id', firmId);
 
   if (error) return { applied: false, reason: error.message };
   return { applied: true };

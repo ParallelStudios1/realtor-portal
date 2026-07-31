@@ -371,17 +371,48 @@ export default function RealtorSettingsScreen() {
             const status = (firm as any)?.status as string | undefined;
             const hasSub = Boolean((firm as any)?.stripe_subscription_id);
             const days = trialDaysLeft((firm as any)?.trial_ends_at);
+            const tier = (firm as any)?.plan_tier as string | undefined;
+            const source = (firm as any)?.billing_source as string | undefined;
+
+            // Human plan name + what it includes, so the user can see exactly
+            // what they're paying for.
+            const TIERS: Record<string, { name: string; seats: number }> = {
+              solo: { name: 'Starter', seats: 3 },
+              team: { name: 'Team', seats: 15 },
+              brokerage: { name: 'Brokerage', seats: 50 },
+            };
+            const plan = tier ? TIERS[tier] : undefined;
+
             let line = 'Manage your plan online.';
-            if (status === 'active' || hasSub) line = 'Your plan is active.';
-            else if (status === 'trial' && days !== null)
+            if (status === 'active' || hasSub) {
+              line = plan
+                ? `You're on the ${plan.name} plan — up to ${plan.seats} agent${
+                    plan.seats === 1 ? '' : 's'
+                  }.`
+                : 'Your plan is active.';
+            } else if (status === 'trial' && days !== null) {
               line =
                 days <= 0
                   ? 'Your free trial has ended.'
                   : `${days} day${days === 1 ? '' : 's'} left in your free trial.`;
+            }
             return (
-              <Text style={[styles.readonlyText, { color: colors.text, marginBottom: 4 }]}>
-                {line}
-              </Text>
+              <>
+                <Text
+                  style={[styles.readonlyText, { color: colors.text, marginBottom: 4 }]}
+                >
+                  {line}
+                </Text>
+                {(status === 'active' || hasSub) && (
+                  <Text
+                    style={[styles.helper, { color: colors.textSecondary, marginBottom: 8 }]}
+                  >
+                    {source === 'apple'
+                      ? 'Billed through your Apple account.'
+                      : 'Billed on the web.'}
+                  </Text>
+                )}
+              </>
             );
           })()}
           <Text style={[styles.helper, { color: colors.textSecondary }]}>
@@ -403,7 +434,11 @@ export default function RealtorSettingsScreen() {
               color={colors.primary}
             />
             <Text style={[styles.secondaryBtnText, { color: colors.primary }]}>
-              {Platform.OS === 'ios' ? 'View plans' : 'Manage plan online'}
+              {Platform.OS !== 'ios'
+                ? 'Manage plan online'
+                : (firm as any)?.status === 'active'
+                ? 'Change or cancel plan'
+                : 'View plans'}
             </Text>
           </Pressable>
         </View>

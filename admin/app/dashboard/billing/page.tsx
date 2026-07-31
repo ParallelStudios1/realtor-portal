@@ -20,12 +20,12 @@ export const metadata = { title: 'Billing · Realtor Portal' };
 const PLAN_CARDS = [
   {
     id: 'solo',
-    name: 'Solo',
+    name: 'Starter',
     price: '$99',
     sub: '/month',
-    who: 'For a single agent',
+    who: 'For solo agents and small teams (up to 3 agents)',
     features: [
-      '1 agent seat',
+      '3 agent seats',
       'Unlimited clients & deals',
       'Branded client portal & mobile app',
       'E-signature tracking & deal timeline',
@@ -37,10 +37,10 @@ const PLAN_CARDS = [
     name: 'Team',
     price: '$299',
     sub: '/month',
-    who: 'For a growing team (up to 10 agents)',
+    who: 'For a growing team (up to 15 agents)',
     features: [
-      'Everything in Solo',
-      '10 agent seats',
+      'Everything in Starter',
+      '15 agent seats',
       'Firm-wide deadline oversight page',
       'At-risk & overdue deadline tracking by agent',
       'Priority email support',

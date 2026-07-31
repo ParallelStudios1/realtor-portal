@@ -12,15 +12,18 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useQueryClient } from '@tanstack/react-query';
 import { useTheme } from '@/lib/theme';
 import { useToast } from '@/components/Toast';
 import { useAuth } from '@/lib/auth';
+import { useFirm } from '@/lib/queries';
 import {
   getProducts,
   initIap,
   endIap,
   purchase,
   restore,
+  manageSubscriptions,
   iapAvailable,
   getLastVerifyError,
   type IapProduct,
@@ -45,11 +48,32 @@ export default function SubscribeScreen() {
   const { colors } = useTheme();
   const toast = useToast();
   const { userProfile } = useAuth();
+  const queryClient = useQueryClient();
+  const { data: firm } = useFirm(userProfile?.firm_id);
 
   const [products, setProducts] = useState<IapProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  // What the firm is already on. Apple-billed plans can be switched inside the
+  // subscription group; Stripe-billed plans must be managed on the web, so we
+  // never offer an Apple purchase on top of one (that would double-bill).
+  const firmStatus = (firm as any)?.status as string | undefined;
+  const billingSource = (firm as any)?.billing_source as string | undefined;
+  const activeProductId =
+    firmStatus === 'active' && billingSource === 'apple'
+      ? ((firm as any)?.iap_product_id as string | null)
+      : null;
+  const stripeManaged = firmStatus === 'active' && billingSource !== 'apple';
+
+  /** Pull fresh firm state so the trial banner + settings stop showing stale info. */
+  const refreshFirm = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['firm'] });
+    if (userProfile?.firm_id) {
+      await queryClient.refetchQueries({ queryKey: ['firm', userProfile.firm_id] });
+    }
+  };
 
   useEffect(() => {
     let alive = true;
@@ -77,6 +101,7 @@ export default function SubscribeScreen() {
     try {
       const ok = await purchase(selected);
       if (ok) {
+        await refreshFirm();
         toast.show('You’re all set — your plan is active.', { variant: 'success' });
         router.back();
       } else {
@@ -103,6 +128,7 @@ export default function SubscribeScreen() {
     setBusy(true);
     try {
       const ok = await restore();
+      if (ok) await refreshFirm();
       toast.show(
         ok ? 'Subscription restored.' : 'No active subscription found.',
         { variant: ok ? 'success' : 'error' }
@@ -110,6 +136,14 @@ export default function SubscribeScreen() {
       if (ok) router.back();
     } finally {
       setBusy(false);
+    }
+  };
+
+  /** Apple owns cancellation — send the user to their subscription settings. */
+  const doManage = async () => {
+    const ok = await manageSubscriptions();
+    if (!ok) {
+      Linking.openURL('https://apps.apple.com/account/subscriptions');
     }
   };
 
@@ -151,26 +185,60 @@ export default function SubscribeScreen() {
           <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
             Plans aren’t available right now. Please try again in a moment.
           </Text>
+        ) : stripeManaged ? (
+          // Already paying through the web. Never sell an Apple plan on top.
+          <View>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+              Your firm’s plan is billed on the web. Manage or cancel it from
+              your billing page to avoid being charged twice.
+            </Text>
+            <Pressable
+              onPress={() => Linking.openURL(MANAGE_URL)}
+              style={[styles.cta, { backgroundColor: colors.primary }]}
+            >
+              <Text style={styles.ctaText}>Open billing page</Text>
+            </Pressable>
+          </View>
         ) : (
           <>
             {products.map((p) => {
-              const isSel = selected === p.id;
+              const isCurrent = activeProductId === p.id;
+              const isSel = selected === p.id && !isCurrent;
               return (
                 <Pressable
                   key={p.id}
-                  onPress={() => setSelected(p.id)}
+                  onPress={() => !isCurrent && setSelected(p.id)}
+                  disabled={isCurrent}
                   style={[
                     styles.plan,
                     {
-                      borderColor: isSel ? colors.primary : colors.border,
-                      backgroundColor: isSel ? colors.primary + '11' : 'transparent',
+                      borderColor: isCurrent
+                        ? colors.primary
+                        : isSel
+                        ? colors.primary
+                        : colors.border,
+                      backgroundColor: isCurrent
+                        ? colors.primary + '18'
+                        : isSel
+                        ? colors.primary + '11'
+                        : 'transparent',
+                      opacity: isCurrent ? 0.85 : 1,
                     },
                   ]}
                 >
                   <View style={{ flex: 1 }}>
-                    <Text style={[styles.planTitle, { color: colors.text }]}>
-                      {p.title}
-                    </Text>
+                    <View style={styles.planTitleRow}>
+                      <Text style={[styles.planTitle, { color: colors.text }]}>
+                        {p.title}
+                      </Text>
+                      {isCurrent ? (
+                        <View
+                          style={[styles.badge, { backgroundColor: colors.primary }]}
+                        >
+                          <Text style={styles.badgeText}>CURRENT PLAN</Text>
+                        </View>
+                      ) : null}
+                    </View>
                     {!!p.description && (
                       <Text style={[styles.planDesc, { color: colors.textSecondary }]}>
                         {p.description}
@@ -184,20 +252,38 @@ export default function SubscribeScreen() {
               );
             })}
 
+            {activeProductId ? (
+              <Text style={[styles.switchNote, { color: colors.textSecondary }]}>
+                Choosing a different plan switches your subscription. Apple
+                prorates the change — you are never billed for two plans.
+              </Text>
+            ) : null}
+
             <Pressable
               onPress={buy}
               disabled={busy || !selected}
               style={[
                 styles.cta,
-                { backgroundColor: busy ? colors.border : colors.primary },
+                { backgroundColor: busy || !selected ? colors.border : colors.primary },
               ]}
             >
               {busy ? (
                 <ActivityIndicator color="#fff" />
               ) : (
-                <Text style={styles.ctaText}>Subscribe</Text>
+                <Text style={styles.ctaText}>
+                  {activeProductId ? 'Switch plan' : 'Subscribe'}
+                </Text>
               )}
             </Pressable>
+
+            {/* Cancellation is handled by Apple; deep-link to their settings. */}
+            {activeProductId ? (
+              <Pressable onPress={doManage} disabled={busy} style={styles.restore}>
+                <Text style={[styles.restoreText, { color: colors.primary }]}>
+                  Manage or cancel subscription
+                </Text>
+              </Pressable>
+            ) : null}
 
             <Pressable onPress={doRestore} disabled={busy} style={styles.restore}>
               <Text style={[styles.restoreText, { color: colors.primary }]}>
@@ -259,8 +345,12 @@ const styles = StyleSheet.create({
     padding: 16,
     marginTop: 12,
   },
+  planTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
   planTitle: { fontSize: 16, fontWeight: '700' },
   planDesc: { fontSize: 12, marginTop: 2 },
+  badge: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: 6 },
+  badgeText: { color: '#fff', fontSize: 9, fontWeight: '800', letterSpacing: 0.4 },
+  switchNote: { fontSize: 12, marginTop: 10, lineHeight: 17 },
   planPrice: { fontSize: 17, fontWeight: '800' },
   cta: {
     marginTop: 24,
