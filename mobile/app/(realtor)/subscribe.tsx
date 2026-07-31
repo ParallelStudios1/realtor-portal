@@ -22,6 +22,7 @@ import {
   purchase,
   restore,
   iapAvailable,
+  getLastVerifyError,
   type IapProduct,
 } from '@/lib/iap';
 
@@ -76,10 +77,16 @@ export default function SubscribeScreen() {
     try {
       const ok = await purchase(selected);
       if (ok) {
-        toast.show('You’re all set — welcome to Pro.', { variant: 'success' });
+        toast.show('You’re all set — your plan is active.', { variant: 'success' });
         router.back();
       } else {
-        toast.show('Purchase could not be confirmed.', { variant: 'error' });
+        // Apple took the purchase but our server didn't activate it. Say why,
+        // and point at Restore, which re-sends the same transaction.
+        toast.show(
+          getLastVerifyError() ||
+            'Apple confirmed the purchase but we could not activate it. Tap Restore Purchases.',
+          { variant: 'error' }
+        );
       }
     } catch (e: any) {
       // StoreKit throws on user cancel; don't shout about it.

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 import { getMe } from '@/lib/supabaseSsr';
 import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
 import {
@@ -6,6 +7,41 @@ import {
   normalizeTransaction,
   applyTransactionToFirm,
 } from '@/lib/appleIap';
+
+/**
+ * Resolve the caller from either a cookie session (web) or an
+ * Authorization: Bearer <supabase access token> header (mobile).
+ *
+ * The iOS app has no cookies, so a cookie-only check would 403 every real
+ * purchase — which is exactly what happened before this existed.
+ */
+async function resolveCaller(
+  req: Request
+): Promise<{ id: string; firm_id: string | null } | null> {
+  const me = await getMe();
+  if (me?.user_id) return { id: me.user_id, firm_id: me.firm_id };
+
+  const auth = req.headers.get('authorization') || '';
+  const m = auth.match(/^Bearer\s+(.+)$/i);
+  if (!m) return null;
+
+  const sb = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      global: { headers: { Authorization: `Bearer ${m[1]}` } },
+      auth: { persistSession: false },
+    }
+  );
+  const { data } = await sb.auth.getUser();
+  if (!data.user) return null;
+  const { data: row } = await sb
+    .from('users')
+    .select('firm_id')
+    .eq('id', data.user.id)
+    .single();
+  return { id: data.user.id, firm_id: (row?.firm_id as string) || null };
+}
 
 /**
  * Called by the iOS app right after a successful StoreKit purchase or restore.
@@ -19,7 +55,7 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export async function POST(req: Request) {
-  const me = await getMe();
+  const me = await resolveCaller(req);
   if (!me?.firm_id) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }

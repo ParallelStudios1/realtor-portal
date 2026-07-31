@@ -110,23 +110,54 @@ export async function getProducts(): Promise<IapProduct[]> {
   }
 }
 
-/** Send a StoreKit signed transaction to our server for verification. */
+/** Last server-side failure reason, surfaced to the UI for diagnosis. */
+let lastVerifyError: string | null = null;
+
+export function getLastVerifyError(): string | null {
+  return lastVerifyError;
+}
+
+/**
+ * Send a StoreKit signed transaction to our server for verification.
+ * Records why it failed so the paywall can say something more useful than
+ * "could not be confirmed".
+ */
 async function verifyWithServer(signedTransaction: string): Promise<boolean> {
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
+  if (!token) {
+    lastVerifyError = 'You are signed out. Sign in and tap Restore Purchases.';
+    return false;
+  }
   const base =
     process.env.EXPO_PUBLIC_API_URL || 'https://realtorportal.parallelstudios.co';
-  const res = await fetch(base + '/api/iap/apple/verify', {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      ...(token ? { authorization: 'Bearer ' + token } : {}),
-    },
-    body: JSON.stringify({ signedTransaction }),
-  });
-  if (!res.ok) return false;
-  const json = await res.json().catch(() => null);
-  return Boolean(json?.active);
+  try {
+    const res = await fetch(base + '/api/iap/apple/verify', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        authorization: 'Bearer ' + token,
+      },
+      body: JSON.stringify({ signedTransaction }),
+    });
+    const body = await res.text();
+    if (!res.ok) {
+      lastVerifyError = `Server ${res.status}: ${body.slice(0, 140)}`;
+      console.warn('[iap] verify rejected', res.status, body);
+      return false;
+    }
+    const json = JSON.parse(body || '{}');
+    if (!json?.active) {
+      lastVerifyError = `Server did not activate: ${body.slice(0, 140)}`;
+      return false;
+    }
+    lastVerifyError = null;
+    return true;
+  } catch (err: any) {
+    lastVerifyError = 'Network error reaching the server.';
+    console.warn('[iap] verify network error', err);
+    return false;
+  }
 }
 
 /** Pull the signed JWS off a purchase, whichever field carries it. */

@@ -87,6 +87,9 @@ export default function RealtorTabsLayout() {
       <Tabs.Screen name="clients/[id]/listing" options={{ href: null, title: 'Listing and offers' }} />
       <Tabs.Screen name="clients/[id]/participants" options={{ href: null, title: 'People on this deal' }} />
       <Tabs.Screen name="clients/[id]/private-messages" options={{ href: null, title: 'Private messages' }} />
+      {/* Paywall is reached from Settings > Plan & billing and the trial
+          banner only - never a tab. */}
+      <Tabs.Screen name="subscribe" options={{ href: null, title: 'Subscribe' }} />
     </Tabs>
   );
 }
