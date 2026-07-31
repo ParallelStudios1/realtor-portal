@@ -71,6 +71,16 @@ export function seatCapForTier(t: PlanTier | null | undefined): number {
   return t ? PLANS[t].seatCap : PLANS.solo.seatCap; // trial / unknown = Starter cap
 }
 
+/**
+ * Apple product ids that are no longer primary but must still grant their tier.
+ * The original Team record hit an App Store Connect validation defect and was
+ * rebuilt under a new id; anyone who ever purchased the old one must keep the
+ * seats and features they paid for.
+ */
+const LEGACY_APPLE_PRODUCT_IDS: Record<string, PlanTier> = {
+  'com.parallelstudios.realtorportal.team.monthly': 'team',
+};
+
 /** Map an Apple auto-renewable product id back to the plan tier it grants. */
 export function tierFromAppleProductId(
   productId: string | null | undefined
@@ -79,5 +89,5 @@ export function tierFromAppleProductId(
   for (const [tier, cfg] of Object.entries(PLANS)) {
     if ((cfg as any).appleProductId === productId) return tier as PlanTier;
   }
-  return null;
+  return LEGACY_APPLE_PRODUCT_IDS[productId] ?? null;
 }
