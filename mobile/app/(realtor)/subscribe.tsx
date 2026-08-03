@@ -226,10 +226,6 @@ export default function SubscribeScreen() {
           </Pressable>
         ) : loading ? (
           <ActivityIndicator style={{ marginTop: 24 }} color={colors.primary} />
-        ) : products.length === 0 ? (
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-            Plans aren’t available right now. Please try again in a moment.
-          </Text>
         ) : stripeManaged ? (
           // Already paying through the web. Never sell an Apple plan on top.
           <View>
@@ -242,6 +238,49 @@ export default function SubscribeScreen() {
               style={[styles.cta, { backgroundColor: colors.primary }]}
             >
               <Text style={styles.ctaText}>Open billing page</Text>
+            </Pressable>
+          </View>
+        ) : products.length === 0 ? (
+          // StoreKit returned nothing — products can be temporarily unfetchable
+          // (rejected/pending review, network, App Store hiccup). This must NOT
+          // strand an existing subscriber: they still need to see their plan
+          // and reach cancellation, neither of which needs the catalog.
+          <View>
+            {activeProductId ? (
+              <>
+                <Text style={[styles.subtitle, { color: colors.text }]}>
+                  You’re on the {planNameFor(activeProductId) ?? 'current'} plan
+                  — a 1 month auto-renewing subscription.
+                </Text>
+                {pendingProductId && pendingProductId !== activeProductId ? (
+                  <Text style={[styles.switchNote, { color: colors.textSecondary }]}>
+                    Switching to {planNameFor(pendingProductId)} on{' '}
+                    {formatWhen(pendingStartsAt)}.
+                  </Text>
+                ) : null}
+                <Text style={[styles.switchNote, { color: colors.textSecondary }]}>
+                  Other plans can’t be loaded from the App Store right now, so
+                  switching is unavailable for a moment. Cancelling still works.
+                </Text>
+                <Pressable
+                  onPress={doManage}
+                  disabled={busy}
+                  style={[styles.cta, { backgroundColor: colors.primary }]}
+                >
+                  <Text style={styles.ctaText}>Manage or cancel subscription</Text>
+                </Pressable>
+              </>
+            ) : (
+              <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+                Plans aren’t available from the App Store right now. Please try
+                again in a moment.
+              </Text>
+            )}
+            {/* Apple requires Restore to be reachable at all times. */}
+            <Pressable onPress={doRestore} disabled={busy} style={styles.restore}>
+              <Text style={[styles.restoreText, { color: colors.primary }]}>
+                Restore purchases
+              </Text>
             </Pressable>
           </View>
         ) : (
