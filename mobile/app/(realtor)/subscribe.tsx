@@ -284,6 +284,21 @@ export default function SubscribeScreen() {
                         </View>
                       ) : null}
                     </View>
+                    {/*
+                      Guideline 3.1.2(c): the app itself must state the length
+                      of the subscription and what the subscriber gets during
+                      each period — not just a price.
+                    */}
+                    <Text style={[styles.planTerms, { color: colors.text }]}>
+                      {p.displayPrice} per {p.periodLabel}
+                      {p.entitlement ? ` · ${p.entitlement}` : ''}
+                    </Text>
+                    <Text style={[styles.planDesc, { color: colors.textSecondary }]}>
+                      1 {p.periodLabel} subscription, renews automatically.
+                      {p.entitlement
+                        ? ` ${p.entitlement} for the full ${p.periodLabel}.`
+                        : ''}
+                    </Text>
                     {!!p.description && (
                       <Text style={[styles.planDesc, { color: colors.textSecondary }]}>
                         {p.description}
@@ -292,6 +307,9 @@ export default function SubscribeScreen() {
                   </View>
                   <Text style={[styles.planPrice, { color: colors.text }]}>
                     {p.displayPrice}
+                    <Text style={[styles.planPer, { color: colors.textSecondary }]}>
+                      {'\n'}/{p.periodLabel}
+                    </Text>
                   </Text>
                 </Pressable>
               );
@@ -351,9 +369,12 @@ export default function SubscribeScreen() {
         {/* Apple requires subscription terms to be visible at point of sale. */}
         {iapAvailable && (
           <Text style={[styles.legal, { color: colors.textSecondary }]}>
-            Subscriptions renew automatically unless cancelled at least 24 hours
-            before the end of the current period. Your Apple account is charged
-            on confirmation. Manage or cancel in your Apple account settings.
+            All plans are 1-month auto-renewing subscriptions. Payment is
+            charged to your Apple account on confirmation of purchase, and the
+            same amount is charged each month for the plan you chose until you
+            cancel. Your subscription renews automatically unless auto-renew is
+            turned off at least 24 hours before the end of the current month.
+            Manage or cancel anytime in your Apple account settings.
           </Text>
         )}
         <View style={styles.legalLinks}>
@@ -402,11 +423,13 @@ const styles = StyleSheet.create({
   },
   planTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
   planTitle: { fontSize: 16, fontWeight: '700' },
-  planDesc: { fontSize: 12, marginTop: 2 },
+  planTerms: { fontSize: 13, fontWeight: '600', marginTop: 3 },
+  planDesc: { fontSize: 12, marginTop: 2, lineHeight: 16 },
   badge: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: 6 },
   badgeText: { color: '#fff', fontSize: 9, fontWeight: '800', letterSpacing: 0.4 },
   switchNote: { fontSize: 12, marginTop: 10, lineHeight: 17 },
-  planPrice: { fontSize: 17, fontWeight: '800' },
+  planPrice: { fontSize: 17, fontWeight: '800', textAlign: 'right' },
+  planPer: { fontSize: 11, fontWeight: '600' },
   cta: {
     marginTop: 24,
     paddingVertical: 16,

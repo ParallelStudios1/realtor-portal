@@ -33,7 +33,42 @@ export type IapProduct = {
   title: string;
   description: string;
   displayPrice: string;
+  /**
+   * Human subscription length, e.g. "month". Guideline 3.1.2(c) requires the
+   * app itself to state how long each subscription period is — a bare price
+   * with no period is a rejection.
+   */
+  periodLabel: string;
+  /** What the subscriber gets during each period, e.g. "Up to 15 agents". */
+  entitlement: string;
 };
+
+/** What each plan includes per period. Must match the App Store descriptions. */
+const ENTITLEMENT_BY_PRODUCT: Record<string, string> = {
+  'com.parallelstudios.realtorportal.starter.monthly': 'Up to 3 agents',
+  'com.parallelstudios.realtorportal.teamplan.monthly': 'Up to 15 agents',
+  'com.parallelstudios.realtorportal.brokerage.monthly': 'Up to 50 agents',
+};
+
+/**
+ * Turn StoreKit's period fields into a word. Every plan we sell is monthly, but
+ * reading it from the product means the screen can never drift from what Apple
+ * actually charges.
+ */
+function periodLabelFrom(p: any): string {
+  const unit = String(
+    p?.subscriptionPeriodUnitIOS ?? p?.subscriptionPeriod?.unit ?? 'MONTH'
+  ).toUpperCase();
+  const count = Number(
+    p?.subscriptionPeriodNumberIOS ?? p?.subscriptionPeriod?.value ?? 1
+  );
+  const word =
+    unit.startsWith('DAY') ? 'day'
+    : unit.startsWith('WEEK') ? 'week'
+    : unit.startsWith('YEAR') ? 'year'
+    : 'month';
+  return count > 1 ? `${count} ${word}s` : word;
+}
 
 export const iapAvailable = Platform.OS === 'ios';
 
@@ -98,12 +133,17 @@ export async function getProducts(): Promise<IapProduct[]> {
     }
     return list
       .filter((p: any) => p && (p.id || p.productId))
-      .map((p: any) => ({
-        id: p.id || p.productId,
-        title: p.displayName || p.title || 'Realtor Portal',
-        description: p.description || '',
-        displayPrice: p.displayPrice || '',
-      }));
+      .map((p: any) => {
+        const id = p.id || p.productId;
+        return {
+          id,
+          title: p.displayName || p.title || 'Realtor Portal',
+          description: p.description || '',
+          displayPrice: p.displayPrice || '',
+          periodLabel: periodLabelFrom(p),
+          entitlement: ENTITLEMENT_BY_PRODUCT[id] ?? '',
+        };
+      });
   } catch (err) {
     console.warn('[iap] fetchProducts failed', err);
     return [];
