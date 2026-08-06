@@ -29,6 +29,10 @@ export async function middleware(req: NextRequest) {
     // Public SMS-consent documentation — Twilio's toll-free verification
     // reviewers must reach this without auth.
     path.startsWith('/sms-consent') ||
+    // Store redirect for ads, QR codes and link-in-bio. Must be reachable
+    // signed-out or every ad click lands on the login page instead of the
+    // App Store.
+    path === '/get' ||
     // Public seller-lead AVM landing page. Lives at /value/[firmSlug] and
     // collects seller leads for whichever firm owns the slug. No auth.
     path.startsWith('/value/') ||
