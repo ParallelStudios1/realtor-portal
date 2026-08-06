@@ -115,6 +115,23 @@ export function GetTheAppBanner() {
   useEffect(() => {
     const { platform: p, isIosSafari } = detectPhone();
     if (!p) return;
+
+    // Test escape hatches, so checking this on a real phone doesn't mean
+    // digging through browser settings to clear site data every time:
+    //   ?appbanner=reset  forget the dismissal and the grace-period clock
+    //   ?appbanner=1      show it now regardless of either
+    const override = new URLSearchParams(window.location.search).get('appbanner');
+    if (override === 'reset') {
+      try {
+        window.localStorage.removeItem(DISMISS_KEY);
+        window.localStorage.removeItem(FIRST_SEEN_KEY);
+      } catch {}
+    }
+    if (override === '1' || override === 'reset') {
+      setPlatform(p);
+      return;
+    }
+
     if (dismissedRecently()) return;
 
     if (isIosSafari && !gracePeriodElapsed()) {
@@ -137,18 +154,48 @@ export function GetTheAppBanner() {
   };
 
   /**
-   * Navigate in the CURRENT tab rather than opening a new one.
+   * Open the store app, not the store's web page.
    *
-   * In-app browsers (Instagram, Facebook, TikTok, LinkedIn) have no tabs, so a
-   * target="_blank" link is silently swallowed and the button appears dead.
-   * That matters here because Instagram ads are a real traffic source. On a
-   * phone a same-tab store link is also just better: iOS and Android hand the
-   * URL straight to the App Store / Play Store app, so the user never loses
-   * their place.
+   * In-app browsers (Instagram, Facebook, TikTok) are the hard case. They have
+   * no tabs, so target="_blank" is silently swallowed — and even with a
+   * same-tab navigation they tend to render the App Store *website* inside the
+   * webview instead of handing off to the App Store app, which looks broken.
+   *
+   * The reliable path is the native scheme (itms-apps:// or market://), which
+   * these webviews pass to the OS. If nothing handles it — desktop-ish
+   * browsers, unusual webviews — we fall back to the https URL shortly after.
+   * The visibilitychange listener cancels that fallback when the handoff
+   * actually worked, so the user doesn't come back to a stray page load.
    */
   const openStore = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
-    window.location.href = href;
+
+    const nativeUrl =
+      platform === 'ios'
+        ? 'itms-apps://apps.apple.com/us/app/realtor-portal/id6768115138'
+        : 'market://details?id=com.parallelstudios.realtorportal';
+
+    let fallback: ReturnType<typeof setTimeout> | null = null;
+    const cancel = () => {
+      if (fallback) clearTimeout(fallback);
+      fallback = null;
+    };
+    // If the OS took over, the page is hidden/backgrounded — don't also
+    // navigate this tab to the web listing.
+    document.addEventListener('visibilitychange', cancel, { once: true });
+    window.addEventListener('pagehide', cancel, { once: true });
+
+    fallback = setTimeout(() => {
+      document.removeEventListener('visibilitychange', cancel);
+      window.location.href = href;
+    }, 900);
+
+    try {
+      window.location.href = nativeUrl;
+    } catch {
+      cancel();
+      window.location.href = href;
+    }
   };
 
   return (
