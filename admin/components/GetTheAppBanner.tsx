@@ -12,10 +12,11 @@ import { useEffect, useState } from 'react';
  * Dismissal is remembered so a returning visitor isn't nagged. We use
  * localStorage rather than a cookie to keep it off every server request.
  *
- * Note: iOS Safari also gets Apple's native Smart App Banner via the
- * apple-itunes-app meta tag in layout.tsx. That one is nicer, knows whether the
- * app is already installed, and Safari draws it above the page. To avoid
- * stacking two banners we suppress this one on Safari/iOS and let Apple's win.
+ * This renders on every phone, iOS Safari included. Apple's native Smart App
+ * Banner would be nicer there (it can say "Open" when the app is installed),
+ * but it only appears once the app is actually live on the App Store. Deferring
+ * to it meant iPhone visitors saw no banner at all while the app was still in
+ * review. Showing our own everywhere is the behaviour that always works.
  */
 
 const APP_STORE_URL = 'https://apps.apple.com/us/app/realtor-portal/id6768115138';
@@ -23,8 +24,17 @@ const PLAY_STORE_URL =
   'https://play.google.com/store/apps/details?id=com.parallelstudios.realtorportal';
 
 const DISMISS_KEY = 'rp_app_banner_dismissed_at';
+const FIRST_SEEN_KEY = 'rp_app_banner_first_seen_at';
 /** Re-offer after this long, so one dismissal isn't forever. */
 const DISMISS_DAYS = 30;
+/**
+ * On iOS Safari, Apple's own Smart App Banner gets the first crack. We hold
+ * ours back this long so the two don't fight, then take over — which is what
+ * makes the prompt recoverable. Safari remembers a dismissal of its banner
+ * forever and gives no way to bring it back or even detect it, so without this
+ * an iPhone user who swipes it away once would never be offered the app again.
+ */
+const IOS_SAFARI_GRACE_HOURS = 24;
 
 type Platform = 'ios' | 'android' | null;
 
@@ -46,15 +56,42 @@ function detectPhone(): { platform: Platform; isIosSafari: boolean } {
   const isIphone = /iPhone|iPod/.test(ua);
   const isAndroidPhone = /Android/.test(ua) && /Mobile/.test(ua);
 
-  // Chrome/Firefox/Edge on iOS all embed "CriOS"/"FxiOS"/"EdgiOS"; real Safari
-  // has none of those. Only real Safari renders Apple's Smart App Banner.
+  // Only real Safari renders Apple's Smart App Banner. Third-party browsers
+  // and every in-app webview (Instagram and Facebook ads are real traffic for
+  // us) do not — so they must NOT be held back by the grace period, or those
+  // visitors would see no banner at all.
   const isIosSafari =
-    isIphone && !/CriOS|FxiOS|EdgiOS|OPiOS|Instagram|FBAN|FBAV/.test(ua);
+    isIphone &&
+    !/CriOS|FxiOS|EdgiOS|OPiOS|Instagram|FBAN|FBAV|FBIOS|LinkedInApp|Twitter|Snapchat|Pinterest|BytedanceWebview|musical_ly|TikTok|WebView|GSA/i.test(
+      ua
+    );
 
   return {
     platform: isIphone ? 'ios' : isAndroidPhone ? 'android' : null,
     isIosSafari,
   };
+}
+
+/**
+ * True once enough time has passed since this visitor's first page view for us
+ * to assume Apple's banner has had its turn (and, if they dismissed it, is
+ * never coming back). Stamps the clock on the first call.
+ */
+function gracePeriodElapsed(): boolean {
+  try {
+    const raw = window.localStorage.getItem(FIRST_SEEN_KEY);
+    if (!raw) {
+      window.localStorage.setItem(FIRST_SEEN_KEY, String(Date.now()));
+      return false;
+    }
+    const first = Number(raw);
+    if (!Number.isFinite(first)) return true;
+    return Date.now() - first >= IOS_SAFARI_GRACE_HOURS * 60 * 60 * 1000;
+  } catch {
+    // Storage blocked: we can't track the grace period, and showing nothing
+    // would be worse than a possible double banner.
+    return true;
+  }
 }
 
 function dismissedRecently(): boolean {
@@ -78,8 +115,12 @@ export function GetTheAppBanner() {
   useEffect(() => {
     const { platform: p, isIosSafari } = detectPhone();
     if (!p) return;
-    if (isIosSafari) return; // Apple's own banner handles this case.
     if (dismissedRecently()) return;
+
+    if (isIosSafari && !gracePeriodElapsed()) {
+      // Apple's banner is presumably still showing on this visit. Stand down.
+      return;
+    }
     setPlatform(p);
   }, []);
 
@@ -95,6 +136,21 @@ export function GetTheAppBanner() {
     setPlatform(null);
   };
 
+  /**
+   * Navigate in the CURRENT tab rather than opening a new one.
+   *
+   * In-app browsers (Instagram, Facebook, TikTok, LinkedIn) have no tabs, so a
+   * target="_blank" link is silently swallowed and the button appears dead.
+   * That matters here because Instagram ads are a real traffic source. On a
+   * phone a same-tab store link is also just better: iOS and Android hand the
+   * URL straight to the App Store / Play Store app, so the user never loses
+   * their place.
+   */
+  const openStore = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    window.location.href = href;
+  };
+
   return (
     <div
       role="complementary"
@@ -103,9 +159,13 @@ export function GetTheAppBanner() {
       style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}
     >
       <div className="flex items-center gap-3">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-ink-900">
-          <span className="text-base font-bold text-white">RP</span>
-        </div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/logo.png"
+          alt=""
+          aria-hidden
+          className="h-11 w-11 shrink-0 rounded-xl object-contain"
+        />
 
         <div className="min-w-0 flex-1">
           <div className="text-sm font-semibold text-ink-900">Realtor Portal</div>
@@ -116,8 +176,7 @@ export function GetTheAppBanner() {
 
         <a
           href={href}
-          target="_blank"
-          rel="noopener noreferrer"
+          onClick={openStore}
           className="shrink-0 rounded-lg bg-ink-900 px-3.5 py-2 text-sm font-semibold text-white active:scale-[0.98]"
         >
           Get

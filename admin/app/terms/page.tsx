@@ -58,7 +58,7 @@ export default function TermsPage() {
               within the app (press and hold a message, or use the report option on a person),
               and you can <strong>block</strong> any user so you no longer see their messages.
               We review reports and act on objectionable content and the users responsible -
-              including removing content and terminating accounts - within 24 hours. We may
+              including removing content and terminating accounts, within 24 hours. We may
               remove content or suspend accounts that violate these terms.
             </p>
             <h2 className="pt-2 text-base font-semibold text-ink-900">

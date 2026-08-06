@@ -2,9 +2,20 @@ import Link from 'next/link';
 
 export const dynamic = 'force-static';
 export const metadata = {
-  title: 'Realtor Portal',
+  // Leads with what someone would actually search for ("client portal for
+  // real estate agents") rather than the brand name, which only people who
+  // already know us type. Kept under ~60 chars so Google doesn't truncate it.
+  title: 'Client Portal Software for Real Estate Agents & Brokerages',
   description:
-    'A branded client portal for real estate firms. Buyers and sellers see their deal in your app, with your logo and colors.',
+    'Realtor Portal keeps every deal in one place: shared deadlines, documents with per-file visibility, and a branded portal your buyers, sellers, co-agents and closing attorney can all see. Free trial, no card required.',
+  alternates: { canonical: '/' },
+  openGraph: {
+    title: 'Client Portal Software for Real Estate Agents & Brokerages',
+    description:
+      'Shared deadlines, documents with per-file visibility, and a branded portal your clients, co-agents and closing attorney can all see.',
+    url: '/',
+    type: 'website',
+  },
 };
 
 /**
@@ -64,7 +75,7 @@ export default function HomePage() {
               Realtor Portal is a branded mobile app and web portal you give
               your clients. They open it and see exactly where their deal stands:
               the property, the phase, the upcoming dates, the documents you
-              shared. Your logo, your name, your firm&apos;s colors - not ours.
+              shared. Your logo, your name, your firm&apos;s colors. Not ours.
             </p>
             <p className="mt-4 text-base text-ink-600">
               It takes about ten minutes to set up. Pricing is per firm, not
@@ -160,7 +171,7 @@ export default function HomePage() {
               {/* Chat snippet */}
               <div className="mt-4 space-y-2">
                 <div className="max-w-[85%] rounded-2xl rounded-bl-md border border-ink-200 bg-white px-3 py-2 text-[11px] text-ink-800 shadow-soft-xs">
-                  Inspection passed - report is in your documents.
+                  Inspection passed. The report is in your documents.
                 </div>
                 <div className="ml-auto max-w-[70%] rounded-2xl rounded-br-md bg-ink-900 px-3 py-2 text-[11px] text-white">
                   Amazing. What&apos;s left before closing?
@@ -207,7 +218,7 @@ export default function HomePage() {
               {
                 title: 'One workspace per deal',
                 body:
-                  'Phase tracking, key dates, the contract, the parties (buyer, seller, both agents, attorney, lender), messages, and documents - all on one page instead of scattered across your inbox.',
+                  'Phase tracking, key dates, the contract, the parties (buyer, seller, both agents, attorney, lender), messages, and documents, all on one page instead of scattered across your inbox.',
                 icon: (
                   <>
                     <rect x="3" y="4" width="18" height="16" rx="2" />
@@ -300,7 +311,7 @@ export default function HomePage() {
               {
                 n: '03',
                 t: 'Run the deal',
-                b: 'Add the property, move the phase as things happen, upload documents, message the client. Everything they need is in the app - you stop fielding “any update?” texts.',
+                b: 'Add the property, move the phase as things happen, upload documents, message the client. Everything they need is in the app, so you stop fielding “any update?” texts.',
               },
             ].map((s) => (
               <li key={s.n} className="bg-white p-7">
@@ -445,7 +456,7 @@ export default function HomePage() {
             {[
               {
                 q: 'Can I really brand it as my firm?',
-                a: 'Yes. Logo, firm name, primary color, accent color, contact info - all picked up from your dashboard and applied everywhere the client sees. The app store listing still says Realtor Portal, but inside the app the client sees your firm.',
+                a: 'Yes. Logo, firm name, primary color, accent color, contact info, all picked up from your dashboard and applied everywhere the client sees. The app store listing still says Realtor Portal, but inside the app the client sees your firm.',
               },
               {
                 q: 'Do my clients have to install something?',
@@ -457,7 +468,7 @@ export default function HomePage() {
               },
               {
                 q: 'What happens during the free trial?',
-                a: 'You get fourteen days with no card on file. Invite real clients, brand the app, run live deals. When the trial ends you pick a plan from Billing. If you don’t, the app pauses messaging, document uploads, and new client invites until you pick one - existing data stays intact.',
+                a: 'You get fourteen days with no card on file. Invite real clients, brand the app, run live deals. When the trial ends you pick a plan from Billing. If you don’t, the app pauses messaging, document uploads, and new client invites until you pick one. Existing data stays intact.',
               },
               {
                 q: 'Can the other agent’s realtor use this too?',
