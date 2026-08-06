@@ -199,47 +199,77 @@ export function GetTheAppBanner() {
   };
 
   return (
-    <div
-      role="complementary"
-      aria-label="Get the Realtor Portal mobile app"
-      className="fixed inset-x-0 bottom-0 z-50 border-t border-ink-200 bg-white/95 px-4 py-3 shadow-[0_-4px_16px_rgba(0,0,0,0.08)] backdrop-blur md:hidden"
-      style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}
-    >
-      <div className="flex items-center gap-3">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/logo.png"
-          alt=""
-          aria-hidden
-          className="h-11 w-11 shrink-0 rounded-xl object-contain"
-        />
+    <>
+      {/*
+        Scoped so the component stays self-contained rather than leaking
+        keyframes into globals.css. The slide-up is what makes the banner
+        register as an arrival instead of page furniture people scroll past.
+        Respects prefers-reduced-motion.
+      */}
+      <style>{`
+        @keyframes rpBannerUp {
+          from { transform: translateY(120%); opacity: 0; }
+          to   { transform: translateY(0);    opacity: 1; }
+        }
+        .rp-banner { animation: rpBannerUp .42s cubic-bezier(.16,1,.3,1) .35s both; }
+        @media (prefers-reduced-motion: reduce) {
+          .rp-banner { animation: none; }
+        }
+      `}</style>
 
-        <div className="min-w-0 flex-1">
-          <div className="text-sm font-semibold text-ink-900">Realtor Portal</div>
-          <div className="truncate text-xs text-ink-600">
-            Deadlines and documents in your pocket
+      <div
+        role="complementary"
+        aria-label="Download the Realtor Portal app"
+        className="rp-banner fixed inset-x-0 bottom-0 z-50 px-3 pt-3 md:hidden"
+        style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}
+      >
+        <div className="rounded-2xl border border-ink-200 bg-white p-4 shadow-[0_8px_32px_rgba(0,0,0,0.18)]">
+          <div className="flex items-center gap-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo.png"
+              alt=""
+              aria-hidden
+              className="h-14 w-14 shrink-0 rounded-2xl border border-ink-100 object-contain shadow-sm"
+            />
+
+            <div className="min-w-0 flex-1">
+              <div className="text-[16px] font-bold leading-tight text-ink-900">
+                Get the Realtor Portal app
+              </div>
+              <div className="mt-0.5 text-[13px] leading-snug text-ink-600">
+                Your deals, deadlines and documents, wherever you are.
+              </div>
+              <div className="mt-1 text-[11px] font-semibold uppercase tracking-wide text-ink-400">
+                Free · {platform === 'ios' ? 'iPhone & iPad' : 'Android'}
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={dismiss}
+              aria-label={`Dismiss ${storeName} banner`}
+              className="-mr-1 -mt-1 shrink-0 self-start p-2 text-ink-300 active:text-ink-500"
+            >
+              <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden>
+                <path d="M5 5l10 10M15 5L5 15" strokeLinecap="round" />
+              </svg>
+            </button>
           </div>
+
+          {/* Full-width CTA: the whole point is that this is unmissable. */}
+          <a
+            href={href}
+            onClick={openStore}
+            className="mt-3.5 flex w-full items-center justify-center gap-2 rounded-xl bg-ink-900 py-3.5 text-[15px] font-bold text-white shadow-sm transition active:scale-[0.985]"
+          >
+            <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden>
+              <path d="M10 3v10m0 0l-4-4m4 4l4-4M4 16h12" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            Download App
+          </a>
         </div>
-
-        <a
-          href={href}
-          onClick={openStore}
-          className="shrink-0 rounded-lg bg-ink-900 px-3.5 py-2 text-sm font-semibold text-white active:scale-[0.98]"
-        >
-          Get
-        </a>
-
-        <button
-          type="button"
-          onClick={dismiss}
-          aria-label={`Dismiss ${storeName} banner`}
-          className="-mr-1 shrink-0 p-2 text-ink-400"
-        >
-          <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden>
-            <path d="M5 5l10 10M15 5L5 15" strokeLinecap="round" />
-          </svg>
-        </button>
       </div>
-    </div>
+    </>
   );
 }
