@@ -143,7 +143,8 @@ export function GetTheAppBanner() {
 
   if (!platform) return null;
 
-  const href = platform === 'ios' ? APP_STORE_URL : PLAY_STORE_URL;
+  // Only used for the dismiss label now; the CTA points at /get, which picks
+  // the store server-side.
   const storeName = platform === 'ios' ? 'App Store' : 'Google Play';
 
   const dismiss = () => {
@@ -154,49 +155,15 @@ export function GetTheAppBanner() {
   };
 
   /**
-   * Open the store app, not the store's web page.
+   * Deliberately a plain link to /get, with no JavaScript at all.
    *
-   * In-app browsers (Instagram, Facebook, TikTok) are the hard case. They have
-   * no tabs, so target="_blank" is silently swallowed — and even with a
-   * same-tab navigation they tend to render the App Store *website* inside the
-   * webview instead of handing off to the App Store app, which looks broken.
-   *
-   * The reliable path is the native scheme (itms-apps:// or market://), which
-   * these webviews pass to the OS. If nothing handles it — desktop-ish
-   * browsers, unusual webviews — we fall back to the https URL shortly after.
-   * The visibilitychange listener cancels that fallback when the handoff
-   * actually worked, so the user doesn't come back to a stray page load.
+   * Earlier versions intercepted the click and drove window.location, first to
+   * the store URL and then to itms-apps://. Both kept doing nothing inside
+   * Instagram's webview, which blocks custom schemes and can ignore
+   * script-driven navigation. A plain anchor to a same-origin URL is the one
+   * thing every webview reliably follows, and /get answers with a server-side
+   * 302 to the correct store before any of our code runs.
    */
-  const openStore = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    e.preventDefault();
-
-    const nativeUrl =
-      platform === 'ios'
-        ? 'itms-apps://apps.apple.com/us/app/realtor-portal/id6768115138'
-        : 'market://details?id=com.parallelstudios.realtorportal';
-
-    let fallback: ReturnType<typeof setTimeout> | null = null;
-    const cancel = () => {
-      if (fallback) clearTimeout(fallback);
-      fallback = null;
-    };
-    // If the OS took over, the page is hidden/backgrounded — don't also
-    // navigate this tab to the web listing.
-    document.addEventListener('visibilitychange', cancel, { once: true });
-    window.addEventListener('pagehide', cancel, { once: true });
-
-    fallback = setTimeout(() => {
-      document.removeEventListener('visibilitychange', cancel);
-      window.location.href = href;
-    }, 900);
-
-    try {
-      window.location.href = nativeUrl;
-    } catch {
-      cancel();
-      window.location.href = href;
-    }
-  };
 
   return (
     <>
@@ -259,8 +226,7 @@ export function GetTheAppBanner() {
 
           {/* Full-width CTA: the whole point is that this is unmissable. */}
           <a
-            href={href}
-            onClick={openStore}
+            href="/get"
             className="mt-3.5 flex w-full items-center justify-center gap-2 rounded-xl bg-ink-900 py-3.5 text-[15px] font-bold text-white shadow-sm transition active:scale-[0.985]"
           >
             <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden>
