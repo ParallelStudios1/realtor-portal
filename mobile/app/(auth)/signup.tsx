@@ -20,7 +20,7 @@ import { useTheme } from '@/lib/theme';
 import { useToast } from '@/components/Toast';
 import { humanError } from '@/lib/humanError';
 
-type Role = 'realtor' | 'buyer' | 'seller' | null;
+type Role = 'realtor' | 'attorney' | 'buyer' | 'seller' | null;
 
 /**
  * Role-aware signup. The user picks WHO THEY ARE first; the form below adapts.
@@ -55,8 +55,10 @@ export default function SignupScreen() {
     if (password !== confirm) return 'Passwords do not match.';
     if (role === 'realtor' && !firmName.trim())
       return 'Firm or brokerage name is required.';
+    if (role === 'attorney' && !firmName.trim())
+      return 'Law firm or practice name is required.';
     if ((role === 'buyer' || role === 'seller') && !realtorEmail.trim())
-      return "Your realtor's email is required.";
+      return "Your realtor's or attorney's email is required.";
     return null;
   };
 
@@ -84,7 +86,10 @@ export default function SignupScreen() {
           full_name: fullName.trim(),
           email: email.trim(),
           password,
-          firm_name: role === 'realtor' ? firmName.trim() : undefined,
+          firm_name:
+            role === 'realtor' || role === 'attorney'
+              ? firmName.trim()
+              : undefined,
           realtor_email:
             role === 'buyer' || role === 'seller'
               ? realtorEmail.trim()
@@ -139,17 +144,29 @@ export default function SignupScreen() {
             First, who are you?
           </Text>
 
-          {/* Role picker */}
+          {/* Role picker — two rows of two so Attorney is a first-class
+              choice, matching the web signup. */}
           <View style={styles.roleRow}>
             <RoleCard
               icon="briefcase-outline"
               label="Realtor"
-              hint="I help others buy or sell"
+              hint="I run deals for clients"
               active={role === 'realtor'}
               accent={accent}
               colors={colors}
               onPress={() => setRole('realtor')}
             />
+            <RoleCard
+              icon="school-outline"
+              label="Attorney"
+              hint="I close & orchestrate deals"
+              active={role === 'attorney'}
+              accent={accent}
+              colors={colors}
+              onPress={() => setRole('attorney')}
+            />
+          </View>
+          <View style={styles.roleRow}>
             <RoleCard
               icon="home-outline"
               label="Buyer"
@@ -205,13 +222,19 @@ export default function SignupScreen() {
                 colors={colors}
               />
 
-              {role === 'realtor' && (
+              {(role === 'realtor' || role === 'attorney') && (
                 <>
                   <Field
-                    label="Firm or brokerage name"
+                    label={
+                      role === 'attorney'
+                        ? 'Law firm or practice name'
+                        : 'Firm or brokerage name'
+                    }
                     value={firmName}
                     onChangeText={setFirmName}
-                    placeholder="Logan Realty Group"
+                    placeholder={
+                      role === 'attorney' ? 'Logan Law, LLC' : 'Logan Realty Group'
+                    }
                     colors={colors}
                   />
                   <View
@@ -238,7 +261,7 @@ export default function SignupScreen() {
 
               {(role === 'buyer' || role === 'seller') && (
                 <Field
-                  label="Your realtor's email"
+                  label="Your realtor's or attorney's email"
                   value={realtorEmail}
                   onChangeText={setRealtorEmail}
                   placeholder="agent@brokerage.com"
