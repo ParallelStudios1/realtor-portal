@@ -28,6 +28,10 @@ export const IAP_PRODUCT_IDS = [
   'com.parallelstudios.realtorportal.brokerage.monthly', // $799.99
 ] as const;
 
+/** The law-practice plan. Fetched only when the firm is a law_firm. */
+export const ATTORNEY_IAP_PRODUCT_ID =
+  'com.parallelstudios.realtorportal.attorney.monthly'; // $49.99
+
 export type IapProduct = {
   id: string;
   title: string;
@@ -48,6 +52,7 @@ const ENTITLEMENT_BY_PRODUCT: Record<string, string> = {
   'com.parallelstudios.realtorportal.starter.monthly': 'Up to 3 agents',
   'com.parallelstudios.realtorportal.teamplan.monthly': 'Up to 15 agents',
   'com.parallelstudios.realtorportal.brokerage.monthly': 'Up to 50 agents',
+  'com.parallelstudios.realtorportal.attorney.monthly': 'Up to 3 attorneys',
 };
 
 /**
@@ -115,20 +120,22 @@ export async function endIap(): Promise<void> {
  * yet (they must be at least "Ready to Submit"), or the bundle id/agreement
  * doesn't match.
  */
-export async function getProducts(): Promise<IapProduct[]> {
+export async function getProducts(
+  skus: readonly string[] = IAP_PRODUCT_IDS
+): Promise<IapProduct[]> {
   const m = await mod();
   if (!m) return [];
   try {
     await initIap();
     const raw = await m.fetchProducts({
-      skus: [...IAP_PRODUCT_IDS],
+      skus: [...skus],
       type: 'subs',
     });
     const list = Array.isArray(raw) ? raw : [];
     if (list.length === 0) {
       console.warn(
         '[iap] fetchProducts returned 0 products for',
-        IAP_PRODUCT_IDS.join(', ')
+        skus.join(', ')
       );
     }
     return list

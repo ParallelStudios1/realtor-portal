@@ -202,21 +202,35 @@ export default function RealtorHome() {
           Quick actions
         </Text>
         <View style={s.actions}>
-          <Action
-            icon="person-add-outline"
-            label="Invite a client"
-            onPress={() => router.push('/(realtor)/invite' as any)}
-            colors={colors}
-          />
+          {(userProfile as any)?.firm_type === 'law_firm' ? (
+            /* Attorneys start deals the way files actually arrive: the
+               referring realtor is their client, who brings the buyer or
+               seller. */
+            <Action
+              icon="briefcase-outline"
+              label="Start a deal"
+              onPress={() => router.push('/(realtor)/start-deal' as any)}
+              colors={colors}
+            />
+          ) : (
+            <Action
+              icon="person-add-outline"
+              label="Invite a client"
+              onPress={() => router.push('/(realtor)/invite' as any)}
+              colors={colors}
+            />
+          )}
           <Action
             icon="chatbubble-ellipses-outline"
             label="Open messages"
             onPress={() => router.push('/(realtor)/messages')}
             colors={colors}
           />
-          {['owner', 'firm_admin', 'manager', 'super_admin'].includes(
+          {(['owner', 'firm_admin', 'manager', 'super_admin'].includes(
             (userProfile?.role as string) || ''
-          ) && (
+          ) ||
+            ((userProfile?.role as string) === 'attorney' &&
+              (userProfile as any)?.firm_type === 'law_firm')) && (
             <>
               <Action
                 icon="people-outline"

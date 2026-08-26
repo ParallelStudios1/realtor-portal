@@ -54,7 +54,10 @@ export const PLANS = {
     price: 49,
     seatCap: 3,
     priceId: process.env.STRIPE_PRICE_ATTORNEY ?? '',
-    appleProductId: '',
+    // $49.99 on Apple (their nearest price point to the $49 web price).
+    // Having a real IAP means the iOS app never has to steer law firms to
+    // web billing — which Apple forbids — mirroring the realtor plans.
+    appleProductId: 'com.parallelstudios.realtorportal.attorney.monthly',
     features: ['customBranding'] as PlanFeature[],
   },
 } as const;

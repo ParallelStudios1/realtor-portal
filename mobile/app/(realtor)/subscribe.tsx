@@ -26,6 +26,7 @@ import {
   manageSubscriptions,
   iapAvailable,
   getLastVerifyError,
+  ATTORNEY_IAP_PRODUCT_ID,
   type IapProduct,
 } from '@/lib/iap';
 
@@ -34,6 +35,7 @@ const PLAN_NAME_BY_PRODUCT: Record<string, string> = {
   'com.parallelstudios.realtorportal.starter.monthly': 'Starter',
   'com.parallelstudios.realtorportal.teamplan.monthly': 'Team',
   'com.parallelstudios.realtorportal.brokerage.monthly': 'Brokerage',
+  'com.parallelstudios.realtorportal.attorney.monthly': 'Attorney',
 };
 
 function planNameFor(productId: string | null | undefined): string | null {
@@ -93,10 +95,9 @@ export default function SubscribeScreen() {
     billingSource !== 'apple' &&
     Boolean((firm as any)?.stripe_subscription_id);
 
-  // Law practices have their own $49 web plan and NO Apple product. Selling
-  // an attorney one of the three realtor Apple subscriptions here would both
-  // overcharge them and grant the wrong entitlement, so the whole purchase UI
-  // stands down and points at the web billing page instead.
+  // Law practices buy the $49.99 Attorney plan through Apple, exactly like
+  // realtors buy theirs — iOS forbids steering users to external billing.
+  // The only difference is WHICH product the paywall fetches.
   const isLawFirm = (firm as any)?.firm_type === 'law_firm';
 
   // A plan change Apple accepted but hasn't applied yet (moving to a cheaper
@@ -119,8 +120,13 @@ export default function SubscribeScreen() {
         if (alive) setLoading(false);
         return;
       }
+      if (!firm) return; // wait for the firm row so we fetch the right catalog
       await initIap();
-      const list = await getProducts();
+      // Law practices see exactly one product: theirs. Realtor firms see the
+      // three realtor tiers and never the attorney plan.
+      const list = await getProducts(
+        isLawFirm ? [ATTORNEY_IAP_PRODUCT_ID] : undefined
+      );
       if (!alive) return;
       setProducts(list);
       setSelected(list[0]?.id ?? null);
@@ -130,7 +136,7 @@ export default function SubscribeScreen() {
       alive = false;
       endIap();
     };
-  }, []);
+  }, [!!firm, isLawFirm]);
 
   const buy = async () => {
     if (!selected) return;
@@ -230,22 +236,6 @@ export default function SubscribeScreen() {
           >
             <Text style={styles.ctaText}>Manage plan</Text>
           </Pressable>
-        ) : isLawFirm ? (
-          // Attorney practice: web billing only. No Apple products exist for
-          // the Attorney plan, deliberately.
-          <View>
-            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-              Your practice is billed on the web — the Attorney plan is
-              $49/month for up to 3 attorneys, and every realtor and client you
-              invite joins free. Manage it from your billing page.
-            </Text>
-            <Pressable
-              onPress={() => Linking.openURL(MANAGE_URL)}
-              style={[styles.cta, { backgroundColor: colors.primary }]}
-            >
-              <Text style={styles.ctaText}>Open billing page</Text>
-            </Pressable>
-          </View>
         ) : loading ? (
           <ActivityIndicator style={{ marginTop: 24 }} color={colors.primary} />
         ) : stripeManaged ? (

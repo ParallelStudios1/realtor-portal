@@ -24,6 +24,7 @@ const PLANS = {
     seatCap: 50,
     features: ['customBranding', 'teamOversight', 'analytics'],
   },
+  attorney: { name: 'Attorney', seatCap: 3, features: ['customBranding'] },
 };
 
 const seatCapForTier = (t) => (t ? PLANS[t].seatCap : PLANS.solo.seatCap);
@@ -79,7 +80,7 @@ function check(label, actual, expected) {
 }
 
 // --- Buy on iOS, then open the web app / Android -------------------------
-for (const tier of ['solo', 'team', 'brokerage']) {
+for (const tier of ['solo', 'team', 'brokerage', 'attorney']) {
   const firm = applyApple({ productTier: tier, active: true });
   const e = entitlements(firm);
   check(
@@ -95,7 +96,7 @@ for (const tier of ['solo', 'team', 'brokerage']) {
 }
 
 // --- Buy on web, then open iOS ------------------------------------------
-for (const tier of ['solo', 'team', 'brokerage']) {
+for (const tier of ['solo', 'team', 'brokerage', 'attorney']) {
   const firm = applyStripe({ priceTier: tier, status: 'active' });
   const e = entitlements(firm);
   check(
@@ -111,7 +112,7 @@ for (const tier of ['solo', 'team', 'brokerage']) {
 }
 
 // --- The two writers must agree exactly for the same tier ----------------
-for (const tier of ['solo', 'team', 'brokerage']) {
+for (const tier of ['solo', 'team', 'brokerage', 'attorney']) {
   const viaApple = entitlements(applyApple({ productTier: tier, active: true }));
   const viaStripe = entitlements(applyStripe({ priceTier: tier, status: 'active' }));
   check(`${PLANS[tier].name}: Apple and Stripe grant identical access`, viaApple, viaStripe);

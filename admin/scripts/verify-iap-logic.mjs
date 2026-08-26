@@ -27,6 +27,11 @@ const PLANS = {
     seatCap: 50,
     appleProductId: 'com.parallelstudios.realtorportal.brokerage.monthly',
   },
+  attorney: {
+    name: 'Attorney',
+    seatCap: 3,
+    appleProductId: 'com.parallelstudios.realtorportal.attorney.monthly',
+  },
 };
 
 function tierFromAppleProductId(productId) {
@@ -62,8 +67,9 @@ function check(label, actual, expected) {
 check('starter.monthly -> solo', tierFromAppleProductId(PLANS.solo.appleProductId), 'solo');
 check('teamplan.monthly -> team', tierFromAppleProductId(PLANS.team.appleProductId), 'team');
 check('brokerage.monthly -> brokerage', tierFromAppleProductId(PLANS.brokerage.appleProductId), 'brokerage');
+check('attorney.monthly -> attorney', tierFromAppleProductId(PLANS.attorney.appleProductId), 'attorney');
 check('unknown product -> null', tierFromAppleProductId('com.example.bogus'), null);
-check('seat caps match store copy', [PLANS.solo.seatCap, PLANS.team.seatCap, PLANS.brokerage.seatCap], [3, 15, 50]);
+check('seat caps match store copy', [PLANS.solo.seatCap, PLANS.team.seatCap, PLANS.brokerage.seatCap, PLANS.attorney.seatCap], [3, 15, 50, 3]);
 
 // Every product id must be distinct, or two plans would collide on lookup.
 const ids = Object.values(PLANS).map((p) => p.appleProductId);
