@@ -72,8 +72,17 @@ export function InviteClient({
   const brand = firm?.brand_color || '#0F172A';
   const accent = firm?.accent_color || brand;
   const realtor = search?.realtor;
-  const firmName = firm?.name || "your realtor's firm";
-  const realtorName = realtor?.full_name || realtor?.email || 'Your realtor';
+  const firmName = firm?.name || 'the firm';
+  // Attorney-led deals have no realtor on the deal row — the inviter is the
+  // orchestrating attorney, and calling them "your realtor" reads wrong to
+  // everyone, especially the actual realtor being invited.
+  const attorneyLed = (search as any)?.orchestrated_by === 'attorney';
+  const inviterName = attorneyLed
+    ? (search as any)?.attorney_name ||
+      (search as any)?.attorney_email ||
+      'The closing attorney'
+    : realtor?.full_name || realtor?.email || 'Your realtor';
+  const realtorName = inviterName;
   const role = invite.role;
   const roleLabel = roleToLabel(role);
   const isRealtor = role === 'realtor' || role === 'co_realtor';

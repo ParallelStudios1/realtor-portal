@@ -40,6 +40,7 @@ export default async function InvitePage({
        search_id, firm_id, created_by,
        firm:firms ( name, brand_color, accent_color, logo_url, tagline ),
        search:client_searches ( id, name, kind, phase,
+         orchestrated_by, attorney_name, attorney_email,
          realtor:users!client_searches_realtor_id_fkey ( full_name, email ),
          client:users!client_searches_client_id_fkey ( id, full_name, email ) )`
     )
