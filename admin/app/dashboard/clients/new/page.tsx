@@ -1,9 +1,17 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import { getMe } from '@/lib/supabaseSsr';
 import { inviteClientAction } from './actions';
 
 export const metadata = { title: 'Invite client · Realtor Portal' };
+export const dynamic = 'force-dynamic';
 
-export default function NewClientPage({ searchParams }: { searchParams: { error?: string; ok?: string } }) {
+export default async function NewClientPage({ searchParams }: { searchParams: { error?: string; ok?: string } }) {
+  // A law firm's client is the referring realtor, not a buyer/seller — so
+  // every "invite client" link in the app lands attorneys on Start a Deal.
+  // One intake flow per firm type, guaranteed at the destination.
+  const me = await getMe();
+  if ((me as any)?.firm_type === 'law_firm') redirect('/attorney/new');
   return (
     <main className="mx-auto max-w-2xl px-6 py-8">
       <Link href="/dashboard/clients" className="text-sm font-semibold text-ink-500 transition hover:text-ink-900">

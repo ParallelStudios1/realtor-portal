@@ -30,6 +30,16 @@ export default function RealtorClientsScreen() {
     true, // isRealtor - fetch all firm searches, not just current user's
   );
 
+  // Law-firm attorneys start deals (their client is the referring realtor);
+  // brokerages invite buyers/sellers. Same screen, correct flow for each.
+  const isLawFirm = (userProfile as any)?.firm_type === 'law_firm';
+  const ctaLabel = isLawFirm ? 'Start a deal' : 'Invite a client';
+  const ctaIcon = isLawFirm ? 'briefcase' : 'person-add';
+  const ctaRoute = isLawFirm ? '/(realtor)/start-deal' : '/(realtor)/invite';
+  const emptyBody = isLawFirm
+    ? 'Start your first deal - add the referring realtor and their buyer or seller, and it will show up here right away.'
+    : 'Invite your first buyer or seller - their deal will show up here right away.';
+
   // First-load: render layout-stable skeleton rows.
   if (searches === undefined) {
     return (
@@ -56,11 +66,11 @@ export default function RealtorClientsScreen() {
         ListHeaderComponent={
           searches && searches.length > 0 ? (
             <Pressable
-              onPress={() => router.push('/(realtor)/invite' as any)}
+              onPress={() => router.push(ctaRoute as any)}
               style={[styles.inviteCta, { backgroundColor: colors.primary }]}
             >
-              <Ionicons name="person-add" size={16} color="#fff" />
-              <Text style={styles.inviteCtaText}>Invite a client</Text>
+              <Ionicons name={ctaIcon as any} size={16} color="#fff" />
+              <Text style={styles.inviteCtaText}>{ctaLabel}</Text>
             </Pressable>
           ) : null
         }
@@ -68,10 +78,10 @@ export default function RealtorClientsScreen() {
           <EmptyState
             icon="briefcase-outline"
             title="No deals yet"
-            body="Invite your first buyer or seller - their deal will show up here right away."
-            ctaLabel="Invite a client"
-            ctaIcon="person-add"
-            onCtaPress={() => router.push('/(realtor)/invite' as any)}
+            body={emptyBody}
+            ctaLabel={ctaLabel}
+            ctaIcon={ctaIcon as any}
+            onCtaPress={() => router.push(ctaRoute as any)}
           />
         }
         renderItem={({ item }) => (

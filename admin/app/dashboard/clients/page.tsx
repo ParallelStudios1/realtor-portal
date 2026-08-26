@@ -68,11 +68,14 @@ export default async function ClientsListPage() {
             </Link>
           </p>
         </div>
-        <Link href="/dashboard/clients/new" className="btn-primary">
+        <Link
+          href={(me as any).firm_type === 'law_firm' ? '/attorney/new' : '/dashboard/clients/new'}
+          className="btn-primary"
+        >
           <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5">
             <path d="M10 4v12M4 10h12" strokeLinecap="round" />
           </svg>
-          Invite client
+          {(me as any).firm_type === 'law_firm' ? 'Start a deal' : 'Invite client'}
         </Link>
       </header>
 
@@ -88,11 +91,15 @@ export default async function ClientsListPage() {
           </div>
           <h3 className="mt-4 text-base font-semibold text-ink-900">No clients yet</h3>
           <p className="mx-auto mt-1.5 max-w-md text-sm leading-relaxed text-ink-600">
-            Invite buyers and sellers - they'll get a one-tap link to your
-            branded app.
+            {(me as any).firm_type === 'law_firm'
+              ? 'Start a deal and the referring realtor plus their buyer or seller will appear here.'
+              : "Invite buyers and sellers - they'll get a one-tap link to your branded app."}
           </p>
-          <Link href="/dashboard/clients/new" className="btn-primary mt-6">
-            Invite your first client
+          <Link
+            href={(me as any).firm_type === 'law_firm' ? '/attorney/new' : '/dashboard/clients/new'}
+            className="btn-primary mt-6"
+          >
+            {(me as any).firm_type === 'law_firm' ? 'Start your first deal' : 'Invite your first client'}
           </Link>
         </div>
       ) : (

@@ -158,10 +158,12 @@ export function DealsBoard({
           </div>
           <h3 className="mt-4 text-base font-semibold text-ink-900">No deals match those filters</h3>
           <p className="mx-auto mt-1.5 max-w-md text-sm leading-relaxed text-ink-600">
-            Clear filters or invite a new client to get started.
+            Clear filters or start a new deal to get going.
           </p>
-          <Link href="/dashboard/clients/new" className="btn-primary mt-6">
-            Invite client
+          {/* /dashboard/deals/new routes law firms to the attorney intake,
+              so this one button is correct for every firm type. */}
+          <Link href="/dashboard/deals/new" className="btn-primary mt-6">
+            Start a deal
           </Link>
         </div>
       ) : view === 'list' ? (

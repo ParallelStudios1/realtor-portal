@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -28,6 +28,14 @@ import { humanError } from '@/lib/humanError';
 export default function InviteClientScreen() {
   const { user, userProfile } = useAuth();
   const { colors } = useTheme();
+
+  // Law firms never see the buyer/seller invite: their client is the
+  // referring realtor, so EVERY path into "invite" lands on Start a Deal.
+  // One flow, one place — no second setup screen to keep in sync.
+  const isLawFirm = (userProfile as any)?.firm_type === 'law_firm';
+  useEffect(() => {
+    if (isLawFirm) router.replace('/(realtor)/start-deal' as any);
+  }, [isLawFirm]);
   const queryClient = useQueryClient();
   const toast = useToast();
 

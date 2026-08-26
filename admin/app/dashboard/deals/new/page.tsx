@@ -1,8 +1,11 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import { getMe } from '@/lib/supabaseSsr';
 import { createBlankDealAction } from './actions';
 import { SubmitStartDeal } from './SubmitStartDeal';
 
 export const metadata = { title: 'New deal · Realtor Portal' };
+export const dynamic = 'force-dynamic';
 
 /**
  * "Start a new deal" - no client required.
@@ -11,13 +14,17 @@ export const metadata = { title: 'New deal · Realtor Portal' };
  * workspace right after and uses Add Party to attach whoever's actually
  * involved: existing client, brand-new client, co-realtor, attorney, etc.
  */
-export default function NewDealPage({
+export default async function NewDealPage({
   searchParams,
 }: {
   // `name`/`kind` prefill the form when starting a deal from a contact/client,
   // so the realtor doesn't retype what the app already knows.
   searchParams: { error?: string; name?: string; kind?: string };
 }) {
+  // Attorney-led deals have their own intake (referring realtor is the
+  // client) — send law firms there so there's exactly one deal-setup flow.
+  const me = await getMe();
+  if ((me as any)?.firm_type === 'law_firm') redirect('/attorney/new');
   const prefillName = searchParams.name || '';
   const prefillKind = searchParams.kind === 'seller' ? 'seller' : 'buyer';
   return (

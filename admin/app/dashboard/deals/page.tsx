@@ -178,9 +178,11 @@ export default async function DealsListPage({
                 <Link href="/dashboard/deals/new" className="btn-primary text-xs">
                   Start a deal →
                 </Link>
-                <Link href="/dashboard/clients/new" className="btn-secondary text-xs">
-                  Invite a client
-                </Link>
+                {(me as any).firm_type !== 'law_firm' && (
+                  <Link href="/dashboard/clients/new" className="btn-secondary text-xs">
+                    Invite a client
+                  </Link>
+                )}
                 <Link href="/dashboard/branding" className="btn-secondary text-xs">
                   Set up branding
                 </Link>

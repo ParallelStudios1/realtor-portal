@@ -68,11 +68,14 @@ export default async function DashboardOverviewPage() {
             Here's what's happening at {me.firm_name}.
           </p>
         </div>
-        <Link href="/dashboard/clients/new" className="btn-primary">
+        <Link
+          href={(me as any).firm_type === 'law_firm' ? '/attorney/new' : '/dashboard/clients/new'}
+          className="btn-primary"
+        >
           <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5">
             <path d="M10 4v12M4 10h12" strokeLinecap="round" />
           </svg>
-          Invite client
+          {(me as any).firm_type === 'law_firm' ? 'Start a deal' : 'Invite client'}
         </Link>
       </header>
 
@@ -126,10 +129,10 @@ export default async function DashboardOverviewPage() {
                   Your deals will appear here as soon as you start one.
                 </p>
                 <Link
-                  href="/dashboard/clients/new"
+                  href={(me as any).firm_type === 'law_firm' ? '/attorney/new' : '/dashboard/clients/new'}
                   className="btn-primary mt-4 text-xs"
                 >
-                  Invite your first client
+                  {(me as any).firm_type === 'law_firm' ? 'Start your first deal' : 'Invite your first client'}
                 </Link>
               </div>
             ) : (
