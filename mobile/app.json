@@ -2,7 +2,7 @@
   "expo": {
     "name": "Realtor Portal",
     "slug": "realtor-portal",
-    "version": "0.1.3",
+    "version": "0.1.4",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "icon": "./assets/icon.png",
