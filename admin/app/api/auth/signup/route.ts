@@ -234,7 +234,9 @@ export async function POST(req: Request) {
         .from('users')
         .select('id, firm_id')
         .ilike('email', realtorEmail)
-        .in('role', ['realtor', 'firm_admin'])
+        // A buyer/seller can also sign up under their ATTORNEY's email —
+        // the law practice hosts the deal exactly like a brokerage would.
+        .in('role', ['realtor', 'firm_admin', 'attorney'])
         .limit(1)
         .maybeSingle();
       if (!realtor?.firm_id) {

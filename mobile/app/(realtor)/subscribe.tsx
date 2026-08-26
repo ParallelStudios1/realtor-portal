@@ -93,6 +93,12 @@ export default function SubscribeScreen() {
     billingSource !== 'apple' &&
     Boolean((firm as any)?.stripe_subscription_id);
 
+  // Law practices have their own $49 web plan and NO Apple product. Selling
+  // an attorney one of the three realtor Apple subscriptions here would both
+  // overcharge them and grant the wrong entitlement, so the whole purchase UI
+  // stands down and points at the web billing page instead.
+  const isLawFirm = (firm as any)?.firm_type === 'law_firm';
+
   // A plan change Apple accepted but hasn't applied yet (moving to a cheaper
   // plan keeps you on what you paid for until the period ends).
   const pendingProductId = (firm as any)?.iap_pending_product_id as string | null;
@@ -224,6 +230,22 @@ export default function SubscribeScreen() {
           >
             <Text style={styles.ctaText}>Manage plan</Text>
           </Pressable>
+        ) : isLawFirm ? (
+          // Attorney practice: web billing only. No Apple products exist for
+          // the Attorney plan, deliberately.
+          <View>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+              Your practice is billed on the web — the Attorney plan is
+              $49/month for up to 3 attorneys, and every realtor and client you
+              invite joins free. Manage it from your billing page.
+            </Text>
+            <Pressable
+              onPress={() => Linking.openURL(MANAGE_URL)}
+              style={[styles.cta, { backgroundColor: colors.primary }]}
+            >
+              <Text style={styles.ctaText}>Open billing page</Text>
+            </Pressable>
+          </View>
         ) : loading ? (
           <ActivityIndicator style={{ marginTop: 24 }} color={colors.primary} />
         ) : stripeManaged ? (

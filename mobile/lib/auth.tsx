@@ -3,7 +3,16 @@ import { supabase } from './supabase';
 import { User, UserRole } from './database.types';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
-export type UserProfile = User & { role: UserRole; firm_id: string | null };
+export type UserProfile = User & {
+  role: UserRole;
+  firm_id: string | null;
+  /**
+   * 'brokerage' | 'law_firm'. Routing needs it: a law-firm attorney runs
+   * deals and gets the full realtor experience; a brokerage-guest attorney
+   * gets the web signpost. Joined from firms in the profile query.
+   */
+  firm_type?: string | null;
+};
 
 type AuthContextType = {
   session: any | null;
@@ -34,14 +43,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!user?.id) return null;
       const { data, error } = await supabase
         .from('users')
-        .select('*')
+        .select('*, firm:firms ( firm_type )')
         .eq('id', user.id)
         .maybeSingle();
       if (error) {
         console.warn('userProfile fetch error:', error.message);
         return null;
       }
-      return data as UserProfile | null;
+      if (!data) return null;
+      // Flatten the firm join so consumers read profile.firm_type directly.
+      const { firm, ...rest } = data as any;
+      return { ...rest, firm_type: firm?.firm_type ?? null } as UserProfile;
     },
     enabled: !!user?.id,
     retry: 1,

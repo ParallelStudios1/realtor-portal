@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { isDealStaff } from '@/lib/staff';
 import { createClient } from '@supabase/supabase-js';
 import { getMe } from '@/lib/supabaseSsr';
 import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
@@ -23,7 +24,13 @@ export const runtime = 'nodejs';
  */
 async function resolveCaller(req: Request) {
   const me = await getMe();
-  if (me?.user_id) return { id: me.user_id, firm_id: me.firm_id, role: me.role };
+  if (me?.user_id)
+    return {
+      id: me.user_id,
+      firm_id: me.firm_id,
+      role: me.role,
+      firm_type: (me as any).firm_type ?? null,
+    };
   const auth = req.headers.get('authorization') || '';
   const m = auth.match(/^Bearer\s+(.+)$/i);
   if (!m) return null;
@@ -39,13 +46,14 @@ async function resolveCaller(req: Request) {
   if (!data.user) return null;
   const { data: row } = await sb
     .from('users')
-    .select('firm_id, role')
+    .select('firm_id, role, firm:firms ( firm_type )')
     .eq('id', data.user.id)
     .single();
   return {
     id: data.user.id,
     firm_id: (row?.firm_id as string) || null,
     role: (row?.role as string) || null,
+    firm_type: ((row as any)?.firm?.firm_type as string) || null,
   };
 }
 
@@ -55,9 +63,11 @@ export async function POST(req: Request) {
     if (!me?.firm_id) {
       return NextResponse.json({ error: 'Not signed in.' }, { status: 401 });
     }
-    if (me.role && me.role !== 'realtor' && me.role !== 'firm_admin') {
+    // Deal staff invite clients — that includes a law-firm attorney inviting
+    // the buyer or seller on one of their own files.
+    if (me.role && !isDealStaff(me as any)) {
       return NextResponse.json(
-        { error: 'Only realtors can invite clients.' },
+        { error: 'Only firm staff can invite clients.' },
         { status: 403 }
       );
     }

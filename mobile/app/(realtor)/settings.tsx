@@ -46,7 +46,13 @@ export default function RealtorSettingsScreen() {
   const queryClient = useQueryClient();
   const toast = useToast();
 
-  const isFirmAdmin = userProfile?.role === 'firm_admin' || userProfile?.role === 'super_admin';
+  // The founding attorney of a law practice administers it the way a
+  // firm_admin administers a brokerage (branding, plan, invites).
+  const isFirmAdmin =
+    userProfile?.role === 'firm_admin' ||
+    userProfile?.role === 'super_admin' ||
+    (userProfile?.role === 'attorney' &&
+      (userProfile as any)?.firm_type === 'law_firm');
 
   // Profile state
   const [fullName, setFullName] = useState(userProfile?.full_name ?? '');

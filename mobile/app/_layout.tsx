@@ -63,7 +63,18 @@ function RootNavigator() {
   // Route based on role
   const role = userProfile.role;
 
-  if (role === 'super_admin' || role === 'realtor' || role === 'firm_admin') {
+  // A law-firm attorney runs deals — they get the SAME app experience as a
+  // realtor (one code path; RLS grants them staff access inside their own
+  // practice). Only brokerage-guest attorneys get the web signpost.
+  const isLawFirmAttorney =
+    role === 'attorney' && (userProfile as any).firm_type === 'law_firm';
+
+  if (
+    role === 'super_admin' ||
+    role === 'realtor' ||
+    role === 'firm_admin' ||
+    isLawFirmAttorney
+  ) {
     return (
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(realtor)" />

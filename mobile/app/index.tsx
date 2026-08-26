@@ -27,11 +27,18 @@ export default function RootIndex() {
   }
 
   const role = userProfile.role;
-  if (role === 'firm_admin' || role === 'realtor' || role === 'super_admin') {
+  const isLawFirmAttorney =
+    role === 'attorney' && (userProfile as any).firm_type === 'law_firm';
+  if (
+    role === 'firm_admin' ||
+    role === 'realtor' ||
+    role === 'super_admin' ||
+    isLawFirmAttorney
+  ) {
     return <Redirect href="/(realtor)" />;
   }
   if (role === 'attorney') {
-    // Attorney tools are web-first; the client tabs would just be empty.
+    // Brokerage-guest attorney: web signpost (client tabs would be empty).
     return <Redirect href="/attorney" />;
   }
   return <Redirect href="/(client)" />;
