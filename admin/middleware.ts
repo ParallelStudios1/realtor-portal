@@ -16,6 +16,10 @@ export async function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname;
   const isPublic =
     path === '/' ||
+    // Ad landing: signup-first funnel. Public, and NOT in the logged-in
+    // auth-page redirect below - its ?done=1 state renders for a
+    // just-signed-in user on purpose.
+    path.startsWith('/start') ||
     path.startsWith('/signup') ||
     path.startsWith('/login') ||
     path.startsWith('/welcome') ||

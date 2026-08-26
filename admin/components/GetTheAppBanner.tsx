@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { track } from '@vercel/analytics';
 
 /**
@@ -112,6 +113,10 @@ export function GetTheAppBanner() {
   // Start hidden. Detection needs the browser, and rendering on the server
   // would flash the banner on desktop before hydration corrects it.
   const [platform, setPlatform] = useState<Platform>(null);
+  const pathname = usePathname();
+  // The ad landing (/start) IS an app funnel already - stacking this banner
+  // on top of its signup form would just cover the fields.
+  const suppressed = pathname?.startsWith('/start');
 
   useEffect(() => {
     const { platform: p, isIosSafari } = detectPhone();
@@ -142,7 +147,7 @@ export function GetTheAppBanner() {
     setPlatform(p);
   }, []);
 
-  if (!platform) return null;
+  if (!platform || suppressed) return null;
 
   // Only used for the dismiss label now; the CTA points at /get, which picks
   // the store server-side.
