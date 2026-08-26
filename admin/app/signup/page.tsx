@@ -69,7 +69,8 @@ export default function SignupPage({
           <SignupForm
             action={signupAction}
             initialRole={
-              (searchParams.role as 'realtor' | 'buyer' | 'seller') || null
+              (searchParams.role as 'realtor' | 'buyer' | 'seller' | 'attorney') ||
+              null
             }
             prefilledEmail={prefilledEmail}
             next={safeNext}

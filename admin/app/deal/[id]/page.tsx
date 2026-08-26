@@ -8,6 +8,8 @@ import { phaseLabelFor, listingStatusLabel, isSellerKind, DEAL_PHASES } from '@/
 import { AgreedHomeCard } from '@/components/AgreedHomeCard';
 import { AttorneyDocList, type AttorneyDoc } from '@/components/AttorneyDocList';
 import { AttorneyUpload, type UploadParty } from './AttorneyUpload';
+import { OrchestratorBar } from './OrchestratorBar';
+import { setAttorneyDealPhaseAction } from './orchestratorActions';
 import { DealChat } from '@/components/DealChat';
 import { PrivateMessages } from '@/components/PrivateMessages';
 import { getPrivateParties } from '@/app/dashboard/deals/[id]/privateActions';
@@ -81,7 +83,7 @@ export default async function DealPage({
     .select(
       `id, name, phase, kind, agreed_price, closing_amount, earnest_money,
        commission_pct, contract_url, attorney_email, attorney_name, notes, created_at,
-       closing_date, offer_house_id, house_agreed_at,
+       closing_date, offer_house_id, house_agreed_at, orchestrated_by, firm_id,
        firm:firms ( id, name, logo_url, brand_color, accent_color ),
        client:users!client_searches_client_id_fkey ( id, full_name, email ),
        realtor:users!client_searches_realtor_id_fkey ( id, full_name, email )`
@@ -150,6 +152,15 @@ export default async function DealPage({
   const isAttorney =
     myParticipantRow?.role === 'attorney' ||
     (!!d.attorney_email && d.attorney_email.toLowerCase() === myEmail);
+
+  // Is the caller the ORCHESTRATING attorney — this deal lives in their own
+  // law firm and is attorney-led? They get controls a guest attorney doesn't:
+  // moving the phase and adding people.
+  const isOrchestratingAttorney =
+    isAttorney &&
+    d.orchestrated_by === 'attorney' &&
+    me.role === 'attorney' &&
+    me.firm_id === d.firm_id;
 
   // Party list an uploader can share a restricted document with. Built here
   // with the service-role read since a non-staff uploader's own RLS can't see
@@ -408,6 +419,17 @@ export default async function DealPage({
                 : rolePurpose((myParticipantRow?.role as string) || '')}
             </span>
           </div>
+        )}
+
+        {/* Orchestrator controls — only the attorney whose practice owns an
+            attorney-led deal sees these. */}
+        {isOrchestratingAttorney && (
+          <OrchestratorBar
+            dealId={d.id}
+            currentPhase={d.phase}
+            phaseAction={setAttorneyDealPhaseAction}
+            brand={brand}
+          />
         )}
 
         {/* Agreed home - the house this deal is about. Respects scoping: only

@@ -37,9 +37,19 @@ export async function getSeatUsage(firmId: string): Promise<SeatUsage> {
 
   const { data: firmRow } = await service
     .from('firms')
-    .select('plan_tier, stripe_subscription_id, iap_original_transaction_id, status')
+    .select(
+      'plan_tier, stripe_subscription_id, iap_original_transaction_id, status, firm_type'
+    )
     .eq('id', firmId)
     .maybeSingle();
+
+  // Law firms are attorney practices: the attorney(s) ARE the seats there.
+  // In a brokerage, attorneys are guests a realtor invited — counting them
+  // would silently shrink every existing customer's seat allowance.
+  const isLawFirm = (firmRow as any)?.firm_type === 'law_firm';
+  const seatRoles = isLawFirm
+    ? ([...SEAT_ROLES, 'attorney'] as string[])
+    : (SEAT_ROLES as unknown as string[]);
 
   // A paid tier only counts while the plan is actually live. Both billing
   // webhooks clear plan_tier on cancellation, but this guard means a stale or
@@ -54,15 +64,17 @@ export async function getSeatUsage(firmId: string): Promise<SeatUsage> {
   const hasSubscription =
     Boolean(firmRow?.stripe_subscription_id) ||
     Boolean((firmRow as any)?.iap_original_transaction_id);
-  // No tier and no subscription → still on trial; treat as Solo cap.
-  const effectiveTier: PlanTier | null = tier ?? (hasSubscription ? null : 'solo');
+  // No tier and no subscription → still on trial. Trials get the entry plan
+  // for their firm type: Starter for brokerages, Attorney for law firms.
+  const effectiveTier: PlanTier | null =
+    tier ?? (hasSubscription ? null : isLawFirm ? 'attorney' : 'solo');
   const seatCap = seatCapForTier(effectiveTier);
 
   const { data: memberRows } = await service
     .from('users')
     .select('email')
     .eq('firm_id', firmId)
-    .in('role', SEAT_ROLES as unknown as string[]);
+    .in('role', seatRoles);
   const memberEmails = new Set(
     (memberRows || []).map((r: any) => (r.email || '').toLowerCase()).filter(Boolean)
   );

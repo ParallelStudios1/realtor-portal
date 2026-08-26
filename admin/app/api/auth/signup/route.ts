@@ -26,7 +26,7 @@ export const runtime = 'nodejs';
  * Always returns JSON. Never empty bodies.
  */
 type Body = {
-  role?: 'realtor' | 'buyer' | 'seller';
+  role?: 'realtor' | 'buyer' | 'seller' | 'attorney';
   full_name?: string;
   email?: string;
   password?: string;
@@ -42,9 +42,9 @@ export async function POST(req: Request) {
     const email = body.email?.trim().toLowerCase();
     const password = body.password;
 
-    if (!role || !['realtor', 'buyer', 'seller'].includes(role)) {
+    if (!role || !['realtor', 'buyer', 'seller', 'attorney'].includes(role)) {
       return NextResponse.json(
-        { error: "Pick a role: 'realtor', 'buyer', or 'seller'." },
+        { error: "Pick a role: 'realtor', 'attorney', 'buyer', or 'seller'." },
         { status: 400 }
       );
     }
@@ -60,9 +60,17 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-    if (role === 'realtor' && !body.firm_name?.trim()) {
+    if (
+      (role === 'realtor' || role === 'attorney') &&
+      !body.firm_name?.trim()
+    ) {
       return NextResponse.json(
-        { error: 'Firm name is required for realtors.' },
+        {
+          error:
+            role === 'attorney'
+              ? 'Practice name is required for attorneys.'
+              : 'Firm name is required for realtors.',
+        },
         { status: 400 }
       );
     }
@@ -152,9 +160,11 @@ export async function POST(req: Request) {
     // 2) Run the right follow-up using a service-role client that impersonates
     //    the new user. Easiest: call our existing RPCs but pass the user id
     //    directly via raw SQL since RPCs use auth.uid().
-    if (role === 'realtor') {
+    if (role === 'realtor' || role === 'attorney') {
       // We can't call create_firm_and_admin here because it relies on
       // auth.uid() which is null in service-role context. Inline the work.
+      // Attorneys get a firm too — a law_firm — because a practice IS a firm:
+      // it owns deals, branding, seats and billing exactly like a brokerage.
       const slugBase = (body.firm_name || 'firm')
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
@@ -178,6 +188,16 @@ export async function POST(req: Request) {
           name: body.firm_name!.trim(),
           slug,
           status: 'trial',
+          firm_type: role === 'attorney' ? 'law_firm' : 'brokerage',
+          // Law firms get an explicit 14-day clock. (Brokerage signups have
+          // theirs stamped during onboarding.)
+          ...(role === 'attorney'
+            ? {
+                trial_ends_at: new Date(
+                  Date.now() + 14 * 24 * 60 * 60 * 1000
+                ).toISOString(),
+              }
+            : {}),
         })
         .select('id')
         .single();
@@ -194,7 +214,10 @@ export async function POST(req: Request) {
           firm_id: firm.id,
           email,
           full_name: fullName,
-          role: 'firm_admin',
+          // The founding attorney keeps role='attorney' so all attorney UX
+          // (routing, /attorney dashboard, deal views) applies. Their
+          // admin-ness comes from owning a law_firm, not from the role.
+          role: role === 'attorney' ? 'attorney' : 'firm_admin',
         },
         { onConflict: 'id' }
       );
@@ -270,7 +293,12 @@ export async function POST(req: Request) {
     return NextResponse.json({
       ok: true,
       user_id: userId,
-      role: role === 'realtor' ? 'firm_admin' : 'client',
+      role:
+        role === 'realtor'
+          ? 'firm_admin'
+          : role === 'attorney'
+            ? 'attorney'
+            : 'client',
     });
   } catch (err: any) {
     console.error('[/api/auth/signup] ', err);

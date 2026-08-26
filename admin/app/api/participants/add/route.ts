@@ -180,7 +180,10 @@ export async function POST(req: Request) {
       me.role !== 'firm_admin' &&
       me.role !== 'super_admin' &&
       me.role !== 'owner' &&
-      me.role !== 'manager'
+      me.role !== 'manager' &&
+      // Attorneys can add parties too — but only to deals their own firm
+      // owns, which the host-firm check below enforces for them.
+      me.role !== 'attorney'
     ) {
       return NextResponse.json(
         { ok: false, error: 'Forbidden.' },
@@ -262,6 +265,14 @@ export async function POST(req: Request) {
     // check, a knowledgeable caller could POST any search_id they once
     // had visibility to and add participants there.
     const callerIsInHostFirm = (search as any).firm_id === me.firm_id;
+    // Attorneys get exactly one path in: deals owned by their own firm.
+    // (Staff roles keep the broader participant/client fallbacks below.)
+    if (me.role === 'attorney' && !callerIsInHostFirm) {
+      return NextResponse.json(
+        { ok: false, error: 'Not allowed on this deal.' },
+        { status: 403 }
+      );
+    }
     let allowed = callerIsInHostFirm;
     if (!allowed) {
       const { data: parts } = await service

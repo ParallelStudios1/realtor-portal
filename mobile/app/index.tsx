@@ -30,5 +30,9 @@ export default function RootIndex() {
   if (role === 'firm_admin' || role === 'realtor' || role === 'super_admin') {
     return <Redirect href="/(realtor)" />;
   }
+  if (role === 'attorney') {
+    // Attorney tools are web-first; the client tabs would just be empty.
+    return <Redirect href="/attorney" />;
+  }
   return <Redirect href="/(client)" />;
 }

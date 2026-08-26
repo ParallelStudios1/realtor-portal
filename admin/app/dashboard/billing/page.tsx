@@ -63,6 +63,26 @@ const PLAN_CARDS = [
   },
 ];
 
+// Law firms see exactly one plan: theirs. Showing an attorney three brokerage
+// tiers about agent seats would only confuse.
+const ATTORNEY_PLAN_CARDS = [
+  {
+    id: 'attorney',
+    name: 'Attorney',
+    price: '$49',
+    sub: '/month',
+    who: 'For a law practice orchestrating its own closings (up to 3 attorneys)',
+    features: [
+      '3 attorney seats',
+      'Unlimited deals & invited parties',
+      'Realtors, buyers and sellers join free',
+      'Documents, deadlines, e-sign tracking & messaging per deal',
+      'Email support',
+    ],
+    popular: true,
+  },
+];
+
 export default async function BillingPage({
   searchParams,
 }: {
@@ -109,6 +129,7 @@ export default async function BillingPage({
   let planName = 'Trial';
   let isSimulatedSubscription = false;
   let billingSource: string | null = null;
+  let isLawFirm = false;
   const isDevOwner =
     (me.email || '').toLowerCase() === 'turnerlogan@parallelstudios.co';
 
@@ -116,9 +137,12 @@ export default async function BillingPage({
     const service = getSupabaseServiceRoleClient();
     const { data: firmRow } = await service
       .from('firms')
-      .select('stripe_subscription_id, billing_source, iap_original_transaction_id')
+      .select(
+        'stripe_subscription_id, billing_source, iap_original_transaction_id, firm_type'
+      )
       .eq('id', me.firm_id)
       .maybeSingle();
+    isLawFirm = (firmRow as any)?.firm_type === 'law_firm';
     isSimulatedSubscription = Boolean(
       (firmRow?.stripe_subscription_id || '').startsWith('sim_')
     );
@@ -258,7 +282,7 @@ export default async function BillingPage({
 
       <div id="plans">
         <BillingClient
-          plans={PLAN_CARDS}
+          plans={isLawFirm ? ATTORNEY_PLAN_CARDS : PLAN_CARDS}
           currentStatus={me.firm_status}
           billingSource={billingSource}
           currentTier={planTier}

@@ -39,10 +39,22 @@ export async function POST(req: Request) {
       team: process.env.STRIPE_PRICE_TEAM ?? PRICE_FALLBACKS.team,
       brokerage:
         process.env.STRIPE_PRICE_BROKERAGE ?? PRICE_FALLBACKS.brokerage,
+      // Law-practice plan. No hardcoded fallback: the price is created in the
+      // Stripe dashboard and wired via env, so this errors cleanly (rather
+      // than charging a wrong amount) until STRIPE_PRICE_ATTORNEY is set.
+      attorney: process.env.STRIPE_PRICE_ATTORNEY || undefined,
     };
     const priceId = plan ? priceMap[plan] : undefined;
     if (!priceId) {
-      return NextResponse.json({ error: 'Invalid plan.' }, { status: 400 });
+      return NextResponse.json(
+        {
+          error:
+            plan === 'attorney'
+              ? 'The Attorney plan is not accepting payments yet — your trial keeps working. Email turnerlogan@parallelstudios.co and we will switch it on.'
+              : 'Invalid plan.',
+        },
+        { status: 400 }
+      );
     }
 
     // Validate the Stripe secret key BEFORE we try to use it. A real Stripe

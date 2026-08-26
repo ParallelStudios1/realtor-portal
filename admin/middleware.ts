@@ -141,7 +141,14 @@ export async function middleware(req: NextRequest) {
     url.search = '';
     return NextResponse.redirect(url);
   }
-  if (role === 'attorney' && (inDashboard || inClient)) {
+  // Attorneys with their own practice pay for it, so Billing must stay
+  // reachable — everything else in /dashboard is realtor-shaped and bounces
+  // them home.
+  const attorneyAllowedInDashboard = path.startsWith('/dashboard/billing');
+  if (
+    role === 'attorney' &&
+    ((inDashboard && !attorneyAllowedInDashboard) || inClient)
+  ) {
     const url = req.nextUrl.clone();
     url.pathname = '/attorney';
     url.search = '';

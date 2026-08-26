@@ -203,17 +203,31 @@ export default async function AttorneyDashboardPage() {
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-8">
-      <header className="mb-6">
-        <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink-400">
-          Attorney workspace
+      <header className="mb-6 flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink-400">
+            Attorney workspace
+          </div>
+          <h1 className="mt-0.5 text-3xl font-bold tracking-tight text-ink-900">
+            Your closings
+          </h1>
+          <p className="mt-1 max-w-2xl text-sm text-ink-600">
+            Every deal you&apos;re counsel on — the ones you run and the ones
+            you were added to. Open one for the contract, financials,
+            deadlines, parties, and signature status.
+          </p>
         </div>
-        <h1 className="mt-0.5 text-3xl font-bold tracking-tight text-ink-900">
-          Your closings
-        </h1>
-        <p className="mt-1 max-w-2xl text-sm text-ink-600">
-          Every deal you&apos;re counsel on. Open one for the contract,
-          financials, deadlines, parties, and signature status - all read-only.
-        </p>
+        <div className="flex shrink-0 items-center gap-3 pt-1">
+          <Link
+            href="/dashboard/billing"
+            className="text-sm font-semibold text-ink-600 hover:text-ink-900"
+          >
+            Billing
+          </Link>
+          <Link href="/attorney/new" className="btn-primary">
+            Start a deal →
+          </Link>
+        </div>
       </header>
 
       {/* Summary stats */}

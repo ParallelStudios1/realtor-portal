@@ -2,8 +2,9 @@
 
 import { useState } from 'react';
 import { useFormStatus } from 'react-dom';
+import { track } from '@vercel/analytics';
 
-type Role = 'realtor' | 'buyer' | 'seller' | null;
+type Role = 'realtor' | 'buyer' | 'seller' | 'attorney' | null;
 
 export function SignupForm({
   action,
@@ -16,7 +17,12 @@ export function SignupForm({
   prefilledEmail?: string;
   next?: string;
 }) {
-  const [role, setRole] = useState<Role>(initialRole);
+  const [role, setRoleState] = useState<Role>(initialRole);
+  // Funnel event: which role people pick tells us who the ads actually reach.
+  const setRole = (r: Role) => {
+    setRoleState(r);
+    if (r) track('signup_role_selected', { role: r });
+  };
 
   return (
     <form action={action} className="mt-6 space-y-4">
@@ -24,12 +30,18 @@ export function SignupForm({
       {next && <input type="hidden" name="next" value={next} />}
 
       {/* Role picker */}
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 gap-2">
         <RoleButton
           label="Realtor"
-          desc="I help people"
+          desc="I run deals for clients"
           active={role === 'realtor'}
           onClick={() => setRole('realtor')}
+        />
+        <RoleButton
+          label="Attorney"
+          desc="I close & orchestrate deals"
+          active={role === 'attorney'}
+          onClick={() => setRole('attorney')}
         />
         <RoleButton
           label="Buyer"
@@ -71,6 +83,15 @@ export function SignupForm({
             />
           )}
 
+          {role === 'attorney' && (
+            <Field
+              label="Law firm or practice name"
+              name="firm_name"
+              placeholder="Logan Law, LLC"
+              hint="You'll orchestrate deals from your own practice and invite realtors, buyers and sellers to each one."
+            />
+          )}
+
           {(role === 'buyer' || role === 'seller') && (
             <Field
               label="Your realtor's email"
@@ -91,9 +112,17 @@ export function SignupForm({
 function SignupSubmit({ role }: { role: Role }) {
   const { pending } = useFormStatus();
   const idleLabel =
-    role === 'realtor' ? 'Create my firm' : 'Create account';
+    role === 'realtor'
+      ? 'Create my firm'
+      : role === 'attorney'
+        ? 'Create my practice'
+        : 'Create account';
   const pendingLabel =
-    role === 'realtor' ? 'Creating your firm…' : 'Creating your account…';
+    role === 'realtor'
+      ? 'Creating your firm…'
+      : role === 'attorney'
+        ? 'Creating your practice…'
+        : 'Creating your account…';
   return (
     <button
       type="submit"

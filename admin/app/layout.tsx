@@ -5,6 +5,7 @@ import { Inter } from 'next/font/google';
 import { ToastProvider } from '@/components/Toast';
 import { NavigationProgress } from '@/components/NavigationProgress';
 import { GetTheAppBanner } from '@/components/GetTheAppBanner';
+import { Analytics } from '@vercel/analytics/react';
 
 // Inter - one real font, loaded once. Variable-axis means we don't pay for
 // extra weight files. display: 'swap' keeps the first paint readable while
@@ -163,6 +164,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(STRUCTURED_DATA) }}
         />
+        {/* Pageview analytics (Vercel). This is what was missing during the
+            first ad campaign: we had no way to know how many clicks actually
+            became visitors. Anonymous, cookieless, no consent banner needed. */}
+        <Analytics />
       </body>
     </html>
   );

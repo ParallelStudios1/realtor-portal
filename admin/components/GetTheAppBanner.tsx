@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { track } from '@vercel/analytics';
 
 /**
  * Mobile-only "get the app" banner.
@@ -227,6 +228,7 @@ export function GetTheAppBanner() {
           {/* Full-width CTA: the whole point is that this is unmissable. */}
           <a
             href="/get"
+            onClick={() => track('get_app_clicked', { platform: platform || '' })}
             className="mt-3.5 flex w-full items-center justify-center gap-2 rounded-xl bg-ink-900 py-3.5 text-[15px] font-bold text-white shadow-sm transition active:scale-[0.985]"
           >
             <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden>

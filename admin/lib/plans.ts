@@ -1,4 +1,4 @@
-export type PlanTier = 'solo' | 'team' | 'brokerage';
+export type PlanTier = 'solo' | 'team' | 'brokerage' | 'attorney';
 
 /**
  * Real, enforceable feature flags per tier. These gate actual pages/actions
@@ -41,6 +41,22 @@ export const PLANS = {
     appleProductId: 'com.parallelstudios.realtorportal.brokerage.monthly',
     features: ['customBranding', 'teamOversight', 'analytics'] as PlanFeature[],
   },
+  /**
+   * Law-firm practices (firm_type='law_firm'). An attorney orchestrates deals
+   * and invites realtors/buyers/sellers as participants — invited parties
+   * never pay, same as the co-broker guest pass. Web (Stripe) billing only;
+   * there is deliberately no Apple product, so the iOS paywall never offers
+   * it and attorneys manage billing from the web dashboard.
+   * Price id comes from env so it can go live without a deploy.
+   */
+  attorney: {
+    name: 'Attorney',
+    price: 49,
+    seatCap: 3,
+    priceId: process.env.STRIPE_PRICE_ATTORNEY ?? '',
+    appleProductId: '',
+    features: ['customBranding'] as PlanFeature[],
+  },
 } as const;
 
 /** Trial gets the Solo feature set (so trials can evaluate the base product). */
@@ -62,7 +78,9 @@ export function minTierFor(feature: PlanFeature): PlanTier {
 export function tierFromPriceId(priceId: string | null | undefined): PlanTier | null {
   if (!priceId) return null;
   for (const [tier, cfg] of Object.entries(PLANS)) {
-    if (cfg.priceId === priceId) return tier as PlanTier;
+    // Guard the empty-string priceId (attorney plan before its env var is
+    // set) — otherwise a null-ish comparison could mis-map.
+    if (cfg.priceId && cfg.priceId === priceId) return tier as PlanTier;
   }
   return null;
 }
@@ -77,7 +95,8 @@ export function tierFromAppleProductId(
 ): PlanTier | null {
   if (!productId) return null;
   for (const [tier, cfg] of Object.entries(PLANS)) {
-    if ((cfg as any).appleProductId === productId) return tier as PlanTier;
+    if ((cfg as any).appleProductId && (cfg as any).appleProductId === productId)
+      return tier as PlanTier;
   }
   return null;
 }

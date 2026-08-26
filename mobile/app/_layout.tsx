@@ -71,6 +71,16 @@ function RootNavigator() {
     );
   }
 
+  if (role === 'attorney') {
+    // Attorney workspace is web-first; show the signpost screen rather than
+    // dropping counsel into an empty client experience.
+    return (
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="attorney" />
+      </Stack>
+    );
+  }
+
   // client (default)
   return (
     <Stack screenOptions={{ headerShown: false }}>

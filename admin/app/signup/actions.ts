@@ -35,13 +35,14 @@ export async function signupAction(formData: FormData) {
         (next ? '&next=' + encodeURIComponent(next) : '')
     );
 
-  if (!role || !['realtor', 'buyer', 'seller'].includes(role)) {
-    back("Please pick whether you're a Realtor, Buyer, or Seller.");
+  if (!role || !['realtor', 'buyer', 'seller', 'attorney'].includes(role)) {
+    back("Please pick whether you're a Realtor, Attorney, Buyer, or Seller.");
     return;
   }
   if (!fullName || !email || !password) back('Fill in every field.');
   if (password!.length < 8) back('Password must be at least 8 characters.');
   if (role === 'realtor' && !firmName) back('Firm name is required.');
+  if (role === 'attorney' && !firmName) back('Practice name is required.');
   if ((role === 'buyer' || role === 'seller') && !realtorEmail)
     back("Your realtor's email is required.");
 
@@ -57,7 +58,8 @@ export async function signupAction(formData: FormData) {
       full_name: fullName,
       email,
       password,
-      firm_name: role === 'realtor' ? firmName : undefined,
+      firm_name:
+        role === 'realtor' || role === 'attorney' ? firmName : undefined,
       realtor_email:
         role === 'buyer' || role === 'seller' ? realtorEmail : undefined,
     }),
@@ -97,5 +99,12 @@ export async function signupAction(formData: FormData) {
 
   // If they came in via a cross-firm invite link, drop them straight onto
   // the deal. Otherwise fall back to the role's default landing.
-  redirect(next ?? (role === 'realtor' ? '/onboarding' : '/client'));
+  redirect(
+    next ??
+      (role === 'realtor'
+        ? '/onboarding'
+        : role === 'attorney'
+          ? '/attorney'
+          : '/client')
+  );
 }
