@@ -4,19 +4,22 @@ import { useState } from 'react';
 import { useFormStatus } from 'react-dom';
 
 /**
- * The attorney's deal-intake form. Deliberately close to how a closing file
- * actually starts: which side, what property, who's involved. Party rows are
- * dynamic — most closings need a client + a realtor, some need a lender and
- * the other side's agent too.
+ * Attorney deal intake, shaped like the file actually arrives.
+ *
+ * In practice a closing attorney's CLIENT is the realtor: an agent they work
+ * with sends the file over, and the agent brings their buyer or seller.
+ * So the form leads with the referring realtor, then the realtor's client,
+ * then everyone else. Each section can be skipped — some attorneys are
+ * engaged directly by a buyer or seller with no agent at all.
  */
 
-type PartyRow = { id: number; role: string; name: string; email: string };
+type ExtraRow = { id: number; role: string; name: string; email: string };
 
-const ROLE_OPTIONS = [
-  { value: 'buyer', label: 'Buyer (client)' },
-  { value: 'seller', label: 'Seller (client)' },
-  { value: 'realtor', label: 'Realtor' },
+const EXTRA_ROLES = [
   { value: 'co_realtor', label: "Other side's realtor" },
+  { value: 'realtor', label: 'Another realtor' },
+  { value: 'buyer', label: 'Buyer' },
+  { value: 'seller', label: 'Seller' },
   { value: 'lender', label: 'Lender' },
   { value: 'inspector', label: 'Inspector' },
   { value: 'title_agent', label: 'Title agent' },
@@ -31,86 +34,143 @@ export function NewDealForm({
   action: (formData: FormData) => Promise<void> | void;
 }) {
   const [kind, setKind] = useState<'buyer' | 'seller'>('buyer');
-  const [parties, setParties] = useState<PartyRow[]>([
-    { id: nextId++, role: 'buyer', name: '', email: '' },
-    { id: nextId++, role: 'realtor', name: '', email: '' },
-  ]);
+  const [extras, setExtras] = useState<ExtraRow[]>([]);
+
+  const principal = kind === 'buyer' ? 'Buyer' : 'Seller';
 
   const addRow = () =>
-    setParties((p) => [...p, { id: nextId++, role: 'other', name: '', email: '' }]);
+    setExtras((p) => [...p, { id: nextId++, role: 'lender', name: '', email: '' }]);
   const removeRow = (id: number) =>
-    setParties((p) => p.filter((r) => r.id !== id));
-  const update = (id: number, patch: Partial<PartyRow>) =>
-    setParties((p) => p.map((r) => (r.id === id ? { ...r, ...patch } : r)));
+    setExtras((p) => p.filter((r) => r.id !== id));
+  const update = (id: number, patch: Partial<ExtraRow>) =>
+    setExtras((p) => p.map((r) => (r.id === id ? { ...r, ...patch } : r)));
 
   return (
-    <form action={action} className="mt-6 space-y-5">
-      <div>
-        <label htmlFor="name" className="block text-sm font-medium">
-          Deal name
-        </label>
-        <input
-          id="name"
-          name="name"
-          required
-          placeholder="Smith closing — 412 Maple Ave"
-          className="input mt-1.5"
-        />
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
+    <form action={action} className="mt-6 space-y-6">
+      {/* ---- The file ---- */}
+      <div className="space-y-4">
         <div>
-          <label htmlFor="kind" className="block text-sm font-medium">
-            Your client is the
+          <label htmlFor="name" className="block text-sm font-medium">
+            Deal name
           </label>
-          <select
-            id="kind"
-            name="kind"
-            value={kind}
-            onChange={(e) => setKind(e.target.value as 'buyer' | 'seller')}
+          <input
+            id="name"
+            name="name"
+            required
+            placeholder="Smith closing — 412 Maple Ave"
             className="input mt-1.5"
-          >
-            <option value="buyer">Buyer</option>
-            <option value="seller">Seller</option>
-          </select>
+          />
         </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label htmlFor="kind" className="block text-sm font-medium">
+              Which side is this file?
+            </label>
+            <select
+              id="kind"
+              name="kind"
+              value={kind}
+              onChange={(e) => setKind(e.target.value as 'buyer' | 'seller')}
+              className="input mt-1.5"
+            >
+              <option value="buyer">Buyer side</option>
+              <option value="seller">Seller side</option>
+            </select>
+          </div>
+          <div>
+            <label htmlFor="phase" className="block text-sm font-medium">
+              Starting stage
+            </label>
+            <select
+              id="phase"
+              name="phase"
+              defaultValue="under_contract"
+              className="input mt-1.5"
+            >
+              <option value="searching">Pre-contract</option>
+              <option value="under_contract">Under contract</option>
+              <option value="closing">Closing</option>
+            </select>
+          </div>
+        </div>
+
         <div>
-          <label htmlFor="phase" className="block text-sm font-medium">
-            Starting stage
+          <label htmlFor="address" className="block text-sm font-medium">
+            Property address <span className="text-ink-400">(optional)</span>
           </label>
-          <select
-            id="phase"
-            name="phase"
-            defaultValue="under_contract"
+          <input
+            id="address"
+            name="address"
+            placeholder="412 Maple Avenue, Johns Creek, GA"
             className="input mt-1.5"
-          >
-            <option value="searching">Pre-contract</option>
-            <option value="under_contract">Under contract</option>
-            <option value="closing">Closing</option>
-          </select>
+          />
         </div>
       </div>
 
-      <div>
-        <label htmlFor="address" className="block text-sm font-medium">
-          Property address <span className="text-ink-400">(optional)</span>
-        </label>
-        <input
-          id="address"
-          name="address"
-          placeholder="412 Maple Avenue, Johns Creek, GA"
-          className="input mt-1.5"
-        />
-      </div>
-
-      <fieldset>
-        <legend className="text-sm font-semibold">People on this deal</legend>
+      {/* ---- The realtor who sent the file ---- */}
+      <fieldset className="rounded-xl border border-ink-200 bg-ink-50/60 p-4">
+        <legend className="px-1 text-sm font-semibold">
+          The realtor who brought you this file
+        </legend>
         <p className="mt-0.5 text-xs text-ink-500">
-          Each person gets an email invite with their own role-scoped view.
-          Leave a row blank to skip it.
+          Usually your actual client. They get full realtor access to the deal —
+          free, no subscription needed. Skip if there's no agent involved.
+        </p>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <input
+            name="realtor_name"
+            placeholder="Realtor's name"
+            className="input"
+            aria-label="Realtor name"
+          />
+          <input
+            name="realtor_email"
+            type="email"
+            placeholder="realtor@brokerage.com"
+            className="input"
+            aria-label="Realtor email"
+          />
+        </div>
+      </fieldset>
+
+      {/* ---- The realtor's client ---- */}
+      <fieldset className="rounded-xl border border-ink-200 bg-ink-50/60 p-4">
+        <legend className="px-1 text-sm font-semibold">
+          The {principal.toLowerCase()}
+        </legend>
+        <p className="mt-0.5 text-xs text-ink-500">
+          The realtor&apos;s client — they follow the whole deal from their own
+          view: dates, documents you share, and messages. Optional.
+        </p>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <input
+            name="principal_name"
+            placeholder={`${principal}'s name`}
+            className="input"
+            aria-label={`${principal} name`}
+          />
+          <input
+            name="principal_email"
+            type="email"
+            placeholder={
+              kind === 'buyer' ? 'buyer@example.com' : 'seller@example.com'
+            }
+            className="input"
+            aria-label={`${principal} email`}
+          />
+        </div>
+      </fieldset>
+
+      {/* ---- Everyone else ---- */}
+      <fieldset>
+        <legend className="text-sm font-semibold">Anyone else</legend>
+        <p className="mt-0.5 text-xs text-ink-500">
+          The other side&apos;s agent, the lender, title — add them now or from
+          the deal later.
         </p>
         <div className="mt-3 space-y-3">
-          {parties.map((row) => (
+          {extras.map((row) => (
             <div key={row.id} className="flex items-start gap-2">
               <select
                 name="party_role"
@@ -119,7 +179,7 @@ export function NewDealForm({
                 className="input w-44 shrink-0"
                 aria-label="Role"
               >
-                {ROLE_OPTIONS.map((o) => (
+                {EXTRA_ROLES.map((o) => (
                   <option key={o.value} value={o.value}>
                     {o.label}
                   </option>
@@ -160,7 +220,7 @@ export function NewDealForm({
           onClick={addRow}
           className="mt-3 text-sm font-semibold text-ink-700 hover:text-ink-900"
         >
-          + Add another person
+          + Add a person
         </button>
       </fieldset>
 

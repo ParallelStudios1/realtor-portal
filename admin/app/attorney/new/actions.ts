@@ -89,20 +89,42 @@ export async function createAttorneyDealAction(formData: FormData) {
   if (!['searching', 'under_contract', 'closing'].includes(phase))
     back('Pick a valid starting stage.');
 
-  // Parties arrive as parallel arrays party_role[] / party_name[] / party_email[]
-  const roles = formData.getAll('party_role').map(String);
-  const names = formData.getAll('party_name').map(String);
-  const emails = formData.getAll('party_email').map(String);
   const parties: PartyInput[] = [];
-  for (let i = 0; i < roles.length; i++) {
-    const role = (roles[i] || '').trim();
-    const pname = (names[i] || '').trim();
-    const email = (emails[i] || '').trim().toLowerCase();
-    if (!role && !pname && !email) continue; // empty row
+  const pushParty = (role: string, rawName: string, rawEmail: string) => {
+    const pname = rawName.trim();
+    const email = rawEmail.trim().toLowerCase();
+    if (!pname && !email) return; // section left blank — fine
     if (!INVITABLE_ROLES.has(role)) back(`"${role}" is not an invitable role.`);
     if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))
       back(`Enter a valid email for the ${role.replace('_', ' ')}.`);
+    // One row per email — the referring realtor typed twice shouldn't get
+    // two participant rows and two invites.
+    if (parties.some((p) => p.email === email)) return;
     parties.push({ role, name: pname, email });
+  };
+
+  // The realistic intake: the referring realtor (usually the attorney's
+  // actual client) and THEIR client, the buyer or seller. Both optional —
+  // some files arrive with no agent attached.
+  pushParty(
+    'realtor',
+    (formData.get('realtor_name') as string) || '',
+    (formData.get('realtor_email') as string) || ''
+  );
+  pushParty(
+    kind === 'seller' ? 'seller' : 'buyer',
+    (formData.get('principal_name') as string) || '',
+    (formData.get('principal_email') as string) || ''
+  );
+
+  // Extra rows arrive as parallel arrays party_role[]/party_name[]/party_email[]
+  const roles = formData.getAll('party_role').map(String);
+  const names = formData.getAll('party_name').map(String);
+  const emails = formData.getAll('party_email').map(String);
+  for (let i = 0; i < roles.length; i++) {
+    const role = (roles[i] || '').trim();
+    if (!role && !(names[i] || '').trim() && !(emails[i] || '').trim()) continue;
+    pushParty(role, names[i] || '', emails[i] || '');
   }
 
   // ---- Create the deal ----
