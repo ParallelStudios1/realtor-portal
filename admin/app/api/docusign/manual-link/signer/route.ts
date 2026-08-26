@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { isDealStaff } from '@/lib/staff';
 import { resolveCaller } from '@/lib/bearerAuth';
 import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
 
@@ -18,9 +19,7 @@ export async function POST(req: NextRequest) {
   if (!me?.firm_id)
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   if (
-    !['realtor', 'firm_admin', 'super_admin', 'owner', 'manager', 'agent'].includes(
-      me.role || ''
-    )
+    !isDealStaff(me)
   )
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
 

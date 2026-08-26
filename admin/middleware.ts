@@ -141,10 +141,13 @@ export async function middleware(req: NextRequest) {
     url.search = '';
     return NextResponse.redirect(url);
   }
-  // Attorneys with their own practice pay for it, so Billing must stay
-  // reachable — everything else in /dashboard is realtor-shaped and bounces
-  // them home.
-  const attorneyAllowedInDashboard = path.startsWith('/dashboard/billing');
+  // Attorneys with their own practice pay for it (Billing) and run their
+  // deals in the SAME canonical workspace realtors use (/dashboard/deals/*)
+  // — one code path, so every deal feature works identically for them.
+  // The rest of /dashboard is realtor-shaped and bounces them home.
+  const attorneyAllowedInDashboard =
+    path.startsWith('/dashboard/billing') ||
+    path.startsWith('/dashboard/deals');
   if (
     role === 'attorney' &&
     ((inDashboard && !attorneyAllowedInDashboard) || inClient)

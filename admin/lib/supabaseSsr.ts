@@ -92,5 +92,7 @@ export async function getMe() {
     firm_status: string | null;
     trial_ends_at: string | null;
     onboarding_completed: boolean | null;
+    /** 'brokerage' | 'law_firm' — which kind of firm this account belongs to. */
+    firm_type: string | null;
   };
 }

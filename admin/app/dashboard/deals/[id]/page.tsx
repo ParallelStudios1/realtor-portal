@@ -166,7 +166,7 @@ export default async function DealDetailPage({
       .from('users')
       .select('id, full_name, email, role')
       .eq('firm_id', me.firm_id)
-      .in('role', ['realtor', 'firm_admin', 'owner', 'manager', 'agent'])
+      .in('role', ['realtor', 'firm_admin', 'owner', 'manager', 'agent', 'attorney'])
       .neq('id', me.user_id),
     // PRIVATE 1:1 DMs only (recipient set) - the group Deal chat renders
     // separately below. Without this filter the "Recent messages" rail mixed

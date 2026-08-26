@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { isDealStaff } from '@/lib/staff';
 import { getMe } from '@/lib/supabaseSsr';
 import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
 import { getEnvelopeStatus } from '@/lib/docusign';
@@ -21,7 +22,7 @@ export async function POST(req: NextRequest) {
   const me = await getMe();
   if (!me?.firm_id)
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
-  if (me.role !== 'realtor' && me.role !== 'firm_admin' && me.role !== 'super_admin')
+  if (!isDealStaff(me))
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
 
   const body = await req.json().catch(() => null);

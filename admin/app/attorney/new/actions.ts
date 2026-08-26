@@ -264,5 +264,7 @@ export async function createAttorneyDealAction(formData: FormData) {
     }
   }
 
-  redirect('/deal/' + dealId);
+  // Land in the full deal workspace — the same one realtors use, with the
+  // guided phase transitions, dates, financials, documents and parties.
+  redirect('/dashboard/deals/' + dealId);
 }

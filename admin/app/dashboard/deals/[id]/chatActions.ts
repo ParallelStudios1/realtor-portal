@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { isDealStaff } from '@/lib/staff';
 import { getMe } from '@/lib/supabaseSsr';
 import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
 import { notifyDealParticipants } from '@/lib/notify';
@@ -70,9 +71,7 @@ async function authorizeDealChat(
   const isStaffSameFirm =
     !!me.firm_id &&
     me.firm_id === d.firm_id &&
-    ['realtor', 'firm_admin', 'super_admin', 'owner', 'manager', 'agent'].includes(
-      me.role || ''
-    );
+    isDealStaff(me);
 
   // 2. Principal client.
   const isPrincipalClient = d.client_id === me.user_id;

@@ -10,6 +10,7 @@ import { AttorneyDocList, type AttorneyDoc } from '@/components/AttorneyDocList'
 import { AttorneyUpload, type UploadParty } from './AttorneyUpload';
 import { OrchestratorBar } from './OrchestratorBar';
 import { setAttorneyDealPhaseAction } from './orchestratorActions';
+import { isDealStaff } from '@/lib/staff';
 import { DealChat } from '@/components/DealChat';
 import { PrivateMessages } from '@/components/PrivateMessages';
 import { getPrivateParties } from '@/app/dashboard/deals/[id]/privateActions';
@@ -104,10 +105,9 @@ export default async function DealPage({
 
   const parts = (participants as any[] | null) || [];
 
-  // Determine the caller's relationship to this deal.
-  const isStaffSameFirm =
-    (me.firm_id === d.firm.id) &&
-    ['realtor', 'firm_admin', 'super_admin'].includes(me.role || '');
+  // Determine the caller's relationship to this deal. A law-firm attorney is
+  // staff of their own practice — isDealStaff mirrors the DB's is_staff_role.
+  const isStaffSameFirm = me.firm_id === d.firm.id && isDealStaff(me);
 
   // Staff at the originating firm see the canonical editor view by default.
   // They can still preview the client-facing render via /deal/[id]?as=client

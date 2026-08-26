@@ -4,6 +4,7 @@ import { getMe } from '@/lib/supabaseSsr';
 import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
 import { notify } from '@/lib/notify';
 import { escapeHtml } from '@/lib/email';
+import { isDealStaff } from '@/lib/staff';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -28,6 +29,7 @@ async function resolveCaller(req: Request): Promise<{
   firm_id: string | null;
   email: string | null;
   role: string | null;
+  firm_type: string | null;
 } | null> {
   const me = await getMe();
   if (me?.user_id) {
@@ -36,6 +38,7 @@ async function resolveCaller(req: Request): Promise<{
       firm_id: me.firm_id ?? null,
       email: me.email ?? null,
       role: me.role ?? null,
+      firm_type: (me as any).firm_type ?? null,
     };
   }
   const authz = req.headers.get('authorization') || '';
@@ -54,7 +57,7 @@ async function resolveCaller(req: Request): Promise<{
   const service = getSupabaseServiceRoleClient();
   const { data: row } = await service
     .from('users')
-    .select('firm_id, role')
+    .select('firm_id, role, firm:firms ( firm_type )')
     .eq('id', data.user.id)
     .maybeSingle();
   return {
@@ -62,6 +65,7 @@ async function resolveCaller(req: Request): Promise<{
     firm_id: (row as any)?.firm_id ?? null,
     email: data.user.email ?? null,
     role: (row as any)?.role ?? null,
+    firm_type: (row as any)?.firm?.firm_type ?? null,
   };
 }
 
@@ -116,11 +120,7 @@ export async function POST(
     // Authorize: principal client OR firm staff on the deal's host firm.
     const isPrincipalClient = d.client_id === me.user_id;
     const isStaffSameFirm =
-      !!me.firm_id &&
-      me.firm_id === d.firm_id &&
-      ['realtor', 'firm_admin', 'super_admin', 'owner', 'manager', 'agent'].includes(
-        me.role || ''
-      );
+      !!me.firm_id && me.firm_id === d.firm_id && isDealStaff(me as any);
     if (!isPrincipalClient && !isStaffSameFirm) {
       return NextResponse.json(
         { ok: false, error: 'You do not have access to this deal.' },

@@ -9,6 +9,7 @@ import { isFirmPlanActive, canUsePremiumForDeal } from '@/lib/planGate';
 import { notify, notifyDealParticipants } from '@/lib/notify';
 import { defaultPartyPermissions } from '@/lib/partyPermissions';
 import { phaseLabelFor } from '@/lib/dealKind';
+import { isDealStaff } from '@/lib/staff';
 
 /**
  * Server actions called from the rich realtor client-detail page. Each one
@@ -24,14 +25,10 @@ import { phaseLabelFor } from '@/lib/dealKind';
 async function authorize(idOrSearchId: string) {
   const me = await getMe();
   if (!me?.firm_id) return { error: 'Not authenticated.' as const };
-  if (
-    me.role !== 'realtor' &&
-    me.role !== 'firm_admin' &&
-    me.role !== 'super_admin' &&
-    me.role !== 'owner' &&
-    me.role !== 'manager'
-  )
-    return { error: 'Forbidden.' as const };
+  // isDealStaff includes law-firm attorneys, who run deals exactly like
+  // realtors. RLS scoping below still binds everyone to their own firm (or
+  // their cross-firm participant grants).
+  if (!isDealStaff(me)) return { error: 'Forbidden.' as const };
   const supabase = getSupabaseServerClient();
   // The action grid lives on both the legacy /dashboard/clients/[id] page
   // (passes a public.users.id) and the new /dashboard/deals/[id] page
@@ -1762,12 +1759,7 @@ export async function createNewDealAction(
 ) {
   const me = await getMe();
   if (!me?.firm_id) return { ok: false as const, error: 'Not authenticated.' };
-  if (
-    me.role !== 'realtor' &&
-    me.role !== 'firm_admin' &&
-    me.role !== 'super_admin'
-  )
-    return { ok: false as const, error: 'Forbidden.' };
+  if (!isDealStaff(me)) return { ok: false as const, error: 'Forbidden.' };
   const service = getSupabaseServiceRoleClient();
   // Confirm client is in our firm.
   const { data: client } = await service

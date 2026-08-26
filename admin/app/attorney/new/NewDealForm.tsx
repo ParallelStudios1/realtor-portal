@@ -82,15 +82,19 @@ export function NewDealForm({
             <label htmlFor="phase" className="block text-sm font-medium">
               Starting stage
             </label>
+            {/* Same starting point as a realtor-created deal. The guided
+                phase transitions in the workspace (with their follow-up
+                questions) take it from here — but a file that arrives already
+                under contract can start there. */}
             <select
               id="phase"
               name="phase"
-              defaultValue="under_contract"
+              defaultValue="searching"
               className="input mt-1.5"
             >
-              <option value="searching">Pre-contract</option>
-              <option value="under_contract">Under contract</option>
-              <option value="closing">Closing</option>
+              <option value="searching">Home search (default)</option>
+              <option value="under_contract">Already under contract</option>
+              <option value="closing">Already closing</option>
             </select>
           </div>
         </div>

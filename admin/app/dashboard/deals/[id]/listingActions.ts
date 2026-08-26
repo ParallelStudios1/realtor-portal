@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { isDealStaff } from '@/lib/staff';
 import { getMe } from '@/lib/supabaseSsr';
 import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
 
@@ -17,7 +18,7 @@ const STAFF = ['realtor', 'firm_admin', 'super_admin', 'owner', 'manager', 'agen
 async function authorizeDeal(searchId: string) {
   const me = await getMe();
   if (!me?.user_id) return { error: 'Not signed in.' as const };
-  if (!STAFF.includes(me.role || ''))
+  if (!isDealStaff(me))
     return { error: 'Only firm staff can manage listings.' as const };
   const service = getSupabaseServiceRoleClient();
   const { data: deal } = await service

@@ -12,6 +12,7 @@
  *     logAudit (compliance trail), then revalidatePath the deal page.
  */
 import { revalidatePath } from 'next/cache';
+import { isDealStaff } from '@/lib/staff';
 import { getMe } from '@/lib/supabaseSsr';
 import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
 import { logAudit } from '@/lib/audit';
@@ -38,7 +39,7 @@ type AuthErr = { ok: false; error: string };
 async function authorizeDate(dateId: string): Promise<AuthOk | AuthErr> {
   const me = await getMe();
   if (!me?.firm_id) return { ok: false, error: 'Not authenticated.' };
-  if (!STAFF_ROLES.includes(me.role || '')) return { ok: false, error: 'Forbidden.' };
+  if (!isDealStaff(me)) return { ok: false, error: 'Forbidden.' };
 
   const service = getSupabaseServiceRoleClient();
   const { data: date } = await service
@@ -150,7 +151,7 @@ export async function removeDateReminderAction(input: {
 }): Promise<ActionResult> {
   const me = await getMe();
   if (!me?.firm_id) return { ok: false, error: 'Not authenticated.' };
-  if (!STAFF_ROLES.includes(me.role || '')) return { ok: false, error: 'Forbidden.' };
+  if (!isDealStaff(me)) return { ok: false, error: 'Forbidden.' };
 
   const service = getSupabaseServiceRoleClient();
   const { data: reminder } = await service

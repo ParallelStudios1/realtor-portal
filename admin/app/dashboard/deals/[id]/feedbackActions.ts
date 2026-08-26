@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { isDealStaff } from '@/lib/staff';
 import { getMe, getSupabaseServerClient } from '@/lib/supabaseSsr';
 import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
 import { sendEmail, escapeHtml } from '@/lib/email';
@@ -42,15 +43,7 @@ const PRICE_OPINIONS = ['overpriced', 'about_right', 'underpriced'];
 async function authorizeShowing(showingId: string) {
   const me = await getMe();
   if (!me?.firm_id) return { error: 'Not authenticated.' as const };
-  if (
-    me.role !== 'realtor' &&
-    me.role !== 'firm_admin' &&
-    me.role !== 'super_admin' &&
-    me.role !== 'owner' &&
-    me.role !== 'manager' &&
-    me.role !== 'agent'
-  )
-    return { error: 'Forbidden.' as const };
+  if (!isDealStaff(me)) return { error: 'Forbidden.' as const };
 
   // RLS-scoped visibility check (covers cross-firm collaborators).
   const supabase = getSupabaseServerClient();

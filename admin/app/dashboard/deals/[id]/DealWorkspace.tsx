@@ -672,7 +672,8 @@ export function DealWorkspace(props: {
                 <option value="">Unassigned</option>
                 {teammates
                   .filter((t) =>
-                    ['realtor', 'firm_admin', 'owner', 'manager'].includes(
+                    // In a law firm the assignable "agents" are attorneys.
+                    ['realtor', 'firm_admin', 'owner', 'manager', 'attorney'].includes(
                       t.role || ''
                     )
                   )

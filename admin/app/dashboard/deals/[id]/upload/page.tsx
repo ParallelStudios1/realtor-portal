@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { isDealStaff } from '@/lib/staff';
 import { notFound, redirect } from 'next/navigation';
 import { getMe } from '@/lib/supabaseSsr';
 import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
@@ -45,9 +46,7 @@ export default async function DealUploadPage({
   const isStaffSameFirm =
     !!me.firm_id &&
     me.firm_id === d.firm_id &&
-    ['realtor', 'firm_admin', 'super_admin', 'owner', 'manager', 'agent'].includes(
-      me.role || ''
-    );
+    isDealStaff(me);
   const isPrincipalClient = d.client_id === me.user_id;
 
   let isParticipant = false;

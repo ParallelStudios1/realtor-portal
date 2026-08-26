@@ -7,6 +7,8 @@ export type Caller = {
   firm_id: string | null;
   email: string | null;
   role: string | null;
+  /** 'brokerage' | 'law_firm' — lets gates treat law-firm attorneys as staff. */
+  firm_type: string | null;
 };
 
 /**
@@ -22,6 +24,7 @@ export async function resolveCaller(req: Request): Promise<Caller | null> {
       firm_id: me.firm_id ?? null,
       email: me.email ?? null,
       role: me.role ?? null,
+      firm_type: (me as any).firm_type ?? null,
     };
   }
   const authz = req.headers.get('authorization') || '';
@@ -40,7 +43,7 @@ export async function resolveCaller(req: Request): Promise<Caller | null> {
   const service = getSupabaseServiceRoleClient();
   const { data: row } = await service
     .from('users')
-    .select('firm_id, role')
+    .select('firm_id, role, firm:firms ( firm_type )')
     .eq('id', data.user.id)
     .maybeSingle();
   return {
@@ -48,6 +51,7 @@ export async function resolveCaller(req: Request): Promise<Caller | null> {
     firm_id: (row as any)?.firm_id ?? null,
     email: data.user.email ?? null,
     role: (row as any)?.role ?? null,
+    firm_type: (row as any)?.firm?.firm_type ?? null,
   };
 }
 

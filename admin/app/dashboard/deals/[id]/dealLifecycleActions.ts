@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { isDealStaff } from '@/lib/staff';
 import { getMe } from '@/lib/supabaseSsr';
 import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
 
@@ -119,9 +120,7 @@ export async function terminateDealAction(fd: FormData) {
 
   const isStaff =
     (deal as any).firm_id === me.firm_id &&
-    ['realtor', 'firm_admin', 'super_admin', 'owner', 'manager', 'agent'].includes(
-      me.role || ''
-    );
+    isDealStaff(me);
   if (!isStaff) {
     return {
       ok: false as const,

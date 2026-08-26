@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { isDealStaff } from '@/lib/staff';
 import { getMe } from '@/lib/supabaseSsr';
 import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
 import { notify } from '@/lib/notify';
@@ -64,7 +65,7 @@ async function authorize(
   const d = deal as { id: string; firm_id: string; client_id: string | null };
 
   const isStaff =
-    !!me.firm_id && me.firm_id === d.firm_id && STAFF_ROLES.includes(me.role || '');
+    !!me.firm_id && me.firm_id === d.firm_id && isDealStaff(me);
   const isClient = d.client_id === me.user_id;
   let isParticipant = false;
   if (!isStaff && !isClient) {

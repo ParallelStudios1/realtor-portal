@@ -3,6 +3,7 @@ import { randomUUID } from 'crypto';
 import { resolveCaller } from '@/lib/bearerAuth';
 import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
 import { logAudit } from '@/lib/audit';
+import { isDealStaff } from '@/lib/staff';
 
 export const runtime = 'nodejs';
 
@@ -25,14 +26,7 @@ export async function POST(req: NextRequest) {
   const me = await resolveCaller(req);
   if (!me?.firm_id)
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
-  if (
-    me.role !== 'realtor' &&
-    me.role !== 'firm_admin' &&
-    me.role !== 'super_admin' &&
-    me.role !== 'owner' &&
-    me.role !== 'manager' &&
-    me.role !== 'agent'
-  )
+  if (!isDealStaff(me))
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
 
   const body = await req.json().catch(() => null);
