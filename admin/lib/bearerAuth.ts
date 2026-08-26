@@ -56,6 +56,15 @@ export async function resolveCaller(req: Request): Promise<Caller | null> {
 }
 
 export const STAFF_ADMIN_ROLES = ['owner', 'firm_admin', 'super_admin'];
-export function isFirmAdmin(role: string | null): boolean {
-  return !!role && STAFF_ADMIN_ROLES.includes(role);
+/**
+ * Firm administration rights. The founding attorney of a law practice
+ * administers it (branding, plan, team) exactly like a brokerage firm_admin —
+ * pass firmType so that case resolves; attorneys inside brokerages never do.
+ */
+export function isFirmAdmin(
+  role: string | null,
+  firmType?: string | null
+): boolean {
+  if (!!role && STAFF_ADMIN_ROLES.includes(role)) return true;
+  return role === 'attorney' && firmType === 'law_firm';
 }

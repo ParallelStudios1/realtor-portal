@@ -8,8 +8,11 @@ import { sendEmail, escapeHtml } from '@/lib/email';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-const FIRM_ROLES = ['owner', 'firm_admin', 'manager', 'realtor', 'agent'];
+const FIRM_ROLES = ['owner', 'firm_admin', 'manager', 'realtor', 'agent', 'attorney'];
+// Display roles for the team list. 'attorney' appears only for law firms
+// (filtered below) so a brokerage's guest counsel never shows as a teammate.
 const SEAT_ROLES = ['firm_admin', 'owner', 'manager', 'realtor', 'agent'];
+const LAW_SEAT_ROLES = [...SEAT_ROLES, 'attorney'];
 
 /** GET: list the firm's staff + pending invites + seat usage. */
 export async function GET(req: Request) {
@@ -22,7 +25,7 @@ export async function GET(req: Request) {
       .from('users')
       .select('id, full_name, email, role')
       .eq('firm_id', me.firm_id)
-      .in('role', SEAT_ROLES)
+      .in('role', me.firm_type === 'law_firm' ? LAW_SEAT_ROLES : SEAT_ROLES)
       .order('role'),
     service
       .from('firm_invites')
@@ -39,7 +42,7 @@ export async function GET(req: Request) {
     seatCap: usage.seatCap,
     usedSeats: usage.usedSeats,
     planName: usage.effectiveTier ? PLANS[usage.effectiveTier].name : 'Trial',
-    canManage: isFirmAdmin(me.role),
+    canManage: isFirmAdmin(me.role, me.firm_type),
     meId: me.user_id,
   });
 }
@@ -48,7 +51,7 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   const me = await resolveCaller(req);
   if (!me?.firm_id) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
-  if (!isFirmAdmin(me.role))
+  if (!isFirmAdmin(me.role, me.firm_type))
     return NextResponse.json({ error: 'Only owners and admins can invite.' }, { status: 403 });
 
   const body = await req.json().catch(() => ({}));
@@ -57,6 +60,8 @@ export async function POST(req: Request) {
   const role = String(body.role || 'realtor');
   if (!email || !full_name)
     return NextResponse.json({ error: 'Name and email are required.' }, { status: 400 });
+  if (role === 'attorney' && me.firm_type !== 'law_firm')
+    return NextResponse.json({ error: 'Attorney seats exist only in law practices.' }, { status: 400 });
   if (!FIRM_ROLES.includes(role))
     return NextResponse.json({ error: 'Invalid role.' }, { status: 400 });
 

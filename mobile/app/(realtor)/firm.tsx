@@ -1,4 +1,5 @@
 import React, { useCallback, useState } from 'react';
+import { useAuth } from '@/lib/auth';
 import {
   View,
   Text,
@@ -30,18 +31,26 @@ type FirmData = {
   meId: string;
 };
 
-const ROLE_OPTS = ['realtor', 'manager', 'firm_admin', 'agent', 'owner'];
+// Law practices hire attorneys; brokerages hire agents. Same screen, the
+// role list follows the firm type.
+const BROKERAGE_ROLE_OPTS = ['realtor', 'manager', 'firm_admin', 'agent', 'owner'];
+const LAW_FIRM_ROLE_OPTS = ['attorney', 'manager', 'firm_admin'];
 const ROLE_LABEL: Record<string, string> = {
   owner: 'Owner',
   firm_admin: 'Admin',
   manager: 'Manager',
   realtor: 'Realtor',
   agent: 'Agent',
+  attorney: 'Attorney',
 };
 
 export default function FirmControlScreen() {
   const { colors } = useTheme();
   const toast = useToast();
+  const { userProfile } = useAuth();
+  const isLawFirm = (userProfile as any)?.firm_type === 'law_firm';
+  const roleOpts = isLawFirm ? LAW_FIRM_ROLE_OPTS : BROKERAGE_ROLE_OPTS;
+  const defaultRole = isLawFirm ? 'attorney' : 'realtor';
   const [data, setData] = useState<FirmData | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
@@ -49,7 +58,7 @@ export default function FirmControlScreen() {
   // Invite form
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [role, setRole] = useState('realtor');
+  const [role, setRole] = useState(defaultRole);
   const [inviting, setInviting] = useState(false);
 
   const load = useCallback(async () => {
@@ -83,7 +92,7 @@ export default function FirmControlScreen() {
       toast.show('Invite sent.', { variant: 'success' });
       setName('');
       setEmail('');
-      setRole('realtor');
+      setRole(defaultRole);
       await load();
     } catch (e: any) {
       toast.show(humanError(e), { variant: 'error' });
@@ -93,7 +102,7 @@ export default function FirmControlScreen() {
   };
 
   const changeRole = async (m: Member) => {
-    const next = ROLE_OPTS[(ROLE_OPTS.indexOf(m.role) + 1) % ROLE_OPTS.length];
+    const next = roleOpts[(roleOpts.indexOf(m.role) + 1) % roleOpts.length];
     setBusy(m.id);
     try {
       await apiFetch('/api/firm/members/manage', {
@@ -182,7 +191,7 @@ export default function FirmControlScreen() {
               style={[s.input, { color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]}
             />
             <View style={s.roleRow}>
-              {ROLE_OPTS.map((r) => (
+              {roleOpts.map((r) => (
                 <Pressable
                   key={r}
                   onPress={() => setRole(r)}

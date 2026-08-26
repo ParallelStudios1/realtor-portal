@@ -30,6 +30,7 @@ import { useToast } from '@/components/Toast';
 import { humanError } from '@/lib/humanError';
 import { MANAGE_PLAN_URL, trialDaysLeft } from '@/components/TrialBanner';
 import { apiFetch } from '@/lib/api';
+import { firmNouns } from '@/lib/terminology';
 
 const HEX_RE = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
 
@@ -45,6 +46,7 @@ export default function RealtorSettingsScreen() {
   const { firm, colors } = useTheme();
   const queryClient = useQueryClient();
   const toast = useToast();
+  const nouns = firmNouns((userProfile as any)?.firm_type);
 
   // The founding attorney of a law practice administers it the way a
   // firm_admin administers a brokerage (branding, plan, invites).
@@ -386,13 +388,14 @@ export default function RealtorSettingsScreen() {
               solo: { name: 'Starter', seats: 3 },
               team: { name: 'Team', seats: 15 },
               brokerage: { name: 'Brokerage', seats: 50 },
+              attorney: { name: 'Attorney', seats: 3 },
             };
             const plan = tier ? TIERS[tier] : undefined;
 
             let line = 'Manage your plan online.';
             if (status === 'active' || hasSub) {
               line = plan
-                ? `You're on the ${plan.name} plan — up to ${plan.seats} agent${
+                ? `You're on the ${plan.name} plan — up to ${plan.seats} ${nouns.staff}${
                     plan.seats === 1 ? '' : 's'
                   }.`
                 : 'Your plan is active.';
@@ -502,7 +505,7 @@ export default function RealtorSettingsScreen() {
               <TextInput
                 value={tagline}
                 onChangeText={setTagline}
-                placeholder="e.g. Boston's premier waterfront brokerage"
+                placeholder={nouns.law ? 'e.g. Georgia real-estate closings, done right' : "e.g. Boston's premier waterfront brokerage"}
                 placeholderTextColor={colors.textSecondary}
                 style={[styles.input, { color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]}
               />

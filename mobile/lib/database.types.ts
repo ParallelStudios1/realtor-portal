@@ -1,4 +1,14 @@
-export type UserRole = 'super_admin' | 'realtor' | 'client';
+// Mirrors the user_role enum in Postgres. This was stale at three values,
+// which made every role comparison against firm_admin/attorney a TS2367.
+export type UserRole =
+  | 'super_admin'
+  | 'realtor'
+  | 'client'
+  | 'firm_admin'
+  | 'attorney'
+  | 'owner'
+  | 'manager'
+  | 'agent';
 export type DealPhase = 'searching' | 'awaiting_offer' | 'offer_made' | 'counter_offer' | 'under_contract' | 'closing' | 'closed';
 export type HouseStatus = 'interested' | 'tour_requested' | 'toured' | 'offered' | 'passed';
 export type TourRequestStatus = 'pending' | 'confirmed' | 'declined' | 'cancelled';

@@ -14,7 +14,7 @@ const FIRM_ROLES = ['owner', 'firm_admin', 'manager', 'realtor', 'agent'];
 export async function POST(req: Request) {
   const me = await resolveCaller(req);
   if (!me?.firm_id) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
-  if (!isFirmAdmin(me.role))
+  if (!isFirmAdmin(me.role, me.firm_type))
     return NextResponse.json({ error: 'Only owners and admins can manage the team.' }, { status: 403 });
 
   const body = await req.json().catch(() => ({}));
