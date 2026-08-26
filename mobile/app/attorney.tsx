@@ -1,4 +1,5 @@
-import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { openWebAuthed } from '@/lib/webBridge';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/lib/auth';
 import { useTheme } from '@/lib/theme';
@@ -26,9 +27,7 @@ export default function AttorneyScreen() {
           documents and tracking closings — lives on the web.
         </Text>
         <Pressable
-          onPress={() =>
-            Linking.openURL('https://realtorportal.parallelstudios.co/attorney')
-          }
+          onPress={() => openWebAuthed('/attorney')}
           style={[styles.cta, { backgroundColor: colors.primary }]}
         >
           <Text style={styles.ctaText}>Open my deals on the web</Text>

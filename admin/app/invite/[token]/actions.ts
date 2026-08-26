@@ -1,6 +1,7 @@
 'use server';
 
 import { redirect } from 'next/navigation';
+import { headers } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
 import { getSupabaseServerClient } from '@/lib/supabaseSsr';
 import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
@@ -255,17 +256,24 @@ export async function acceptInviteAction(formData: FormData) {
   }
 
   // 6. Route by role to the right post-accept landing.
-  if (isAttorney) {
-    redirect('/attorney');
+  const webDest = isAttorney
+    ? '/attorney'
+    : isClient
+      ? '/client'
+      : isRealtor
+        ? '/dashboard/deals/' + inv.search_id
+        : '/deal/' + inv.search_id;
+
+  // Phones get pushed into the native app — that's where deals are meant to
+  // be followed. The interstitial tries the app scheme, falls back to the
+  // store, and always leaves a "continue on web" escape hatch (webDest).
+  const ua = headers().get('user-agent') || '';
+  const isPhone = /iPhone|iPod/.test(ua) || (/Android/.test(ua) && /Mobile/.test(ua));
+  if (isPhone) {
+    redirect('/open-app?next=' + encodeURIComponent(webDest));
   }
-  if (isClient) {
-    redirect('/client');
-  }
-  if (isRealtor) {
-    redirect('/dashboard/deals/' + inv.search_id);
-  }
-  // Default: send them to the deal.
-  redirect('/deal/' + inv.search_id);
+
+  redirect(webDest);
 }
 
 /**

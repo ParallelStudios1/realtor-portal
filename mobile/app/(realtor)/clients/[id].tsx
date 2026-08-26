@@ -1,4 +1,5 @@
 import React from 'react';
+import { openWebAuthed } from '@/lib/webBridge';
 import {
   View,
   Text,
@@ -408,6 +409,17 @@ export default function RealtorClientDetailScreen() {
               label="Add party"
               onPress={() =>
                 router.push(`/(realtor)/clients/${id}/add-party` as any)
+              }
+            />
+            {/* Anything the phone doesn't have natively, the web has — this
+                opens the FULL deal workspace already signed in as you, so
+                mobile is never missing an option. */}
+            <ActionTile
+              tone="#6D28D9"
+              icon="desktop"
+              label="Full workspace"
+              onPress={() =>
+                openWebAuthed(`/dashboard/deals/${(search as any)?.id || id}`)
               }
             />
           </View>

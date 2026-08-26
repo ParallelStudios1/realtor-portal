@@ -41,7 +41,6 @@ export default function SignupScreen() {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirm, setConfirm] = useState('');
   const [firmName, setFirmName] = useState('');
   const [realtorEmail, setRealtorEmail] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -52,7 +51,6 @@ export default function SignupScreen() {
     if (!fullName.trim()) return 'Full name is required.';
     if (!email.trim()) return 'Email is required.';
     if (password.length < 8) return 'Password must be at least 8 characters.';
-    if (password !== confirm) return 'Passwords do not match.';
     if (role === 'realtor' && !firmName.trim())
       return 'Firm or brokerage name is required.';
     if (role === 'attorney' && !firmName.trim())
@@ -210,14 +208,6 @@ export default function SignupScreen() {
                 value={password}
                 onChangeText={setPassword}
                 placeholder="At least 8 characters"
-                secureTextEntry
-                colors={colors}
-              />
-              <Field
-                label="Confirm password"
-                value={confirm}
-                onChangeText={setConfirm}
-                placeholder="Type it again"
                 secureTextEntry
                 colors={colors}
               />

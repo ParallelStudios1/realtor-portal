@@ -33,6 +33,11 @@ export async function middleware(req: NextRequest) {
     // signed-out or every ad click lands on the login page instead of the
     // App Store.
     path === '/get' ||
+    // Mobile→web session hand-off. Tokens live in the URL fragment (never
+    // sent to the server); the page itself must be public to receive them.
+    path.startsWith('/auth/bridge') ||
+    // Post-invite hand-off that pushes phones into the native app.
+    path.startsWith('/open-app') ||
     // Public seller-lead AVM landing page. Lives at /value/[firmSlug] and
     // collects seller leads for whichever firm owns the slug. No auth.
     path.startsWith('/value/') ||

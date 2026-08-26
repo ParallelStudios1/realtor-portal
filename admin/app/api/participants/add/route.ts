@@ -495,15 +495,23 @@ export async function POST(req: Request) {
         const { data: ctx } = await service
           .from('client_searches')
           .select(
-            `name, firm:firms ( name ), realtor:users!client_searches_realtor_id_fkey ( full_name, email, phone )`
+            `name, orchestrated_by, attorney_name, attorney_email,
+             firm:firms ( name ), realtor:users!client_searches_realtor_id_fkey ( full_name, email, phone )`
           )
           .eq('id', (search as any).id)
           .maybeSingle();
         const firmName = (ctx as any)?.firm?.name || 'a Realtor Portal firm';
+        // Name the actual inviter. Attorney-led deals have no realtor on the
+        // row — calling their closing attorney "Your realtor" reads wrong to
+        // every recipient, most of all the realtor being invited.
         const realtorName =
           (ctx as any)?.realtor?.full_name ||
           (ctx as any)?.realtor?.email ||
-          'Your realtor';
+          ((ctx as any)?.orchestrated_by === 'attorney'
+            ? (ctx as any)?.attorney_name ||
+              (ctx as any)?.attorney_email ||
+              'The closing attorney'
+            : 'Your realtor');
         const siteUrl =
           process.env.SITE_URL || 'https://realtorportal.parallelstudios.co';
         const isRealtorRole =
