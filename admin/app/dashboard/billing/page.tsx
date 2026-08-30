@@ -280,6 +280,17 @@ export default async function BillingPage({
         </div>
       )}
 
+      {/* Launch promo. The Stripe checkout applies coupon `launch30`
+          automatically, so this banner is a promise the next screen keeps.
+          Only shown for web (Stripe) billing — Apple-billed pricing is set by
+          the App Store intro offer instead. */}
+      {billingSource !== 'apple' && (
+        <div className="mb-4 rounded-2xl border border-ink-900 bg-ink-900 p-4 text-sm text-white shadow-soft">
+          <strong>Launch offer:</strong> 30% off any plan for your first 6
+          months — applied automatically at checkout, no code needed.
+        </div>
+      )}
+
       <div id="plans">
         <BillingClient
           plans={isLawFirm ? ATTORNEY_PLAN_CARDS : PLAN_CARDS}

@@ -94,6 +94,9 @@ export default function StartPage({
           Deadlines, documents, and clients in a branded portal your clients
           will actually use. Free 14-day trial - no card needed.
         </p>
+        <p className="mx-auto mt-3 inline-block rounded-full bg-ink-900 px-3 py-1 text-xs font-semibold text-white">
+          Launch offer: 30% off your first 6 months
+        </p>
       </div>
 
       {searchParams.error && (

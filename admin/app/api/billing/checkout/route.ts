@@ -126,7 +126,19 @@ export async function POST(req: Request) {
         .eq('id', me.firm_id);
     }
 
-    const session = await stripe.checkout.sessions.create({
+    // Launch promo: 30% off every plan for the first 6 months, applied
+    // automatically (nobody types a code). The coupon lives in Stripe
+    // (id 'launch30', 30% off, repeating x6). Coupons don't change the price
+    // ID, so tier mapping in the webhook is unaffected. `discounts` and
+    // `allow_promotion_codes` are mutually exclusive in Checkout, so the
+    // promo replaces manual codes while it runs. Kill switch: set
+    // STRIPE_LAUNCH_COUPON=off. If the coupon is missing/invalid, we retry
+    // without it — a broken promo must never block a paying customer.
+    const launchCoupon =
+      process.env.STRIPE_LAUNCH_COUPON === 'off'
+        ? null
+        : process.env.STRIPE_LAUNCH_COUPON || 'launch30';
+    const sessionParams: Stripe.Checkout.SessionCreateParams = {
       mode: 'subscription',
       customer: stripeCustomerId,
       line_items: [{ price: priceId, quantity: 1 }],
@@ -135,8 +147,25 @@ export async function POST(req: Request) {
       subscription_data: {
         metadata: { firm_id: me.firm_id },
       },
-      allow_promotion_codes: true,
-    });
+    };
+    let session: Stripe.Checkout.Session;
+    try {
+      session = await stripe.checkout.sessions.create(
+        launchCoupon
+          ? { ...sessionParams, discounts: [{ coupon: launchCoupon }] }
+          : { ...sessionParams, allow_promotion_codes: true }
+      );
+    } catch (couponErr: any) {
+      if (launchCoupon && /coupon/i.test(couponErr?.message || '')) {
+        console.error('[checkout] launch coupon failed, retrying without:', couponErr?.message);
+        session = await stripe.checkout.sessions.create({
+          ...sessionParams,
+          allow_promotion_codes: true,
+        });
+      } else {
+        throw couponErr;
+      }
+    }
 
     if (!session.url) {
       return NextResponse.json(
