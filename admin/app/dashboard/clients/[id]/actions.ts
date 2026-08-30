@@ -439,6 +439,15 @@ export async function addHouseAction(
     bedrooms?: number | null;
     bathrooms?: number | null;
     square_feet?: number | null;
+    // FMLS autofill pass-through: filled by /api/fmls/lookup, so the house
+    // record carries the MLS number, listing facts, and listing-agent
+    // contacts without the agent typing any of it.
+    mls_number?: string | null;
+    listing_status?: string | null;
+    listed_at?: string | null;
+    seller_realtor_name?: string | null;
+    seller_realtor_email?: string | null;
+    seller_realtor_firm?: string | null;
   }
 ) {
   const a = await authorize(clientId);
@@ -459,6 +468,12 @@ export async function addHouseAction(
       bedrooms: payload.bedrooms ?? null,
       bathrooms: payload.bathrooms ?? null,
       square_feet: payload.square_feet ?? null,
+      mls_number: payload.mls_number ?? null,
+      listing_status: payload.listing_status ?? null,
+      listed_at: payload.listed_at ?? null,
+      seller_realtor_name: payload.seller_realtor_name ?? null,
+      seller_realtor_email: payload.seller_realtor_email ?? null,
+      seller_realtor_firm: payload.seller_realtor_firm ?? null,
     })
     .select('id')
     .single();

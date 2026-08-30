@@ -1147,6 +1147,12 @@ function HouseModal({
     bedrooms?: number | null;
     bathrooms?: number | null;
     square_feet?: number | null;
+    mls_number?: string | null;
+    listing_status?: string | null;
+    listed_at?: string | null;
+    seller_realtor_name?: string | null;
+    seller_realtor_email?: string | null;
+    seller_realtor_firm?: string | null;
   }) => Promise<void>;
 }) {
   const [address, setAddress] = useState('');
@@ -1159,8 +1165,59 @@ function HouseModal({
   const [sqft, setSqft] = useState('');
   const [pending, start] = useTransition();
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  // FMLS autofill: type the listing number once, every field fills itself and
+  // the listing-agent facts ride along invisibly into the house record.
+  const [fmlsNum, setFmlsNum] = useState('');
+  const [fmlsBusy, setFmlsBusy] = useState(false);
+  const [fmlsMeta, setFmlsMeta] = useState<{
+    mls_number: string;
+    listing_status: string | null;
+    listed_at: string | null;
+    seller_realtor_name: string | null;
+    seller_realtor_email: string | null;
+    seller_realtor_firm: string | null;
+  } | null>(null);
   const toast = useToast();
   const supabase = getSupabaseBrowserClient();
+
+  async function fillFromFmls() {
+    if (!fmlsNum.trim()) return;
+    setFmlsBusy(true);
+    try {
+      const r = await fetch(
+        '/api/fmls/lookup?mls=' + encodeURIComponent(fmlsNum.trim()),
+        { cache: 'no-store' }
+      );
+      const json = await r.json().catch(() => ({}));
+      if (!r.ok || !json?.ok) {
+        toast.show(json?.error || 'FMLS lookup failed.', { variant: 'error' });
+        return;
+      }
+      const h = json.house;
+      setAddress(h.address || '');
+      if (h.list_price != null) setListPrice(String(h.list_price));
+      if (h.bedrooms != null) setBedrooms(String(h.bedrooms));
+      if (h.bathrooms != null) setBathrooms(String(h.bathrooms));
+      if (h.square_feet != null) setSqft(String(h.square_feet));
+      if (h.photo_url) setPhotoUrl(h.photo_url);
+      if (h.notes) setNotes(h.notes);
+      setFmlsMeta({
+        mls_number: h.mls_number,
+        listing_status: h.listing_status ?? null,
+        listed_at: h.listed_at ?? null,
+        seller_realtor_name: h.seller_realtor_name ?? null,
+        seller_realtor_email: h.seller_realtor_email ?? null,
+        seller_realtor_firm: h.seller_realtor_firm ?? null,
+      });
+      toast.show(
+        `Filled from FMLS #${h.mls_number}` +
+          (json.source === 'mock' ? ' (sample data)' : ''),
+        { variant: 'success' }
+      );
+    } finally {
+      setFmlsBusy(false);
+    }
+  }
 
   async function uploadPhotoFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -1185,6 +1242,37 @@ function HouseModal({
   return (
     <Modal title="Add a house" onClose={onClose}>
       <div className="space-y-4">
+        <Field
+          label="FMLS number"
+          hint="Enter the listing number and every field below fills itself"
+        >
+          <div className="flex gap-2">
+            <input
+              className={inputCls}
+              value={fmlsNum}
+              onChange={(e) => setFmlsNum(e.target.value)}
+              placeholder="7412345"
+              inputMode="numeric"
+            />
+            <button
+              type="button"
+              onClick={fillFromFmls}
+              disabled={fmlsBusy || !fmlsNum.trim()}
+              className="shrink-0 rounded-lg bg-ink-900 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-ink-800 disabled:opacity-50"
+            >
+              {fmlsBusy ? 'Looking up…' : 'Auto-fill'}
+            </button>
+          </div>
+          {fmlsMeta && (
+            <p className="mt-1.5 text-xs text-ink-500">
+              FMLS #{fmlsMeta.mls_number}
+              {fmlsMeta.listing_status ? ` · ${fmlsMeta.listing_status}` : ''}
+              {fmlsMeta.seller_realtor_name
+                ? ` · Listed by ${fmlsMeta.seller_realtor_name}${fmlsMeta.seller_realtor_firm ? `, ${fmlsMeta.seller_realtor_firm}` : ''}`
+                : ''}
+            </p>
+          )}
+        </Field>
         <Field label="Address">
           <input
             className={inputCls}
@@ -1296,6 +1384,7 @@ function HouseModal({
               bedrooms: bedrooms ? Number(bedrooms) : null,
               bathrooms: bathrooms ? Number(bathrooms) : null,
               square_feet: sqft ? Number(sqft) : null,
+              ...(fmlsMeta ?? {}),
             })
           )
         }
