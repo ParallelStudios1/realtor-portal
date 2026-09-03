@@ -143,7 +143,7 @@ export default async function ClientsListPage() {
         </div>
       ) : (
         <ul className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {clients.map((c: any) => {
+          {(clients ?? []).map((c: any) => {
             const latest = dealMap[c.id];
             const dealCount = countMap[c.id] || 0;
             const href = latest
