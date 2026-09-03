@@ -49,6 +49,45 @@ export default async function ClientsListPage() {
     }
   }
 
+  // Law firms: every party named at deal intake (referring realtors, buyers,
+  // sellers, lenders...) is a CONTACT the attorney typed once and should see
+  // here — joined or still just invited. This is where "the names I entered"
+  // land, even before anyone accepts.
+  type DealContact = {
+    name: string | null;
+    email: string;
+    role: string;
+    dealId: string | null;
+    dealName: string | null;
+    joined: boolean;
+  };
+  let dealContacts: DealContact[] = [];
+  if ((me as any).firm_type === 'law_firm') {
+    const { data: parts } = await supabase
+      .from('deal_participants')
+      .select(
+        'external_name, external_email, role, user_id, search:client_searches ( id, name )'
+      )
+      .eq('firm_id', me.firm_id!)
+      .neq('role', 'attorney')
+      .order('created_at', { ascending: false });
+    const seen = new Set<string>();
+    for (const p of (parts || []) as any[]) {
+      if (!p.external_email) continue;
+      const key = p.external_email.toLowerCase() + '|' + (p.search?.id || '');
+      if (seen.has(key)) continue;
+      seen.add(key);
+      dealContacts.push({
+        name: p.external_name,
+        email: p.external_email,
+        role: p.role,
+        dealId: p.search?.id ?? null,
+        dealName: p.search?.name ?? null,
+        joined: !!p.user_id,
+      });
+    }
+  }
+
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
       <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
@@ -79,7 +118,7 @@ export default async function ClientsListPage() {
         </Link>
       </header>
 
-      {!clients || clients.length === 0 ? (
+      {(!clients || clients.length === 0) && dealContacts.length === 0 ? (
         <div className="bg-dotted rounded-2xl border border-dashed border-ink-300 bg-white p-14 text-center shadow-soft-sm">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-ink-900 text-white shadow-soft-sm">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" className="h-7 w-7" aria-hidden>
@@ -153,6 +192,54 @@ export default async function ClientsListPage() {
             );
           })}
         </ul>
+      )}
+
+      {dealContacts.length > 0 && (
+        <section className="mt-10">
+          <h2 className="text-lg font-bold tracking-tight text-ink-900">
+            Deal contacts
+          </h2>
+          <p className="mt-1 text-sm text-ink-600">
+            Everyone named on your deals — realtors, buyers, sellers, and the
+            rest — whether they&apos;ve accepted their invite yet or not.
+          </p>
+          <ul className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {dealContacts.map((c, i) => (
+              <li key={c.email + i}>
+                <Link
+                  href={c.dealId ? '/dashboard/deals/' + c.dealId : '/dashboard/deals'}
+                  className="block rounded-2xl border border-ink-200 bg-white p-4 shadow-soft-sm transition hover:-translate-y-0.5 hover:border-ink-300 hover:shadow-soft-md"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ink-100 text-sm font-bold text-ink-700">
+                      {initials(c.name || c.email)}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate font-semibold">{c.name || c.email}</div>
+                      <div className="truncate text-xs text-ink-500">{c.email}</div>
+                    </div>
+                    <span
+                      className={
+                        'shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ' +
+                        (c.joined
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : 'bg-amber-100 text-amber-800')
+                      }
+                    >
+                      {c.joined ? 'Joined' : 'Invited'}
+                    </span>
+                  </div>
+                  <div className="mt-3 flex items-center justify-between border-t border-ink-100 pt-2 text-[11px] text-ink-500">
+                    <span className="font-semibold uppercase tracking-wide">
+                      {c.role.replace(/_/g, ' ')}
+                    </span>
+                    <span className="truncate pl-2">{c.dealName || ''}</span>
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
     </main>
   );

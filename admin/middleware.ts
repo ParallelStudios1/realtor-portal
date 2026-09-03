@@ -71,6 +71,7 @@ export async function middleware(req: NextRequest) {
   // decide between /client and /dashboard.
   let role: string | null = null;
   let firmId: string | null = null;
+  let firmType: string | null = null;
   if (
     user &&
     (path === '/login' ||
@@ -84,11 +85,12 @@ export async function middleware(req: NextRequest) {
   ) {
     const { data: row } = await supabase
       .from('users')
-      .select('role, firm_id')
+      .select('role, firm_id, firm:firms ( firm_type )')
       .eq('id', user.id)
       .maybeSingle();
     role = (row?.role as string) || null;
     firmId = (row?.firm_id as string) || null;
+    firmType = ((row as any)?.firm?.firm_type as string) || null;
   }
 
   // ---- Plan lockout ----
@@ -99,7 +101,12 @@ export async function middleware(req: NextRequest) {
   // stay reachable so they can fix it. Clients/attorneys are never gated
   // here (they don't pay; the firm does).
   const isStaffRole =
-    role !== null && role !== 'client' && role !== 'attorney';
+    role !== null &&
+    role !== 'client' &&
+    // A law-firm attorney pays for their own practice, so the plan lockout
+    // applies to them like any other staff. A brokerage-guest attorney
+    // never pays and stays exempt.
+    (role !== 'attorney' || firmType === 'law_firm');
   const inDashboardArea = path === '/dashboard' || path.startsWith('/dashboard/');
   const planExemptPath =
     path.startsWith('/dashboard/billing') ||
@@ -128,8 +135,18 @@ export async function middleware(req: NextRequest) {
     }
   }
 
+  // A law-firm attorney IS staff — they run deals in the same dashboard as
+  // realtors, with every control. Only a brokerage-guest attorney (invited
+  // as counsel on someone else's deal) gets the scoped /attorney signpost.
+  const isLawFirmAttorney = role === 'attorney' && firmType === 'law_firm';
   const homeForRole = (r: string | null) =>
-    r === 'attorney' ? '/attorney' : r === 'client' ? '/client' : '/dashboard';
+    r === 'attorney'
+      ? isLawFirmAttorney
+        ? '/dashboard'
+        : '/attorney'
+      : r === 'client'
+        ? '/client'
+        : '/dashboard';
 
   // Logged in + visiting auth pages → role-aware home
   if (user && (path === '/login' || path === '/signup')) {
@@ -159,10 +176,25 @@ export async function middleware(req: NextRequest) {
     path.startsWith('/dashboard/deals');
   if (
     role === 'attorney' &&
+    !isLawFirmAttorney &&
     ((inDashboard && !attorneyAllowedInDashboard) || inClient)
   ) {
     const url = req.nextUrl.clone();
     url.pathname = '/attorney';
+    url.search = '';
+    return NextResponse.redirect(url);
+  }
+  // Law-firm attorneys live in /dashboard; their old thin home page just
+  // forwards there. The intake at /attorney/new (and deeper tools) stays.
+  if (isLawFirmAttorney && path === '/attorney') {
+    const url = req.nextUrl.clone();
+    url.pathname = '/dashboard';
+    url.search = '';
+    return NextResponse.redirect(url);
+  }
+  if (isLawFirmAttorney && inClient) {
+    const url = req.nextUrl.clone();
+    url.pathname = '/dashboard';
     url.search = '';
     return NextResponse.redirect(url);
   }
