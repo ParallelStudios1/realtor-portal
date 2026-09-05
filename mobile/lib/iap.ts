@@ -157,12 +157,15 @@ export async function getProducts(
         skus.join(', ')
       );
     }
-    return list
+    const mapped = list
       .filter((p: any) => p && (p.id || p.productId))
       .map((p: any) => {
         const id = p.id || p.productId;
-        // StoreKit reports the intro offer on the product when the user is
-        // eligible. Only surface it when both price and period count exist.
+        // The product METADATA always carries the intro offer, but Apple only
+        // honors it for subscribers who never used one in this group. Showing
+        // it to an ineligible user means the purchase sheet contradicts our
+        // card — so eligibility is checked below and ineligible users see the
+        // regular price everywhere.
         const introPrice = (p.introductoryPriceIOS as string) || null;
         const introPeriods =
           Number(p.introductoryPriceNumberOfPeriodsIOS || 0) || null;
@@ -175,8 +178,29 @@ export async function getProducts(
           entitlement: ENTITLEMENT_BY_PRODUCT[id] ?? '',
           introPrice: introPrice && introPeriods ? introPrice : null,
           introPeriods: introPrice && introPeriods ? introPeriods : null,
+          _groupId: (p.subscriptionGroupIdIOS as string) || null,
         };
       });
+
+    // Per-group eligibility. On any failure we HIDE the intro price — quietly
+    // under-promising beats advertising a discount Apple then refuses.
+    const groups = [
+      ...new Set(
+        mapped.filter((p) => p.introPrice && p._groupId).map((p) => p._groupId!)
+      ),
+    ];
+    const eligibility: Record<string, boolean> = {};
+    for (const g of groups) {
+      try {
+        eligibility[g] = Boolean(await m.isEligibleForIntroOfferIOS(g));
+      } catch {
+        eligibility[g] = false;
+      }
+    }
+    return mapped.map(({ _groupId, ...p }) => {
+      const eligible = _groupId ? eligibility[_groupId] === true : false;
+      return eligible ? p : { ...p, introPrice: null, introPeriods: null };
+    });
   } catch (err) {
     console.warn('[iap] fetchProducts failed', err);
     return [];
