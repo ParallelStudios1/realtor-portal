@@ -39,6 +39,10 @@ export const metadata = {
 export default function HomePage() {
   return (
     <main className="min-h-screen bg-white text-ink-900 antialiased leading-[1.6]">
+      {/* Launch promo bar - the one loud thing on an otherwise quiet page. */}
+      <div className="bg-ink-900 px-4 py-2.5 text-center text-sm font-medium text-white">
+        Launch offer: <span className="font-semibold">30% off every plan for your first 6 months</span> — applied automatically, no code needed.
+      </div>
       {/* Nav */}
       <header className="sticky top-0 z-40 border-b border-ink-200 bg-white">
         <nav className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
@@ -340,6 +344,9 @@ export default function HomePage() {
             Unlimited clients on every plan. Cancel from your dashboard,
             month-to-month. Fourteen days free, no card.
           </p>
+          <p className="mt-2 inline-block rounded-full border border-ink-900 bg-white px-3 py-1 text-xs font-semibold text-ink-900">
+            Launch offer: 30% off every plan for your first 6 months
+          </p>
 
           <div className="mt-10 grid gap-6 md:grid-cols-3">
             {[
@@ -406,6 +413,9 @@ export default function HomePage() {
                   </span>
                   <span className="text-sm text-ink-500">/mo</span>
                 </div>
+                <p className="mt-1.5 text-xs font-semibold text-emerald-700">
+                  30% off for your first 6 months
+                </p>
                 <p className="mt-1 text-xs text-ink-500">{p.who}</p>
                 <ul className="mt-6 space-y-2.5 text-sm text-ink-700">
                   {p.features.map((feat) => (

@@ -45,6 +45,13 @@ export type IapProduct = {
   periodLabel: string;
   /** What the subscriber gets during each period, e.g. "Up to 15 agents". */
   entitlement: string;
+  /**
+   * Introductory offer, straight from StoreKit (never hardcoded, so the
+   * paywall can only ever promise what Apple will actually charge).
+   * e.g. introPrice "$69.99" for introPeriods 6 → "first 6 months at $69.99".
+   */
+  introPrice: string | null;
+  introPeriods: number | null;
 };
 
 /** What each plan includes per period. Must match the App Store descriptions. */
@@ -142,6 +149,11 @@ export async function getProducts(
       .filter((p: any) => p && (p.id || p.productId))
       .map((p: any) => {
         const id = p.id || p.productId;
+        // StoreKit reports the intro offer on the product when the user is
+        // eligible. Only surface it when both price and period count exist.
+        const introPrice = (p.introductoryPriceIOS as string) || null;
+        const introPeriods =
+          Number(p.introductoryPriceNumberOfPeriodsIOS || 0) || null;
         return {
           id,
           title: p.displayName || p.title || 'Realtor Portal',
@@ -149,6 +161,8 @@ export async function getProducts(
           displayPrice: p.displayPrice || '',
           periodLabel: periodLabelFrom(p),
           entitlement: ENTITLEMENT_BY_PRODUCT[id] ?? '',
+          introPrice: introPrice && introPeriods ? introPrice : null,
+          introPeriods: introPrice && introPeriods ? introPeriods : null,
         };
       });
   } catch (err) {

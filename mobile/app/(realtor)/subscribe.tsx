@@ -229,13 +229,23 @@ export default function SubscribeScreen() {
         </View>
 
         {!iapAvailable ? (
-          // Android: Stripe billing page on the web.
+          // Android: Stripe billing page on the web — where the same 30%
+          // launch coupon is applied automatically at checkout.
+          <>
+          <View style={[styles.promo, { backgroundColor: colors.primary }]}>
+            <Ionicons name="pricetag" size={14} color="#fff" />
+            <Text style={styles.promoText}>
+              Launch offer: 30% off every plan for your first 6 months —
+              applied automatically at checkout.
+            </Text>
+          </View>
           <Pressable
             onPress={() => Linking.openURL(MANAGE_URL)}
             style={[styles.cta, { backgroundColor: colors.primary }]}
           >
             <Text style={styles.ctaText}>Manage plan</Text>
           </Pressable>
+          </>
         ) : loading ? (
           <ActivityIndicator style={{ marginTop: 24 }} color={colors.primary} />
         ) : stripeManaged ? (
@@ -297,6 +307,18 @@ export default function SubscribeScreen() {
           </View>
         ) : (
           <>
+            {/* Launch promo — only shown when StoreKit itself reports an
+                intro offer, so this can never promise a price Apple won't
+                honor at the purchase sheet. */}
+            {products.some((p) => p.introPrice) ? (
+              <View style={[styles.promo, { backgroundColor: colors.primary }]}>
+                <Ionicons name="pricetag" size={14} color="#fff" />
+                <Text style={styles.promoText}>
+                  Launch offer: 30% off your first 6 months — applied
+                  automatically.
+                </Text>
+              </View>
+            ) : null}
             {products.map((p) => {
               const isCurrent = activeProductId === p.id;
               const isSel = selected === p.id && !isCurrent;
@@ -341,7 +363,9 @@ export default function SubscribeScreen() {
                       each period — not just a price.
                     */}
                     <Text style={[styles.planTerms, { color: colors.text }]}>
-                      {p.displayPrice} per {p.periodLabel}
+                      {p.introPrice
+                        ? `${p.introPrice} per ${p.periodLabel} for your first ${p.introPeriods} ${p.periodLabel}s, then ${p.displayPrice} per ${p.periodLabel}`
+                        : `${p.displayPrice} per ${p.periodLabel}`}
                       {p.entitlement ? ` · ${p.entitlement}` : ''}
                     </Text>
                     <Text style={[styles.planDesc, { color: colors.textSecondary }]}>
@@ -356,12 +380,24 @@ export default function SubscribeScreen() {
                       </Text>
                     )}
                   </View>
-                  <Text style={[styles.planPrice, { color: colors.text }]}>
-                    {p.displayPrice}
-                    <Text style={[styles.planPer, { color: colors.textSecondary }]}>
-                      {'\n'}/{p.periodLabel}
+                  <View style={{ alignItems: 'flex-end' }}>
+                    {p.introPrice ? (
+                      <Text
+                        style={[
+                          styles.planPriceWas,
+                          { color: colors.textSecondary },
+                        ]}
+                      >
+                        {p.displayPrice}
+                      </Text>
+                    ) : null}
+                    <Text style={[styles.planPrice, { color: colors.text }]}>
+                      {p.introPrice ?? p.displayPrice}
+                      <Text style={[styles.planPer, { color: colors.textSecondary }]}>
+                        {'\n'}/{p.periodLabel}
+                      </Text>
                     </Text>
-                  </Text>
+                  </View>
                 </Pressable>
               );
             })}
@@ -481,6 +517,22 @@ const styles = StyleSheet.create({
   switchNote: { fontSize: 12, marginTop: 10, lineHeight: 17 },
   planPrice: { fontSize: 17, fontWeight: '800', textAlign: 'right' },
   planPer: { fontSize: 11, fontWeight: '600' },
+  planPriceWas: {
+    fontSize: 12,
+    fontWeight: '600',
+    textDecorationLine: 'line-through',
+    marginBottom: 2,
+  },
+  promo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 14,
+  },
+  promoText: { color: '#fff', fontSize: 13, fontWeight: '700', flex: 1 },
   cta: {
     marginTop: 24,
     paddingVertical: 16,

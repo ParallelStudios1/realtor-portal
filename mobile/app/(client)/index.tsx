@@ -148,7 +148,9 @@ export default function ClientHomeScreen() {
         .select('full_name, email, phone')
         .eq('id', activeSearch.realtor_id)
         .maybeSingle();
-      return data;
+      return data as
+        | { full_name: string | null; email: string | null; phone: string | null }
+        | null;
     },
     enabled: !!activeSearch?.realtor_id,
   });
