@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { resolveCaller } from '@/lib/bearerAuth';
 import { isDealStaff } from '@/lib/staff';
 import { lookupFmlsListing, fmlsMode } from '@/lib/fmls/provider';
+import { firmHasFmls } from '@/lib/fmls/entitlement';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -35,6 +36,18 @@ export async function GET(req: Request) {
     return NextResponse.json(
       { error: 'FMLS integration is not enabled yet.' },
       { status: 503 }
+    );
+  }
+  // Paid add-on, firm-level, no free trial: FMLS bills us per subscriber
+  // from day one, so the feature is dark until the firm buys the add-on.
+  if (!(await firmHasFmls(req, me.firm_id))) {
+    return NextResponse.json(
+      {
+        error:
+          'FMLS integration is a paid add-on your firm has not enabled yet. An admin can add it from Billing.',
+        upgrade: 'fmls',
+      },
+      { status: 402 }
     );
   }
 

@@ -51,13 +51,18 @@ function extrasBlock(p: ResoProperty): string | null {
  */
 export function mapResoToHouse(p: ResoProperty): FmlsHousePayload {
   const listedAt = (p.OnMarketDate || p.ListingContractDate || '').slice(0, 10);
+  // FMLS dialect, confirmed against their live test feed: price often arrives
+  // in FMLS_CurrentPrice with ListPrice blank, and square footage in
+  // BuildingAreaTotal (0 = unknown) with LivingArea blank.
+  const price = p.ListPrice ?? p.FMLS_CurrentPrice ?? null;
+  const sqft = p.LivingArea ?? (p.BuildingAreaTotal || null);
   return {
     mls_number: p.ListingId ?? '',
     address: resoAddress(p),
-    list_price: p.ListPrice ?? null,
+    list_price: price,
     bedrooms: p.BedroomsTotal ?? null,
     bathrooms: bathrooms(p),
-    square_feet: p.LivingArea ?? null,
+    square_feet: sqft,
     photo_url: firstPhoto(p),
     listing_url: null,
     listing_status: p.StandardStatus ?? null,

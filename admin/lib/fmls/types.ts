@@ -21,6 +21,12 @@ export type ResoProperty = {
   BathroomsFull?: number;
   BathroomsHalf?: number;
   LivingArea?: number; // square feet
+  /** FMLS often reports square footage here instead of LivingArea. */
+  BuildingAreaTotal?: number;
+  /** FMLS custom field; present when ListPrice is blanked. */
+  FMLS_CurrentPrice?: number;
+  /** FMLS's "Allow Internet Display" — false means do not surface at all. */
+  InternetEntireListingDisplayYN?: boolean;
   LotSizeAcres?: number;
   YearBuilt?: number;
   TaxAnnualAmount?: number;

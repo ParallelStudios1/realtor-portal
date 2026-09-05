@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { getMe } from '@/lib/supabaseSsr';
 import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
 import { BillingClient } from './BillingClient';
+import { FmlsAddonCard } from './FmlsAddonCard';
 import { DevPlanSimulator } from './DevPlanSimulator';
 import { PLANS, type PlanTier } from '@/lib/plans';
 import { getSeatUsage, planNameForUsage } from '@/lib/seats';
@@ -130,6 +131,7 @@ export default async function BillingPage({
   let isSimulatedSubscription = false;
   let billingSource: string | null = null;
   let isLawFirm = false;
+  let fmlsActive = false;
   const isDevOwner =
     (me.email || '').toLowerCase() === 'turnerlogan@parallelstudios.co';
 
@@ -138,11 +140,12 @@ export default async function BillingPage({
     const { data: firmRow } = await service
       .from('firms')
       .select(
-        'stripe_subscription_id, billing_source, iap_original_transaction_id, firm_type'
+        'stripe_subscription_id, billing_source, iap_original_transaction_id, firm_type, fmls_active'
       )
       .eq('id', me.firm_id)
       .maybeSingle();
     isLawFirm = (firmRow as any)?.firm_type === 'law_firm';
+    fmlsActive = Boolean((firmRow as any)?.fmls_active);
     isSimulatedSubscription = Boolean(
       (firmRow?.stripe_subscription_id || '').startsWith('sim_')
     );
@@ -288,6 +291,17 @@ export default async function BillingPage({
           currentTier={planTier}
         />
       </div>
+
+      {/* FMLS add-on — realtor firms only (a law practice's realtor guests
+          bring their own listings). Hidden entirely until the branch ships
+          with a configured price. */}
+      {!isLawFirm && (
+        <FmlsAddonCard
+          active={fmlsActive}
+          available={Boolean(process.env.STRIPE_PRICE_FMLS)}
+          priceLabel={process.env.FMLS_ADDON_PRICE_LABEL || null}
+        />
+      )}
 
       <div className="mt-8 rounded-2xl border border-ink-200 bg-white p-6 text-sm text-ink-600 shadow-soft-sm">
         <strong className="block text-ink-900">Need more than 50 agents?</strong>

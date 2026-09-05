@@ -54,11 +54,13 @@ export async function lookupFmlsListing(
   }
 
   try {
+    // NB: no $expand — the FMLS/Bridge dataset embeds Media inline and
+    // returns HTTP 400 for $expand=Media (verified against the live feed).
     const url =
       `${BASE!.replace(/\/$/, '')}/${DATASET}/Property` +
       `?access_token=${encodeURIComponent(TOKEN!)}` +
       `&$filter=${encodeURIComponent(`ListingId eq '${mls}'`)}` +
-      `&$expand=Media&$top=1`;
+      `&$top=1`;
     const r = await fetch(url, {
       headers: { accept: 'application/json' },
       cache: 'no-store',
@@ -73,6 +75,14 @@ export async function lookupFmlsListing(
     const listing = json.value?.[0];
     if (!listing) {
       return { ok: false, error: `No FMLS listing found for #${mls}.` };
+    }
+    // FMLS rule: "Allow Internet Display = No" listings must not surface —
+    // FMLS also blanks their key fields, so there's nothing useful to show.
+    if (listing.InternetEntireListingDisplayYN === false) {
+      return {
+        ok: false,
+        error: `FMLS #${mls} is not available for display per the listing broker.`,
+      };
     }
     return { ok: true, source: 'live', house: mapResoToHouse(listing) };
   } catch (e: any) {

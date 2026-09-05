@@ -53,6 +53,21 @@ export async function POST(req: Request) {
         const session = event.data.object as Stripe.Checkout.Session;
         const subscriptionId = session.subscription as string | null;
         const customerId = session.customer as string | null;
+        // FMLS add-on: a SEPARATE subscription. It must never touch the
+        // firm's plan fields — it only flips the add-on flag.
+        if (session.metadata?.addon === 'fmls') {
+          if (subscriptionId && customerId) {
+            await service
+              .from('firms')
+              .update({
+                fmls_active: true,
+                fmls_stripe_subscription_id: subscriptionId,
+                fmls_activated_at: new Date().toISOString(),
+              })
+              .eq('stripe_customer_id', customerId);
+          }
+          break;
+        }
         if (subscriptionId && customerId) {
           // Re-fetch the session with line_items expanded so we can read
           // which Stripe price (and therefore which plan tier) was bought.
@@ -90,6 +105,14 @@ export async function POST(req: Request) {
 
       case 'customer.subscription.updated': {
         const sub = event.data.object as Stripe.Subscription;
+        if (sub.metadata?.addon === 'fmls') {
+          const on = sub.status === 'active' || sub.status === 'trialing';
+          await service
+            .from('firms')
+            .update({ fmls_active: on, fmls_stripe_subscription_id: sub.id })
+            .eq('stripe_customer_id', sub.customer as string);
+          break;
+        }
         const status =
           sub.status === 'active' || sub.status === 'trialing'
             ? 'active'
@@ -125,6 +148,13 @@ export async function POST(req: Request) {
 
       case 'customer.subscription.deleted': {
         const sub = event.data.object as Stripe.Subscription;
+        if (sub.metadata?.addon === 'fmls') {
+          await service
+            .from('firms')
+            .update({ fmls_active: false })
+            .eq('stripe_customer_id', sub.customer as string);
+          break;
+        }
         await service
           .from('firms')
           // Clear the tier too: entitlements fall back to trial limits rather
@@ -136,6 +166,23 @@ export async function POST(req: Request) {
 
       case 'invoice.payment_failed': {
         const invoice = event.data.object as Stripe.Invoice;
+        // A failed ADD-ON invoice must not suspend the whole firm — it only
+        // turns the add-on off. Match against the stored add-on sub id.
+        const subId = (invoice as any).subscription as string | null;
+        if (subId) {
+          const { data: addonFirm } = await service
+            .from('firms')
+            .select('id')
+            .eq('fmls_stripe_subscription_id', subId)
+            .maybeSingle();
+          if (addonFirm) {
+            await service
+              .from('firms')
+              .update({ fmls_active: false })
+              .eq('id', (addonFirm as any).id);
+            break;
+          }
+        }
         await service
           .from('firms')
           .update({ status: 'suspended' })

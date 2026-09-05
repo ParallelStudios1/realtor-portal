@@ -50,5 +50,17 @@ check(
 const sparse = mapResoToHouse({ ListingId: '7000001' });
 check('sparse listing safe', [sparse.address, sparse.list_price, sparse.notes], ['', null, null]);
 
+// FMLS dialect (verified against their live test feed):
+// price in FMLS_CurrentPrice when ListPrice blank, sqft in BuildingAreaTotal.
+const fmlsish = mapResoToHouse({
+  ListingId: '5893300',
+  FMLS_CurrentPrice: 1000000,
+  BuildingAreaTotal: 1224,
+});
+check('FMLS_CurrentPrice fallback', fmlsish.list_price, 1000000);
+check('BuildingAreaTotal fallback', fmlsish.square_feet, 1224);
+check('BuildingAreaTotal 0 means unknown', mapResoToHouse({ BuildingAreaTotal: 0 }).square_feet, null);
+check('ListPrice wins when present', mapResoToHouse({ ListPrice: 5, FMLS_CurrentPrice: 9 }).list_price, 5);
+
 console.log(failures === 0 ? '\nFMLS mapper verified.' : `\n${failures} check(s) FAILED.`);
 process.exit(failures === 0 ? 0 : 1);
