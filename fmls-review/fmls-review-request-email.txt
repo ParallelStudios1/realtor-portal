@@ -26,13 +26,16 @@ Attached are three screenshots showing the flow with FMLS test data
 (listing #5893300): entering the listing number, the auto-filled property
 form, and the resulting house record on the deal.
 
-Demo login for your review:
+Demo login for your review (the FMLS test-data flow is live on our site
+for this review account):
   Web: https://realtorportal.parallelstudios.co
   Email: fmls-demo@parallelstudios.co
   Password: FmlsReview2026!
-  (The FMLS integration runs on our development environment until FMLS
-  approves live data; the demo account shows the same product experience,
-  and we're happy to do a screen-share of the FMLS flow if useful.)
+To see it yourself: sign in, open the deal "Demo Deal - Buyer Purchase"
+(it already contains FMLS test listing #5893300), or click Add house on
+any deal and enter an FMLS test listing number. The feature is gated to
+authorized accounts only and is not purchasable by members until FMLS
+approval.
 
 Sponsoring member on file: Agent 370802, Office PALM02, Firm H-53016.
 
