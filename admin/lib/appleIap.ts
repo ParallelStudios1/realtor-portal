@@ -224,6 +224,12 @@ export async function applyTransactionToFirm(
     .maybeSingle();
   if (seen) return { applied: false, reason: 'duplicate' };
 
+  // The FMLS add-on is a SEPARATE Apple subscription (its own group). It must
+  // never touch the firm's PLAN fields — it only flips the add-on flag.
+  // Mirror of the Stripe webhook's addon branch.
+  const isFmlsAddon =
+    txn.productId === 'com.parallelstudios.realtorportal.fmls.monthly';
+
   // Resolve the firm: explicit id, else the one already tied to this Apple
   // subscription (renewals arrive with no user context).
   let firmId = args.firmId;
@@ -231,7 +237,12 @@ export async function applyTransactionToFirm(
     const { data: existing } = await service
       .from('firms')
       .select('id')
-      .eq('iap_original_transaction_id', txn.originalTransactionId)
+      .eq(
+        isFmlsAddon
+          ? 'fmls_apple_original_transaction_id'
+          : 'iap_original_transaction_id',
+        txn.originalTransactionId
+      )
       .maybeSingle();
     firmId = (existing as any)?.id ?? null;
   }
@@ -239,6 +250,29 @@ export async function applyTransactionToFirm(
   const expiresAt = txn.expiresDate ? new Date(txn.expiresDate) : null;
   const revoked = Boolean(txn.revocationDate);
   const active = !revoked && (!expiresAt || expiresAt.getTime() > Date.now());
+
+  if (isFmlsAddon) {
+    await service.from('iap_transactions').insert({
+      firm_id: firmId,
+      provider: 'apple',
+      external_id: externalId,
+      original_transaction_id: txn.originalTransactionId,
+      product_id: txn.productId,
+      notification_type: args.notificationType ?? null,
+      expires_at: expiresAt ? expiresAt.toISOString() : null,
+      raw: args.raw ?? null,
+    });
+    if (!firmId) return { applied: false, reason: 'no_firm' };
+    await service
+      .from('firms')
+      .update({
+        fmls_active: active,
+        fmls_apple_original_transaction_id: txn.originalTransactionId,
+        ...(active ? { fmls_activated_at: new Date().toISOString() } : {}),
+      })
+      .eq('id', firmId);
+    return { applied: true };
+  }
 
   await service.from('iap_transactions').insert({
     firm_id: firmId,

@@ -448,6 +448,11 @@ export async function addHouseAction(
     seller_realtor_name?: string | null;
     seller_realtor_email?: string | null;
     seller_realtor_firm?: string | null;
+    year_built?: number | null;
+    lot_acres?: number | null;
+    annual_taxes?: number | null;
+    hoa_fee?: number | null;
+    hoa_frequency?: string | null;
   }
 ) {
   const a = await authorize(clientId);
@@ -474,6 +479,11 @@ export async function addHouseAction(
       seller_realtor_name: payload.seller_realtor_name ?? null,
       seller_realtor_email: payload.seller_realtor_email ?? null,
       seller_realtor_firm: payload.seller_realtor_firm ?? null,
+      year_built: payload.year_built ?? null,
+      lot_acres: payload.lot_acres ?? null,
+      annual_taxes: payload.annual_taxes ?? null,
+      hoa_fee: payload.hoa_fee ?? null,
+      hoa_frequency: payload.hoa_frequency ?? null,
     })
     .select('id')
     .single();

@@ -27,22 +27,8 @@ function firstPhoto(p: ResoProperty): string | null {
   return media[0]?.MediaURL ?? null;
 }
 
-/** The feed facts that have no dedicated houses column yet → readable notes. */
-function extrasBlock(p: ResoProperty): string | null {
-  const lines: string[] = [];
-  if (p.YearBuilt) lines.push(`Year built: ${p.YearBuilt}`);
-  if (p.LotSizeAcres != null) lines.push(`Lot: ${p.LotSizeAcres} acres`);
-  if (p.TaxAnnualAmount != null)
-    lines.push(`Annual taxes: $${p.TaxAnnualAmount.toLocaleString('en-US')}`);
-  if (p.AssociationFee != null)
-    lines.push(
-      `HOA: $${p.AssociationFee.toLocaleString('en-US')}${
-        p.AssociationFeeFrequency ? ` / ${p.AssociationFeeFrequency.toLowerCase()}` : ''
-      }`
-    );
-  if (p.PublicRemarks?.trim()) lines.push('', p.PublicRemarks.trim());
-  return lines.length ? lines.join('\n') : null;
-}
+// Year built / lot / taxes / HOA now have their own columns (0069); notes
+// carry only the listing's public remarks — the human description.
 
 /**
  * RESO Property → the exact payload the house form / addHouseAction accepts.
@@ -70,6 +56,11 @@ export function mapResoToHouse(p: ResoProperty): FmlsHousePayload {
     seller_realtor_name: p.ListAgentFullName ?? null,
     seller_realtor_email: p.ListAgentEmail ?? null,
     seller_realtor_firm: p.ListOfficeName ?? null,
-    notes: extrasBlock(p),
+    year_built: p.YearBuilt ?? null,
+    lot_acres: p.LotSizeAcres ?? null,
+    annual_taxes: p.TaxAnnualAmount ?? null,
+    hoa_fee: p.AssociationFee ?? null,
+    hoa_frequency: p.AssociationFeeFrequency ?? null,
+    notes: p.PublicRemarks?.trim() || null,
   };
 }

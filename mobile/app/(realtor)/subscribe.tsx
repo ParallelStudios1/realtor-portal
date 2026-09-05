@@ -27,6 +27,7 @@ import {
   iapAvailable,
   getLastVerifyError,
   ATTORNEY_IAP_PRODUCT_ID,
+  FMLS_IAP_PRODUCT_ID,
   type IapProduct,
 } from '@/lib/iap';
 
@@ -76,6 +77,10 @@ export default function SubscribeScreen() {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // FMLS add-on: shown only when the server says iOS sales are live AND the
+  // firm doesn't already have it. Bought as its own Apple subscription.
+  const [fmlsProduct, setFmlsProduct] = useState<IapProduct | null>(null);
+  const [fmlsBusy, setFmlsBusy] = useState(false);
 
   // What the firm is already on. Apple-billed plans can be switched inside the
   // subscription group; Stripe-billed plans must be managed on the web, so we
@@ -131,6 +136,22 @@ export default function SubscribeScreen() {
       setProducts(list);
       setSelected(list[0]?.id ?? null);
       setLoading(false);
+      // FMLS add-on (realtor firms only): server flag gates sales until FMLS
+      // approval; the product itself must also be fetchable from Apple.
+      if (!isLawFirm && !(firm as any)?.fmls_active) {
+        try {
+          const apiBase =
+            (process.env.EXPO_PUBLIC_API_URL as string | undefined) ||
+            'https://realtorportal.parallelstudios.co';
+          const avail = await fetch(`${apiBase}/api/fmls/availability`).then(
+            (r) => r.json()
+          );
+          if (avail?.ios) {
+            const [p] = await getProducts([FMLS_IAP_PRODUCT_ID]);
+            if (alive && p) setFmlsProduct(p);
+          }
+        } catch {}
+      }
     })();
     return () => {
       alive = false;
@@ -178,6 +199,34 @@ export default function SubscribeScreen() {
       }
     } finally {
       setBusy(false);
+    }
+  };
+
+  const buyFmls = async () => {
+    if (!fmlsProduct) return;
+    setFmlsBusy(true);
+    try {
+      const result = await purchase(fmlsProduct.id);
+      if (result.status === 'active') {
+        await refreshFirm();
+        setFmlsProduct(null);
+        toast.show('FMLS integration is on for your whole firm.', {
+          variant: 'success',
+        });
+      } else {
+        toast.show(
+          getLastVerifyError() ||
+            'Apple confirmed the purchase but we could not activate it. Tap Restore Purchases.',
+          { variant: 'error' }
+        );
+      }
+    } catch (e: any) {
+      const msg = String(e?.message || '');
+      if (!/cancel/i.test(msg)) {
+        toast.show(msg || 'Purchase failed.', { variant: 'error' });
+      }
+    } finally {
+      setFmlsBusy(false);
     }
   };
 
@@ -435,6 +484,49 @@ export default function SubscribeScreen() {
                 </Text>
               )}
             </Pressable>
+
+            {/* FMLS add-on — separate subscription, firm-level, no trial. */}
+            {fmlsProduct ? (
+              <View
+                style={[
+                  styles.plan,
+                  { borderColor: colors.border, marginTop: 20 },
+                ]}
+              >
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.planTitle, { color: colors.text }]}>
+                    FMLS Integration (add-on)
+                  </Text>
+                  <Text style={[styles.planTerms, { color: colors.text }]}>
+                    {fmlsProduct.displayPrice} per {fmlsProduct.periodLabel}
+                    {fmlsProduct.entitlement ? ` · ${fmlsProduct.entitlement}` : ''}
+                  </Text>
+                  <Text style={[styles.planDesc, { color: colors.textSecondary }]}>
+                    Type an FMLS listing number and the house fills itself.
+                    1 {fmlsProduct.periodLabel} auto-renewing subscription in
+                    addition to your plan. No free trial - MLS licensing starts
+                    the day you do.
+                  </Text>
+                  <Pressable
+                    onPress={buyFmls}
+                    disabled={fmlsBusy}
+                    style={[
+                      styles.cta,
+                      {
+                        marginTop: 12,
+                        backgroundColor: fmlsBusy ? colors.border : colors.primary,
+                      },
+                    ]}
+                  >
+                    {fmlsBusy ? (
+                      <ActivityIndicator color="#fff" />
+                    ) : (
+                      <Text style={styles.ctaText}>Add FMLS</Text>
+                    )}
+                  </Pressable>
+                </View>
+              </View>
+            ) : null}
 
             {/* Cancellation is handled by Apple; deep-link to their settings. */}
             {activeProductId ? (

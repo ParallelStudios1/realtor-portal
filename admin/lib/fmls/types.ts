@@ -68,11 +68,13 @@ export type FmlsHousePayload = {
   seller_realtor_name: string | null;
   seller_realtor_email: string | null;
   seller_realtor_firm: string | null;
-  /**
-   * Everything valuable that has no dedicated houses column yet (year built,
-   * lot, taxes, HOA, remarks) lands in notes as a readable block, so nothing
-   * from the feed is lost even before we add columns for it.
-   */
+  /** Dedicated house-fact columns (migration 0069). */
+  year_built: number | null;
+  lot_acres: number | null;
+  annual_taxes: number | null;
+  hoa_fee: number | null;
+  hoa_frequency: string | null;
+  /** The listing's public remarks — the human description. */
   notes: string | null;
 };
 

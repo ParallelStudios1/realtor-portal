@@ -198,6 +198,47 @@ export default function RealtorHouseDetailScreen() {
               .join(' · ')}
           </Text>
 
+          {/* House facts - filled by FMLS autofill or by hand. */}
+          {((house as any).year_built ||
+            (house as any).lot_acres != null ||
+            (house as any).annual_taxes != null ||
+            (house as any).hoa_fee != null ||
+            (house as any).mls_number) ? (
+            <Text style={[styles.specRow, { color: colors.textSecondary }]}>
+              {[
+                (house as any).year_built ? `Built ${(house as any).year_built}` : null,
+                (house as any).lot_acres != null ? `${(house as any).lot_acres} acres` : null,
+                (house as any).annual_taxes != null
+                  ? `Taxes $${Number((house as any).annual_taxes).toLocaleString()}/yr`
+                  : null,
+                (house as any).hoa_fee != null
+                  ? `HOA $${Number((house as any).hoa_fee).toLocaleString()}${(house as any).hoa_frequency ? `/${String((house as any).hoa_frequency).toLowerCase()}` : ''}`
+                  : null,
+                (house as any).mls_number ? `FMLS #${(house as any).mls_number}` : null,
+              ]
+                .filter(Boolean)
+                .join(' · ')}
+            </Text>
+          ) : null}
+          {(house as any).seller_realtor_name ? (
+            <Text style={[styles.specRow, { color: colors.textSecondary }]}>
+              Listed by {(house as any).seller_realtor_name}
+              {(house as any).seller_realtor_firm
+                ? ` · ${(house as any).seller_realtor_firm}`
+                : ''}
+            </Text>
+          ) : null}
+
+          {/* The notes/description - was never rendered on mobile before. */}
+          {house.notes ? (
+            <View style={[styles.actionBlock, { borderColor: colors.border }]}>
+              <Text style={[styles.actionTitle, { color: colors.text }]}>Notes</Text>
+              <Text style={{ color: colors.text, fontSize: 14, lineHeight: 20 }}>
+                {house.notes}
+              </Text>
+            </View>
+          ) : null}
+
           {house.listing_url ? (
             <Pressable
               onPress={() => Linking.openURL(house.listing_url!)}

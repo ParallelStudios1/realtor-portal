@@ -60,6 +60,20 @@ export default function UnderContractScreen() {
   // Default to the first house once they load.
   const effectiveHouseId = houseId ?? houseList[0]?.id ?? null;
 
+  // The house record often already knows the selling side (typed earlier or
+  // auto-filled from FMLS). Prefill EMPTY fields when the house is chosen -
+  // the agent should never retype what the deal already knows.
+  React.useEffect(() => {
+    const h = houseList.find((x) => x.id === effectiveHouseId);
+    if (!h) return;
+    if (h.seller_name && !sellerName) setSellerName(h.seller_name);
+    if (h.seller_email && !sellerEmail) setSellerEmail(h.seller_email);
+    if (h.seller_realtor_name && !agentName) setAgentName(h.seller_realtor_name);
+    if (h.seller_realtor_email && !agentEmail) setAgentEmail(h.seller_realtor_email);
+    if (h.seller_realtor_firm && !agentFirm) setAgentFirm(h.seller_realtor_firm);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [effectiveHouseId, houseList.length]);
+
   const apiBase = (
     (process.env.EXPO_PUBLIC_API_URL as string | undefined) ||
     'https://realtorportal.parallelstudios.co'

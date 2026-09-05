@@ -916,6 +916,41 @@ function PhaseModal({
   const changed = phase !== currentPhase;
   const isUnderContract = phase === 'under_contract';
 
+  // NEVER ask for a number the deal already knows. When making an offer,
+  // the chosen house's list price is the obvious starting point; when
+  // closing, the latest agreed number (counter > offer > stored closing)
+  // is. Prefill only into EMPTY fields so nothing typed is overwritten.
+  const supabasePrefill = getSupabaseBrowserClient();
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      if (phase !== 'offer_made' || !offerHouseId || offer) return;
+      const { data } = await supabasePrefill
+        .from('houses')
+        .select('list_price')
+        .eq('id', offerHouseId)
+        .maybeSingle();
+      if (alive && data?.list_price != null && !offer) {
+        setOffer(String(data.list_price));
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, offerHouseId]);
+  useEffect(() => {
+    if (
+      (phase === 'closing' || phase === 'closed') &&
+      !closingAmount &&
+      currentClosingAmount != null &&
+      currentClosingAmount > 0
+    ) {
+      setClosingAmount(String(currentClosingAmount));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
+
   function buildExtras() {
     if (phase === 'offer_made')
       return {
@@ -1153,6 +1188,11 @@ function HouseModal({
     seller_realtor_name?: string | null;
     seller_realtor_email?: string | null;
     seller_realtor_firm?: string | null;
+    year_built?: number | null;
+    lot_acres?: number | null;
+    annual_taxes?: number | null;
+    hoa_fee?: number | null;
+    hoa_frequency?: string | null;
   }) => Promise<void>;
 }) {
   const [address, setAddress] = useState('');
@@ -1176,6 +1216,11 @@ function HouseModal({
     seller_realtor_name: string | null;
     seller_realtor_email: string | null;
     seller_realtor_firm: string | null;
+    year_built: number | null;
+    lot_acres: number | null;
+    annual_taxes: number | null;
+    hoa_fee: number | null;
+    hoa_frequency: string | null;
   } | null>(null);
   const toast = useToast();
   const supabase = getSupabaseBrowserClient();
@@ -1208,6 +1253,11 @@ function HouseModal({
         seller_realtor_name: h.seller_realtor_name ?? null,
         seller_realtor_email: h.seller_realtor_email ?? null,
         seller_realtor_firm: h.seller_realtor_firm ?? null,
+        year_built: h.year_built ?? null,
+        lot_acres: h.lot_acres ?? null,
+        annual_taxes: h.annual_taxes ?? null,
+        hoa_fee: h.hoa_fee ?? null,
+        hoa_frequency: h.hoa_frequency ?? null,
       });
       toast.show(
         `Filled from FMLS #${h.mls_number}` +
@@ -1270,6 +1320,19 @@ function HouseModal({
               {fmlsMeta.seller_realtor_name
                 ? ` · Listed by ${fmlsMeta.seller_realtor_name}${fmlsMeta.seller_realtor_firm ? `, ${fmlsMeta.seller_realtor_firm}` : ''}`
                 : ''}
+              {[
+                fmlsMeta.year_built ? `Built ${fmlsMeta.year_built}` : null,
+                fmlsMeta.lot_acres != null ? `${fmlsMeta.lot_acres} acres` : null,
+                fmlsMeta.annual_taxes != null
+                  ? `Taxes $${Number(fmlsMeta.annual_taxes).toLocaleString()}/yr`
+                  : null,
+                fmlsMeta.hoa_fee != null
+                  ? `HOA $${Number(fmlsMeta.hoa_fee).toLocaleString()}${fmlsMeta.hoa_frequency ? `/${fmlsMeta.hoa_frequency.toLowerCase()}` : ''}`
+                  : null,
+              ]
+                .filter(Boolean)
+                .map((s) => ` · ${s}`)
+                .join('')}
             </p>
           )}
         </Field>
@@ -2835,6 +2898,36 @@ function UnderContractModal({
   // Only show the "who's selling this house?" capture for buyer deals that
   // actually have candidate houses to choose from.
   const showCapture = isBuyer && houseList.length > 0;
+
+  // The house record often already knows who's on the other side (typed in
+  // earlier, or auto-filled from FMLS: listing agent name/email/office and
+  // seller). Never make the agent retype it — prefill any EMPTY fields the
+  // moment a house is chosen.
+  const supabaseUc = getSupabaseBrowserClient();
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      if (!houseId) return;
+      const { data } = await supabaseUc
+        .from('houses')
+        .select(
+          'seller_name, seller_email, seller_realtor_name, seller_realtor_email, seller_realtor_firm'
+        )
+        .eq('id', houseId)
+        .maybeSingle();
+      if (!alive || !data) return;
+      const d = data as any;
+      if (d.seller_name && !sellerName) setSellerName(d.seller_name);
+      if (d.seller_email && !sellerEmail) setSellerEmail(d.seller_email);
+      if (d.seller_realtor_name && !agentName) setAgentName(d.seller_realtor_name);
+      if (d.seller_realtor_email && !agentEmail) setAgentEmail(d.seller_realtor_email);
+      if (d.seller_realtor_firm && !agentFirm) setAgentFirm(d.seller_realtor_firm);
+    })();
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [houseId]);
   return (
     <Modal title="Going under contract" onClose={onClose}>
       <p className="mb-3 text-xs text-ink-500">

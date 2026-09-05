@@ -104,6 +104,23 @@ export default function PhaseScreen() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
+  // Never re-ask a number the deal already knows: an offer starts from the
+  // chosen house's list price; the closing amount starts from the latest
+  // agreed number on the deal. Only fills EMPTY fields.
+  React.useEffect(() => {
+    if (phase !== 'offer_made' || offerAmount) return;
+    const h = houseList.find((x) => x.id === offerHouseId) ?? (houseList.length === 1 ? houseList[0] : null);
+    if (h?.list_price != null) setOfferAmount(String(h.list_price));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, offerHouseId, houseList.length]);
+  React.useEffect(() => {
+    if ((phase !== 'closing' && phase !== 'closed') || closingAmount) return;
+    const s: any = search;
+    const known = s?.counter_offer_amount ?? s?.offer_amount ?? s?.closing_amount;
+    if (known != null && Number(known) > 0) setClosingAmount(String(known));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
+
   // Client-side gate mirroring the server's per-phase requirements.
   const canSubmit = useMemo(() => {
     if (!searchId || !phase || submitting) return false;

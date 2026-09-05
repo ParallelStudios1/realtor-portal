@@ -32,6 +32,16 @@ export const IAP_PRODUCT_IDS = [
 export const ATTORNEY_IAP_PRODUCT_ID =
   'com.parallelstudios.realtorportal.attorney.monthly'; // $49.99
 
+/**
+ * The FMLS integration ADD-ON — its own subscription group in App Store
+ * Connect ("FMLS Add-on"), because a firm holds it ALONGSIDE a plan and
+ * products in one group are mutually exclusive. $49.99/mo, no trial ever
+ * (FMLS charges per subscriber from day one). Server maps it to
+ * firms.fmls_active, never to a plan tier.
+ */
+export const FMLS_IAP_PRODUCT_ID =
+  'com.parallelstudios.realtorportal.fmls.monthly'; // $49.99
+
 export type IapProduct = {
   id: string;
   title: string;
@@ -60,6 +70,8 @@ const ENTITLEMENT_BY_PRODUCT: Record<string, string> = {
   'com.parallelstudios.realtorportal.teamplan.monthly': 'Up to 15 agents',
   'com.parallelstudios.realtorportal.brokerage.monthly': 'Up to 50 agents',
   'com.parallelstudios.realtorportal.attorney.monthly': 'Up to 3 attorneys',
+  'com.parallelstudios.realtorportal.fmls.monthly':
+    'FMLS listing autofill for your whole firm',
 };
 
 /**

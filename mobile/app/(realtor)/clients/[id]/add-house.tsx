@@ -66,6 +66,11 @@ export default function AddHouseScreen() {
     seller_realtor_name: string | null;
     seller_realtor_email: string | null;
     seller_realtor_firm: string | null;
+    year_built: number | null;
+    lot_acres: number | null;
+    annual_taxes: number | null;
+    hoa_fee: number | null;
+    hoa_frequency: string | null;
   } | null>(null);
 
   const apiBase = (
@@ -211,6 +216,11 @@ export default function AddHouseScreen() {
         seller_realtor_name: h.seller_realtor_name ?? null,
         seller_realtor_email: h.seller_realtor_email ?? null,
         seller_realtor_firm: h.seller_realtor_firm ?? null,
+        year_built: h.year_built ?? null,
+        lot_acres: h.lot_acres ?? null,
+        annual_taxes: h.annual_taxes ?? null,
+        hoa_fee: h.hoa_fee ?? null,
+        hoa_frequency: h.hoa_frequency ?? null,
       });
       toast.show(`Filled from FMLS #${h.mls_number}.`, { variant: 'success' });
     } catch (e: any) {

@@ -29,10 +29,11 @@ check('listed date', h.listed_at, '2026-08-14');
 check('listing agent', h.seller_realtor_name, 'Dana Whitfield');
 check('listing office', h.seller_realtor_firm, 'Example Realty Partners');
 check('first photo', h.photo_url, 'https://realtorportal.parallelstudios.co/logo.png');
-check('extras include year built', h.notes?.includes('Year built: 2004'), true);
-check('extras include taxes', h.notes?.includes('Annual taxes: $4,612'), true);
-check('extras include HOA', h.notes?.includes('HOA: $650 / annually'), true);
-check('extras include remarks', h.notes?.includes('Riverbrook community'), true);
+check('year built column', h.year_built, 2004);
+check('lot acres column', h.lot_acres, 0.31);
+check('annual taxes column', h.annual_taxes, 4612);
+check('hoa fee + frequency', [h.hoa_fee, h.hoa_frequency], [650, 'Annually']);
+check('notes are the public remarks', h.notes?.includes('Riverbrook community'), true);
 
 // UnparsedAddress wins when present
 check(
