@@ -1,0 +1,44 @@
+To: data@fmls.com
+Subject: Re: FMLS Licensed Content from FMLS Marketplace — Realtor Portal ready for review
+
+Hello,
+
+Our product Realtor Portal is now built against the FMLS test data via the
+Bridge API, and we have set the Marketplace product to Waiting for Review.
+Please start the review process at your convenience.
+
+About the product: Realtor Portal is an agent-facing BACK OFFICE deal
+management app (not IDX — there is no public listing search or display).
+A subscribed agent opens one of their own private deals, enters an FMLS
+listing number, and the property record fills itself from the feed:
+address, list price, beds/baths, square footage, status, listing agent and
+office, and the primary photo. That data is visible only to the
+participants of that private deal.
+
+Compliance notes:
+- Listings with "Allow Internet Display" set to No are refused and never
+  shown (we honor the flag at lookup time).
+- Listing agent attribution (name and office) is displayed on every house
+  record sourced from FMLS.
+- No listing content is exposed publicly or outside the subscribing firm.
+
+Attached are three screenshots showing the flow with FMLS test data
+(listing #5893300): entering the listing number, the auto-filled property
+form, and the resulting house record on the deal.
+
+Demo login for your review:
+  Web: https://realtorportal.parallelstudios.co
+  Email: fmls-demo@parallelstudios.co
+  Password: FmlsReview2026!
+  (The FMLS integration runs on our development environment until FMLS
+  approves live data; the demo account shows the same product experience,
+  and we're happy to do a screen-share of the FMLS flow if useful.)
+
+Sponsoring member on file: Agent 370802, Office PALM02, Firm H-53016.
+
+Thank you!
+
+Turner Logan
+Parallel Studios LLC, App and Web Development, CEO
+(678) 822-6564
+https://parallelstudios.co/

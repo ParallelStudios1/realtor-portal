@@ -55,6 +55,18 @@ export default function AddHouseScreen() {
   const [pickingPhoto, setPickingPhoto] = useState(false);
   const [parsingUrl, setParsingUrl] = useState(false);
   const [pulledFromListing, setPulledFromListing] = useState(false);
+  // FMLS autofill - type the listing number once and every field fills
+  // itself. Mirror of the web Add-a-house modal.
+  const [fmlsNum, setFmlsNum] = useState('');
+  const [fmlsBusy, setFmlsBusy] = useState(false);
+  const [fmlsMeta, setFmlsMeta] = useState<{
+    mls_number: string;
+    listing_status: string | null;
+    listed_at: string | null;
+    seller_realtor_name: string | null;
+    seller_realtor_email: string | null;
+    seller_realtor_firm: string | null;
+  } | null>(null);
 
   const apiBase = (
     (process.env.EXPO_PUBLIC_API_URL as string | undefined) ||
@@ -161,6 +173,54 @@ export default function AddHouseScreen() {
   };
 
   // -------------------------------------------------------------------------
+  // FMLS number → full autofill (paid add-on; server enforces entitlement)
+  // -------------------------------------------------------------------------
+
+  const fillFromFmls = async () => {
+    const mls = fmlsNum.trim();
+    if (!mls) return;
+    setFmlsBusy(true);
+    try {
+      const { data: sess } = await supabase.auth.getSession();
+      const token = sess.session?.access_token;
+      const r = await fetch(
+        `${apiBase}/api/fmls/lookup?mls=${encodeURIComponent(mls)}`,
+        { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+      );
+      const raw = await r.text();
+      let json: any = null;
+      try {
+        json = raw ? JSON.parse(raw) : null;
+      } catch {}
+      if (!r.ok || !json?.ok) {
+        toast.show(json?.error || 'FMLS lookup failed.', { variant: 'error' });
+        return;
+      }
+      const h = json.house;
+      if (h.address) setAddress(h.address);
+      if (h.list_price != null) setPrice(String(h.list_price));
+      if (h.bedrooms != null) setBedrooms(String(h.bedrooms));
+      if (h.bathrooms != null) setBathrooms(String(h.bathrooms));
+      if (h.square_feet != null) setSquareFeet(String(h.square_feet));
+      if (h.photo_url) setPhotoUrl(h.photo_url);
+      if (h.notes) setNotes(h.notes);
+      setFmlsMeta({
+        mls_number: h.mls_number,
+        listing_status: h.listing_status ?? null,
+        listed_at: h.listed_at ?? null,
+        seller_realtor_name: h.seller_realtor_name ?? null,
+        seller_realtor_email: h.seller_realtor_email ?? null,
+        seller_realtor_firm: h.seller_realtor_firm ?? null,
+      });
+      toast.show(`Filled from FMLS #${h.mls_number}.`, { variant: 'success' });
+    } catch (e: any) {
+      toast.show(humanError(e), { variant: 'error' });
+    } finally {
+      setFmlsBusy(false);
+    }
+  };
+
+  // -------------------------------------------------------------------------
   // Listing URL → og: tag preview
   // -------------------------------------------------------------------------
 
@@ -257,6 +317,9 @@ export default function AddHouseScreen() {
           square_feet: parseNumberOrNull(squareFeet) ?? null,
           notes: notes.trim() || null,
           status: 'interested',
+          // FMLS pass-through: listing facts + agent attribution ride along
+          // when the house came from an FMLS lookup.
+          ...(fmlsMeta ?? {}),
         });
       if (error) throw error;
 
@@ -294,6 +357,47 @@ export default function AddHouseScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <Text style={[styles.title, { color: colors.text }]}>Add House</Text>
+
+          {/* FMLS autofill */}
+          <View style={{ marginBottom: 16 }}>
+            <Text style={[styles.label, { color: colors.text }]}>FMLS number</Text>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <TextInput
+                value={fmlsNum}
+                onChangeText={setFmlsNum}
+                placeholder="7412345"
+                placeholderTextColor={colors.textSecondary}
+                keyboardType="number-pad"
+                autoCorrect={false}
+                style={[
+                  styles.input,
+                  { flex: 1, color: colors.text, borderColor: colors.border },
+                ]}
+              />
+              <Pressable
+                onPress={fillFromFmls}
+                disabled={fmlsBusy || !fmlsNum.trim()}
+                style={[
+                  styles.fmlsBtn,
+                  {
+                    backgroundColor: colors.primary,
+                    opacity: fmlsBusy || !fmlsNum.trim() ? 0.5 : 1,
+                  },
+                ]}
+              >
+                {fmlsBusy ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <Text style={styles.fmlsBtnText}>Auto-fill</Text>
+                )}
+              </Pressable>
+            </View>
+            <Text style={[styles.helperText, { color: colors.textSecondary, marginTop: 6 }]}>
+              {fmlsMeta
+                ? `FMLS #${fmlsMeta.mls_number}${fmlsMeta.listing_status ? ` · ${fmlsMeta.listing_status}` : ''}${fmlsMeta.seller_realtor_name ? ` · Listed by ${fmlsMeta.seller_realtor_name}${fmlsMeta.seller_realtor_firm ? `, ${fmlsMeta.seller_realtor_firm}` : ''}` : ''}`
+                : 'Enter the listing number and every field below fills itself'}
+            </Text>
+          </View>
 
           {/* Photo */}
           <View style={{ marginBottom: 16 }}>
@@ -563,6 +667,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   photoActionText: { fontSize: 14, fontWeight: '600' },
+  fmlsBtn: {
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  fmlsBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
   saveBtn: { paddingVertical: 14, borderRadius: 8, alignItems: 'center' },
   saveBtnText: { color: '#fff', fontWeight: '700', fontSize: 16 },
   cancelBtn: { padding: 16, alignItems: 'center' },
