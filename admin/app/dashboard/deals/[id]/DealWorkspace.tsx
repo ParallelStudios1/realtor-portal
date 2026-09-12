@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useState, useTransition, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useToast } from '@/components/Toast';
+import { FmlsListingLine, FmlsDisclaimer } from '@/components/FmlsDisclaimer';
 import {
   ClientDetailActions,
   ParticipantList,
@@ -885,6 +886,14 @@ export function DealWorkspace(props: {
                                 ? ' · ' + String(h.status).replace(/_/g, ' ')
                                 : ''}
                           </div>
+                          {/* FMLS compliance: FMLS# + last-updated inside
+                              every FMLS-sourced listing display. */}
+                          {h.mls_number && (
+                            <FmlsListingLine
+                              mlsNumber={h.mls_number}
+                              updatedAt={h.fmls_updated_at ?? null}
+                            />
+                          )}
                           {/* Captured "other side" info - buyer deals only. */}
                           {!isSeller &&
                             (h.seller_realtor_name ||
@@ -937,6 +946,11 @@ export function DealWorkspace(props: {
                       );
                     })}
                   </ul>
+                )}
+                {/* FMLS-required statements, shown once whenever any listing
+                    in this section came from the FMLS feed. */}
+                {(houses as any[]).some((x) => x.mls_number) && (
+                  <FmlsDisclaimer />
                 )}
               </Card>
             );

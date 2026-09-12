@@ -484,6 +484,9 @@ export async function addHouseAction(
       annual_taxes: payload.annual_taxes ?? null,
       hoa_fee: payload.hoa_fee ?? null,
       hoa_frequency: payload.hoa_frequency ?? null,
+      // FMLS compliance: displayed listings must state when their content
+      // was last updated — that's the moment we pulled it from the feed.
+      fmls_updated_at: payload.mls_number ? new Date().toISOString() : null,
     })
     .select('id')
     .single();

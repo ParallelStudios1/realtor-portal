@@ -34,6 +34,7 @@ import { Stars } from '@/components/Stars';
 import type { HouseStatus } from '@/lib/database.types';
 import { useToast } from '@/components/Toast';
 import { humanError } from '@/lib/humanError';
+import { FmlsDisclaimer } from '@/components/FmlsDisclaimer';
 
 /**
  * House detail (client side).
@@ -283,12 +284,28 @@ export default function ClientHouseDetailScreen() {
                 .filter(Boolean)
                 .join(' · ')}
             </Text>
+            {/* FMLS compliance: FMLS# prominent + content-last-updated. */}
+            {(house as any).mls_number ? (
+              <Text style={{ color: colors.text, fontSize: 12, fontWeight: '700', marginTop: 4 }}>
+                FMLS# {(house as any).mls_number}
+                {(house as any).fmls_updated_at
+                  ? `  ·  Listing content last updated ${new Date((house as any).fmls_updated_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}`
+                  : ''}
+              </Text>
+            ) : null}
           </View>
 
           {house.notes ? (
             <View style={[styles.notesBlock, { borderColor: colors.border }]}>
               <Text style={[styles.notesText, { color: colors.text }]}>{house.notes}</Text>
             </View>
+          ) : null}
+
+          {(house as any).mls_number ? (
+            <FmlsDisclaimer
+              textColor={colors.textSecondary}
+              borderColor={colors.border}
+            />
           ) : null}
 
           {house.listing_url ? (

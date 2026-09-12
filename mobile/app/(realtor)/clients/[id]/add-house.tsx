@@ -222,7 +222,7 @@ export default function AddHouseScreen() {
         hoa_fee: h.hoa_fee ?? null,
         hoa_frequency: h.hoa_frequency ?? null,
       });
-      toast.show(`Filled from FMLS #${h.mls_number}.`, { variant: 'success' });
+      toast.show(`Filled from FMLS# ${h.mls_number}.`, { variant: 'success' });
     } catch (e: any) {
       toast.show(humanError(e), { variant: 'error' });
     } finally {
@@ -328,8 +328,11 @@ export default function AddHouseScreen() {
           notes: notes.trim() || null,
           status: 'interested',
           // FMLS pass-through: listing facts + agent attribution ride along
-          // when the house came from an FMLS lookup.
-          ...(fmlsMeta ?? {}),
+          // when the house came from an FMLS lookup, stamped with the fetch
+          // time (FMLS requires displaying when content was last updated).
+          ...(fmlsMeta
+            ? { ...fmlsMeta, fmls_updated_at: new Date().toISOString() }
+            : {}),
         });
       if (error) throw error;
 
@@ -404,7 +407,7 @@ export default function AddHouseScreen() {
             </View>
             <Text style={[styles.helperText, { color: colors.textSecondary, marginTop: 6 }]}>
               {fmlsMeta
-                ? `FMLS #${fmlsMeta.mls_number}${fmlsMeta.listing_status ? ` · ${fmlsMeta.listing_status}` : ''}${fmlsMeta.seller_realtor_name ? ` · Listed by ${fmlsMeta.seller_realtor_name}${fmlsMeta.seller_realtor_firm ? `, ${fmlsMeta.seller_realtor_firm}` : ''}` : ''}`
+                ? `FMLS# ${fmlsMeta.mls_number}${fmlsMeta.listing_status ? ` · ${fmlsMeta.listing_status}` : ''}${fmlsMeta.seller_realtor_name ? ` · Listed by ${fmlsMeta.seller_realtor_name}${fmlsMeta.seller_realtor_firm ? `, ${fmlsMeta.seller_realtor_firm}` : ''}` : ''}`
                 : 'Enter the listing number and every field below fills itself'}
             </Text>
           </View>

@@ -23,6 +23,7 @@ import {
 } from '@/lib/mutations';
 import { formatHouseStatus, HOUSE_STATUSES } from '@/lib/houseStatus';
 import { Stars } from '@/components/Stars';
+import { FmlsDisclaimer } from '@/components/FmlsDisclaimer';
 import type { HouseStatus } from '@/lib/database.types';
 
 /**
@@ -214,10 +215,18 @@ export default function RealtorHouseDetailScreen() {
                 (house as any).hoa_fee != null
                   ? `HOA $${Number((house as any).hoa_fee).toLocaleString()}${(house as any).hoa_frequency ? `/${String((house as any).hoa_frequency).toLowerCase()}` : ''}`
                   : null,
-                (house as any).mls_number ? `FMLS #${(house as any).mls_number}` : null,
               ]
                 .filter(Boolean)
                 .join(' · ')}
+            </Text>
+          ) : null}
+          {/* FMLS compliance: FMLS# prominent + content-last-updated. */}
+          {(house as any).mls_number ? (
+            <Text style={[styles.specRow, { color: colors.text, fontWeight: '700' }]}>
+              FMLS# {(house as any).mls_number}
+              {(house as any).fmls_updated_at
+                ? `  ·  Listing content last updated ${new Date((house as any).fmls_updated_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}`
+                : ''}
             </Text>
           ) : null}
           {(house as any).seller_realtor_name ? (
@@ -237,6 +246,13 @@ export default function RealtorHouseDetailScreen() {
                 {house.notes}
               </Text>
             </View>
+          ) : null}
+
+          {(house as any).mls_number ? (
+            <FmlsDisclaimer
+              textColor={colors.textSecondary}
+              borderColor={colors.border}
+            />
           ) : null}
 
           {house.listing_url ? (

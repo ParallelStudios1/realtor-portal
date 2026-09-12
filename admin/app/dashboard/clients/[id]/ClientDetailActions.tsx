@@ -1260,7 +1260,7 @@ function HouseModal({
         hoa_frequency: h.hoa_frequency ?? null,
       });
       toast.show(
-        `Filled from FMLS #${h.mls_number}` +
+        `Filled from FMLS# ${h.mls_number}` +
           (json.source === 'mock' ? ' (sample data)' : ''),
         { variant: 'success' }
       );
@@ -1315,7 +1315,7 @@ function HouseModal({
           </div>
           {fmlsMeta && (
             <p className="mt-1.5 text-xs text-ink-500">
-              FMLS #{fmlsMeta.mls_number}
+              FMLS# {fmlsMeta.mls_number}
               {fmlsMeta.listing_status ? ` · ${fmlsMeta.listing_status}` : ''}
               {fmlsMeta.seller_realtor_name
                 ? ` · Listed by ${fmlsMeta.seller_realtor_name}${fmlsMeta.seller_realtor_firm ? `, ${fmlsMeta.seller_realtor_firm}` : ''}`

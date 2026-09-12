@@ -10,6 +10,7 @@ import { buildCalendarFeedUrl } from '@/lib/ics';
 import { formatDateOnly } from '@/lib/dates';
 import { CalendarView, type CalEvent } from '@/components/CalendarView';
 import { listingStatusLabel, offerStatusLabel } from '@/lib/dealKind';
+import { FmlsDisclaimer } from '@/components/FmlsDisclaimer';
 import { SellerAddListing } from './SellerAddListing';
 
 export const dynamic = 'force-dynamic';
@@ -447,13 +448,16 @@ export default async function ClientHomePage() {
                         {h.list_price != null && (
                           <div className="mt-0.5 text-sm font-semibold text-ink-700">
                             ${Number(h.list_price).toLocaleString()}
-                            {h.mls_number ? ` · MLS ${h.mls_number}` : ''}
+                            {h.mls_number ? ` · FMLS# ${h.mls_number}` : ''}
                           </div>
                         )}
                       </div>
                     </Link>
                   ))}
                 </ul>
+              )}
+              {(myListings as any[])?.some((x) => x.mls_number) && (
+                <FmlsDisclaimer />
               )}
               {(myListings || []).length > 0 && (
                 <SellerAddListing brandColor={brandColor} hasListings={true} />
