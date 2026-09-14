@@ -19,12 +19,24 @@ export function FmlsAddonCard({
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // FMLS requires every subscriber to be an FMLS member registered through
+  // their Marketplace — this ID is how we register the buyer. Data access
+  // itself needs no FMLS login; this is purely the authorization paper trail.
+  const [fmlsMemberId, setFmlsMemberId] = useState('');
 
   const buy = async () => {
+    if (!fmlsMemberId.trim()) {
+      setError('Enter your FMLS agent or office ID — the add-on is available to FMLS members only.');
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
-      const r = await fetch('/api/billing/fmls-checkout', { method: 'POST' });
+      const r = await fetch('/api/billing/fmls-checkout', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ fmls_member_id: fmlsMemberId.trim() }),
+      });
       const json = await r.json().catch(() => ({}));
       if (!r.ok || !json?.url) {
         setError(json?.error || 'Could not start checkout.');
@@ -67,13 +79,25 @@ export function FmlsAddonCard({
         </div>
         {!active &&
           (available ? (
-            <button
-              onClick={buy}
-              disabled={busy}
-              className="btn-primary shrink-0"
-            >
-              {busy ? 'Opening checkout…' : 'Add FMLS'}
-            </button>
+            <div className="flex shrink-0 flex-col items-stretch gap-2">
+              <input
+                value={fmlsMemberId}
+                onChange={(e) => setFmlsMemberId(e.target.value)}
+                placeholder="Your FMLS agent or office ID"
+                className="input text-sm"
+              />
+              <button
+                onClick={buy}
+                disabled={busy}
+                className="btn-primary"
+              >
+                {busy ? 'Opening checkout…' : 'Add FMLS'}
+              </button>
+              <p className="max-w-[220px] text-[10px] leading-snug text-ink-400">
+                FMLS members only. We register your firm&apos;s Marketplace
+                subscription with FMLS using this ID.
+              </p>
+            </div>
           ) : (
             <span className="shrink-0 rounded-lg border border-ink-200 px-3 py-2 text-xs font-semibold text-ink-500">
               Coming soon

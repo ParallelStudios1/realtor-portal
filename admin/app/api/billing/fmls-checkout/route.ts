@@ -34,6 +34,24 @@ export async function POST(req: Request) {
       );
     }
 
+    // FMLS members only: the buyer's FMLS agent/office ID is required so we
+    // can register their Marketplace subscription (that registration is what
+    // authorizes them and what FMLS bills us for). Not a login — data access
+    // runs through our approved vendor feed.
+    const body = (await req.json().catch(() => ({}))) as {
+      fmls_member_id?: string;
+    };
+    const fmlsMemberId = (body.fmls_member_id || '').trim().slice(0, 60);
+    if (!fmlsMemberId) {
+      return NextResponse.json(
+        {
+          error:
+            'The FMLS integration is available to FMLS members only. Enter your FMLS agent or office ID.',
+        },
+        { status: 400 }
+      );
+    }
+
     const priceId = process.env.STRIPE_PRICE_FMLS;
     if (!priceId) {
       return NextResponse.json(
@@ -65,6 +83,13 @@ export async function POST(req: Request) {
       );
     }
 
+    // Save the member ID up front so it's on the firm record even if the
+    // webhook fires before we could correlate metadata.
+    await service
+      .from('firms')
+      .update({ fmls_member_id: fmlsMemberId })
+      .eq('id', me.firm_id);
+
     const stripe = new Stripe(stripeKey, { apiVersion: '2024-06-20' });
     const baseUrl =
       process.env.NEXT_PUBLIC_SITE_URL ?? 'https://realtorportal.parallelstudios.co';
@@ -89,9 +114,9 @@ export async function POST(req: Request) {
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: `${baseUrl}/dashboard/billing?fmls=1`,
       cancel_url: `${baseUrl}/dashboard/billing?fmls_canceled=1`,
-      metadata: { addon: 'fmls', firm_id: me.firm_id },
+      metadata: { addon: 'fmls', firm_id: me.firm_id, fmls_member_id: fmlsMemberId },
       subscription_data: {
-        metadata: { addon: 'fmls', firm_id: me.firm_id },
+        metadata: { addon: 'fmls', firm_id: me.firm_id, fmls_member_id: fmlsMemberId },
       },
       // Deliberately: no trial_period_days, no discounts, no promo codes.
     });

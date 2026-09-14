@@ -1,0 +1,40 @@
+To: data@fmls.com
+Subject: Re: FMLS Licensed Content from FMLS Marketplace — requested changes implemented
+
+Hello,
+
+Thank you for the review feedback. All requested items are now implemented
+and live, on both the website and the mobile apps, wherever FMLS listing
+content is displayed:
+
+1. The listing number is clearly and prominently displayed directly within
+   each FMLS property listing, formatted as "FMLS# <number>"
+   (e.g. FMLS# 5893300).
+
+2. The following statement is displayed with every FMLS listing section:
+   "FMLS listing data functionality is provided and supported by Parallel
+   Studios LLC · turnerlogan@parallelstudios.co · (678) 822-6564."
+
+3. Each FMLS listing shows when its content was last updated, e.g.
+   "Listing content last updated Sep 14, 2026."
+
+4. The required disclaimer appears beneath every FMLS listing section:
+   "Information Deemed Reliable But Not Guaranteed. If you believe any FMLS
+   listing contains material that infringes your copyrighted work please
+   click here to review our DMCA policy and learn how to submit a takedown
+   request. © 2026 FMLS" — with "click here" hyperlinked to
+   https://www.fmls.com/dmca.htm and the year rendered dynamically.
+
+You can verify with the same demo login:
+  Web: https://realtorportal.parallelstudios.co
+  Email: fmls-demo@parallelstudios.co
+  Password: FmlsReview2026!
+Open the deal "Demo Deal - Buyer Purchase" — the FMLS test listing
+(FMLS# 5893300) shows all of the above.
+
+Please let us know if anything else is needed, and thank you again.
+
+Turner Logan
+Parallel Studios LLC, App and Web Development, CEO
+(678) 822-6564
+https://parallelstudios.co/
