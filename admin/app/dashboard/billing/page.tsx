@@ -3,6 +3,7 @@ import { getMe } from '@/lib/supabaseSsr';
 import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
 import { BillingClient } from './BillingClient';
 import { FmlsAddonCard } from './FmlsAddonCard';
+import { FmlsSetupCard } from './FmlsSetupCard';
 import { DevPlanSimulator } from './DevPlanSimulator';
 import { PLANS, type PlanTier } from '@/lib/plans';
 import { getSeatUsage, planNameForUsage } from '@/lib/seats';
@@ -132,6 +133,7 @@ export default async function BillingPage({
   let billingSource: string | null = null;
   let isLawFirm = false;
   let fmlsActive = false;
+  let fmlsSetupDone = true;
   const isDevOwner =
     (me.email || '').toLowerCase() === 'turnerlogan@parallelstudios.co';
 
@@ -140,12 +142,13 @@ export default async function BillingPage({
     const { data: firmRow } = await service
       .from('firms')
       .select(
-        'stripe_subscription_id, billing_source, iap_original_transaction_id, firm_type, fmls_active'
+        'stripe_subscription_id, billing_source, iap_original_transaction_id, firm_type, fmls_active, fmls_marketplace_done_at'
       )
       .eq('id', me.firm_id)
       .maybeSingle();
     isLawFirm = (firmRow as any)?.firm_type === 'law_firm';
     fmlsActive = Boolean((firmRow as any)?.fmls_active);
+    fmlsSetupDone = Boolean((firmRow as any)?.fmls_marketplace_done_at);
     isSimulatedSubscription = Boolean(
       (firmRow?.stripe_subscription_id || '').startsWith('sim_')
     );
@@ -306,6 +309,11 @@ export default async function BillingPage({
       {/* FMLS add-on — realtor firms only (a law practice's realtor guests
           bring their own listings). Hidden entirely until the branch ships
           with a configured price. */}
+      {/* Integrated post-purchase FMLS setup: the moment the add-on is
+          active, walk the firm through FMLS's one required member step —
+          in-app, no email needed. Clears once they confirm. */}
+      {!isLawFirm && fmlsActive && !fmlsSetupDone && <FmlsSetupCard />}
+
       {!isLawFirm && (
         <FmlsAddonCard
           active={fmlsActive}

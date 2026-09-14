@@ -9,6 +9,7 @@ import {
   SafeAreaView,
   Linking,
   Platform,
+  Alert,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -210,9 +211,20 @@ export default function SubscribeScreen() {
       if (result.status === 'active') {
         await refreshFirm();
         setFmlsProduct(null);
-        toast.show('FMLS integration is on for your whole firm.', {
-          variant: 'success',
-        });
+        // Integrated setup — no email required. FMLS's one member-side step
+        // is registering the subscription in their Marketplace; walk them
+        // straight there from inside the app.
+        Alert.alert(
+          'FMLS integration is on',
+          'Listing autofill is live for your whole firm.\n\nOne step on FMLS’s side finishes your setup: sign in to the FMLS Marketplace with your FMLS account and subscribe to “Realtor Portal”. FMLS requires this registration for every member firm.',
+          [
+            {
+              text: 'Open FMLS Marketplace',
+              onPress: () => Linking.openURL('https://marketplace.fmls.com'),
+            },
+            { text: 'Later', style: 'cancel' },
+          ]
+        );
       } else {
         toast.show(
           getLastVerifyError() ||
