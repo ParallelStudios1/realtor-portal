@@ -124,7 +124,8 @@ export default async function DealDetailPage({
           'bedrooms, bathrooms, square_feet, ' +
           'is_under_contract, seller_name, seller_email, seller_realtor_name, ' +
           'seller_realtor_email, seller_realtor_firm, ' +
-          'listing_status, mls_number, listed_at, commission_pct, sold_price, sold_at'
+          'listing_status, mls_number, listed_at, commission_pct, sold_price, sold_at, ' +
+          'fmls_updated_at, year_built, lot_acres, annual_taxes, hoa_fee, hoa_frequency'
       )
       .eq('search_id', params.id)
       .order('created_at', { ascending: false }),
