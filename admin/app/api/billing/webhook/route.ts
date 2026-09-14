@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { getSupabaseServiceRoleClient } from '@/lib/supabaseServer';
 import { tierFromPriceId } from '@/lib/plans';
+import { notify } from '@/lib/notify';
 
 export const runtime = 'nodejs';
 // Stripe sends raw body - Next App Router needs this to skip body parsing.
@@ -57,14 +58,47 @@ export async function POST(req: Request) {
         // firm's plan fields — it only flips the add-on flag.
         if (session.metadata?.addon === 'fmls') {
           if (subscriptionId && customerId) {
-            await service
+            const { data: fmlsFirm } = await service
               .from('firms')
               .update({
                 fmls_active: true,
                 fmls_stripe_subscription_id: subscriptionId,
                 fmls_activated_at: new Date().toISOString(),
               })
-              .eq('stripe_customer_id', customerId);
+              .eq('stripe_customer_id', customerId)
+              .select('id, name, contact_email, fmls_member_id')
+              .maybeSingle();
+            // Fully automatic registration flow — nothing manual for anyone
+            // on our side. FMLS's designed authorization step is the MEMBER
+            // subscribing to the product in their Marketplace, so we email
+            // the buyer that one step, and email ourselves the record.
+            try {
+              const f = fmlsFirm as any;
+              const memberId =
+                session.metadata?.fmls_member_id || f?.fmls_member_id || '';
+              if (f?.contact_email) {
+                await notify({
+                  email: f.contact_email,
+                  subject: 'FMLS integration is on — one FMLS step to finish',
+                  text:
+                    `Your FMLS integration for ${f.name} is active in Realtor Portal - you can start using FMLS listing autofill right away.\n\n` +
+                    `One step on FMLS's side completes your authorization: sign in to the FMLS Marketplace (https://marketplace.fmls.com) with your FMLS account and subscribe to "Realtor Portal". FMLS requires this registration for every member using FMLS data in a third-party product.\n\n` +
+                    `Questions? Just reply to this email.`,
+                });
+              }
+              await notify({
+                email: 'turnerlogan@parallelstudios.co',
+                subject: `FMLS add-on purchased: ${f?.name ?? customerId}`,
+                text:
+                  `Firm: ${f?.name ?? '?'} (${f?.id ?? '?'})\n` +
+                  `FMLS member ID: ${memberId || 'not provided'}\n` +
+                  `Contact: ${f?.contact_email ?? '?'}\n` +
+                  `Stripe sub: ${subscriptionId}\n\n` +
+                  `They were emailed the Marketplace self-subscribe step. Confirm their subscription appears under Marketplace > Subscriptions; FMLS billing follows their registration.`,
+              });
+            } catch (e) {
+              console.error('[webhook] fmls notify failed', e);
+            }
           }
           break;
         }

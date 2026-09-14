@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { tierFromAppleProductId } from './plans';
+import { notify } from './notify';
 
 /**
  * Apple In-App Purchase verification + entitlement sync.
@@ -263,6 +264,11 @@ export async function applyTransactionToFirm(
       raw: args.raw ?? null,
     });
     if (!firmId) return { applied: false, reason: 'no_firm' };
+    const { data: beforeFirm } = await service
+      .from('firms')
+      .select('fmls_active, name, contact_email, fmls_member_id')
+      .eq('id', firmId)
+      .maybeSingle();
     await service
       .from('firms')
       .update({
@@ -271,6 +277,37 @@ export async function applyTransactionToFirm(
         ...(active ? { fmls_activated_at: new Date().toISOString() } : {}),
       })
       .eq('id', firmId);
+    // First activation → the same zero-manual-work registration flow as the
+    // Stripe path: the buyer gets FMLS's one self-subscribe step, we get the
+    // record. (Apple purchases can't collect the FMLS member ID in-sheet, so
+    // the member identifies themself when subscribing on Marketplace.)
+    if (active && !(beforeFirm as any)?.fmls_active) {
+      try {
+        const f = beforeFirm as any;
+        if (f?.contact_email) {
+          await notify({
+            email: f.contact_email,
+            subject: 'FMLS integration is on — one FMLS step to finish',
+            text:
+              `Your FMLS integration for ${f.name ?? 'your firm'} is active in Realtor Portal - FMLS listing autofill works right away.\n\n` +
+              `One step on FMLS's side completes your authorization: sign in to the FMLS Marketplace (https://marketplace.fmls.com) with your FMLS account and subscribe to "Realtor Portal". FMLS requires this registration for every member using FMLS data in a third-party product.\n\n` +
+              `Questions? Just reply to this email.`,
+          });
+        }
+        await notify({
+          email: 'turnerlogan@parallelstudios.co',
+          subject: `FMLS add-on purchased (Apple): ${f?.name ?? firmId}`,
+          text:
+            `Firm: ${f?.name ?? '?'} (${firmId})\n` +
+            `FMLS member ID on file: ${f?.fmls_member_id || 'not provided (Apple purchase)'}\n` +
+            `Contact: ${f?.contact_email ?? '?'}\n` +
+            `Apple original transaction: ${txn.originalTransactionId}\n\n` +
+            `They were emailed the Marketplace self-subscribe step. Confirm their subscription appears under Marketplace > Subscriptions.`,
+        });
+      } catch (e) {
+        console.error('[appleIap] fmls notify failed', e);
+      }
+    }
     return { applied: true };
   }
 
