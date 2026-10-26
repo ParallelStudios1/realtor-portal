@@ -38,8 +38,10 @@ export function FmlsSetupCard() {
       <p className="mt-1 max-w-2xl text-sm leading-relaxed text-ink-700">
         Your FMLS autofill is already working. FMLS separately requires each
         member firm to register its subscription to Realtor Portal in their
-        Marketplace — a one-time, two-minute step on FMLS&apos;s site with
-        your FMLS account.
+        Data Marketplace — a one-time, two-minute step on FMLS&apos;s site
+        with your FMLS account. We&apos;ve already asked FMLS to add you as a
+        subscriber; if you don&apos;t see &ldquo;Realtor Portal&rdquo; under
+        Browse Products yet, check back within a business day.
       </p>
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <a

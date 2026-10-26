@@ -69,23 +69,40 @@ export async function POST(req: Request) {
               .select('id, name, contact_email, fmls_member_id')
               .maybeSingle();
             // Fully automatic registration flow — nothing manual for anyone
-            // on our side. FMLS's designed authorization step is the MEMBER
-            // subscribing to the product in their Marketplace, so we email
-            // the buyer that one step, and email ourselves the record.
+            // on our side. FMLS requires (1) the VENDOR to tell data@fmls.com
+            // who to add, THEN (2) the member subscribes in the Marketplace.
+            // So on purchase we email FMLS the add request, tell the buyer
+            // what happens next, and email ourselves the record.
             try {
               const f = fmlsFirm as any;
               const memberId =
                 session.metadata?.fmls_member_id || f?.fmls_member_id || '';
+              // (1) Vendor → FMLS: request the member be added so they can
+              // subscribe to our Marketplace product.
+              await notify({
+                email: 'data@fmls.com',
+                subject: 'Realtor Portal — please add a member subscriber',
+                text:
+                  `Hello,\n\n` +
+                  `A new firm has purchased the FMLS integration for our Marketplace product "Realtor Portal" (vendor: Parallel Studios). Please add the following member so they can subscribe:\n\n` +
+                  `FMLS agent/office ID: ${memberId || 'not provided - we will follow up'}\n` +
+                  `Firm name: ${f?.name ?? 'unknown'}\n` +
+                  `Contact email: ${f?.contact_email ?? 'unknown'}\n\n` +
+                  `Once added, we will direct them to subscribe via Data Marketplace > Browse Products > Realtor Portal.\n\n` +
+                  `Thank you!\nParallel Studios LLC · turnerlogan@parallelstudios.co · (678) 822-6564`,
+              });
+              // (2) Buyer: explain the two-step FMLS side in the right order.
               if (f?.contact_email) {
                 await notify({
                   email: f.contact_email,
                   subject: 'FMLS integration is on — one FMLS step to finish',
                   text:
                     `Your FMLS integration for ${f.name} is active in Realtor Portal - you can start using FMLS listing autofill right away.\n\n` +
-                    `One step on FMLS's side completes your authorization: sign in to the FMLS Marketplace (https://marketplace.fmls.com) with your FMLS account and subscribe to "Realtor Portal". FMLS requires this registration for every member using FMLS data in a third-party product.\n\n` +
+                    `To complete your authorization on FMLS's side, we've asked FMLS to register you as a subscriber (this usually takes about a business day). Once FMLS confirms, sign in at fmls.com, go to Data Marketplace > Browse Products, find "Realtor Portal" and press Subscribe. FMLS requires this registration for every member using FMLS data in a third-party product.\n\n` +
                     `Questions? Just reply to this email.`,
                 });
               }
+              // (3) Ourselves: the full record.
               await notify({
                 email: 'turnerlogan@parallelstudios.co',
                 subject: `FMLS add-on purchased: ${f?.name ?? customerId}`,
@@ -94,7 +111,7 @@ export async function POST(req: Request) {
                   `FMLS member ID: ${memberId || 'not provided'}\n` +
                   `Contact: ${f?.contact_email ?? '?'}\n` +
                   `Stripe sub: ${subscriptionId}\n\n` +
-                  `They were emailed the Marketplace self-subscribe step. Confirm their subscription appears under Marketplace > Subscriptions; FMLS billing follows their registration.`,
+                  `data@fmls.com was automatically asked to add this member, and the buyer was told to subscribe in the Marketplace once FMLS confirms. Watch for FMLS's "new subscriber" email; no action needed unless FMLS replies with questions.`,
               });
             } catch (e) {
               console.error('[webhook] fmls notify failed', e);

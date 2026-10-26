@@ -284,13 +284,27 @@ export async function applyTransactionToFirm(
     if (active && !(beforeFirm as any)?.fmls_active) {
       try {
         const f = beforeFirm as any;
+        // (1) Vendor → FMLS: request the member be added (FMLS requires this
+        // BEFORE the member can subscribe in the Marketplace).
+        await notify({
+          email: 'data@fmls.com',
+          subject: 'Realtor Portal — please add a member subscriber',
+          text:
+            `Hello,\n\n` +
+            `A new firm has purchased the FMLS integration for our Marketplace product "Realtor Portal" (vendor: Parallel Studios). Please add the following member so they can subscribe:\n\n` +
+            `FMLS agent/office ID: ${f?.fmls_member_id || 'not provided - we will follow up'}\n` +
+            `Firm name: ${f?.name ?? 'unknown'}\n` +
+            `Contact email: ${f?.contact_email ?? 'unknown'}\n\n` +
+            `Once added, we will direct them to subscribe via Data Marketplace > Browse Products > Realtor Portal.\n\n` +
+            `Thank you!\nParallel Studios LLC · turnerlogan@parallelstudios.co · (678) 822-6564`,
+        });
         if (f?.contact_email) {
           await notify({
             email: f.contact_email,
             subject: 'FMLS integration is on — one FMLS step to finish',
             text:
               `Your FMLS integration for ${f.name ?? 'your firm'} is active in Realtor Portal - FMLS listing autofill works right away.\n\n` +
-              `One step on FMLS's side completes your authorization: sign in to the FMLS Marketplace (https://marketplace.fmls.com) with your FMLS account and subscribe to "Realtor Portal". FMLS requires this registration for every member using FMLS data in a third-party product.\n\n` +
+              `To complete your authorization on FMLS's side, we've asked FMLS to register you as a subscriber (this usually takes about a business day). Once FMLS confirms, sign in at fmls.com, go to Data Marketplace > Browse Products, find "Realtor Portal" and press Subscribe. FMLS requires this registration for every member using FMLS data in a third-party product.\n\n` +
               `Questions? Just reply to this email.`,
           });
         }
@@ -302,7 +316,7 @@ export async function applyTransactionToFirm(
             `FMLS member ID on file: ${f?.fmls_member_id || 'not provided (Apple purchase)'}\n` +
             `Contact: ${f?.contact_email ?? '?'}\n` +
             `Apple original transaction: ${txn.originalTransactionId}\n\n` +
-            `They were emailed the Marketplace self-subscribe step. Confirm their subscription appears under Marketplace > Subscriptions.`,
+            `data@fmls.com was automatically asked to add this member, and the buyer was told to subscribe in the Marketplace once FMLS confirms. Watch for FMLS's "new subscriber" email; no action needed unless FMLS replies with questions.`,
         });
       } catch (e) {
         console.error('[appleIap] fmls notify failed', e);
