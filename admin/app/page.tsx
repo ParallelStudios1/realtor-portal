@@ -233,7 +233,7 @@ export default function HomePage() {
               </div>
               <div className="mt-3 flex items-center gap-2">
                 <span className="flex-1 rounded-lg border border-white/20 bg-white/10 px-3 py-2 font-mono text-sm text-white">
-                  FMLS# 7305085
+                  FMLS# 7421865
                 </span>
                 <span className="rounded-lg bg-white px-3 py-2 text-xs font-bold text-ink-900">
                   Auto-fill
@@ -241,11 +241,11 @@ export default function HomePage() {
               </div>
               <div className="mt-4 space-y-2 text-xs text-white/80">
                 {[
-                  ['Address', '298 Randall Drive'],
-                  ['List price', '$30,000'],
-                  ['Listing agent', 'T. Crone · Keller Williams'],
-                  ['Year built · Lot', '2001 · 0.46 ac'],
-                  ['Annual taxes', '$313'],
+                  ['Address', '412 Maple Avenue'],
+                  ['List price', '$485,000'],
+                  ['Listing agent', 'J. Carter · Example Realty'],
+                  ['Year built · Lot', '2004 · 0.38 ac'],
+                  ['Annual taxes', '$4,120'],
                 ].map(([k, v]) => (
                   <div key={k} className="flex justify-between rounded-lg bg-white/5 px-3 py-2">
                     <span className="text-white/50">{k}</span>
