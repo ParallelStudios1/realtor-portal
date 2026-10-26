@@ -41,7 +41,8 @@ export default function HomePage() {
     <main className="min-h-screen bg-white text-ink-900 antialiased leading-[1.6]">
       {/* Launch promo bar - the one loud thing on an otherwise quiet page. */}
       <div className="bg-ink-900 px-4 py-2.5 text-center text-sm font-medium text-white">
-        Launch offer: <span className="font-semibold">30% off every plan for your first 6 months</span> — applied automatically, no code needed.
+        <span className="mr-2 rounded-full bg-white/15 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider">New</span>
+        <span className="font-semibold">FMLS integration is live</span> — type a listing number, the whole deal fills itself. Plus 30% off every plan for your first 6 months, applied automatically.
       </div>
       {/* Nav */}
       <header className="sticky top-0 z-40 border-b border-ink-200 bg-white">
@@ -187,6 +188,73 @@ export default function HomePage() {
                   Final walkthrough
                 </span>
                 <span className="text-[11px] text-ink-500">Thu, Jun 26</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FMLS announcement - the newest, most Georgia-specific selling point.
+          Live MLS autofill is something the national transaction tools don't
+          lead with, so it gets its own band right under the hero. */}
+      <section className="border-b border-ink-200 bg-ink-900 text-white">
+        <div className="mx-auto grid max-w-5xl items-center gap-10 px-6 py-16 sm:py-20 lg:grid-cols-[1fr_0.9fr]">
+          <div>
+            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-white/60">
+              New — FMLS integration
+            </div>
+            <h2 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">
+              Type the FMLS number. The deal builds itself.
+            </h2>
+            <p className="mt-4 text-base leading-relaxed text-white/80">
+              Realtor Portal is now an approved FMLS Marketplace product with a
+              licensed live data feed. Enter a listing number and the property
+              fills in automatically — address, price, beds and baths, square
+              footage, photo, listing agent, taxes, lot size, HOA — and carries
+              through every phase of the deal so you never retype it.
+            </p>
+            <p className="mt-3 text-sm text-white/60">
+              Available as a firm-wide add-on for $49/month. FMLS members only.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link
+                href="/signup"
+                className="rounded-lg bg-white px-5 py-3 text-base font-semibold text-ink-900 transition hover:bg-ink-100"
+              >
+                Try it on your next deal
+              </Link>
+            </div>
+          </div>
+          {/* Mini mock: the autofill moment. */}
+          <div aria-hidden className="hidden lg:block">
+            <div className="rounded-2xl border border-white/15 bg-white/5 p-5">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-white/50">
+                Add house
+              </div>
+              <div className="mt-3 flex items-center gap-2">
+                <span className="flex-1 rounded-lg border border-white/20 bg-white/10 px-3 py-2 font-mono text-sm text-white">
+                  FMLS# 7305085
+                </span>
+                <span className="rounded-lg bg-white px-3 py-2 text-xs font-bold text-ink-900">
+                  Auto-fill
+                </span>
+              </div>
+              <div className="mt-4 space-y-2 text-xs text-white/80">
+                {[
+                  ['Address', '298 Randall Drive'],
+                  ['List price', '$30,000'],
+                  ['Listing agent', 'T. Crone · Keller Williams'],
+                  ['Year built · Lot', '2001 · 0.46 ac'],
+                  ['Annual taxes', '$313'],
+                ].map(([k, v]) => (
+                  <div key={k} className="flex justify-between rounded-lg bg-white/5 px-3 py-2">
+                    <span className="text-white/50">{k}</span>
+                    <span className="font-medium">{v}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-3 text-[10px] text-white/40">
+                Filled from the live FMLS feed in one tap.
               </div>
             </div>
           </div>

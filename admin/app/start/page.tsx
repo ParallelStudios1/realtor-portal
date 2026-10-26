@@ -97,6 +97,9 @@ export default function StartPage({
         <p className="mx-auto mt-3 inline-block rounded-full bg-ink-900 px-3 py-1 text-xs font-semibold text-white">
           Launch offer: 30% off your first 6 months
         </p>
+        <p className="mx-auto mt-2 inline-block rounded-full border border-ink-900 px-3 py-1 text-xs font-semibold text-ink-900">
+          New: FMLS integration — listings autofill from the live feed
+        </p>
       </div>
 
       {searchParams.error && (
